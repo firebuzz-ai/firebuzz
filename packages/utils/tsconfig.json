@@ -1,9 +1,9 @@
 {
-  "extends": "@firebuzz/typescript-config/base.json",
-  "exclude": ["dist", "node_modules"],
-  "include": ["src"],
-  "compilerOptions": {
-    "outDir": "dist",
-    "jsx": "react"
-  }
+	"extends": "@firebuzz/typescript-config/base.json",
+	"exclude": ["dist", "node_modules"],
+	"include": ["src"],
+	"compilerOptions": {
+		"outDir": "dist",
+		"jsx": "react"
+	}
 }

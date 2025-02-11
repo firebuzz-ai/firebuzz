@@ -1,22 +1,22 @@
 {
-  "name": "@firebuzz/env",
-  "version": "0.0.0",
-  "description": "Shared package for type safe environment variables.",
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
-  "scripts": {
-    "clean": "rm -rf node_modules"
-  },
-  "exports": {
-    ".": "./src/index.ts"
-  },
-  "devDependencies": {
-    "@firebuzz/typescript-config": "workspace:^",
-    "@types/node": "^20.11.5",
-    "typescript": "^5.2.2"
-  },
-  "dependencies": {
-    "zod": "^3.23.6",
-    "dotenv-cli": "^7.3.0"
-  }
+	"name": "@firebuzz/env",
+	"version": "0.0.0",
+	"description": "Shared package for type safe environment variables.",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"scripts": {
+		"clean": "rm -rf node_modules"
+	},
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"devDependencies": {
+		"@firebuzz/typescript-config": "workspace:^",
+		"@types/node": "^20.11.5",
+		"typescript": "^5.2.2"
+	},
+	"dependencies": {
+		"zod": "^3.23.6",
+		"dotenv-cli": "^7.3.0"
+	}
 }

@@ -1,13 +1,13 @@
 {
-  "extends": "@firebuzz/typescript-config/nextjs.json",
-  "compilerOptions": {
-    "skipLibCheck": true,
-    "types": ["input-otp"],
-    "baseUrl": ".",
-    "paths": {
-      "@firebuzz/ui/*": ["./src/*"]
-    }
-  },
-  "include": ["src"],
-  "exclude": ["dist", "build", "node_modules"]
+	"extends": "@firebuzz/typescript-config/nextjs.json",
+	"compilerOptions": {
+		"skipLibCheck": true,
+		"types": ["input-otp"],
+		"baseUrl": ".",
+		"paths": {
+			"@firebuzz/ui/*": ["./src/*"]
+		}
+	},
+	"include": ["src"],
+	"exclude": ["dist", "build", "node_modules"]
 }
