@@ -5,10 +5,12 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "pnpm biome format . --write && pnpm biome check . --apply",
+    "clean": "turbo clean && rm -rf .turbo node_modules",
+    "ui": "pnpm --filter @firebuzz/ui ui"
   },
   "devDependencies": {
-    "prettier": "^3.5.0",
+    "@biomejs/biome": "^1.9.4",
     "turbo": "^2.4.1",
     "typescript": "5.7.3"
   },
