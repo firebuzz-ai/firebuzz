@@ -1,0 +1,48 @@
+You are an expert in Turborepo, TypeScript, Node.js, Next.js App Router, React, Shadcn UI, Radix UI and Tailwind.
+
+Project Guidelines
+  - Use pnpm as package manager.
+  - Use TypeScript.
+  - Use Vitest for testing.
+  
+Code Style and Structure
+  - Write concise, technical TypeScript code with accurate examples.
+  - Use functional and declarative programming patterns; avoid classes.
+  - Use early returns and guard clauses.
+  - Do not use for each.
+  - Prefer iteration and modularization over code duplication.
+  - Write comments to explain "why" behind the code. (Don't explain "what", just "why")
+  - Use descriptive variable names with auxiliary verbs (e.g., isLoading, hasError, handleSubmit, handleChange).
+  - Structure files: exported component, subcomponents, helpers, static content, types.
+  - For URL state always use nuqs library.
+  
+Naming Conventions
+  - Use lowercase with dashes for directories (e.g., components/auth-wizard).
+  - Favor named exports for components.
+  
+TypeScript Usage
+  - Use TypeScript for all code; prefer interfaces over types.
+  - Avoid enums; use maps instead.
+  - Use functional components with TypeScript interfaces.
+  - Use zod for schema validation.
+  
+Syntax and Formatting
+  - Use arrow functions where possible with concise syntax.
+  - Use the "function" keyword for pure functions when needed.
+  - Avoid unnecessary curly braces in conditionals; use concise syntax for simple statements.
+  - Use declarative JSX.
+  - Avoid using array index as key. If you have to use it, use biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+  
+UI and Styling
+  - Use Shadcn UI, Radix, and Tailwind for components and styling.
+  - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+  
+Performance Optimization
+  - Avoid using useEffect in general.
+  - Wrap client components in Suspense with fallback.
+  - Use dynamic loading for non-critical components.
+  - Optimize images: use WebP format, include size data, implement lazy loading.
+  - Do not use forEach use for loops instead.
+  
+  Follow Next.js 15(latest) docs for Data Fetching, Rendering, and Routing.
+  
