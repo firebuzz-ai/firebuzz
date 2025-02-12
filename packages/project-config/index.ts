@@ -1,13 +1,13 @@
 export const projectConfig = {
-	name: "poe",
-	description: "AI-powered content suite for tech-savvy marketing teams.",
-	/* Contact */
-	email: {
-		support: "support@usepoe.com",
-		sales: "sales@usepoe.com",
-	},
-	links: {
-		marketing: "https://usepoe.com",
-		app: "https://app.usepoe.com",
-	},
+  name: "Firebuzz",
+  description: "AI-powered automation tool for PPC marketers.",
+  /* Contact */
+  email: {
+    support: "support@getfirebuzz.com",
+    sales: "sales@getfirebuzz.com",
+  },
+  links: {
+    marketing: "https://getfirebuzz.com",
+    app: "https://app.getfirebuzz.com",
+  },
 };
