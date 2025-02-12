@@ -8,82 +8,82 @@ import { createContext, useContext, useMemo } from "react";
 import { useUser } from "./user";
 
 const workspaceContext = createContext<{
-  currentWorkspace: Doc<"workspaces"> | null;
-  workspaces: Doc<"workspaces">[];
-  changeWorkspace: (workspaceId: string) => Promise<void>;
-  isLoading: boolean;
+	currentWorkspace: Doc<"workspaces"> | null;
+	workspaces: Doc<"workspaces">[];
+	changeWorkspace: (workspaceId: string) => Promise<void>;
+	isLoading: boolean;
 }>({
-  currentWorkspace: null,
-  workspaces: [],
-  changeWorkspace: async () => {},
-  isLoading: true,
+	currentWorkspace: null,
+	workspaces: [],
+	changeWorkspace: async () => {},
+	isLoading: true,
 });
 
 const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
-  const { isLoading: isUserLoading, isAuthenticated, user } = useUser();
-  const router = useRouter();
+	const { isLoading: isUserLoading, isAuthenticated, user } = useUser();
+	const router = useRouter();
 
-  const {
-    userMemberships,
-    isLoaded: teamWorkspacesLoaded,
-    setActive,
-  } = useOrganizationList({ userMemberships: true });
+	const {
+		userMemberships,
+		isLoaded: teamWorkspacesLoaded,
+		setActive,
+	} = useOrganizationList({ userMemberships: true });
 
-  const { data: workspaces, isPending: isWorkspacesPending } =
-    useCachedRichQuery(
-      api.collections.workspace.getAll,
-      teamWorkspacesLoaded && userMemberships.data
-        ? {
-            externalIds:
-              userMemberships.data?.map(
-                (membership) => membership.organization.id
-              ) ?? [],
-          }
-        : "skip"
-    );
+	const { data: workspaces, isPending: isWorkspacesPending } =
+		useCachedRichQuery(
+			api.collections.workspace.getAll,
+			teamWorkspacesLoaded && userMemberships.data
+				? {
+						externalIds:
+							userMemberships.data?.map(
+								(membership) => membership.organization.id,
+							) ?? [],
+					}
+				: "skip",
+		);
 
-  const personalWorkspace = useMemo(() => {
-    return workspaces?.find((workspace) => workspace.ownerId === user?._id);
-  }, [workspaces, user?._id]);
+	const personalWorkspace = useMemo(() => {
+		return workspaces?.find((workspace) => workspace.ownerId === user?._id);
+	}, [workspaces, user?._id]);
 
-  const currentWorkspace = useMemo(() => {
-    if (!user?.currentWorkspaceId) return null;
-    return workspaces?.find(
-      (workspace) => workspace._id === user?.currentWorkspaceId
-    );
-  }, [workspaces, user?.currentWorkspaceId]);
+	const currentWorkspace = useMemo(() => {
+		if (!user?.currentWorkspaceId) return null;
+		return workspaces?.find(
+			(workspace) => workspace._id === user?.currentWorkspaceId,
+		);
+	}, [workspaces, user?.currentWorkspaceId]);
 
-  const changeWorkspace = async (workspaceId: string) => {
-    if (setActive) {
-      await setActive({
-        organization:
-          workspaceId === personalWorkspace?.externalId ? null : workspaceId,
-      });
+	const changeWorkspace = async (workspaceId: string) => {
+		if (setActive) {
+			await setActive({
+				organization:
+					workspaceId === personalWorkspace?.externalId ? null : workspaceId,
+			});
 
-      router.push("/content");
-    }
-  };
+			router.push("/content");
+		}
+	};
 
-  const exposed = {
-    workspaces: workspaces ?? [],
-    currentWorkspace: currentWorkspace ?? null,
-    changeWorkspace,
-    isLoading:
-      isUserLoading ||
-      !isAuthenticated ||
-      !teamWorkspacesLoaded ||
-      isWorkspacesPending,
-  };
+	const exposed = {
+		workspaces: workspaces ?? [],
+		currentWorkspace: currentWorkspace ?? null,
+		changeWorkspace,
+		isLoading:
+			isUserLoading ||
+			!isAuthenticated ||
+			!teamWorkspacesLoaded ||
+			isWorkspacesPending,
+	};
 
-  return (
-    <workspaceContext.Provider value={exposed}>
-      {children}
-    </workspaceContext.Provider>
-  );
+	return (
+		<workspaceContext.Provider value={exposed}>
+			{children}
+		</workspaceContext.Provider>
+	);
 };
 
 const useWorkspace = () => {
-  return useContext(workspaceContext);
+	return useContext(workspaceContext);
 };
 
 export { WorkspaceProvider, useWorkspace };
