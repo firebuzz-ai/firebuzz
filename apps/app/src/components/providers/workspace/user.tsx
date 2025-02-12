@@ -9,7 +9,7 @@ import {
 	useConvexAuth,
 } from "@firebuzz/convex";
 
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 interface User extends Doc<"users"> {
 	currentWorkspaceId: Id<"workspaces">;
 	currentWorkspaceExternalId: string;
@@ -46,8 +46,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
 	);
 };
 
-const useUser = () => {
-	return useContext(userContext);
-};
 
-export { UserProvider, useUser };
+
+export { UserProvider, userContext };

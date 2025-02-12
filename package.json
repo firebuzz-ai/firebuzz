@@ -1,23 +1,25 @@
 {
-	"name": "firebuzz",
-	"private": true,
-	"scripts": {
-		"build": "turbo build",
-		"dev": "pnpm with-env turbo dev",
-		"lint": "turbo lint",
-		"format": "pnpm biome format . --write && pnpm biome check . --write",
-		"clean": "turbo clean && rm -rf .turbo node_modules",
-		"ui": "pnpm --filter @firebuzz/ui ui",
-		"with-env": "dotenv -e .env.local --"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^1.9.4",
-		"turbo": "^2.4.1",
-		"typescript": "5.7.3",
-		"dotenv-cli": "^7.3.0"
-	},
-	"packageManager": "pnpm@9.0.0",
-	"engines": {
-		"node": ">=18"
-	}
+  "name": "firebuzz",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "pnpm with-env turbo dev",
+    "dev:app": "pnpm with-env turbo dev --filter app --filter @firebuzz/convex",
+    "dev:marketing": "pnpm with-env turbo dev --filter marketing",
+    "lint": "turbo lint",
+    "format": "pnpm biome format . --write && pnpm biome check . --write",
+    "clean": "turbo clean && rm -rf .turbo node_modules",
+    "ui": "pnpm --filter @firebuzz/ui ui",
+    "with-env": "dotenv -e .env.local --"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
+    "turbo": "^2.4.1",
+    "typescript": "5.7.3",
+    "dotenv-cli": "^7.3.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18"
+  }
 }
