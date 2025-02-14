@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as collections_landing_pages from "../collections/landing-pages.js";
 import type * as collections_projects from "../collections/projects.js";
 import type * as collections_users from "../collections/users.js";
 import type * as collections_workspace from "../collections/workspace.js";
@@ -28,6 +29,7 @@ import type * as triggers from "../triggers.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "collections/landing-pages": typeof collections_landing_pages;
   "collections/projects": typeof collections_projects;
   "collections/users": typeof collections_users;
   "collections/workspace": typeof collections_workspace;

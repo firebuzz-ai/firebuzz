@@ -15,7 +15,6 @@ import {
 } from "@firebuzz/ui/components/ui/sidebar";
 
 import {
-  BookOpen,
   Bot,
   ChevronRight,
   Folder,
@@ -36,18 +35,26 @@ import { ProjectsSidebarList } from "./projects-list";
 // This is sample data.
 const navLinks = [
   {
-    title: "Content",
+    title: "Asset",
     url: "#",
     icon: SquareTerminal,
     isActive: true,
     items: [
       {
-        title: "New Content",
-        url: "/content",
+        title: "Ads",
+        url: "/assets/ads",
       },
       {
-        title: "All Contents",
-        url: "/content/all-contents",
+        title: "Landing Pages",
+        url: "/assets/landing-pages",
+      },
+      {
+        title: "Forms",
+        url: "/assets/forms",
+      },
+      {
+        title: "Email Templates",
+        url: "/assets/email-templates",
       },
     ],
   },
@@ -67,25 +74,17 @@ const navLinks = [
     ],
   },
   {
-    title: "Editor",
-    url: "#",
-    icon: BookOpen,
+    title: "Storage",
+    url: "/storage",
+    icon: Folder,
     items: [
       {
-        title: "Create New",
-        url: "/editor/new",
+        title: "Knowledge Base",
+        url: "/storage/knowledge-base",
       },
       {
-        title: "Get Started",
-        url: "#",
-      },
-      {
-        title: "Tutorials",
-        url: "#",
-      },
-      {
-        title: "Changelog",
-        url: "#",
+        title: "Images",
+        url: "/storage/images",
       },
     ],
   },
@@ -109,21 +108,6 @@ const navLinks = [
       {
         title: "Limits",
         url: "#",
-      },
-    ],
-  },
-  {
-    title: "Storage",
-    url: "/storage",
-    icon: Folder,
-    items: [
-      {
-        title: "Knowledge Base",
-        url: "/storage/knowledge-base",
-      },
-      {
-        title: "Images",
-        url: "/storage/images",
       },
     ],
   },
