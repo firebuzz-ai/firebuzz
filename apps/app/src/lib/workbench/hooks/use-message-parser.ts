@@ -52,7 +52,8 @@ const parser = new MessageParser({
             type: data.action.type,
             content: data.action.content,
             filePath: data.action.filePath,
-            status: "pending",
+            isInitial: data.action.isInitial,
+            status: data.action.isInitial ? "success" : "pending",
             title: data.action.title,
             artifactId: data.artifactId,
           };
@@ -63,7 +64,8 @@ const parser = new MessageParser({
         const action: Action = {
           id: data.actionId,
           messageId: data.messageId,
-          status: "pending",
+          isInitial: data.action.isInitial,
+          status: data.action.isInitial ? "success" : "pending",
           type: data.action.type,
           content: data.action.content,
           title: data.action.title,
@@ -74,6 +76,10 @@ const parser = new MessageParser({
       });
     },
     onActionClose: async (data) => {
+      if (data.action.isInitial) {
+        return;
+      }
+
       try {
         if (data.action.type === "file") {
           const isServerRunning = workbenchStore.get(isDevServerRunningAtom);
@@ -131,31 +137,47 @@ export function useMessageParser() {
   const [parsedMessages, setParsedMessages] = useAtom(parsedMessagesAtom);
 
   const parseMessages = useCallback(
-    (messages: Message[], _isLoading: boolean) => {
-      const newParsedMessages: Record<number, string> = {};
+    (messages: Message[]) => {
+      const newParsedMessages: Record<number, string> = { ...parsedMessages };
       let hasChanges = false;
+
+      console.log("Parsing messages:", {
+        incoming: messages,
+        existing: parsedMessages,
+      });
 
       for (const [index, message] of messages.entries()) {
         if (message.role === "assistant") {
-          const newParsedContent = parser.parse(message.id, message.content);
+          const newParsedContent = parser.parse(
+            message.id,
+            message.content,
+            // @ts-ignore
+            message.metadata?.initial ?? false
+          );
 
-          // Only update if content is different to avoid unnecessary state updates
-          if (
-            newParsedContent &&
-            (parsedMessages[index] || "") !== newParsedContent
-          ) {
-            newParsedMessages[index] = newParsedContent;
+          console.log("Parsed content for message:", {
+            messageId: message.id,
+            index,
+            content: message.content,
+            parsed: newParsedContent,
+            existing: parsedMessages[index],
+          });
+
+          if (newParsedContent) {
+            console.log("Updating parsed messages:", {
+              index,
+              newContent: newParsedContent,
+            });
+            newParsedMessages[index] =
+              (newParsedMessages[index] ?? "") + newParsedContent;
             hasChanges = true;
           }
         }
       }
 
-      // Only update state if we have actual changes
       if (hasChanges) {
-        setParsedMessages((prevParsed) => ({
-          ...prevParsed,
-          ...newParsedMessages,
-        }));
+        console.log("Updating parsed messages:", newParsedMessages);
+        setParsedMessages(newParsedMessages);
       }
     },
     [setParsedMessages, parsedMessages]

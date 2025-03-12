@@ -8,7 +8,7 @@ import {
 } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useChat } from "@ai-sdk/react";
-import { type Id, api, useMutation, usePaginatedQuery } from "@firebuzz/convex";
+import { type Id, api, useMutation, useRichQuery } from "@firebuzz/convex";
 import { stripIndents } from "@firebuzz/utils";
 import { useAtomValue } from "jotai";
 import { useEffect } from "react";
@@ -32,16 +32,13 @@ export const Chat = ({ id }: { id: string }) => {
     api.collections.landingPageMessages.mutations.createLandingPageMessage
   );
   const {
-    results: messagesFromServer,
+    data: messagesFromServer,
     /*  loadMore,
     isLoading, */
-  } = usePaginatedQuery(
-    api.collections.landingPageMessages.queries.getPaginatedLandingPageMessages,
+  } = useRichQuery(
+    api.collections.landingPageMessages.queries.getLandingPageMessages,
     {
       landingPageId: id as Id<"landingPages">,
-    },
-    {
-      initialNumItems: 2,
     }
   );
 
@@ -52,6 +49,9 @@ export const Chat = ({ id }: { id: string }) => {
         id: message._id,
         content: message.message,
         role: message.role,
+        metadata: {
+          initial: true,
+        },
       })) ?? [],
     onFinish: async (message) => {
       await saveMessage({
@@ -71,7 +71,7 @@ export const Chat = ({ id }: { id: string }) => {
       (msg) => msg.role === "assistant"
     );
     if (assistantMessages.length > 0) {
-      parseMessages(messages, false);
+      parseMessages(messages);
     }
   }, [messages, parseMessages]);
 
@@ -101,7 +101,15 @@ export const Chat = ({ id }: { id: string }) => {
       <ChatInput
         onSubmit={async (message) => {
           closeRightPanel();
+
+          const messageId = await saveMessage({
+            landingPageId: id as Id<"landingPages">,
+            message: message,
+            type: "user",
+          });
+
           await append({
+            id: messageId,
             role: "user",
             content: stripIndents(`
             ${message}
@@ -111,11 +119,6 @@ export const Chat = ({ id }: { id: string }) => {
               .map(([key, value]) => `${key}: ${value}`)
               .join("\n")}
             `),
-          });
-          await saveMessage({
-            landingPageId: id as Id<"landingPages">,
-            message: message,
-            type: "user",
           });
         }}
       />

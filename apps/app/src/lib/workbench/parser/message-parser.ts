@@ -19,6 +19,7 @@ export interface BaseAction {
   type: ActionType;
   content: string;
   title: string;
+  isInitial: boolean;
 }
 
 export interface FileAction extends BaseAction {
@@ -60,6 +61,7 @@ interface MessageState {
   currentArtifact?: ArtifactData;
   currentAction?: BaseAction;
   actionId: number;
+  isInitial: boolean;
 }
 
 interface ElementFactoryProps {
@@ -97,7 +99,7 @@ export class MessageParser {
   }
 
   /** Parse the input string for a given messageId */
-  parse(messageId: string, input: string): string {
+  parse(messageId: string, input: string, initial: boolean): string {
     let state = this.#messages.get(messageId);
     if (!state) {
       state = {
@@ -105,6 +107,7 @@ export class MessageParser {
         insideArtifact: false,
         insideAction: false,
         actionId: 0,
+        isInitial: initial,
       };
       this.#messages.set(messageId, state);
     }
@@ -148,7 +151,10 @@ export class MessageParser {
             const tagEnd = input.indexOf(">", actionOpenIndex);
             if (tagEnd !== -1) {
               const actionTag = input.slice(actionOpenIndex, tagEnd + 1);
-              state.currentAction = this.#parseActionTag(actionTag);
+              state.currentAction = this.#parseActionTag(
+                actionTag,
+                state.isInitial
+              );
               state.insideAction = true;
 
               this.#options.callbacks?.onActionOpen?.({
@@ -229,10 +235,10 @@ export class MessageParser {
   }
 
   /** Parse attributes from an action tag */
-  #parseActionTag(tag: string): BaseAction {
+  #parseActionTag(tag: string, isInitial: boolean): BaseAction {
     const type = (this.#extractAttribute(tag, "type") as ActionType) ?? "shell";
     const title = this.#extractAttribute(tag, "title") || "";
-    const action: BaseAction = { type, content: "", title };
+    const action: BaseAction = { type, content: "", title, isInitial };
 
     if (type === "file") {
       (action as FileAction).filePath =

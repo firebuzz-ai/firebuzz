@@ -1,7 +1,6 @@
-"use server";
-import { cookies } from "next/headers";
-
 export async function setPanelSize(size: number, cookieName: string) {
-  const cookieStore = await cookies();
-  cookieStore.set(cookieName, size.toString());
+  await fetch("/api/cookie", {
+    method: "POST",
+    body: JSON.stringify({ key: cookieName, value: size.toString() }),
+  });
 }

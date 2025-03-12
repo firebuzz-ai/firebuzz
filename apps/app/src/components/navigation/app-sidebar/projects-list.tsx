@@ -29,7 +29,7 @@ import Link from "next/link";
 
 export const ProjectsSidebarList = () => {
   const { data: projects, isPending } = useCachedRichQuery(
-    api.collections.projects.getAllByWorkspace
+    api.collections.projects.queries.getAllByWorkspace
   );
 
   return (

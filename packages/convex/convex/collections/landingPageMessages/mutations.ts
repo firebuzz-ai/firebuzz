@@ -21,7 +21,7 @@ export const createLandingPageMessage = mutation({
       throw new ConvexError("Unauthorized");
     }
 
-    await ctx.db.insert("landingPageMessages", {
+    return await ctx.db.insert("landingPageMessages", {
       landingPageId: args.landingPageId,
       message: args.message,
       role: args.type,
