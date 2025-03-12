@@ -49,13 +49,7 @@ const errorResponses = {
 	},
 };
 
-const metadataSchema = z.object({
-	contentType: z.enum(['html', 'css', 'js']),
-	projectId: z.string(),
-	landingId: z.string(),
-	variantId: z.string(),
-	language: z.string(),
-});
+const metadataSchema = z.record(z.string(), z.any());
 
 // @route POST /api/v1/kv
 export const insertKvBodySchema = z.object({
@@ -351,4 +345,15 @@ export const kvRoute = app
 			console.error(error);
 			return c.json({ success: false as const, message: 'Internal Server Error' as const }, 500);
 		}
+	})
+	.options('*', (c) => {
+		return c.text('', {
+			status: 200,
+			headers: {
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+				'Access-Control-Max-Age': '86400',
+			},
+		});
 	});

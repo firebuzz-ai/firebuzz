@@ -1,7 +1,7 @@
 "use client";
 
-import { useUser } from "@/hooks/user";
-import { useWorkspace } from "@/hooks/workspace";
+import { useUser } from "@/hooks/auth/use-user";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
   type Doc,
   type Id,
@@ -33,7 +33,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Get all projects for current workspace
   const { data: projects, isPending: isProjectsPending } = useCachedRichQuery(
-    api.collections.projects.getAllByWorkspace,
+    api.collections.projects.queries.getAllByWorkspace,
     !user || !currentWorkspace ? "skip" : undefined
   );
 
@@ -44,7 +44,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
   }, [projects, user?.currentProject]);
 
   const updateUserCurrentProject = useMutation(
-    api.collections.users.updateCurrentProject
+    api.collections.users.mutations.updateCurrentProject
   );
 
   const changeProject = async (projectId: Id<"projects"> | undefined) => {

@@ -30,6 +30,7 @@ import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Info } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
+import { slugify } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
@@ -58,7 +59,12 @@ export const CreateProjectForm = () => {
   const onSubmitHandler = async (data: z.infer<typeof formSchema>) => {
     try {
       setIsLoading(true);
-      await createProjectMutation(data);
+      await createProjectMutation({
+        title: data.title,
+        color: data.color,
+        icon: data.icon,
+        slug: slugify(data.title),
+      });
 
       toast.success("Project created", {
         id: "create-project",

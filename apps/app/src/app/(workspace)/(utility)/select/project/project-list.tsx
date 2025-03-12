@@ -1,7 +1,7 @@
 "use client";
 
-import { useProject } from "@/hooks/project";
-import { useWorkspace } from "@/hooks/workspace";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { buttonVariants } from "@firebuzz/ui/components/ui/button";
 import type { ColorPickerColorType } from "@firebuzz/ui/components/ui/color-picker";
 import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";

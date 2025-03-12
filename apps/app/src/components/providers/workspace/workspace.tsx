@@ -3,7 +3,7 @@
 import { useOrganizationList } from "@clerk/nextjs";
 import { type Doc, api, useCachedRichQuery } from "@firebuzz/convex";
 
-import { useUser } from "@/hooks/user";
+import { useUser } from "@/hooks/auth/use-user";
 import { useRouter } from "next/navigation";
 import { createContext, useMemo } from "react";
 
@@ -31,7 +31,7 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 
   const { data: workspaces, isPending: isWorkspacesPending } =
     useCachedRichQuery(
-      api.collections.workspace.getAll,
+      api.collections.workspaces.queries.getAll,
       teamWorkspacesLoaded && userMemberships.data
         ? {
             externalIds:

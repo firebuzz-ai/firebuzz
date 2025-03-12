@@ -1,5 +1,5 @@
 "use client";
-import { useUser } from "@/hooks/user";
+import { useUser } from "@/hooks/auth/use-user";
 import { useAuth } from "@clerk/nextjs";
 import { AvatarFallback, AvatarImage } from "@firebuzz/ui/components/ui/avatar";
 

@@ -7,3 +7,10 @@ export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 	});
 	return auth(c, next);
 });
+
+export const cors = createMiddleware<{ Bindings: Env }>((c, next) => {
+	c.res.headers.set('Access-Control-Allow-Origin', '*');
+	c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+	c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+	return next();
+});

@@ -4,13 +4,16 @@
   "scripts": {
     "build": "turbo build",
     "dev": "pnpm with-env turbo dev",
-    "dev:app": "pnpm with-env turbo dev --filter app --filter @firebuzz/convex",
+    "dev:app": "pnpm with-env turbo dev --filter app ",
+    "dev:convex": "pnpm with-env turbo dev --filter @firebuzz/convex",
     "dev:marketing": "pnpm with-env turbo dev --filter marketing",
+    "dev:template": "pnpm with-env turbo dev --filter template",
     "lint": "turbo lint",
     "format": "pnpm biome format . --write && pnpm biome check . --write",
     "clean": "turbo clean && rm -rf .turbo node_modules",
     "ui": "pnpm --filter @firebuzz/ui ui",
-    "with-env": "dotenv -e .env.local --"
+    "with-env": "dotenv -e .env.local --",
+    "test": "turbo test"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

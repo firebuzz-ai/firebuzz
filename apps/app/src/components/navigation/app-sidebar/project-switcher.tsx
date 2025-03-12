@@ -1,9 +1,7 @@
 "use client";
 
-import { useProject } from "@/hooks/project";
-import { useWorkspace } from "@/hooks/workspace";
-import type { ColorPickerColorType } from "@firebuzz/ui/components/ui/color-picker";
-import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +11,6 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@firebuzz/ui/components/ui/dropdown-menu";
-import type { IconPickerIconType } from "@firebuzz/ui/components/ui/icon-picker";
 import {
   SidebarMenuButton,
   useSidebar,
@@ -38,15 +35,8 @@ export const ProjectSwitcher = () => {
       <DropdownMenuTrigger asChild>
         <SidebarMenuButton
           size="lg"
-          className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground flex"
+          className="data-[state=open]:bg-sidebar-accent h-10 group-data-[collapsible=icon]:hidden flex"
         >
-          <div>
-            <ColoredIconPreview
-              icon={currentProject.icon as IconPickerIconType}
-              color={currentProject.color as ColorPickerColorType}
-              className="size-8"
-            />
-          </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold">
               {currentProject.title}

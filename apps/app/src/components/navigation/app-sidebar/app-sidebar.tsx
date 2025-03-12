@@ -15,13 +15,14 @@ import {
 } from "@firebuzz/ui/components/ui/sidebar";
 
 import {
-  Bot,
   ChevronRight,
   Folder,
   Settings2,
   SquareTerminal,
+  Workflow,
 } from "@firebuzz/ui/icons/lucide";
 
+import { Icon } from "@firebuzz/ui/components/brand/icon";
 import {
   Collapsible,
   CollapsibleContent,
@@ -42,34 +43,34 @@ const navLinks = [
     items: [
       {
         title: "Ads",
-        url: "/assets/ads",
+        url: "/assets/ad",
       },
       {
         title: "Landing Pages",
-        url: "/assets/landing-pages",
+        url: "/assets/landing",
       },
       {
         title: "Forms",
-        url: "/assets/forms",
+        url: "/assets/landing-pages/edit/1",
       },
       {
         title: "Email Templates",
-        url: "/assets/email-templates",
+        url: "/assets/landing-pages/edit/2",
       },
     ],
   },
   {
     title: "Campaign",
     url: "#",
-    icon: Bot,
+    icon: Workflow,
     items: [
       {
         title: "New Campaign",
-        url: "/campaign",
+        url: "/campaigns/new",
       },
       {
         title: "All Campaigns",
-        url: "/campaign/all-campaigns",
+        url: "/campaigns",
       },
     ],
   },
@@ -80,7 +81,7 @@ const navLinks = [
     items: [
       {
         title: "Knowledge Base",
-        url: "/storage/knowledge-base",
+        url: "/components/buttons",
       },
       {
         title: "Images",
@@ -131,9 +132,12 @@ export function AppSidebar({
       side={side}
       className={className}
     >
-      <SidebarHeader>
+      <SidebarHeader className="group-data-[state=expanded]:border-b">
         <SidebarMenu>
-          <SidebarMenuItem>
+          <SidebarMenuItem className="flex justify-between gap-2">
+            <div className="border border-border bg-muted rounded-md p-1.5 max-w-fit w-full">
+              <Icon className="h-6" />
+            </div>
             <ProjectSwitcher />
           </SidebarMenuItem>
         </SidebarMenu>
