@@ -1,6 +1,6 @@
 import type { Message } from "ai";
 import { useAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import {
   type Action,
   type Artifact,
@@ -133,41 +133,36 @@ const parser = new MessageParser({
   },
 });
 
+type MessageWithMetadata = Message & {
+  metadata?: {
+    initial?: boolean;
+  };
+};
+
 export function useMessageParser() {
   const [parsedMessages, setParsedMessages] = useAtom(parsedMessagesAtom);
 
+  // Reset parser state when component unmounts
+  useEffect(() => {
+    return () => {
+      parser.reset();
+    };
+  }, []);
+
   const parseMessages = useCallback(
-    (messages: Message[]) => {
+    (messages: MessageWithMetadata[]) => {
       const newParsedMessages: Record<number, string> = { ...parsedMessages };
       let hasChanges = false;
-
-      console.log("Parsing messages:", {
-        incoming: messages,
-        existing: parsedMessages,
-      });
 
       for (const [index, message] of messages.entries()) {
         if (message.role === "assistant") {
           const newParsedContent = parser.parse(
             message.id,
             message.content,
-            // @ts-ignore
             message.metadata?.initial ?? false
           );
 
-          console.log("Parsed content for message:", {
-            messageId: message.id,
-            index,
-            content: message.content,
-            parsed: newParsedContent,
-            existing: parsedMessages[index],
-          });
-
           if (newParsedContent) {
-            console.log("Updating parsed messages:", {
-              index,
-              newContent: newParsedContent,
-            });
             newParsedMessages[index] =
               (newParsedMessages[index] ?? "") + newParsedContent;
             hasChanges = true;
@@ -176,7 +171,6 @@ export function useMessageParser() {
       }
 
       if (hasChanges) {
-        console.log("Updating parsed messages:", newParsedMessages);
         setParsedMessages(newParsedMessages);
       }
     },

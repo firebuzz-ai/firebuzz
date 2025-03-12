@@ -111,4 +111,5 @@ export const resetState = () => {
   workbenchStore.set(artifactsAtom, RESET);
   workbenchStore.set(actionsAtom, RESET);
   workbenchStore.set(parsedFilesAtom, RESET);
+  workbenchStore.set(parsedMessagesAtom, RESET);
 };
