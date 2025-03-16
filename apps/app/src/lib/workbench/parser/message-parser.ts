@@ -11,6 +11,7 @@ export interface ArtifactData {
   id: string;
   title?: string;
   files?: FileSystemTree;
+  isInitial: boolean;
 }
 
 export type ActionType = "file" | "shell";
@@ -35,6 +36,7 @@ export type Action = FileAction | ShellAction;
 
 export interface ArtifactCallbackData extends ArtifactData {
   messageId: string;
+  versionId?: string;
 }
 
 export interface ActionCallbackData {
@@ -62,12 +64,14 @@ interface MessageState {
   currentAction?: BaseAction;
   actionId: number;
   isInitial: boolean;
+  versionId: string | undefined;
 }
 
 interface ElementFactoryProps {
   messageId: string;
   artifactId: string;
   title?: string;
+  versionId?: string;
 }
 
 export type ElementFactory = (props: ElementFactoryProps) => string;
@@ -79,6 +83,7 @@ export const createArtifactElement: ElementFactory = (props) => {
     `data-message-id="${props.messageId}"`,
     `data-artifact-id="${props.artifactId}"`,
     props.title ? `data-title="${props.title}"` : "",
+    props.versionId ? `data-version-id="${props.versionId}"` : "",
   ].filter(Boolean); // Remove empty strings
 
   return `<div ${elementProps.join(" ")}></div>`;
@@ -99,7 +104,12 @@ export class MessageParser {
   }
 
   /** Parse the input string for a given messageId */
-  parse(messageId: string, input: string, initial: boolean): string {
+  parse(
+    messageId: string,
+    input: string,
+    initial: boolean,
+    versionId: string | undefined
+  ): string {
     let state = this.#messages.get(messageId);
     if (!state) {
       state = {
@@ -108,6 +118,7 @@ export class MessageParser {
         insideAction: false,
         actionId: 0,
         isInitial: initial,
+        versionId,
       };
       this.#messages.set(messageId, state);
     }
@@ -175,6 +186,8 @@ export class MessageParser {
               messageId,
               id: state.currentArtifact!.id,
               title: state.currentArtifact!.title,
+              versionId: state.versionId,
+              isInitial: state.isInitial,
             });
 
             state.insideArtifact = false;
@@ -197,14 +210,19 @@ export class MessageParser {
             }
 
             const artifactTag = input.slice(artifactOpenIndex, tagEnd + 1);
-            const artifactData = this.#parseArtifactTag(artifactTag);
+            const artifactData = this.#parseArtifactTag(
+              artifactTag,
+              state.isInitial
+            );
             state.currentArtifact = artifactData;
             state.insideArtifact = true;
 
             this.#options.callbacks?.onArtifactOpen?.({
               messageId,
+              versionId: state.versionId,
               id: artifactData.id,
               title: artifactData.title,
+              isInitial: state.isInitial,
             });
 
             const factory =
@@ -213,6 +231,7 @@ export class MessageParser {
               messageId,
               artifactId: artifactData.id,
               title: artifactData.title,
+              versionId: state.versionId,
             });
 
             i = tagEnd + 1;
@@ -248,10 +267,10 @@ export class MessageParser {
   }
 
   /** Parse attributes from an artifact tag */
-  #parseArtifactTag(tag: string): ArtifactData {
+  #parseArtifactTag(tag: string, isInitial: boolean): ArtifactData {
     const id = this.#extractAttribute(tag, "id") || crypto.randomUUID();
     const title = this.#extractAttribute(tag, "title");
-    return { id, title };
+    return { id, title, isInitial };
   }
 
   /** Extract an attribute value from a tag */

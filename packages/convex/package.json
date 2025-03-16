@@ -11,7 +11,8 @@
     "./nextjs": "./src/nextjs.ts"
   },
   "scripts": {
-    "dev": "convex dev --local",
+    "dev:local": "convex dev --local",
+    "dev:remote": "convex dev",
     "setup": "convex dev --until-success",
     "deploy": "npx convex deploy",
     "clean": "rm -rf node_modules"

@@ -31,11 +31,7 @@ export const Chat = ({ id }: { id: string }) => {
   const saveMessage = useMutation(
     api.collections.landingPageMessages.mutations.createLandingPageMessage
   );
-  const {
-    data: messagesFromServer,
-    /*  loadMore,
-    isLoading, */
-  } = useRichQuery(
+  const { data: messagesFromServer } = useRichQuery(
     api.collections.landingPageMessages.queries.getLandingPageMessages,
     {
       landingPageId: id as Id<"landingPages">,
@@ -51,6 +47,7 @@ export const Chat = ({ id }: { id: string }) => {
         role: message.role,
         metadata: {
           initial: true,
+          versionId: message.landingPageVersionId,
         },
       })) ?? [],
     onFinish: async (message) => {
@@ -66,7 +63,6 @@ export const Chat = ({ id }: { id: string }) => {
   const { parsedMessages, parseMessages } = useMessageParser();
 
   useEffect(() => {
-    // Prevent unnecessary parsing if messages haven't changed in a meaningful way
     const assistantMessages = messages.filter(
       (msg) => msg.role === "assistant"
     );

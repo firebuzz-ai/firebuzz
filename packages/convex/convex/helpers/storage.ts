@@ -1,3 +1,5 @@
+"use node";
+
 import { ConvexError } from "convex/values";
 
 import { PutObjectCommand } from "@aws-sdk/client-s3";
@@ -28,7 +30,7 @@ export const storeStringInR2 = internalAction({
       });
 
       const command = new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
+        Bucket: process.env.R2_BUCKET!,
         Key: args.key,
         Body: Buffer.from(filesTXT),
         Metadata: args.metadata,

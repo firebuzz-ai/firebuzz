@@ -20,10 +20,10 @@ export function EditCampaign({ id, rightPanelSize }: EditCampaignProps) {
     isPending: isLoading,
     isError,
   } = useRichQuery(
-    api.collections.campaigns.getCampaignById,
+    api.collections.campaigns.queries.getCampaignById,
     id
       ? {
-          campaignId: id as Id<"campaigns">,
+          id: id as Id<"campaigns">,
         }
       : "skip"
   );

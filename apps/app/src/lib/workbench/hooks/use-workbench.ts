@@ -11,6 +11,7 @@ import {
   portAtom,
   projectIdAtom,
 } from "../atoms";
+import { WORK_DIR } from "../contants";
 import {
   type ParsedFile,
   parseFileSystemTree,
@@ -45,17 +46,19 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
 
       // Check project dir
       projectDir = await webcontainerInstance.fs
-        .readdir(`/workspace/${id}`)
+        .readdir(`${WORK_DIR}/workspace/${id}`)
         .catch(() => [])
         .then((dir) => dir);
 
+      console.log({ projectDir });
+
       if (!projectDir.length || projectDir.length === 0) {
         // Create project dir
-        await webcontainerInstance.fs.mkdir(`/workspace/${id}`, {
+        await webcontainerInstance.fs.mkdir(`${WORK_DIR}/workspace/${id}`, {
           recursive: true,
         });
         await webcontainerInstance.mount(initialFiles, {
-          mountPoint: `/workspace/${id}`,
+          mountPoint: `${WORK_DIR}/workspace/${id}`,
         });
       }
 
@@ -65,7 +68,7 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
         const installProcess = await webcontainerInstance.spawn(
           "pnpm",
           ["install", "--no-store"],
-          { cwd: `/workspace/${id}` }
+          { cwd: `${WORK_DIR}/workspace/${id}` }
         );
         const exitCode = await installProcess.exit;
         if (exitCode !== 0) {
@@ -82,7 +85,7 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
         "pnpm",
         ["run", "dev"],
         {
-          cwd: `/workspace/${id}`,
+          cwd: `${WORK_DIR}/workspace/${id}`,
         }
       );
 

@@ -30,7 +30,9 @@ export const CampaignCanvas = ({
 }: {
   campaign: Doc<"campaigns">;
 }) => {
-  const updateCampaign = useMutation(api.collections.campaigns.updateCampaign);
+  const updateCampaign = useMutation(
+    api.collections.campaigns.mutations.updateCampaign
+  );
 
   const onSaveHandler = useCallback(
     (nodes: Node[], edges: Edge[]) => {

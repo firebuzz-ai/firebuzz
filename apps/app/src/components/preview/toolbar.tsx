@@ -1,3 +1,4 @@
+import { isIframeLoadedAtom } from "@/lib/workbench/atoms";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -7,11 +8,13 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
   AlertTriangle,
+  Loader2,
   Maximize,
   MousePointerClick,
   RefreshCcw,
 } from "@firebuzz/ui/icons/lucide";
 import { reloadPreview } from "@webcontainer/api";
+import { useAtomValue } from "jotai";
 
 export const Toolbar = ({
   url,
@@ -26,18 +29,25 @@ export const Toolbar = ({
     }
   };
 
+  const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
+
   return (
     <div className="px-2 border-b h-10 flex items-center gap-2">
       {/* Refresh */}
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
+            disabled={!isIframeLoaded}
             onClick={handleRefresh}
             variant="ghost"
             size="icon"
             className="!size-8"
           >
-            <RefreshCcw className="size-3" />
+            {isIframeLoaded ? (
+              <RefreshCcw className="size-3" />
+            ) : (
+              <Loader2 className="size-3 animate-spin" />
+            )}
           </Button>
         </TooltipTrigger>
         <TooltipContent side="bottom">Refresh</TooltipContent>

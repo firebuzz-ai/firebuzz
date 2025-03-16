@@ -3,7 +3,11 @@ import { atom, createStore } from "jotai";
 import { RESET, atomWithReset } from "jotai/utils";
 import type { ParsedFile } from "./parser/current-files-parser";
 import { generateFileTreeString } from "./parser/file-tree-parser";
-import type { Action as ActionType } from "./parser/message-parser";
+import type {
+  ActionCallbackData,
+  Action as ActionType,
+  ArtifactCallbackData,
+} from "./parser/message-parser";
 
 interface ServerState {
   port: number | null;
@@ -26,7 +30,8 @@ export interface Artifact {
   messageId: string;
   title: string;
   closed: boolean;
-  snapshot: boolean;
+  versionId?: string;
+  isInitial: boolean;
 }
 
 export type Action = ActionType & {
@@ -34,7 +39,22 @@ export type Action = ActionType & {
   messageId: string;
   artifactId: string;
   status: "pending" | "success" | "error";
+  isInitial: boolean;
 };
+
+export type MessageQueueItem =
+  | {
+      type: "artifact";
+      callbackType: "open" | "close";
+      isInitial: boolean;
+      data: ArtifactCallbackData;
+    }
+  | {
+      type: "action";
+      callbackType: "open" | "close";
+      isInitial: boolean;
+      data: ActionCallbackData;
+    };
 
 export const workbenchStore = createStore();
 
@@ -67,6 +87,7 @@ export const parsedMessagesAtom = atomWithReset<{ [index: number]: string }>(
 );
 export const artifactsAtom = atomWithReset<Artifact[]>([]);
 export const actionsAtom = atomWithReset<Action[]>([]);
+export const messageQueueAtom = atomWithReset<MessageQueueItem[]>([]);
 
 // Files
 export const parsedFilesAtom = atomWithReset<Map<string, ParsedFile>>(

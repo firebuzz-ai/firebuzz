@@ -9,8 +9,8 @@ import { useParams } from "next/navigation";
 export const CampaignTopbar = () => {
   const { id } = useParams<{ id: string | undefined }>();
   const { data: campaign, isPending: isLoading } = useRichQuery(
-    api.collections.campaigns.getCampaignById,
-    id ? { campaignId: id as Id<"campaigns"> } : "skip"
+    api.collections.campaigns.queries.getCampaignById,
+    id ? { id: id as Id<"campaigns"> } : "skip"
   );
 
   return (

@@ -89,14 +89,16 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
     });
 
   // Mutations
-  const updateCampaign = useMutation(api.collections.campaigns.updateCampaign);
+  const updateCampaign = useMutation(
+    api.collections.campaigns.mutations.updateCampaign
+  );
   const publishCampaign = useMutation(
-    api.collections.campaigns.publishCampaign
+    api.collections.campaigns.mutations.publishCampaign
   );
 
   // Get current campaign
-  const campaign = useQuery(api.collections.campaigns.getCampaignById, {
-    campaignId: id as Id<"campaigns">,
+  const campaign = useQuery(api.collections.campaigns.queries.getCampaignById, {
+    id: id as Id<"campaigns">,
   });
 
   // Function to set ref at specific index

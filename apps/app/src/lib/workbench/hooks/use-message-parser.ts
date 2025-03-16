@@ -2,81 +2,69 @@ import type { Message } from "ai";
 import { useAtom } from "jotai";
 import { useCallback, useEffect } from "react";
 import {
-  type Action,
-  type Artifact,
-  actionsAtom,
-  artifactsAtom,
-  isDevServerRunningAtom,
-  parsedFilesAtom,
+  type MessageQueueItem,
+  messageQueueAtom,
   parsedMessagesAtom,
-  projectIdAtom,
   workbenchStore,
 } from "../atoms";
 import { MessageParser } from "../parser/message-parser";
-import { webcontainerInstance } from "../webcontainer";
+import { useMessageQueue } from "./use-message-queue";
 
 const parser = new MessageParser({
   callbacks: {
     onArtifactOpen: (data) => {
-      console.log("onArtifactOpen", data);
-      workbenchStore.set(artifactsAtom, (prev) => {
-        const artifact: Artifact = {
-          id: data.id,
-          messageId: data.messageId,
-          closed: false,
-          snapshot: false,
-          title: data.title || "",
-        };
-        return [...prev, artifact];
+      const messageQueueItem: MessageQueueItem = {
+        type: "artifact",
+        callbackType: "open",
+        isInitial: data.isInitial,
+        data,
+      };
+
+      // Add to queue
+      workbenchStore.set(messageQueueAtom, (prev) => {
+        return [...prev, messageQueueItem];
       });
     },
     onArtifactClose: (data) => {
       console.log("onArtifactClose", data);
-      workbenchStore.set(artifactsAtom, (prev) => {
-        return prev.map((artifact) => {
-          if (artifact.messageId === data.messageId) {
-            return { ...artifact, closed: true };
-          }
-          return artifact;
-        });
+
+      const messageQueueItem: MessageQueueItem = {
+        type: "artifact",
+        callbackType: "close",
+        isInitial: data.isInitial,
+        data,
+      };
+      // Add to queue
+      workbenchStore.set(messageQueueAtom, (prev) => {
+        return [...prev, messageQueueItem];
       });
     },
     onActionOpen: (data) => {
       console.log("onActionOpen", data);
-      workbenchStore.set(actionsAtom, (prev) => {
-        // File action
-        if (data.action.type === "file") {
-          const action: Action = {
-            id: data.actionId,
-            messageId: data.messageId,
-            type: data.action.type,
-            content: data.action.content,
-            filePath: data.action.filePath,
-            isInitial: data.action.isInitial,
-            status: data.action.isInitial ? "success" : "pending",
-            title: data.action.title,
-            artifactId: data.artifactId,
-          };
-          console.log("onActionOpen", { action, data });
-          return [...prev, action];
-        }
-        // Shell action
-        const action: Action = {
-          id: data.actionId,
-          messageId: data.messageId,
-          isInitial: data.action.isInitial,
-          status: data.action.isInitial ? "success" : "pending",
-          type: data.action.type,
-          content: data.action.content,
-          title: data.action.title,
-          artifactId: data.artifactId,
-        };
-        console.log("onActionOpen", { action, data });
-        return [...prev, action];
+      const messageQueueItem: MessageQueueItem = {
+        type: "action",
+        callbackType: "open",
+        isInitial: data.action.isInitial,
+        data,
+      };
+      // Add to queue
+      workbenchStore.set(messageQueueAtom, (prev) => {
+        return [...prev, messageQueueItem];
       });
     },
     onActionClose: async (data) => {
-      if (data.action.isInitial) {
+      const messageQueueItem: MessageQueueItem = {
+        type: "action",
+        callbackType: "close",
+        isInitial: data.action.isInitial,
+        data,
+      };
+      // Add to queue
+      workbenchStore.set(messageQueueAtom, (prev) => {
+        return [...prev, messageQueueItem];
+      });
+    },
+    /*   if (data.action.isInitial) {
         return;
       }
 
@@ -128,19 +116,22 @@ const parser = new MessageParser({
             return action;
           });
         });
-      }
-    },
+      } */
   },
 });
 
 type MessageWithMetadata = Message & {
   metadata?: {
     initial?: boolean;
+    versionId?: string;
   };
 };
 
 export function useMessageParser() {
   const [parsedMessages, setParsedMessages] = useAtom(parsedMessagesAtom);
+
+  // Handle message queue
+  useMessageQueue();
 
   // Reset parser state when component unmounts
   useEffect(() => {
@@ -159,7 +150,8 @@ export function useMessageParser() {
           const newParsedContent = parser.parse(
             message.id,
             message.content,
-            message.metadata?.initial ?? false
+            message.metadata?.initial ?? false,
+            message.metadata?.versionId
           );
 
           if (newParsedContent) {

@@ -44,7 +44,7 @@ export const CreateCampaignForm = () => {
   const router = useRouter();
   const { currentProject } = useProject();
   const createCampaignMutation = useMutation(
-    api.collections.campaigns.createCampaign
+    api.collections.campaigns.mutations.createCampaign
   );
   const [isLoading, setIsLoading] = useState(false);
 
