@@ -5,7 +5,7 @@ import type { Id } from "@firebuzz/convex";
 import {
   ConvexError,
   api,
-  useAction,
+  useMutation,
   usePaginatedQuery,
 } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -50,13 +50,13 @@ const formSchema = z.object({
 export function CreateLandingPage() {
   const router = useRouter();
   const { currentProject } = useProject();
-  const createLandingPageMutation = useAction(
-    api.helpers.landingStorage.createLandingPage
+  const createLandingPageMutation = useMutation(
+    api.collections.landingPages.mutations.createLandingPage
   );
   const [isLoading, setIsLoading] = useState(false);
 
   const { results: campaigns } = usePaginatedQuery(
-    api.collections.campaigns.getPaginatedCampaigns,
+    api.collections.campaigns.queries.getPaginatedCampaigns,
     currentProject
       ? {
           projectId: currentProject._id,
@@ -70,7 +70,7 @@ export function CreateLandingPage() {
   );
 
   const { results: templates } = usePaginatedQuery(
-    api.collections.landingPageTemplates.getAllLandingPageTemplates,
+    api.collections.landingPageTemplates.queries.getAllLandingPageTemplates,
     {
       paginationOpts: {
         numItems: 50,
