@@ -8,7 +8,7 @@ export const TableFooter = ({
   status: "LoadingFirstPage" | "CanLoadMore" | "LoadingMore" | "Exhausted";
 }) => {
   return (
-    <div className="flex flex-1 max-h-min items-center justify-between py-1.5 border-t border-border px-4">
+    <div className="flex w-full max-h-min items-center justify-between py-1.5 border-t border-border px-4">
       <div className="flex items-center gap-4 text-xs text-muted-foreground justify-between w-full">
         <div className="flex items-center gap-1">
           {`${currentCount} of ${totalCount} loaded`}

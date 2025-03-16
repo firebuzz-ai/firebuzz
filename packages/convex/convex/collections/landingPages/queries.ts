@@ -71,6 +71,8 @@ export const getLandingPageById = query({
     // Get landing page
     const landingPage = await ctx.db.get(args.id);
 
+    console.log({ landingPage });
+
     if (!landingPage || landingPage.deletedAt) {
       throw new ConvexError("Landing page not found");
     }
@@ -79,9 +81,15 @@ export const getLandingPageById = query({
       throw new ConvexError("Unauthorized");
     }
 
+    if (landingPage.landingPageVersionId === undefined) {
+      throw new ConvexError("Landing page version not found");
+    }
+
     // Get current version files download url
     const key = `landing-page-versions/${landingPage._id}/${landingPage.landingPageVersionId}.txt`;
     const signedUrl = await r2.getUrl(key);
+
+    console.log({ key, signedUrl });
 
     return {
       ...landingPage,

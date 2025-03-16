@@ -54,8 +54,8 @@ export const createLandingPage = mutationWithTrigger({
     });
 
     // Update the landing page version
-    await ctx.db.patch(landingPageVersionId, {
-      landingPageId,
+    await ctx.db.patch(landingPageId, {
+      landingPageVersionId,
     });
 
     // Store the template files in R2
