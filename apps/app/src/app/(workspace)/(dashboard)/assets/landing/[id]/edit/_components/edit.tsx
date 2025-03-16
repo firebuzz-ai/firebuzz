@@ -6,12 +6,10 @@ import { Preview } from "@/components/preview/preview";
 import { useWorkbench } from "@/lib/workbench/hooks/use-workbench";
 
 import { webcontainerInstance } from "@/lib/workbench/webcontainer";
-import { createClient } from "@engine/api";
+
 import { toast } from "@firebuzz/ui/lib/utils";
 import type { FileSystemTree } from "@webcontainer/api";
 import { Chat } from "./chat";
-
-const engineAPIClient = createClient();
 
 export function EditLandingPage({
   id,
@@ -102,7 +100,7 @@ export function EditLandingPage({
     }
 
     // Put files in KV
-    const htmlPromise = engineAPIClient.kv.assets.$post({
+    /*   const htmlPromise = engineAPIClient.kv.assets.$post({
       json: {
         key: id,
         value: files.indexHTML,
@@ -148,10 +146,10 @@ export function EditLandingPage({
           },
         },
       },
-    });
+    }); */
 
     try {
-      await Promise.all([htmlPromise, jsPromise, cssPromise]);
+      /* await Promise.all([htmlPromise, jsPromise, cssPromise]); */
       toast.success("Published", {
         description: "Landing page published successfully",
         id: "publish-process",

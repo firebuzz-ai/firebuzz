@@ -37,7 +37,9 @@ import { z } from "zod";
 
 export const CreateProjectForm = () => {
   const router = useRouter();
-  const createProjectMutation = useMutation(api.collections.projects.create);
+  const createProjectMutation = useMutation(
+    api.collections.projects.mutations.create
+  );
   const formSchema = z.object({
     title: z.string().min(3),
     color: colorPickerColorZodEnum,

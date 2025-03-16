@@ -2,7 +2,7 @@
 
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
-import type { ChatRequestOptions, Message } from "ai";
+import type { Message } from "ai";
 import {
   type Dispatch,
   type SetStateAction,
@@ -17,16 +17,12 @@ export type MessageEditorProps = {
   setMessages: (
     messages: Message[] | ((messages: Message[]) => Message[])
   ) => void;
-  reload: (
-    chatRequestOptions?: ChatRequestOptions
-  ) => Promise<string | null | undefined>;
 };
 
 export function MessageEditor({
   message,
   setMode,
   setMessages,
-  reload,
 }: MessageEditorProps) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -93,7 +89,6 @@ export function MessageEditor({
             });
 
             setMode("view");
-            reload();
           }}
         >
           {isSubmitting ? "Sending..." : "Send"}

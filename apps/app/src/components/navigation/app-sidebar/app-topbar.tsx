@@ -25,7 +25,7 @@ const AppTopbar = () => {
   }, [pathname, isProjectPath]);
   const { data: currentProject, isPending: isProjectLoading } =
     useCachedRichQuery(
-      api.collections.projects.getById,
+      api.collections.projects.queries.getById,
       projectId
         ? {
             id: projectId,

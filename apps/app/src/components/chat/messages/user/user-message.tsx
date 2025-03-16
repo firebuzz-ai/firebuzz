@@ -24,7 +24,6 @@ export const UserMessage = ({
   isLoading,
   chatId,
   setMessages,
-  reload,
 }: UserMessageProps) => {
   const { user } = useUser();
   const [mode, setMode] = useState<"view" | "edit">("view");
@@ -68,7 +67,6 @@ export const UserMessage = ({
                   message={message}
                   setMode={setMode}
                   setMessages={setMessages}
-                  reload={reload}
                 />
               </div>
             )}
