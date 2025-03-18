@@ -51,14 +51,20 @@ export const envCloudflare = () =>
       R2_ENDPOINT: z.string(),
       R2_ACCESS_KEY_ID: z.string(),
       R2_SECRET_ACCESS_KEY: z.string(),
-      R2_BUCKET_NAME: z.string(),
+      R2_BUCKET: z.string(),
+      R2_TOKEN: z.string(),
+      CLOUDFLARE_ACCOUNT_ID: z.string(),
+      AI_GATEWAY_ID: z.string(),
     })
     .parse({
       NEXT_PUBLIC_R2_PUBLIC_URL: process.env.NEXT_PUBLIC_R2_PUBLIC_URL,
       R2_ENDPOINT: process.env.R2_ENDPOINT,
       R2_ACCESS_KEY_ID: process.env.R2_ACCESS_KEY_ID,
       R2_SECRET_ACCESS_KEY: process.env.R2_SECRET_ACCESS_KEY,
-      R2_BUCKET_NAME: process.env.R2_BUCKET_NAME,
+      R2_BUCKET: process.env.R2_BUCKET,
+      R2_TOKEN: process.env.R2_TOKEN,
+      CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+      AI_GATEWAY_ID: process.env.AI_GATEWAY_ID,
     });
 
 /* CLERK */
@@ -105,6 +111,7 @@ export const envGoogle = () =>
     .parse({
       GOOGLE_GENERATIVE_AI_API_KEY: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
     });
+
 /* OPENAI */
 export const envOpenai = () =>
   z
@@ -113,6 +120,18 @@ export const envOpenai = () =>
     })
     .parse({
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    });
+
+/* AZURE */
+export const envAzure = () =>
+  z
+    .object({
+      AZURE_OPENAI_API_KEY: z.string(),
+      AZURE_OPENAI_RESOURCE_NAME: z.string(),
+    })
+    .parse({
+      AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
+      AZURE_OPENAI_RESOURCE_NAME: process.env.AZURE_OPENAI_RESOURCE_NAME,
     });
 
 /* ANTHROPIC */

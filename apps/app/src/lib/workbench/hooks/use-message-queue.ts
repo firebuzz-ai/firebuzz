@@ -13,7 +13,7 @@ import {
   projectIdAtom,
   workbenchStore,
 } from "../atoms";
-import { WORK_DIR } from "../contants";
+import { WORK_DIR } from "../constants";
 import { webcontainerInstance } from "../webcontainer";
 
 export function useMessageQueue() {
@@ -55,6 +55,7 @@ export function useMessageQueue() {
                 return [...prev, artifact];
               });
             } else if (item.callbackType === "close") {
+              console.log("Closing artifact", item);
               // Update artifact closed state
               workbenchStore.set(artifactsAtom, (prev) => {
                 return prev.map((artifact) => {
@@ -64,8 +65,6 @@ export function useMessageQueue() {
                   return artifact;
                 });
               });
-              console.log("Artifact closed");
-              console.log({ isInitial: item.isInitial, landingPageId });
 
               // Save version if not initial
               if (!item.isInitial && landingPageId) {
@@ -85,12 +84,11 @@ export function useMessageQueue() {
                     }
                   );
 
-                  console.log({ files });
-
                   await createLandingPageVersion({
                     landingPageId: landingPageId as Id<"landingPages">,
-                    files: JSON.stringify(files),
+                    filesString: JSON.stringify(files),
                   });
+
                   console.log("Version created");
                 } catch (error) {
                   console.error("Error creating landing page version:", error);
@@ -130,11 +128,11 @@ export function useMessageQueue() {
             } else if (item.callbackType === "close" && !item.isInitial) {
               // Skip if initial or server not running
               if (!isServerRunning) {
-                console.log("Server is not running - skipping action close");
                 continue;
               }
 
               try {
+                // File action
                 if (item.data.action.type === "file" && landingPageId) {
                   const filePath = item.data.action.filePath;
                   const content = item.data.action.content;
@@ -146,6 +144,16 @@ export function useMessageQueue() {
                     content
                   );
 
+                  // Update action status to success
+                  workbenchStore.set(actionsAtom, (prev) => {
+                    return prev.map((action) => {
+                      if (action.id === item.data.actionId) {
+                        return { ...action, status: "success" };
+                      }
+                      return action;
+                    });
+                  });
+
                   // Update parsed files
                   workbenchStore.set(parsedFilesAtom, (prev) => {
                     return new Map(prev).set(filePath, {
@@ -156,19 +164,74 @@ export function useMessageQueue() {
                   });
                 }
 
-                // Update action status
-                workbenchStore.set(actionsAtom, (prev) => {
-                  return prev.map((action) => {
-                    if (action.id === item.data.actionId) {
-                      return {
-                        ...action,
-                        status: "success",
-                        content: item.data.action.content,
-                      };
+                // Shell action
+                if (item.data.action.type === "shell" && landingPageId) {
+                  // Run shell command
+                  const args = item.data.action.content
+                    .replaceAll("\n", "")
+                    .replaceAll("\r", "")
+                    .replaceAll("\t", "")
+                    .split(" ")
+                    .filter(
+                      (arg) =>
+                        arg !== "" &&
+                        arg !== " " &&
+                        arg !== "\n" &&
+                        arg !== "\r" &&
+                        arg !== "\t"
+                    );
+
+                  console.log("Running shell command");
+                  console.log(args);
+
+                  const process = await webcontainerInstance.spawn(
+                    args[0],
+                    args.slice(1),
+                    {
+                      cwd: `${WORK_DIR}/workspace/${landingPageId}`,
                     }
-                    return action;
-                  });
-                });
+                  );
+
+                  process.output.pipeTo(
+                    new WritableStream({
+                      write(chunk) {
+                        console.log(chunk);
+                      },
+                    })
+                  );
+
+                  const exitCode = await process.exit;
+                  // If the command failed, update the action status
+                  if (exitCode !== 0) {
+                    // Update action status
+                    workbenchStore.set(actionsAtom, (prev) => {
+                      return prev.map((action) => {
+                        if (action.id === item.data.actionId) {
+                          return {
+                            ...action,
+                            status: "error",
+                            content: item.data.action.content,
+                          };
+                        }
+                        return action;
+                      });
+                    });
+                  } else {
+                    // Update action status to success
+                    workbenchStore.set(actionsAtom, (prev) => {
+                      return prev.map((action) => {
+                        if (action.id === item.data.actionId) {
+                          return {
+                            ...action,
+                            status: "success",
+                            content: item.data.action.content,
+                          };
+                        }
+                        return action;
+                      });
+                    });
+                  }
+                }
               } catch (error) {
                 // Update action status to error
                 workbenchStore.set(actionsAtom, (prev) => {

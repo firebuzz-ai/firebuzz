@@ -23,7 +23,7 @@ app.get('/:siteid/assets/:asset', async (c) => {
 	const siteid = c.req.param('siteid');
 	const assetP = c.req.param('asset');
 
-	const asset = await c.env.ASSETS.get(`assets/${siteid}/${assetP}`);
+	const asset = await c.env.ASSETS.get(`${siteid}/assets/${assetP}`);
 
 	if (!asset) {
 		return c.text('Not found', 404);

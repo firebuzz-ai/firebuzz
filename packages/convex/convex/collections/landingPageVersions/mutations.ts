@@ -1,14 +1,13 @@
 import { ConvexError, v } from "convex/values";
-import { internal } from "../../_generated/api";
-import { aggregateLandingPageVersions } from "../../aggregates";
 import { r2 } from "../../helpers/r2";
 import { mutationWithTrigger } from "../../triggers";
 import { getCurrentUser } from "../users/utils";
+import { createLandingPageVersionInternal } from "./utils";
 
 export const createLandingPageVersion = mutationWithTrigger({
   args: {
     landingPageId: v.id("landingPages"),
-    files: v.string(),
+    filesString: v.string(),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -22,42 +21,16 @@ export const createLandingPageVersion = mutationWithTrigger({
       throw new ConvexError("Unauthorized");
     }
 
-    // Check last count of landing page versions
-    const lastCount = await aggregateLandingPageVersions.count(ctx, {
-      namespace: args.landingPageId,
-      // @ts-ignore
-      bounds: {},
-    });
-
-    // Create the landing page version
-    const landingPageVersion = await ctx.db.insert("landingPageVersions", {
-      number: lastCount + 1,
-      createdBy: user._id,
-      workspaceId: landingPage.workspaceId,
+    const landingPageVersionId = await createLandingPageVersionInternal(ctx, {
+      landingPageId: args.landingPageId,
+      filesString: args.filesString,
+      userId: user._id,
+      workspaceId: user.currentWorkspaceId,
       projectId: landingPage.projectId,
       campaignId: landingPage.campaignId,
-      landingPageId: landingPage._id,
     });
 
-    // Update the landing page version
-    await ctx.db.patch(landingPage._id, {
-      landingPageVersionId: landingPageVersion,
-    });
-
-    // Store the files in R2
-    await ctx.scheduler.runAfter(0, internal.helpers.storage.storeStringInR2, {
-      string: args.files,
-      key: `landing-page-versions/${landingPage._id}/${landingPageVersion}.txt`,
-      metadata: {
-        landingPageId: landingPage._id,
-        landingPageVersionId: landingPageVersion,
-        workspaceId: user.currentWorkspaceId,
-        projectId: landingPage.projectId,
-        campaignId: landingPage.campaignId,
-      },
-    });
-
-    return landingPageVersion;
+    return landingPageVersionId;
   },
 });
 

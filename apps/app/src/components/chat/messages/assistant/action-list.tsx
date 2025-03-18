@@ -1,7 +1,9 @@
 import type { Action } from "@/lib/workbench/atoms";
+import { javascript } from "@codemirror/lang-javascript";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { CheckIcon, XIcon } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import CodeMirror from "@uiw/react-codemirror";
 import { motion } from "motion/react";
 
 interface ActionListProps {
@@ -47,19 +49,51 @@ const ActionItem = ({ action, isLast }: ActionItemProps) => {
 
       {action.type === "shell" && (
         <div
-          className={cn("mt-1", {
+          className={cn("mt-2", {
             "mb-3.5": !isLast,
           })}
         >
-          {/* TODO: Implement syntax highlighting */}
-          {
-            <pre className="text-xs bg-muted p-2 rounded">
-              <code>{action.content}</code>
-            </pre>
-          }
+          <TerminalCode code={action.content} />
         </div>
       )}
     </motion.li>
+  );
+};
+
+interface TerminalCodeProps {
+  code: string;
+}
+
+const TerminalCode = ({ code }: TerminalCodeProps) => {
+  // Process the code to ensure each line starts with proper indentation and formatting
+  const processedCode = code
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
+
+  return (
+    <div className="terminal-code relative rounded overflow-hidden">
+      <CodeMirror
+        value={processedCode}
+        height="auto"
+        readOnly
+        extensions={[javascript({ jsx: true })]}
+        basicSetup={{
+          lineNumbers: false,
+          foldGutter: false,
+          dropCursor: false,
+          allowMultipleSelections: false,
+          indentOnInput: false,
+          highlightActiveLine: false,
+          highlightSelectionMatches: false,
+          autocompletion: false,
+          rectangularSelection: false,
+          crosshairCursor: false,
+          closeBrackets: false,
+        }}
+      />
+    </div>
   );
 };
 

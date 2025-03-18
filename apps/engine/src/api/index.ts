@@ -7,7 +7,7 @@ const apiRoutes = new OpenAPIHono<{ Bindings: Env }>().use(cors).use(apiAuth).ro
 
 // Export the app routes and the type of the app
 type AppType = typeof apiRoutes;
-const createClient = (baseUrl = 'http://localhost:8787/api/v1') => {
+const createClient = (baseUrl = 'http://localhost:8787') => {
 	return hc<AppType>(`${baseUrl}/api/v1`);
 };
 

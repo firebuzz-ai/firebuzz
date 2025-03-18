@@ -1,7 +1,7 @@
 "use client";
 import { TableFooter } from "@/components/tables/paginated-footer";
 import { useProject } from "@/hooks/auth/use-project";
-import { api, useCachedQuery, usePaginatedQuery } from "@firebuzz/convex";
+import { api, useCachedQuery, useStablePaginatedQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
@@ -20,7 +20,7 @@ export const LandingPages = () => {
     results: landingPages,
     status,
     loadMore,
-  } = usePaginatedQuery(
+  } = useStablePaginatedQuery(
     api.collections.landingPages.queries.getPaginatedLandingPages,
     currentProject
       ? {

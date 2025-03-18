@@ -14,15 +14,10 @@ interface ServerState {
   url: string | null;
 }
 
-export interface PreviewError {
-  hash: string;
+export interface Error {
+  type: "client" | "dev-server" | "build" | "container";
   message: string;
-  stack: string;
-  pathname: string;
-  port: number;
-  previewId: string;
-  search: string;
-  type: string;
+  rawError: string | null;
 }
 
 export interface Artifact {
@@ -74,7 +69,8 @@ export const portAtom = atomWithReset<ServerState | null>(null);
 export const devServerInstanceAtom = atomWithReset<WebContainerProcess | null>(
   null
 );
-export const previewErrorAtom = atomWithReset<PreviewError | null>(null);
+export const devServerLogsAtom = atomWithReset<string>("");
+export const errorsAtom = atomWithReset<Error[]>([]);
 export const isDevServerRunningAtom = atom(
   (get) => get(portAtom)?.port !== null
 );
@@ -128,7 +124,10 @@ export const resetState = () => {
   workbenchStore.set(portAtom, RESET);
   workbenchStore.set(selectedElementAtom, RESET);
   workbenchStore.set(isIframeLoadedAtom, RESET);
-  workbenchStore.set(previewErrorAtom, RESET);
+  workbenchStore.set(errorsAtom, RESET);
+  workbenchStore.set(devServerLogsAtom, RESET);
+  workbenchStore.set(messageQueueAtom, RESET);
+  workbenchStore.set(devServerInstanceAtom, RESET);
   workbenchStore.set(artifactsAtom, RESET);
   workbenchStore.set(actionsAtom, RESET);
   workbenchStore.set(parsedFilesAtom, RESET);

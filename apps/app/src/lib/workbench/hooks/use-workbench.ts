@@ -4,6 +4,8 @@ import { useCallback, useEffect } from "react";
 
 import {
   devServerInstanceAtom,
+  devServerLogsAtom,
+  errorsAtom,
   isDependenciesInstalledAtom,
   isDevServerRunningAtom,
   isIframeLoadedAtom,
@@ -11,7 +13,7 @@ import {
   portAtom,
   projectIdAtom,
 } from "../atoms";
-import { WORK_DIR } from "../contants";
+import { WORK_DIR } from "../constants";
 import {
   type ParsedFile,
   parseFileSystemTree,
@@ -23,7 +25,12 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
   );
   const port = useAtomValue(portAtom);
   const isDevServerRunning = useAtomValue(isDevServerRunningAtom);
-  const setDevServerInstance = useSetAtom(devServerInstanceAtom);
+  const setErrors = useSetAtom(errorsAtom);
+  const setDevServerLogs = useSetAtom(devServerLogsAtom);
+
+  const [devServerInstance, setDevServerInstance] = useAtom(
+    devServerInstanceAtom
+  );
   const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
   const setInitialFiles = useSetAtom(parsedFilesAtom);
   const setProjectId = useSetAtom(projectIdAtom);
@@ -50,8 +57,6 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
         .catch(() => [])
         .then((dir) => dir);
 
-      console.log({ projectDir });
-
       if (!projectDir.length || projectDir.length === 0) {
         // Create project dir
         await webcontainerInstance.fs.mkdir(`${WORK_DIR}/workspace/${id}`, {
@@ -64,10 +69,9 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
 
       if (!projectDir?.includes("node_modules")) {
         // Install dependencies without cache
-
         const installProcess = await webcontainerInstance.spawn(
           "pnpm",
-          ["install", "--no-store"],
+          ["install"],
           { cwd: `${WORK_DIR}/workspace/${id}` }
         );
         const exitCode = await installProcess.exit;
@@ -76,11 +80,9 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
         }
       }
 
-      console.log("Dependencies installed");
       setIsDependenciesInstalled(true);
 
       // Start the dev server and store the process
-
       const devProcess = await webcontainerInstance.spawn(
         "pnpm",
         ["run", "dev"],
@@ -106,7 +108,38 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
   ]);
 
   useEffect(() => {
+    if (devServerInstance) {
+      // Improved logging - collect all output in a readable format
+      devServerInstance.output.pipeTo(
+        new WritableStream({
+          write(data) {
+            // Remove ANSI escape codes for cleaner output
+            // biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
+            const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
+
+            if (
+              cleanedData.includes("Internal server error") ||
+              cleanedData.includes("Error:")
+            ) {
+              setErrors((prev) => {
+                return [
+                  ...prev,
+                  { type: "dev-server", message: cleanedData, rawError: null },
+                ];
+              });
+            }
+            setDevServerLogs((prev) => {
+              return prev + cleanedData;
+            });
+          },
+        })
+      );
+    }
+  }, [devServerInstance, setErrors, setDevServerLogs]);
+
+  useEffect(() => {
     const devProcess = initialize();
+
     return () => {
       devProcess?.then((process) => {
         process?.kill();

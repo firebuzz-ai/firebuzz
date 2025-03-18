@@ -4,18 +4,17 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@firebuzz/ui/components/ui/avatar";
-import { cn } from "@firebuzz/ui/lib/utils";
-import type { Message } from "ai";
+import type { Message as MessageType } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { Markdown } from "../markdown";
 import { MessageActions } from "../message-actions";
 import { MessageEditor } from "../message-editor";
 interface UserMessageProps {
-  message: Message;
+  message: MessageType;
   isLoading: boolean;
   chatId: string;
-  setMessages: Dispatch<SetStateAction<Message[]>>;
+  setMessages: Dispatch<SetStateAction<MessageType[]>>;
   reload: () => void;
 }
 
@@ -36,12 +35,7 @@ export const UserMessage = ({
         animate={{ y: 0, opacity: 1 }}
         data-role={message.role}
       >
-        <div
-          className={cn("flex gap-4 w-full", {
-            "w-full": mode === "edit",
-            "group-data-[role=user]/message:w-fit": mode !== "edit",
-          })}
-        >
+        <div className="flex gap-4 w-full">
           <Avatar className="size-8 flex items-center rounded-lg justify-center ring-1 shrink-0 ring-border bg-background">
             <AvatarFallback className="rounded-none">
               {user?.firstName?.charAt(0)}
@@ -51,15 +45,15 @@ export const UserMessage = ({
 
           <div className="flex flex-col gap-4 w-full">
             {message.content && mode === "view" && (
-              <div className="flex flex-row gap-2 items-start">
-                <div className="flex flex-col gap-4">
+              <div className="flex flex-row gap-2 items-start w-full">
+                <div className="flex flex-col gap-4 w-full">
                   <Markdown>{message.content as string}</Markdown>
                 </div>
               </div>
             )}
 
             {message.content && mode === "edit" && (
-              <div className="flex flex-row gap-2 items-start">
+              <div className="flex flex-row gap-2 items-start w-full">
                 <div className="size-8" />
 
                 <MessageEditor

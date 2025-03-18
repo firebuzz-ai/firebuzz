@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { query } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 import { getCurrentUser } from "../users/utils";
 
 export const getLandingPageVersionById = query({
@@ -19,5 +19,20 @@ export const getLandingPageVersionById = query({
     }
 
     return landingPageVersion;
+  },
+});
+
+export const getFilesInternal = internalQuery({
+  args: {
+    templateId: v.id("landingPageTemplates"),
+  },
+  handler: async (ctx, args) => {
+    const template = await ctx.db.get(args.templateId);
+
+    if (!template) {
+      throw new ConvexError("Template not found");
+    }
+
+    return template.files;
   },
 });

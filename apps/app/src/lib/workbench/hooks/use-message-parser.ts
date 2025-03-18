@@ -26,8 +26,6 @@ const parser = new MessageParser({
       });
     },
     onArtifactClose: (data) => {
-      console.log("onArtifactClose", data);
-
       const messageQueueItem: MessageQueueItem = {
         type: "artifact",
         callbackType: "close",
@@ -40,7 +38,6 @@ const parser = new MessageParser({
       });
     },
     onActionOpen: (data) => {
-      console.log("onActionOpen", data);
       const messageQueueItem: MessageQueueItem = {
         type: "action",
         callbackType: "open",
@@ -64,68 +61,8 @@ const parser = new MessageParser({
         return [...prev, messageQueueItem];
       });
     },
-    /*   if (data.action.isInitial) {
-        return;
-      }
-
-      try {
-        if (data.action.type === "file") {
-          const isServerRunning = workbenchStore.get(isDevServerRunningAtom);
-
-          if (!isServerRunning) {
-            console.log("Server is not running - skipping action close");
-            return;
-          }
-
-          const projectId = workbenchStore.get(projectIdAtom);
-          const filePath = data.action.filePath;
-          const content = data.action.content;
-          const extension = filePath.split(".").pop() || "";
-
-          if (!projectId) {
-            throw new Error("Project ID or action not found");
-          }
-
-          // Write file to webcontainer
-          await webcontainerInstance.fs.writeFile(
-            `/workspace/${projectId}/${filePath}`,
-            content
-          );
-
-          // Update parsed files
-          workbenchStore.set(parsedFilesAtom, (prev) => {
-            return new Map(prev).set(filePath, {
-              path: filePath,
-              content: content,
-              extension: extension,
-            });
-          });
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        workbenchStore.set(actionsAtom, (prev) => {
-          return prev.map((action) => {
-            if (action.id === data.actionId) {
-              return {
-                ...action,
-                status: "success",
-                content: data.action.content,
-              };
-            }
-            return action;
-          });
-        });
-      } */
   },
 });
-
-type MessageWithMetadata = Message & {
-  metadata?: {
-    initial?: boolean;
-    versionId?: string;
-  };
-};
 
 export function useMessageParser() {
   const [parsedMessages, setParsedMessages] = useAtom(parsedMessagesAtom);
@@ -141,7 +78,7 @@ export function useMessageParser() {
   }, []);
 
   const parseMessages = useCallback(
-    (messages: MessageWithMetadata[]) => {
+    (messages: Message[]) => {
       const newParsedMessages: Record<number, string> = { ...parsedMessages };
       let hasChanges = false;
 
@@ -150,7 +87,9 @@ export function useMessageParser() {
           const newParsedContent = parser.parse(
             message.id,
             message.content,
+            // @ts-ignore (metadata is not always present)
             message.metadata?.initial ?? false,
+            // @ts-ignore
             message.metadata?.versionId
           );
 

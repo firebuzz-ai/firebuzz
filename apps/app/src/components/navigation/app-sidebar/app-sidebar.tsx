@@ -6,10 +6,8 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
   SidebarRail,
 } from "@firebuzz/ui/components/ui/sidebar";
@@ -26,18 +24,18 @@ import { Icon } from "@firebuzz/ui/components/brand/icon";
 import {
   Collapsible,
   CollapsibleContent,
-  CollapsibleTrigger,
 } from "@firebuzz/ui/components/ui/collapsible";
-import Link from "next/link";
 import AvatarMenu from "./avatar-menu";
 import { ProjectSwitcher } from "./project-switcher";
 import { ProjectsSidebarList } from "./projects-list";
+import { SidebarGroupButton } from "./sidebar-group-button";
+import { SidebarLink } from "./sidebar-link";
 
 // This is sample data.
 const navLinks = [
   {
     title: "Asset",
-    url: "#",
+    url: "/assets",
     icon: SquareTerminal,
     isActive: true,
     items: [
@@ -61,7 +59,7 @@ const navLinks = [
   },
   {
     title: "Campaign",
-    url: "#",
+    url: "/campaigns",
     icon: Workflow,
     items: [
       {
@@ -91,7 +89,7 @@ const navLinks = [
   },
   {
     title: "Settings",
-    url: "#",
+    url: "/settings",
     icon: Settings2,
     items: [
       {
@@ -154,22 +152,19 @@ export function AppSidebar({
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title}>
-                      {item.icon && <item.icon />}
-                      <span>{item.title}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                  <SidebarGroupButton title={item.title} url={item.url}>
+                    {item.icon && <item.icon />}
+                    <span>{item.title}</span>
+                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  </SidebarGroupButton>
                   <CollapsibleContent>
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => (
                         <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarMenuSubButton asChild>
-                            <Link href={subItem.url}>
-                              <span>{subItem.title}</span>
-                            </Link>
-                          </SidebarMenuSubButton>
+                          <SidebarLink
+                            href={subItem.url}
+                            label={subItem.title}
+                          />
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>

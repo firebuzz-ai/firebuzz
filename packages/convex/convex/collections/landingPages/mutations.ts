@@ -1,11 +1,17 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
-import { internalMutation } from "../../_generated/server";
+import { internalAction, internalMutation } from "../../_generated/server";
+import { retrier } from "../../helpers/retrier";
 import {
   internalMutationWithTrigger,
   mutationWithTrigger,
 } from "../../triggers";
 import { getCurrentUser } from "../users/utils";
+
+import { createClient } from "@engine/api/client";
+import { createLandingPageVersionInternal } from "../landingPageVersions/utils";
+
+const engineAPIClient = createClient(process.env.ENGINE_URL);
 
 export const createLandingPage = mutationWithTrigger({
   args: {
@@ -44,32 +50,16 @@ export const createLandingPage = mutationWithTrigger({
     });
 
     // Create landing page version
-    const landingPageVersionId = await ctx.db.insert("landingPageVersions", {
+    await createLandingPageVersionInternal(ctx, {
+      userId: user._id,
       landingPageId,
-      number: 1,
-      createdBy: user._id,
+      filesString: template.files,
+      workspaceId: user.currentWorkspaceId,
       projectId: args.projectId,
       campaignId: args.campaignId,
-      workspaceId: user.currentWorkspaceId,
     });
 
-    // Update the landing page version
-    await ctx.db.patch(landingPageId, {
-      landingPageVersionId,
-    });
-
-    // Store the template files in R2
-    await ctx.scheduler.runAfter(0, internal.helpers.storage.storeStringInR2, {
-      string: template.files,
-      key: `landing-page-versions/${landingPageId}/${landingPageVersionId}.txt`,
-      metadata: {
-        landingPageId,
-        landingPageVersionId,
-        workspaceId: user.currentWorkspaceId,
-        projectId: args.projectId,
-        campaignId: args.campaignId,
-      },
-    });
+    return landingPageId;
   },
 });
 
@@ -145,14 +135,111 @@ export const deleteLandingPage = mutationWithTrigger({
 
 export const publishLandingPage = mutationWithTrigger({
   args: {
+    html: v.string(),
+    js: v.string(),
+    css: v.string(),
     id: v.id("landingPages"),
   },
-  handler: async (ctx, { id }) => {
+  handler: async (ctx, { id, html, js, css }) => {
     await getCurrentUser(ctx);
+
     await ctx.db.patch(id, {
       status: "published",
       isPublished: true,
       publishedAt: new Date().toISOString(),
     });
+
+    await retrier.run(
+      ctx,
+      internal.collections.landingPages.mutations.storeLandingPageFilesinKV,
+      {
+        key: id,
+        html,
+        js,
+        css,
+      }
+    );
+  },
+});
+
+export const storeLandingPageFilesinKV = internalAction({
+  args: {
+    key: v.string(),
+    html: v.string(),
+    js: v.string(),
+    css: v.string(),
+  },
+  handler: async (_ctx, { key, html, js, css }) => {
+    console.log({ token: process.env.ENGINE_SERVICE_TOKEN });
+    const htmlPromise = engineAPIClient.kv.assets.$post(
+      {
+        json: {
+          key: key,
+          value: html,
+          options: {
+            metadata: {
+              contentType: "html",
+              projectId: "1",
+              landingId: "1",
+              variantId: "1",
+              language: "en",
+            },
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.ENGINE_SERVICE_TOKEN}`,
+        },
+      }
+    );
+
+    const jsPromise = engineAPIClient.kv.assets.$post(
+      {
+        json: {
+          key: `${key}/assets/script`,
+          value: js,
+          options: {
+            metadata: {
+              contentType: "js",
+              projectId: "1",
+              landingId: "1",
+              variantId: "1",
+              language: "en",
+            },
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.ENGINE_SERVICE_TOKEN}`,
+        },
+      }
+    );
+
+    const cssPromise = engineAPIClient.kv.assets.$post(
+      {
+        json: {
+          key: `${key}/assets/styles`,
+          value: css,
+          options: {
+            metadata: {
+              contentType: "css",
+              projectId: "1",
+              landingId: "1",
+              variantId: "1",
+              language: "en",
+            },
+          },
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.ENGINE_SERVICE_TOKEN}`,
+        },
+      }
+    );
+
+    await Promise.all([htmlPromise, jsPromise, cssPromise]);
   },
 });

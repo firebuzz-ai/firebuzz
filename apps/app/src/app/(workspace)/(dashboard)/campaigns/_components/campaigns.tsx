@@ -5,7 +5,7 @@ import {
   type Doc,
   api,
   useCachedQuery,
-  usePaginatedQuery,
+  useStablePaginatedQuery,
 } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
@@ -27,7 +27,7 @@ export const Campaigns = () => {
     results: campaigns,
     status,
     loadMore,
-  } = usePaginatedQuery(
+  } = useStablePaginatedQuery(
     api.collections.campaigns.queries.getPaginatedCampaigns,
     currentProject
       ? {

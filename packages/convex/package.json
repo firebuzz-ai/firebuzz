@@ -21,19 +21,22 @@
     "@ai-sdk/openai": "^0.0.72",
     "@aws-sdk/client-s3": "^3.705.0",
     "@clerk/backend": "^1.15.5",
+    "@convex-dev/action-retrier": "^0.2.0",
     "@convex-dev/aggregate": "^0.1.20",
     "@convex-dev/migrations": "^0.2.2",
-    "@convex-dev/r2": "^0.3.0",
+    "@convex-dev/r2": "^0.4.0",
     "@firebuzz/env": "workspace:*",
     "@firebuzz/utils": "workspace:*",
     "@llamaindex/readers": "^1.0.21",
     "ai": "^3.4.33",
-    "convex": "^1.19.5",
-    "convex-helpers": "^0.1.63",
+    "convex": "^1.21.0",
+    "convex-helpers": "^0.1.72",
+    "react": "^19.0.0",
     "svix": "^1.37.0"
   },
   "devDependencies": {
     "@firebuzz/typescript-config": "workspace:*",
-    "@types/node": "^22.8.7"
+    "@types/node": "^22.8.7",
+    "@types/react": "^19"
   }
 }

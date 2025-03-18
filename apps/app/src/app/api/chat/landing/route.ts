@@ -1,12 +1,12 @@
-import { getSystemPrompt } from "@/lib/chat/prompt";
-import { openai } from "@ai-sdk/openai";
+import { WORK_DIR, getSystemPrompt } from "@/lib/chat/prompt";
 import { auth } from "@clerk/nextjs/server";
 import { type Message, smoothStream, streamText } from "ai";
 
+import { openAI } from "@/lib/ai/openai";
 import type { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const { messages } = await request.json();
+  const { messages, projectId } = await request.json();
 
   const user = await auth();
 
@@ -15,17 +15,19 @@ export async function POST(request: NextRequest) {
   }
 
   const response = streamText({
-    model: openai("o3-mini"),
-    system: getSystemPrompt(),
-    messages: messages.map((message: Message, index: number) => {
-      if (index !== messages.length - 1 && message.role === "user") {
-        return {
-          ...message,
-          content: message.content.split("Current files:")[0].trim(),
-        };
-      }
-      return message;
-    }),
+    model: openAI("o3-mini"),
+    system: getSystemPrompt(`${WORK_DIR}/workspace/${projectId}`),
+    messages: messages
+      .map((message: Message, index: number) => {
+        if (index !== messages.length - 1 && message.role === "user") {
+          return {
+            ...message,
+            content: message.content.split("Current files:")[0].trim(),
+          };
+        }
+        return message;
+      })
+      .slice(-10), // Get last 10 messages
     providerOptions: {
       openai: { reasoningEffort: "low" },
     },

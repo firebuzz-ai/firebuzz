@@ -2,14 +2,13 @@ import { useSetAtom } from "jotai";
 import type React from "react";
 import { useEffect } from "react";
 import {
-  type PreviewError,
+  errorsAtom,
   isIframeLoadedAtom,
   portAtom,
-  previewErrorAtom,
   resetState,
   selectedElementAtom,
 } from "./atoms";
-import { PREVIEW_SCRIPT } from "./contants";
+import { PREVIEW_SCRIPT } from "./constants";
 import { webcontainerInstance } from "./webcontainer";
 
 // Set Preview Script
@@ -25,7 +24,7 @@ export const WebcontainerProvider = ({
   const setPort = useSetAtom(portAtom);
   const setIsIframeLoaded = useSetAtom(isIframeLoadedAtom);
   const setSelectedElement = useSetAtom(selectedElementAtom);
-  const setPreviewError = useSetAtom(previewErrorAtom);
+  const setErrors = useSetAtom(errorsAtom);
   // Port Listener
   useEffect(() => {
     const unsubPort = webcontainerInstance.on("port", (port, type, url) => {
@@ -39,8 +38,37 @@ export const WebcontainerProvider = ({
       }
     });
 
-    const unsubError = webcontainerInstance.on("preview-message", (message) => {
-      setPreviewError(message as PreviewError);
+    // Client Error Listener
+    const unsubClientError = webcontainerInstance.on(
+      "preview-message",
+      (message) => {
+        setErrors((prev) => {
+          return [
+            ...prev,
+            {
+              type: "client",
+              // @ts-ignore
+              message: message?.message ?? "",
+              rawError: JSON.stringify(message),
+            },
+          ];
+        });
+      }
+    );
+
+    // Container Error Listener
+    const unsubContainerError = webcontainerInstance.on("error", (error) => {
+      console.log("container error", error);
+      setErrors((prev) => {
+        return [
+          ...prev,
+          {
+            type: "container",
+            message: error.message,
+            rawError: JSON.stringify(error),
+          },
+        ];
+      });
     });
 
     setPreviewScript();
@@ -49,9 +77,10 @@ export const WebcontainerProvider = ({
     return () => {
       resetState();
       unsubPort();
-      unsubError();
+      unsubClientError();
+      unsubContainerError();
     };
-  }, [setPort, setPreviewError]);
+  }, [setPort, setErrors]);
 
   // Listen for messages from the iframe
   useEffect(() => {
@@ -61,6 +90,8 @@ export const WebcontainerProvider = ({
       } else if (event.data?.type === "element-selected") {
         console.log("element-selected", event.data.data);
         setSelectedElement(event.data.data);
+      } else {
+        console.log("unknown message", event.data);
       }
     };
 

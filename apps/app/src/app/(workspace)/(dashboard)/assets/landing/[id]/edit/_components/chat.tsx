@@ -10,8 +10,9 @@ import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useChat } from "@ai-sdk/react";
 import { type Id, api, useMutation, useRichQuery } from "@firebuzz/convex";
 import { stripIndents } from "@firebuzz/utils";
+import type { Message } from "ai";
 import { useAtomValue } from "jotai";
-import { useEffect } from "react";
+import { type Dispatch, type SetStateAction, useEffect } from "react";
 
 const EmptyState = () => {
   return (
@@ -27,6 +28,7 @@ const EmptyState = () => {
 export const Chat = ({ id }: { id: string }) => {
   const currentFileTree = useAtomValue(currentFilesTreeAtom);
   const currentImportantFiles = useAtomValue(currentImportantFilesAtom);
+
   const { closeRightPanel, openRightPanel } = useTwoPanelsLayout();
   const saveMessage = useMutation(
     api.collections.landingPageMessages.mutations.createLandingPageMessage
@@ -50,6 +52,9 @@ export const Chat = ({ id }: { id: string }) => {
           versionId: message.landingPageVersionId,
         },
       })) ?? [],
+    body: {
+      projectId: id,
+    },
     onFinish: async (message) => {
       await saveMessage({
         landingPageId: id as Id<"landingPages">,
@@ -67,7 +72,7 @@ export const Chat = ({ id }: { id: string }) => {
       (msg) => msg.role === "assistant"
     );
     if (assistantMessages.length > 0) {
-      parseMessages(messages);
+      parseMessages(messages as Message[]);
     }
   }, [messages, parseMessages]);
 
@@ -81,17 +86,18 @@ export const Chat = ({ id }: { id: string }) => {
             return {
               ...message,
               content: message.content.split("Current files:")[0].trim(),
-            };
+            } as Message;
           }
 
           return {
             ...message,
             content: parsedMessages[i] ?? "",
-          };
+          } as Message;
         })}
         isLoading={status === "submitted"}
+        isStreaming={status === "streaming"}
         overviewComponent={<EmptyState />}
-        setMessages={setMessages}
+        setMessages={setMessages as Dispatch<SetStateAction<Message[]>>}
         reload={() => {}}
       />
       <ChatInput

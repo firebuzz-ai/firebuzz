@@ -1,24 +1,15 @@
-"use node";
-import { ConvexError } from "convex/values";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { ConvexError, v } from "convex/values";
+import { internalAction } from "../../_generated/server";
 
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-
-import { S3Client } from "@aws-sdk/client-s3";
-
-import { v } from "convex/values";
-import { internalAction } from "../_generated/server";
-
-export const storeStringInR2 = internalAction({
+export const storeLandingPageVersion = internalAction({
   args: {
-    string: v.string(),
     key: v.string(),
     metadata: v.record(v.string(), v.string()),
+    filesString: v.string(),
   },
   handler: async (_ctx, args) => {
     try {
-      // Convert the string to a buffer
-      const filesTXT = new TextEncoder().encode(args.string);
-
       const S3 = new S3Client({
         region: "auto",
         endpoint: process.env.R2_ENDPOINT!,
@@ -31,7 +22,7 @@ export const storeStringInR2 = internalAction({
       const command = new PutObjectCommand({
         Bucket: process.env.R2_BUCKET!,
         Key: args.key,
-        Body: Buffer.from(filesTXT),
+        Body: new TextEncoder().encode(args.filesString),
         Metadata: args.metadata,
       });
 

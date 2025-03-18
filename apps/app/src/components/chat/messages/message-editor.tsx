@@ -2,7 +2,7 @@
 
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
-import type { Message } from "ai";
+import type { Message as MessageType } from "ai";
 import {
   type Dispatch,
   type SetStateAction,
@@ -12,11 +12,9 @@ import {
 } from "react";
 
 export type MessageEditorProps = {
-  message: Message;
+  message: MessageType;
   setMode: Dispatch<SetStateAction<"view" | "edit">>;
-  setMessages: (
-    messages: Message[] | ((messages: Message[]) => Message[])
-  ) => void;
+  setMessages: Dispatch<SetStateAction<MessageType[]>>;
 };
 
 export function MessageEditor({

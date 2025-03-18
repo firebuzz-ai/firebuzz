@@ -15,8 +15,10 @@ import type * as collections_landingPageMessages_mutations from "../collections/
 import type * as collections_landingPageMessages_queries from "../collections/landingPageMessages/queries.js";
 import type * as collections_landingPageTemplates_mutations from "../collections/landingPageTemplates/mutations.js";
 import type * as collections_landingPageTemplates_queries from "../collections/landingPageTemplates/queries.js";
+import type * as collections_landingPageVersions_actions from "../collections/landingPageVersions/actions.js";
 import type * as collections_landingPageVersions_mutations from "../collections/landingPageVersions/mutations.js";
 import type * as collections_landingPageVersions_queries from "../collections/landingPageVersions/queries.js";
+import type * as collections_landingPageVersions_utils from "../collections/landingPageVersions/utils.js";
 import type * as collections_landingPages_mutations from "../collections/landingPages/mutations.js";
 import type * as collections_landingPages_queries from "../collections/landingPages/queries.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
@@ -30,6 +32,7 @@ import type * as collections_workspaces_queries from "../collections/workspaces/
 import type * as collections_workspaces_utils from "../collections/workspaces/utils.js";
 import type * as helpers_batch from "../helpers/batch.js";
 import type * as helpers_r2 from "../helpers/r2.js";
+import type * as helpers_retrier from "../helpers/retrier.js";
 import type * as helpers_storage from "../helpers/storage.js";
 import type * as helpers_system from "../helpers/system.js";
 import type * as http from "../http.js";
@@ -40,6 +43,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+
 /**
  * A utility for referencing Convex functions in your app's API.
  *
@@ -56,8 +60,10 @@ declare const fullApi: ApiFromModules<{
   "collections/landingPageMessages/queries": typeof collections_landingPageMessages_queries;
   "collections/landingPageTemplates/mutations": typeof collections_landingPageTemplates_mutations;
   "collections/landingPageTemplates/queries": typeof collections_landingPageTemplates_queries;
+  "collections/landingPageVersions/actions": typeof collections_landingPageVersions_actions;
   "collections/landingPageVersions/mutations": typeof collections_landingPageVersions_mutations;
   "collections/landingPageVersions/queries": typeof collections_landingPageVersions_queries;
+  "collections/landingPageVersions/utils": typeof collections_landingPageVersions_utils;
   "collections/landingPages/mutations": typeof collections_landingPages_mutations;
   "collections/landingPages/queries": typeof collections_landingPages_queries;
   "collections/projects/mutations": typeof collections_projects_mutations;
@@ -71,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "collections/workspaces/utils": typeof collections_workspaces_utils;
   "helpers/batch": typeof helpers_batch;
   "helpers/r2": typeof helpers_r2;
+  "helpers/retrier": typeof helpers_retrier;
   "helpers/storage": typeof helpers_storage;
   "helpers/system": typeof helpers_system;
   http: typeof http;
@@ -919,6 +926,18 @@ export declare const components: {
           splitCursor?: null | string;
         }
       >;
+      store: FunctionReference<
+        "action",
+        "internal",
+        {
+          accessKeyId: string;
+          bucket: string;
+          endpoint: string;
+          secretAccessKey: string;
+          url: string;
+        },
+        any
+      >;
       syncMetadata: FunctionReference<
         "action",
         "internal",
@@ -930,6 +949,53 @@ export declare const components: {
           secretAccessKey: string;
         },
         null
+      >;
+    };
+  };
+  actionRetrier: {
+    public: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        { runId: string },
+        boolean
+      >;
+      cleanup: FunctionReference<
+        "mutation",
+        "internal",
+        { runId: string },
+        any
+      >;
+      start: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          functionArgs: any;
+          functionHandle: string;
+          options: {
+            base: number;
+            initialBackoffMs: number;
+            logLevel: "DEBUG" | "INFO" | "WARN" | "ERROR";
+            maxFailures: number;
+            onComplete?: string;
+            runAfter?: number;
+            runAt?: number;
+          };
+        },
+        string
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { runId: string },
+        | { type: "inProgress" }
+        | {
+            result:
+              | { returnValue: any; type: "success" }
+              | { error: string; type: "failed" }
+              | { type: "canceled" };
+            type: "completed";
+          }
       >;
     };
   };

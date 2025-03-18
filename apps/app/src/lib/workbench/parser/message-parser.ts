@@ -4,7 +4,7 @@ import {
   ARTIFACT_ACTION_TAG_OPEN,
   ARTIFACT_TAG_CLOSE,
   ARTIFACT_TAG_OPEN,
-} from "../contants";
+} from "../constants";
 
 // **Interfaces and Types**
 export interface ArtifactData {
