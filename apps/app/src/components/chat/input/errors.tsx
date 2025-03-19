@@ -65,31 +65,32 @@ export const Errors = ({
   if (errors.length === 0) return null;
 
   return (
-    <motion.div
-      className="px-3 py-2 bg-muted/50 border rounded-lg shadow-sm flex items-center justify-between"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-    >
-      <div className="flex items-center gap-2 text-red-400">
-        <Bug className="size-4" />
-        <p className="text-sm">{errors.length} errors found.</p>
-      </div>
-      <Button
-        onClick={handleErrorClick}
-        variant="brand"
-        size="sm"
-        className="w-28"
-        disabled={isHandlingError}
+    <div className="absolute -top-16 px-4 w-full">
+      <motion.div
+        className="px-3 py-2 bg-muted border rounded-lg shadow-sm flex w-full items-center justify-between"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
       >
-        {isHandlingError ? (
-          <Spinner variant="white" size="xs" />
-        ) : (
-          <div className="flex items-center gap-2">
-            <div>Fix Errors</div>
-            <ButtonShortcut>⌘E</ButtonShortcut>
-          </div>
-        )}
-      </Button>
-    </motion.div>
+        <div className="flex items-center gap-2 text-red-400">
+          <Bug className="size-4" />
+          <p className="text-sm">{errors.length} errors found.</p>
+        </div>
+        <Button
+          onClick={handleErrorClick}
+          size="sm"
+          className="w-32"
+          disabled={isHandlingError}
+        >
+          {isHandlingError ? (
+            <Spinner size="xs" />
+          ) : (
+            <div className="flex items-center gap-2">
+              <div>Fix Errors</div>
+              <ButtonShortcut>⌘E</ButtonShortcut>
+            </div>
+          )}
+        </Button>
+      </motion.div>
+    </div>
   );
 };

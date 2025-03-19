@@ -8,7 +8,6 @@ import type { Message as MessageType } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { Markdown } from "../markdown";
-import { MessageActions } from "../message-actions";
 import { MessageEditor } from "../message-editor";
 interface UserMessageProps {
   message: MessageType;
@@ -26,6 +25,8 @@ export const UserMessage = ({
 }: UserMessageProps) => {
   const { user } = useUser();
   const [mode, setMode] = useState<"view" | "edit">("view");
+
+  if (isLoading || !chatId) return null;
 
   return (
     <AnimatePresence>
@@ -64,14 +65,6 @@ export const UserMessage = ({
                 />
               </div>
             )}
-
-            <MessageActions
-              key={`action-${message.id}`}
-              chatId={chatId}
-              message={message}
-              vote={{}}
-              isLoading={isLoading}
-            />
           </div>
         </div>
       </motion.div>

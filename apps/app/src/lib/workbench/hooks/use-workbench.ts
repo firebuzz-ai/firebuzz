@@ -19,6 +19,7 @@ import {
   parseFileSystemTree,
 } from "../parser/current-files-parser";
 import { webcontainerInstance } from "../webcontainer";
+
 export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
   const [isDependenciesInstalled, setIsDependenciesInstalled] = useAtom(
     isDependenciesInstalledAtom
@@ -34,6 +35,8 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
   const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
   const setInitialFiles = useSetAtom(parsedFilesAtom);
   const setProjectId = useSetAtom(projectIdAtom);
+
+  // We don't need the isElementSelectionEnabled atom here since we're using it in the toolbar component
 
   const initialize = useCallback(async () => {
     if (!webcontainerInstance) {

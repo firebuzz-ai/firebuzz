@@ -1,4 +1,7 @@
-import { isIframeLoadedAtom } from "@/lib/workbench/atoms";
+import {
+  isElementSelectionEnabledAtom,
+  isIframeLoadedAtom,
+} from "@/lib/workbench/atoms";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -14,7 +17,7 @@ import {
   RefreshCcw,
 } from "@firebuzz/ui/icons/lucide";
 import { reloadPreview } from "@webcontainer/api";
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 
 export const Toolbar = ({
   url,
@@ -30,6 +33,25 @@ export const Toolbar = ({
   };
 
   const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
+  const [isElementSelectionEnabled, setIsElementSelectionEnabled] = useAtom(
+    isElementSelectionEnabledAtom
+  );
+
+  // Toggle element selection and send message to iframe
+  const toggleElementSelection = () => {
+    const newValue = !isElementSelectionEnabled;
+    setIsElementSelectionEnabled(newValue);
+
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        {
+          type: "set-element-selection",
+          enabled: newValue,
+        },
+        "*"
+      );
+    }
+  };
 
   return (
     <div className="px-2 border-b h-10 flex items-center gap-2">
@@ -73,16 +95,32 @@ export const Toolbar = ({
         {/* Select Element */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="!size-6">
+            <Button
+              variant={isElementSelectionEnabled ? "default" : "ghost"}
+              size="icon"
+              className="!size-6"
+              onClick={toggleElementSelection}
+              type="button"
+              aria-pressed={isElementSelectionEnabled}
+            >
               <MousePointerClick className="size-3" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Select Element</TooltipContent>
+          <TooltipContent side="bottom">
+            {isElementSelectionEnabled
+              ? "Disable Element Selection"
+              : "Enable Element Selection"}
+          </TooltipContent>
         </Tooltip>
         {/* Fullscreen Button */}
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="!size-6">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="!size-6"
+              type="button"
+            >
               <Maximize className="size-3" />
             </Button>
           </TooltipTrigger>

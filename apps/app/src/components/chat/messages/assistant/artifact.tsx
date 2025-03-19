@@ -10,12 +10,12 @@ interface ArtifactProps {
 }
 
 export const Artifact = ({ id }: ArtifactProps) => {
-  const [isActionsVisible, setIsActionsVisible] = useState(true);
   const artifacts = useAtomValue(artifactsAtom);
   const actions = useAtomValue(actionsAtom);
 
   const artifact = artifacts.find((a) => a.messageId === id);
   const artifactActions = actions.filter((action) => action.messageId === id);
+  const [isActionsVisible, setIsActionsVisible] = useState(!artifact?.closed);
 
   if (!artifact) return null;
 
@@ -36,7 +36,7 @@ export const Artifact = ({ id }: ArtifactProps) => {
         </Button>
       </div>
 
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {isActionsVisible && artifactActions.length > 0 && (
           <motion.div
             initial={{ height: 0 }}

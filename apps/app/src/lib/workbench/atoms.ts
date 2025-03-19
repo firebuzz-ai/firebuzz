@@ -29,6 +29,12 @@ export interface Artifact {
   isInitial: boolean;
 }
 
+export interface SelectedElement {
+  componentName: string;
+  filePath: string;
+  lineNumber: number;
+}
+
 export type Action = ActionType & {
   id: string;
   messageId: string;
@@ -74,8 +80,9 @@ export const errorsAtom = atomWithReset<Error[]>([]);
 export const isDevServerRunningAtom = atom(
   (get) => get(portAtom)?.port !== null
 );
-export const selectedElementAtom = atomWithReset<string | null>(null);
+export const selectedElementAtom = atomWithReset<SelectedElement | null>(null);
 export const isIframeLoadedAtom = atomWithReset(false);
+export const isElementSelectionEnabledAtom = atom<boolean>(false);
 
 // Parsed Data
 export const parsedMessagesAtom = atomWithReset<{ [index: number]: string }>(

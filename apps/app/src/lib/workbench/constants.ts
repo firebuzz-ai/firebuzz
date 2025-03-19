@@ -8,7 +8,31 @@ export const PREVIEW_SCRIPT = stripIndents(`
           // Log when the script starts executing
           console.time('iframe-total-load-time');
           const startTime = performance.now();
+          
           window.parent.postMessage({ type: 'load-started', time: startTime }, '*');
+          
+          // Track if element selection is enabled
+          let isElementSelectionEnabled = false;
+          
+          // Listen for messages from parent to enable/disable element selection
+          window.addEventListener('message', (event) => {
+            if (event.data.type === 'set-element-selection') {
+              isElementSelectionEnabled = event.data.enabled;
+              console.log('Element selection ' + (isElementSelectionEnabled ? 'enabled' : 'disabled'));
+              
+              // Update UI feedback for selection mode
+              if (isElementSelectionEnabled) {
+                document.body.style.cursor = 'pointer';
+              } else {
+                document.body.style.cursor = '';
+                // Remove any active highlight
+                const highlighted = document.querySelector('.wc-hover-highlight');
+                if (highlighted) {
+                  highlighted.classList.remove('wc-hover-highlight');
+                }
+              }
+            }
+          });
   
           window.addEventListener('load', () => {
             const endTime = performance.now();
@@ -31,8 +55,10 @@ export const PREVIEW_SCRIPT = stripIndents(`
   
             let currentHighlight = null;
   
-            // Handle mouseover
+            // Handle mouseover - only when element selection is enabled
             document.body.addEventListener('mouseover', (e) => {
+              if (!isElementSelectionEnabled) return;
+              
               const target = e.target;
               if (currentHighlight) {
                 currentHighlight.classList.remove('wc-hover-highlight');
@@ -43,6 +69,8 @@ export const PREVIEW_SCRIPT = stripIndents(`
   
             // Handle mouseout
             document.body.addEventListener('mouseout', (e) => {
+              if (!isElementSelectionEnabled) return;
+              
               if (currentHighlight) {
                 currentHighlight.classList.remove('wc-hover-highlight');
                 currentHighlight = null;
@@ -51,9 +79,12 @@ export const PREVIEW_SCRIPT = stripIndents(`
   
             // Handle click - Updated to handle UI components specially
             document.body.addEventListener('click', (e) => {
+              if (!isElementSelectionEnabled) return;
+              
               e.preventDefault();
               const target = e.target;
 
+              // Find React fiber
               const fiberKey = Object.keys(target).find(key => 
                 key.startsWith('__reactFiber$') || 
                 key.startsWith('__reactInternalInstance$')
@@ -95,28 +126,67 @@ export const PREVIEW_SCRIPT = stripIndents(`
 
               if (!components.length) return;
 
-              // Get the most specific component (first in the tree)
-              const clickedElement = components[0];
-              
-              // Find the parent component if clicked element is from UI folder
-              const isUIComponent = clickedElement.source.fileName.includes('/components/ui/');
-              const parentComponent = isUIComponent ? components[1] : clickedElement;
+              try {
+                // Get the most specific component (first in the tree)
+                const clickedElement = components[0];
+                
+                // Find the parent component if clicked element is from UI folder
+                const isUIComponent = clickedElement.source?.fileName?.includes('/components/ui/') || false;
+                const parentComponent = isUIComponent && components.length > 1 ? components[1] : clickedElement;
+                
+                // Safely get file path - handling multiple possible path patterns
+                let filePath = '';
+                if (parentComponent.source?.fileName) {
+                  // Try several common path patterns
+                  const pathPatterns = [
+                    '/workspace/1/src/',
+                    '/src/',
+                    '/app/',
+                    '/components/'
+                  ];
+                  
+                  const fileName = parentComponent.source.fileName.replace(/\\\\/g, '/');
+                  
+                  // Find the first pattern that works
+                  for (const pattern of pathPatterns) {
+                    if (fileName.includes(pattern)) {
+                      const parts = fileName.split(pattern);
+                      if (parts.length > 1) {
+                        filePath = parts[1];
+                        break;
+                      }
+                    }
+                  }
+                  
+                  // If no pattern matched, use the full path as fallback
+                  if (!filePath) {
+                    filePath = fileName;
+                  }
+                }
 
-              // Format the file path to be relative
-              const filePath = parentComponent.source.fileName
-                .split('/workspace/1/src/')[1] // Get relative path
-                .replace(/\\\\/g, '/'); // Normalize slashes
+                // Safe text extraction
+                const elementText = typeof clickedElement.text === 'string' 
+                  ? clickedElement.text.trim() 
+                  : '';
+                
+                const componentInfo = {
+                  filePath,
+                  componentName: \`\${clickedElement.name || 'Unknown'}\${elementText ? \` (\${elementText})\` : ''}\`,
+                  lineNumber: parentComponent.source?.lineNumber || 0
+                };
 
-              const componentInfo = {
-                filePath,
-                componentName: \`\${clickedElement.name}\${clickedElement.text ? \` (\${clickedElement.text})\` : ''}\`,
-                lineNumber: parentComponent.source.lineNumber
-              };
-
-              window.parent.postMessage({
-                type: 'element-selected',
-                data: componentInfo
-              }, '*');
+                window.parent.postMessage({
+                  type: 'element-selected',
+                  data: componentInfo
+                }, '*');
+              } catch (error) {
+                console.error('Error processing component selection:', error);
+                // Send error info to parent for debugging
+                window.parent.postMessage({
+                  type: 'element-selection-error',
+                  error: error.message
+                }, '*');
+              }
             }, true);
           });
         `);

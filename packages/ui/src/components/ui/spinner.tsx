@@ -7,7 +7,7 @@ const spinnerVariants = cva("inline animate-spin text-accent", {
     variant: {
       default: "fill-muted-foreground",
       destructive: "fill-destructive",
-      white: "fill-white",
+      white: "fill-white text-muted",
     },
     size: {
       xs: "w-4 h-4",

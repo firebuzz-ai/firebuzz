@@ -5,13 +5,15 @@ import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import {
   currentFilesTreeAtom,
   currentImportantFilesAtom,
+  isElementSelectionEnabledAtom,
+  selectedElementAtom,
 } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useChat } from "@ai-sdk/react";
 import { type Id, api, useMutation, useRichQuery } from "@firebuzz/convex";
 import { stripIndents } from "@firebuzz/utils";
 import type { Message } from "ai";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { type Dispatch, type SetStateAction, useEffect } from "react";
 
 const EmptyState = () => {
@@ -28,6 +30,10 @@ const EmptyState = () => {
 export const Chat = ({ id }: { id: string }) => {
   const currentFileTree = useAtomValue(currentFilesTreeAtom);
   const currentImportantFiles = useAtomValue(currentImportantFilesAtom);
+  const setIsElementSelectionEnabled = useSetAtom(
+    isElementSelectionEnabledAtom
+  );
+  const setSelectedElement = useSetAtom(selectedElementAtom);
 
   const { closeRightPanel, openRightPanel } = useTwoPanelsLayout();
   const saveMessage = useMutation(
@@ -103,6 +109,8 @@ export const Chat = ({ id }: { id: string }) => {
       <ChatInput
         onSubmit={async (message) => {
           closeRightPanel();
+          setIsElementSelectionEnabled(false);
+          setSelectedElement(null);
 
           const messageId = await saveMessage({
             landingPageId: id as Id<"landingPages">,

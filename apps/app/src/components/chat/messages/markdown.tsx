@@ -1,4 +1,5 @@
 import { Artifact } from "@/components/chat/messages/assistant/artifact";
+import { ElementReference } from "@/components/chat/messages/element-reference";
 import { ErrorExplanation } from "@/components/chat/messages/error-explanation";
 import {
   allowedHTMLElements,
@@ -16,15 +17,18 @@ interface MarkdownProps {
 
 export const Markdown = memo(
   ({ children, html = false, limitedMarkdown = false }: MarkdownProps) => {
-    // Try to parse the content as JSON if it might be an error explanation
+    // Try to parse the content as JSON if it might be an error explanation or element reference
     const parsedContent = useMemo(() => {
       if (typeof children !== "string") return null;
 
       try {
         const content = JSON.parse(children);
         if (
-          content?.type === "error-explanation" &&
-          Array.isArray(content.errors)
+          (content?.type === "error-explanation" &&
+            Array.isArray(content.errors)) ||
+          (content?.type === "element-reference" &&
+            content.element &&
+            content.message)
         ) {
           return content;
         }
@@ -37,6 +41,16 @@ export const Markdown = memo(
     // If it's an error explanation, render the ErrorExplanation component
     if (parsedContent?.type === "error-explanation") {
       return <ErrorExplanation errors={parsedContent.errors} />;
+    }
+
+    // If it's an element reference, render the ElementReference component
+    if (parsedContent?.type === "element-reference") {
+      return (
+        <ElementReference
+          message={parsedContent.message}
+          element={parsedContent.element}
+        />
+      );
     }
 
     const components = useMemo(() => {

@@ -88,7 +88,7 @@ export const ChatMessages = ({
       )}
     >
       <div
-        className="relative w-full pb-6"
+        className="relative w-full"
         style={{ height: `${virtualizer.getTotalSize()}px` }}
       >
         {virtualizer.getVirtualItems().map((virtualItem: VirtualItem) => {

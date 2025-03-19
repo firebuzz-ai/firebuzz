@@ -20,7 +20,7 @@ interface ErrorExplanationProps {
 }
 
 export const ErrorExplanation = ({ errors }: ErrorExplanationProps) => {
-  const [isErrorsVisible, setIsErrorsVisible] = useState(true);
+  const [isErrorsVisible, setIsErrorsVisible] = useState(false);
 
   if (!errors || errors.length === 0) {
     return null;

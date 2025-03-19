@@ -2,6 +2,7 @@ import { useSetAtom } from "jotai";
 import type React from "react";
 import { useEffect } from "react";
 import {
+  type SelectedElement,
   errorsAtom,
   isIframeLoadedAtom,
   portAtom,
@@ -89,7 +90,9 @@ export const WebcontainerProvider = ({
         setIsIframeLoaded(true);
       } else if (event.data?.type === "element-selected") {
         console.log("element-selected", event.data.data);
-        setSelectedElement(event.data.data);
+        setSelectedElement(event.data.data as SelectedElement);
+      } else if (event.data?.type === "element-selection-error") {
+        console.error("Element selection error:", event.data.error);
       } else {
         console.log("unknown message", event.data);
       }
@@ -98,6 +101,18 @@ export const WebcontainerProvider = ({
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, [setIsIframeLoaded, setSelectedElement]);
+
+  // Add keyboard shortcut to clear selected element
+  useEffect(() => {
+    const handleKeydown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSelectedElement(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeydown);
+    return () => window.removeEventListener("keydown", handleKeydown);
+  }, [setSelectedElement]);
 
   return <>{children}</>;
 };
