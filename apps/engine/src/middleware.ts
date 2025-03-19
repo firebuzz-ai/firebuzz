@@ -1,5 +1,6 @@
 import { bearerAuth } from 'hono/bearer-auth';
 import { createMiddleware } from 'hono/factory';
+import type { Env } from './env';
 
 export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 	const auth = bearerAuth({

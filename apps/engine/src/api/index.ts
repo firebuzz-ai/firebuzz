@@ -1,8 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { hc } from 'hono/client';
+import type { Env } from '../env';
 import { cors } from '../middleware';
 import { apiAuth } from './../middleware';
 import { kvRoute } from './v1/kv/assets';
+
 const apiRoutes = new OpenAPIHono<{ Bindings: Env }>().use(cors).use(apiAuth).route('/kv/assets', kvRoute);
 
 // Export the app routes and the type of the app

@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo build",
+    "build:app": "pnpm with-env turbo build --filter app",
     "dev": "pnpm with-env turbo dev",
     "dev:app": "pnpm with-env turbo dev --filter app ",
     "dev:convex": "pnpm with-env turbo dev --filter @firebuzz/convex",

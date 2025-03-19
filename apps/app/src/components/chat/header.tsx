@@ -2,6 +2,7 @@ import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ChevronsLeft } from "@firebuzz/ui/icons/lucide";
+
 export function ChatHeader({ title, type }: { title: string; type: string }) {
   const { openRightPanel, isRightPanelClosing, isRightPanelOpen } =
     useTwoPanelsLayout();

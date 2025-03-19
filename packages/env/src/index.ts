@@ -113,14 +113,19 @@ export const envGoogle = () =>
     });
 
 /* OPENAI */
-export const envOpenai = () =>
-  z
+export const envOpenai = () => {
+  const parsed = z
     .object({
       OPENAI_API_KEY: z.string(),
     })
-    .parse({
-      OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-    });
+    .safeParse(process.env);
+
+  if (!parsed.success) {
+    throw new Error("Missing OpenAI environment variables.");
+  }
+
+  return parsed.data;
+};
 
 /* AZURE */
 export const envAzure = () =>

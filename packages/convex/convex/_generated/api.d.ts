@@ -19,6 +19,7 @@ import type * as collections_landingPageVersions_actions from "../collections/la
 import type * as collections_landingPageVersions_mutations from "../collections/landingPageVersions/mutations.js";
 import type * as collections_landingPageVersions_queries from "../collections/landingPageVersions/queries.js";
 import type * as collections_landingPageVersions_utils from "../collections/landingPageVersions/utils.js";
+import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
 import type * as collections_landingPages_mutations from "../collections/landingPages/mutations.js";
 import type * as collections_landingPages_queries from "../collections/landingPages/queries.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   "collections/landingPageVersions/mutations": typeof collections_landingPageVersions_mutations;
   "collections/landingPageVersions/queries": typeof collections_landingPageVersions_queries;
   "collections/landingPageVersions/utils": typeof collections_landingPageVersions_utils;
+  "collections/landingPages/actions": typeof collections_landingPages_actions;
   "collections/landingPages/mutations": typeof collections_landingPages_mutations;
   "collections/landingPages/queries": typeof collections_landingPages_queries;
   "collections/projects/mutations": typeof collections_projects_mutations;
