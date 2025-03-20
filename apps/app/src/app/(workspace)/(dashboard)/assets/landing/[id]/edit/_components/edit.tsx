@@ -7,16 +7,18 @@ import { useWorkbench } from "@/lib/workbench/hooks/use-workbench";
 
 import { useWorkbenchHelpers } from "@/lib/workbench/hooks/use-workbench-helpers";
 import { api, useMutation } from "@firebuzz/convex";
-import type { Id } from "@firebuzz/convex/nextjs";
+import type { Doc, Id } from "@firebuzz/convex/nextjs";
 import { toast } from "@firebuzz/ui/lib/utils";
 import type { FileSystemTree } from "@webcontainer/api";
 import { Chat } from "./chat";
 export function EditLandingPage({
   id,
   initialFiles,
+  initialMessages,
 }: {
   id: string;
   initialFiles: FileSystemTree;
+  initialMessages: Doc<"landingPageMessages">[];
 }) {
   useWorkbench(initialFiles, id);
   const { buildProject, getBuildFiles } = useWorkbenchHelpers();
@@ -64,7 +66,7 @@ export function EditLandingPage({
   return (
     <>
       <ChatLayout>
-        <Chat id={id} />
+        <Chat id={id} initialMessages={initialMessages} />
       </ChatLayout>
       <PreviewLayout>
         <Preview publish={publish} />

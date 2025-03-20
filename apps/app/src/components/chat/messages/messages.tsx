@@ -1,7 +1,7 @@
 import { useChatScroll } from "@/hooks/ui/use-chat-scroll";
-import { type VirtualItem, cn, useVirtualizer } from "@firebuzz/ui/lib/utils";
+import { cn, useVirtualizer } from "@firebuzz/ui/lib/utils";
 import type { Message as MessageType } from "ai";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Message } from "./message";
 import { ThinkingMessage } from "./thinkinh-message";
 
@@ -56,106 +56,129 @@ export const ChatMessages = ({
     }
   }, [isAssistantResponding, scrollToBottom]);
 
-  // Prepare data array for virtualizer (messages + potential thinking message)
-  const messageData = [...messages];
-
-  // Add thinking message if needed
+  // Check if thinking message should be shown
   const isThinking =
     isLoading &&
     messages.length > 0 &&
     messages[messages.length - 1].role === "user";
 
   // Create virtualizer for messages
+  const parentRef = useRef<HTMLDivElement | null>(null);
+
+  // Define types for display items
+  type DisplayItem =
+    | { type: "overview" }
+    | { type: "thinking" }
+    | { type: "message"; data: MessageType };
+
+  // Create an array that includes both real messages and potentially a thinking placeholder
+  const displayItems: DisplayItem[] = [
+    ...(messages.length === 0 ? [{ type: "overview" as const }] : []),
+    ...messages.map((message) => ({ type: "message" as const, data: message })),
+    ...(isThinking ? [{ type: "thinking" as const }] : []),
+  ];
+
   const virtualizer = useVirtualizer({
-    count:
-      messageData.length +
-      (isThinking ? 1 : 0) +
-      (messages.length === 0 ? 1 : 0),
+    count: displayItems.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => 180, // Increased to ensure enough space for each message + padding
-    overscan: 10, // Render more items outside viewport for smoother scrolling
-    measureElement: (element) => {
-      // Add extra padding to account for the gaps between messages
-      return element?.getBoundingClientRect().height + 24 || 180;
+    estimateSize: () => 180,
+    overscan: 10,
+    scrollToFn: (offset, { behavior }) => {
+      scrollContainerRef.current?.scrollTo({
+        top: offset,
+        behavior,
+      });
     },
   });
+
+  // Create array of virtualized items
+  const virtualItems = virtualizer.getVirtualItems();
 
   return (
     <div
       ref={scrollContainerRef}
       className={cn(
-        "flex flex-col min-w-0 flex-1 justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll px-4 pt-4"
+        "flex flex-col min-w-0 h-full justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll px-4 py-4"
       )}
     >
+      {/* This padding creates space for virtual items */}
       <div
+        ref={parentRef}
         className="relative w-full"
-        style={{ height: `${virtualizer.getTotalSize()}px` }}
+        style={{
+          height: virtualizer.getTotalSize(),
+          paddingTop: virtualItems.length > 0 ? virtualItems[0].start : 0,
+          paddingBottom:
+            virtualItems.length > 0
+              ? virtualizer.getTotalSize() -
+                virtualItems[virtualItems.length - 1].end
+              : 0,
+        }}
       >
-        {virtualizer.getVirtualItems().map((virtualItem: VirtualItem) => {
-          const index = virtualItem.index;
+        <div className="flex flex-col gap-6 w-full">
+          {virtualItems.map((virtualItem) => {
+            const index = virtualItem.index;
+            const item = displayItems[index];
 
-          // Handle empty state with overview component
-          if (messages.length === 0 && index === 0) {
+            if (!item) return null;
+
+            // Handle different types of items
+            if (item.type === "overview") {
+              return (
+                <div
+                  key="overview"
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  className="w-full p-3"
+                >
+                  {overviewComponent}
+                </div>
+              );
+            }
+
+            if (item.type === "thinking") {
+              return (
+                <div
+                  key="thinking"
+                  data-index={virtualItem.index}
+                  ref={virtualizer.measureElement}
+                  className="w-full p-3"
+                >
+                  <ThinkingMessage />
+                </div>
+              );
+            }
+
+            // Regular message
+            const message = item.data;
             return (
               <div
-                key="overview"
-                ref={virtualizer.measureElement}
+                key={message.id}
                 data-index={virtualItem.index}
-                className="absolute top-0 left-0 w-full p-3"
-                style={{
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
+                ref={virtualizer.measureElement}
+                className="w-full p-3"
               >
-                {overviewComponent}
+                <Message
+                  chatId={chatId}
+                  message={message}
+                  isLoading={
+                    isLoading &&
+                    message.role === "assistant" &&
+                    // Only mark the last assistant message as loading
+                    index ===
+                      messages.findLastIndex((m) => m.role === "assistant")
+                  }
+                  setMessages={setMessages}
+                  reload={reload}
+                />
               </div>
             );
-          }
+          })}
+        </div>
 
-          // Handle the thinking message
-          if (isThinking && index === messageData.length) {
-            return (
-              <div
-                key="thinking"
-                ref={virtualizer.measureElement}
-                data-index={virtualItem.index}
-                className="absolute top-0 left-0 w-full p-3 pt-3"
-                style={{
-                  transform: `translateY(${virtualItem.start}px)`,
-                }}
-              >
-                <ThinkingMessage />
-              </div>
-            );
-          }
-
-          // Regular message
-          const message = messageData[index];
-          if (!message) return null;
-
-          return (
-            <div
-              key={message.id}
-              ref={virtualizer.measureElement}
-              data-index={virtualItem.index}
-              className="absolute top-0 left-0 w-full p-3 pt-3"
-              style={{
-                transform: `translateY(${virtualItem.start}px)`,
-              }}
-            >
-              <Message
-                chatId={chatId}
-                message={message}
-                isLoading={isLoading && messageData.length - 1 === index}
-                setMessages={setMessages}
-                reload={reload}
-              />
-            </div>
-          );
-        })}
+        {/* Invisible element used to track if we're at the bottom */}
+        <div ref={bottomRef} className="h-24 w-full" />
       </div>
-
-      {/* Invisible element used to track if we're at the bottom */}
-      <div ref={bottomRef} className="h-px w-full" />
     </div>
   );
 };

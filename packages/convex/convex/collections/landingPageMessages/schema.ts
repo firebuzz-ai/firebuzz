@@ -2,6 +2,7 @@ import { type Infer, v } from "convex/values";
 
 export const landingPageMessagesSchema = v.object({
   message: v.string(),
+  messageId: v.optional(v.string()),
   role: v.union(v.literal("user"), v.literal("assistant")),
   vote: v.optional(v.union(v.literal("up"), v.literal("down"))),
   // Relations
