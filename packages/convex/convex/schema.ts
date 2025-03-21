@@ -39,5 +39,7 @@ export default defineSchema({
     .index("by_landing_page_id", ["landingPageId"])
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
-    .index("by_campaign_id", ["campaignId"]),
+    .index("by_campaign_id", ["campaignId"])
+    .index("by_created_at", ["createdAt"])
+    .index("by_message_id", ["messageId"]),
 });

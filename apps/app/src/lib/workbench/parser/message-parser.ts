@@ -14,7 +14,7 @@ export interface ArtifactData {
   isInitial: boolean;
 }
 
-export type ActionType = "file" | "shell";
+export type ActionType = "file" | "shell" | "quick-edit";
 
 export interface BaseAction {
   type: ActionType;
@@ -32,7 +32,14 @@ export interface ShellAction extends BaseAction {
   type: "shell";
 }
 
-export type Action = FileAction | ShellAction;
+export interface QuickEditAction extends BaseAction {
+  type: "quick-edit";
+  filePath: string;
+  from?: string;
+  to?: string;
+}
+
+export type Action = FileAction | ShellAction | QuickEditAction;
 
 export interface ArtifactCallbackData extends ArtifactData {
   messageId: string;
@@ -134,6 +141,14 @@ export class MessageParser {
           if (closeIndex !== -1) {
             const content = input.slice(i, closeIndex);
             state.currentAction!.content = content;
+
+            // For quick-edit actions with content-based format, parse the from/to tags
+            if (state.currentAction!.type === "quick-edit" && content.trim()) {
+              this.#parseQuickEditContent(
+                state.currentAction as QuickEditAction,
+                content
+              );
+            }
 
             const actionData = { ...state.currentAction } as Action;
             this.#options.callbacks?.onActionClose?.({
@@ -262,7 +277,20 @@ export class MessageParser {
     if (type === "file") {
       (action as FileAction).filePath =
         this.#extractAttribute(tag, "filePath") || "";
+    } else if (type === "quick-edit") {
+      const quickEditAction = action as QuickEditAction;
+      quickEditAction.filePath = this.#extractAttribute(tag, "filePath") || "";
+
+      // Extract from/to attributes if present in the tag
+      const fromAttr = this.#extractAttribute(tag, "from");
+      const toAttr = this.#extractAttribute(tag, "to");
+
+      if (fromAttr !== undefined && toAttr !== undefined) {
+        quickEditAction.from = fromAttr;
+        quickEditAction.to = toAttr;
+      }
     }
+
     return action;
   }
 
@@ -277,6 +305,18 @@ export class MessageParser {
   #extractAttribute(tag: string, name: string): string | undefined {
     const match = tag.match(new RegExp(`${name}="([^"]*)"`, "i"));
     return match?.[1];
+  }
+
+  /** Parse from and to tags from content-based quick-edit actions */
+  #parseQuickEditContent(action: QuickEditAction, content: string): void {
+    // Parse <from> and <to> sections
+    const fromMatch = content.match(/<from>([\s\S]*?)<\/from>/);
+    const toMatch = content.match(/<to>([\s\S]*?)<\/to>/);
+
+    if (fromMatch && toMatch) {
+      action.from = fromMatch[1];
+      action.to = toMatch[1];
+    }
   }
 
   /** Reset all message states */

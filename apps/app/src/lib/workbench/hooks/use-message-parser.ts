@@ -79,10 +79,10 @@ export function useMessageParser() {
 
   const parseMessages = useCallback(
     (messages: Message[]) => {
-      const newParsedMessages: Record<number, string> = { ...parsedMessages };
+      const newParsedMessages: Record<string, string> = { ...parsedMessages };
       let hasChanges = false;
 
-      for (const [index, message] of messages.entries()) {
+      for (const [_, message] of messages.entries()) {
         if (message.role === "assistant") {
           const newParsedContent = parser.parse(
             message.id,
@@ -94,8 +94,8 @@ export function useMessageParser() {
           );
 
           if (newParsedContent) {
-            newParsedMessages[index] =
-              (newParsedMessages[index] ?? "") + newParsedContent;
+            newParsedMessages[message.id] =
+              (newParsedMessages[message.id] ?? "") + newParsedContent;
             hasChanges = true;
           }
         }

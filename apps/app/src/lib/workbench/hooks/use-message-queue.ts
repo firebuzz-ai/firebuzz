@@ -14,6 +14,7 @@ import {
   workbenchStore,
 } from "../atoms";
 import { WORK_DIR } from "../constants";
+import type { QuickEditAction } from "../parser/message-parser";
 import { webcontainerInstance } from "../webcontainer";
 
 export function useMessageQueue() {
@@ -118,10 +119,19 @@ export function useMessageQueue() {
                         type: "file" as const,
                         filePath: item.data.action.filePath,
                       }
-                    : {
-                        ...baseAction,
-                        type: "shell" as const,
-                      };
+                    : item.data.action.type === "quick-edit"
+                      ? {
+                          ...baseAction,
+                          type: "quick-edit" as const,
+                          filePath: (item.data.action as QuickEditAction)
+                            .filePath,
+                          from: (item.data.action as QuickEditAction).from,
+                          to: (item.data.action as QuickEditAction).to,
+                        }
+                      : {
+                          ...baseAction,
+                          type: "shell" as const,
+                        };
 
                 return [...prev, action];
               });
@@ -162,6 +172,100 @@ export function useMessageQueue() {
                       extension: extension,
                     });
                   });
+                }
+
+                // Quick-edit action
+                if (item.data.action.type === "quick-edit" && landingPageId) {
+                  const quickEditAction = item.data.action as QuickEditAction;
+                  const { filePath, from, to } = quickEditAction;
+
+                  console.log("Quick-edit action", filePath, from, to);
+
+                  try {
+                    // Read the current file content
+                    const fileContent = await webcontainerInstance.fs.readFile(
+                      `${WORK_DIR}/workspace/${landingPageId}/${filePath}`,
+                      "utf-8"
+                    );
+
+                    // Ensure from and to are defined
+                    if (!from || !to) {
+                      throw new Error(
+                        "Quick-edit action missing from or to values"
+                      );
+                    }
+
+                    console.log("File content", fileContent);
+
+                    // Replace the text
+                    const normalizeWhitespace = (str: string) => {
+                      return str.replace(/\s+/g, " ").trim();
+                    };
+
+                    // Create a regex that's more flexible with whitespace
+                    const fromRegex = new RegExp(
+                      normalizeWhitespace(from)
+                        .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape regex special chars
+                        .replace(/ /g, "\\s+"), // Make whitespace flexible
+                      "g" // Global flag to replace all occurrences
+                    );
+
+                    // Attempt to find the content with flexible matching
+                    let newContent = fileContent;
+                    if (fileContent.includes(from)) {
+                      // If exact match found, use it
+                      newContent = fileContent.replace(from, to);
+                    } else {
+                      // Try with regex for more flexible matching
+                      newContent = fileContent.replace(fromRegex, to);
+                    }
+
+                    console.log("New content", newContent);
+
+                    // Make sure the replacement happened (the 'from' text was found)
+                    if (newContent === fileContent) {
+                      throw new Error(
+                        `Could not find text to replace in ${filePath}`
+                      );
+                    }
+
+                    // Write the updated content back to the file
+                    await webcontainerInstance.fs.writeFile(
+                      `${WORK_DIR}/workspace/${landingPageId}/${filePath}`,
+                      newContent
+                    );
+
+                    // Update action status to success
+                    workbenchStore.set(actionsAtom, (prev) => {
+                      return prev.map((action) => {
+                        if (action.id === item.data.actionId) {
+                          return { ...action, status: "success" };
+                        }
+                        return action;
+                      });
+                    });
+
+                    // Update parsed files
+                    const extension = filePath.split(".").pop() || "";
+                    workbenchStore.set(parsedFilesAtom, (prev) => {
+                      return new Map(prev).set(filePath, {
+                        path: filePath,
+                        content: newContent,
+                        extension: extension,
+                      });
+                    });
+                  } catch (error) {
+                    console.error("Error processing quick-edit action:", error);
+                    // Update action status to error
+                    workbenchStore.set(actionsAtom, (prev) => {
+                      return prev.map((action) => {
+                        if (action.id === item.data.actionId) {
+                          return { ...action, status: "error" };
+                        }
+                        return action;
+                      });
+                    });
+                  }
                 }
 
                 // Shell action

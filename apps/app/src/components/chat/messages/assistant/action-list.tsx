@@ -56,6 +56,70 @@ const ActionItem = ({ action, isLast }: ActionItemProps) => {
           <TerminalCode code={action.content} />
         </div>
       )}
+
+      {action.type === "quick-edit" && action.from && action.to && (
+        <div
+          className={cn("mt-2", {
+            "mb-3.5": !isLast,
+          })}
+        >
+          <div className="text-xs text-muted-foreground">
+            <div className="mb-1">
+              <span className="font-semibold">File:</span> {action.filePath}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div>
+                <span className="font-semibold">From:</span>
+                <div className="terminal-code relative rounded mt-1 overflow-hidden">
+                  <CodeMirror
+                    value={action.from}
+                    height="auto"
+                    readOnly
+                    extensions={[javascript({ jsx: true })]}
+                    basicSetup={{
+                      lineNumbers: false,
+                      foldGutter: false,
+                      dropCursor: false,
+                      allowMultipleSelections: false,
+                      indentOnInput: false,
+                      highlightActiveLine: false,
+                      highlightSelectionMatches: false,
+                      autocompletion: false,
+                      rectangularSelection: false,
+                      crosshairCursor: false,
+                      closeBrackets: false,
+                    }}
+                  />
+                </div>
+              </div>
+              <div>
+                <span className="font-semibold">To:</span>
+                <div className="terminal-code relative rounded mt-1 overflow-hidden">
+                  <CodeMirror
+                    value={action.to}
+                    height="auto"
+                    readOnly
+                    extensions={[javascript({ jsx: true })]}
+                    basicSetup={{
+                      lineNumbers: false,
+                      foldGutter: false,
+                      dropCursor: false,
+                      allowMultipleSelections: false,
+                      indentOnInput: false,
+                      highlightActiveLine: false,
+                      highlightSelectionMatches: false,
+                      autocompletion: false,
+                      rectangularSelection: false,
+                      crosshairCursor: false,
+                      closeBrackets: false,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.li>
   );
 };
@@ -115,6 +179,8 @@ const getActionLabel = (action: Action) => {
     case "file":
       return <span>{action.title}</span>;
     case "shell":
+      return <span>{action.title}</span>;
+    case "quick-edit":
       return <span>{action.title}</span>;
     default:
       return "Unknown action";

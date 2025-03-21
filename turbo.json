@@ -24,7 +24,9 @@
         "ANTHROPIC_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
         "FAL_KEY",
-        "UNSPLASH_ACCESS_KEY"
+        "UNSPLASH_ACCESS_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_RESOURCE_NAME"
       ]
     },
     "lint": {
@@ -56,7 +58,9 @@
         "ANTHROPIC_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
         "FAL_KEY",
-        "UNSPLASH_ACCESS_KEY"
+        "UNSPLASH_ACCESS_KEY",
+        "AZURE_OPENAI_API_KEY",
+        "AZURE_OPENAI_RESOURCE_NAME"
       ]
     },
     "test": {

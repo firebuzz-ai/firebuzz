@@ -41,7 +41,11 @@ export type Action = ActionType & {
   artifactId: string;
   status: "pending" | "success" | "error";
   isInitial: boolean;
-};
+} & (
+    | { type: "file"; filePath: string }
+    | { type: "shell" }
+    | { type: "quick-edit"; filePath: string; from?: string; to?: string }
+  );
 
 export type MessageQueueItem =
   | {
@@ -85,9 +89,7 @@ export const isIframeLoadedAtom = atomWithReset(false);
 export const isElementSelectionEnabledAtom = atom<boolean>(false);
 
 // Parsed Data
-export const parsedMessagesAtom = atomWithReset<{ [index: number]: string }>(
-  {}
-);
+export const parsedMessagesAtom = atomWithReset<{ [id: string]: string }>({});
 export const artifactsAtom = atomWithReset<Artifact[]>([]);
 export const actionsAtom = atomWithReset<Action[]>([]);
 export const messageQueueAtom = atomWithReset<MessageQueueItem[]>([]);
