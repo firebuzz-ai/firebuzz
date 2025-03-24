@@ -1,5 +1,5 @@
 import { type Id, api, useMutation } from "@firebuzz/convex";
-import { useAtom, useAtomValue } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { RESET } from "jotai/utils";
 import { useEffect, useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   type Artifact,
   actionsAtom,
   artifactsAtom,
+  currentPreviewVersionAtom,
   isDevServerRunningAtom,
   messageQueueAtom,
   parsedFilesAtom,
@@ -23,6 +24,10 @@ export function useMessageQueue() {
   const [isProcessing, setIsProcessing] = useState(false);
   const landingPageId = useAtomValue(projectIdAtom);
   const isServerRunning = useAtomValue(isDevServerRunningAtom);
+  const setArtifacts = useSetAtom(artifactsAtom);
+  const setActions = useSetAtom(actionsAtom);
+  const setParsedFiles = useSetAtom(parsedFilesAtom);
+  const setCurrentPreviewVersion = useSetAtom(currentPreviewVersionAtom);
 
   // Get the Convex mutation
   const createLandingPageVersion = useMutation(
@@ -43,22 +48,27 @@ export function useMessageQueue() {
         for (const item of messageQueue) {
           if (item.type === "artifact") {
             if (item.callbackType === "open") {
+              const artifact: Artifact = {
+                id: item.data.id,
+                messageId: item.data.messageId,
+                closed: false,
+                isInitial: item.isInitial,
+                versionId: item.data.versionId,
+                versionNumber: item.data.versionNumber,
+                title: item.data.title || "",
+                isSaving: false,
+              };
               // Add new artifact
-              workbenchStore.set(artifactsAtom, (prev) => {
-                const artifact: Artifact = {
-                  id: item.data.id,
-                  messageId: item.data.messageId,
-                  closed: false,
-                  isInitial: item.isInitial,
-                  versionId: item.data.versionId,
-                  title: item.data.title || "",
-                };
+              setArtifacts((prev) => {
                 return [...prev, artifact];
               });
             } else if (item.callbackType === "close") {
               console.log("Closing artifact", item);
+
+              setCurrentPreviewVersion(null);
+
               // Update artifact closed state
-              workbenchStore.set(artifactsAtom, (prev) => {
+              setArtifacts((prev) => {
                 return prev.map((artifact) => {
                   if (artifact.messageId === item.data.messageId) {
                     return { ...artifact, closed: true };
@@ -70,7 +80,15 @@ export function useMessageQueue() {
               // Save version if not initial
               if (!item.isInitial && landingPageId) {
                 try {
-                  console.log("Getting files");
+                  // Set is saving to true
+                  setArtifacts((prev) => {
+                    return prev.map((artifact) => {
+                      if (artifact.messageId === item.data.messageId) {
+                        return { ...artifact, isSaving: true };
+                      }
+                      return artifact;
+                    });
+                  });
                   // Get Files
                   const files = await webcontainerInstance.export(
                     `./${WORK_DIR}/workspace/${landingPageId}`,
@@ -85,12 +103,27 @@ export function useMessageQueue() {
                     }
                   );
 
-                  await createLandingPageVersion({
-                    landingPageId: landingPageId as Id<"landingPages">,
-                    filesString: JSON.stringify(files),
-                  });
+                  const { landingPageVersionId, number } =
+                    await createLandingPageVersion({
+                      landingPageId: landingPageId as Id<"landingPages">,
+                      messageId: item.data.messageId,
+                      filesString: JSON.stringify(files),
+                    });
 
-                  console.log("Version created");
+                  // Update Version ID
+                  setArtifacts((prev) => {
+                    return prev.map((artifact) => {
+                      if (artifact.messageId === item.data.messageId) {
+                        return {
+                          ...artifact,
+                          versionId: landingPageVersionId,
+                          versionNumber: number,
+                          isSaving: false,
+                        };
+                      }
+                      return artifact;
+                    });
+                  });
                 } catch (error) {
                   console.error("Error creating landing page version:", error);
                 }
@@ -99,7 +132,7 @@ export function useMessageQueue() {
           } else if (item.type === "action") {
             if (item.callbackType === "open") {
               // Add new action
-              workbenchStore.set(actionsAtom, (prev) => {
+              setActions((prev) => {
                 const baseAction = {
                   id: item.data.actionId,
                   messageId: item.data.messageId,
@@ -155,7 +188,7 @@ export function useMessageQueue() {
                   );
 
                   // Update action status to success
-                  workbenchStore.set(actionsAtom, (prev) => {
+                  setActions((prev) => {
                     return prev.map((action) => {
                       if (action.id === item.data.actionId) {
                         return { ...action, status: "success" };
@@ -165,7 +198,7 @@ export function useMessageQueue() {
                   });
 
                   // Update parsed files
-                  workbenchStore.set(parsedFilesAtom, (prev) => {
+                  setParsedFiles((prev) => {
                     return new Map(prev).set(filePath, {
                       path: filePath,
                       content: content,
@@ -178,8 +211,6 @@ export function useMessageQueue() {
                 if (item.data.action.type === "quick-edit" && landingPageId) {
                   const quickEditAction = item.data.action as QuickEditAction;
                   const { filePath, from, to } = quickEditAction;
-
-                  console.log("Quick-edit action", filePath, from, to);
 
                   try {
                     // Read the current file content
@@ -194,8 +225,6 @@ export function useMessageQueue() {
                         "Quick-edit action missing from or to values"
                       );
                     }
-
-                    console.log("File content", fileContent);
 
                     // Replace the text
                     const normalizeWhitespace = (str: string) => {
@@ -220,8 +249,6 @@ export function useMessageQueue() {
                       newContent = fileContent.replace(fromRegex, to);
                     }
 
-                    console.log("New content", newContent);
-
                     // Make sure the replacement happened (the 'from' text was found)
                     if (newContent === fileContent) {
                       throw new Error(
@@ -236,7 +263,7 @@ export function useMessageQueue() {
                     );
 
                     // Update action status to success
-                    workbenchStore.set(actionsAtom, (prev) => {
+                    setActions((prev) => {
                       return prev.map((action) => {
                         if (action.id === item.data.actionId) {
                           return { ...action, status: "success" };
@@ -247,7 +274,7 @@ export function useMessageQueue() {
 
                     // Update parsed files
                     const extension = filePath.split(".").pop() || "";
-                    workbenchStore.set(parsedFilesAtom, (prev) => {
+                    setParsedFiles((prev) => {
                       return new Map(prev).set(filePath, {
                         path: filePath,
                         content: newContent,
@@ -257,7 +284,7 @@ export function useMessageQueue() {
                   } catch (error) {
                     console.error("Error processing quick-edit action:", error);
                     // Update action status to error
-                    workbenchStore.set(actionsAtom, (prev) => {
+                    setActions((prev) => {
                       return prev.map((action) => {
                         if (action.id === item.data.actionId) {
                           return { ...action, status: "error" };
@@ -366,9 +393,13 @@ export function useMessageQueue() {
     messageQueue,
     setMessageQueue,
     createLandingPageVersion,
+    setArtifacts,
+    setActions,
+    setParsedFiles,
     isProcessing,
     landingPageId,
     isServerRunning,
+    setCurrentPreviewVersion,
   ]);
 
   return {

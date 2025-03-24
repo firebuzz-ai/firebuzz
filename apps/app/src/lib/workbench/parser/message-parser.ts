@@ -44,6 +44,7 @@ export type Action = FileAction | ShellAction | QuickEditAction;
 export interface ArtifactCallbackData extends ArtifactData {
   messageId: string;
   versionId?: string;
+  versionNumber?: number;
 }
 
 export interface ActionCallbackData {
@@ -72,6 +73,7 @@ interface MessageState {
   actionId: number;
   isInitial: boolean;
   versionId: string | undefined;
+  versionNumber: number | undefined;
 }
 
 interface ElementFactoryProps {
@@ -79,6 +81,7 @@ interface ElementFactoryProps {
   artifactId: string;
   title?: string;
   versionId?: string;
+  versionNumber?: number;
 }
 
 export type ElementFactory = (props: ElementFactoryProps) => string;
@@ -91,6 +94,7 @@ export const createArtifactElement: ElementFactory = (props) => {
     `data-artifact-id="${props.artifactId}"`,
     props.title ? `data-title="${props.title}"` : "",
     props.versionId ? `data-version-id="${props.versionId}"` : "",
+    props.versionNumber ? `data-version-number="${props.versionNumber}"` : "",
   ].filter(Boolean); // Remove empty strings
 
   return `<div ${elementProps.join(" ")}></div>`;
@@ -115,7 +119,8 @@ export class MessageParser {
     messageId: string,
     input: string,
     initial: boolean,
-    versionId: string | undefined
+    versionId: string | undefined,
+    versionNumber: number | undefined
   ): string {
     let state = this.#messages.get(messageId);
     if (!state) {
@@ -126,6 +131,7 @@ export class MessageParser {
         actionId: 0,
         isInitial: initial,
         versionId,
+        versionNumber,
       };
       this.#messages.set(messageId, state);
     }
@@ -202,6 +208,7 @@ export class MessageParser {
               id: state.currentArtifact!.id,
               title: state.currentArtifact!.title,
               versionId: state.versionId,
+              versionNumber: state.versionNumber,
               isInitial: state.isInitial,
             });
 
@@ -235,6 +242,7 @@ export class MessageParser {
             this.#options.callbacks?.onArtifactOpen?.({
               messageId,
               versionId: state.versionId,
+              versionNumber: state.versionNumber,
               id: artifactData.id,
               title: artifactData.title,
               isInitial: state.isInitial,
@@ -247,6 +255,7 @@ export class MessageParser {
               artifactId: artifactData.id,
               title: artifactData.title,
               versionId: state.versionId,
+              versionNumber: state.versionNumber,
             });
 
             i = tagEnd + 1;

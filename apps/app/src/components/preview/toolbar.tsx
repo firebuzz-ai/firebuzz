@@ -1,5 +1,6 @@
 import {
   isElementSelectionEnabledAtom,
+  isIframeFullScreenAtom,
   isIframeLoadedAtom,
 } from "@/lib/workbench/atoms";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -10,12 +11,12 @@ import {
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
-  AlertTriangle,
   Loader2,
   Maximize,
   MousePointerClick,
   RefreshCcw,
 } from "@firebuzz/ui/icons/lucide";
+import { cn } from "@firebuzz/ui/lib/utils";
 import { reloadPreview } from "@webcontainer/api";
 import { useAtom, useAtomValue } from "jotai";
 
@@ -26,6 +27,8 @@ export const Toolbar = ({
   url: string;
   iframeRef: React.RefObject<HTMLIFrameElement | null>;
 }) => {
+  const [isFullScreen, setIsFullScreen] = useAtom(isIframeFullScreenAtom);
+
   const handleRefresh = () => {
     if (iframeRef?.current) {
       reloadPreview(iframeRef.current, 500);
@@ -82,23 +85,17 @@ export const Toolbar = ({
         value={url}
       />
       {/* Right Bar */}
-      <div className="flex items-center gap-0.5">
-        {/* Error Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="!size-6">
-              <AlertTriangle className="size-3" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Error</TooltipContent>
-        </Tooltip>
+      <div className="flex items-center gap-1">
         {/* Select Element */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isElementSelectionEnabled ? "default" : "ghost"}
+              variant="ghost"
               size="icon"
-              className="!size-6"
+              className={cn(
+                "!size-6",
+                isElementSelectionEnabled && "text-brand"
+              )}
               onClick={toggleElementSelection}
               type="button"
               aria-pressed={isElementSelectionEnabled}
@@ -106,19 +103,16 @@ export const Toolbar = ({
               <MousePointerClick className="size-3" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">
-            {isElementSelectionEnabled
-              ? "Disable Element Selection"
-              : "Enable Element Selection"}
-          </TooltipContent>
+          <TooltipContent side="bottom">Select</TooltipContent>
         </Tooltip>
         {/* Fullscreen Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              onClick={() => setIsFullScreen(!isFullScreen)}
               variant="ghost"
               size="icon"
-              className="!size-6"
+              className={cn("!size-6", isFullScreen && "text-brand")}
               type="button"
             >
               <Maximize className="size-3" />

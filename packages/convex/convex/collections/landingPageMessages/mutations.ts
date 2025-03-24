@@ -6,7 +6,8 @@ import { landingPageMessagesSchema } from "./schema";
 export const createLandingPageMessages = mutation({
   args: {
     landingPageId: v.id("landingPages"),
-
+    landingPageVersionId: v.optional(v.id("landingPageVersions")),
+    landingPageVersionNumber: v.optional(v.number()),
     messages: v.array(
       v.object({
         id: v.string(),
@@ -14,6 +15,11 @@ export const createLandingPageMessages = mutation({
         message: v.string(),
         role: landingPageMessagesSchema.fields.role,
         createdAt: v.string(),
+        metadata: v.optional(
+          v.object({
+            isSystem: v.boolean(),
+          })
+        ),
       })
     ),
   },
@@ -40,6 +46,8 @@ export const createLandingPageMessages = mutation({
       workspaceId: user.currentWorkspaceId,
       projectId: landingPage.projectId,
       campaignId: landingPage.campaignId,
+      landingPageVersionId: args.landingPageVersionId,
+      landingPageVersionNumber: args.landingPageVersionNumber,
     }));
 
     await Promise.all(

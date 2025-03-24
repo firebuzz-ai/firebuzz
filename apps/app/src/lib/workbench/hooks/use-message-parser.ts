@@ -90,7 +90,9 @@ export function useMessageParser() {
             // @ts-ignore (metadata is not always present)
             message.metadata?.initial ?? false,
             // @ts-ignore
-            message.metadata?.versionId
+            message.metadata?.versionId,
+            // @ts-ignore
+            message.metadata?.versionNumber
           );
 
           if (newParsedContent) {

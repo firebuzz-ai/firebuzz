@@ -2,7 +2,7 @@
 
 import { selectedElementAtom } from "@/lib/workbench/atoms";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
-import { Code } from "@firebuzz/ui/icons/lucide";
+import { ChevronRight, Code } from "@firebuzz/ui/icons/lucide";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
 
@@ -22,14 +22,17 @@ export const SelectedElement = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-2 text-primary">
+        <div className="flex items-center gap-1 text-primary">
           <Code className="size-4" />
-          <p className="text-sm">
-            <span className="font-medium">{selectedElement.componentName}</span>
-            <span className="text-muted-foreground ml-2">
+          <div className="text-sm flex items-center gap-1 ml-2">
+            <span className="font-medium">
+              {selectedElement.componentName.split("(")[0]}
+            </span>
+            <ChevronRight className="size-3" />
+            <span className="text-muted-foreground">
               {selectedElement.filePath}:{selectedElement.lineNumber}
             </span>
-          </p>
+          </div>
         </div>
         <Button
           onClick={handleRemove}

@@ -97,7 +97,7 @@ export const ChatMessages = ({
         {showLoadMoreButton &&
           status === "CanLoadMore" &&
           messages.length > 0 && (
-            <div className="w-full flex justify-center py-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+            <div className="w-full flex justify-center py-2 sticky -top-4 bg-background/80 backdrop-blur-sm z-10">
               <Button
                 size="sm"
                 variant="outline"

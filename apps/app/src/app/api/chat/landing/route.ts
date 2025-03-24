@@ -13,7 +13,7 @@ import {
 import { anthropic } from "@/lib/ai/anthropic";
 import { azureOpenAI } from "@/lib/ai/azure";
 import { openAI } from "@/lib/ai/openai";
-import { api, fetchMutation } from "@firebuzz/convex/nextjs";
+import { api, fetchMutation, fetchQuery } from "@firebuzz/convex/nextjs";
 import { stripIndents } from "@firebuzz/utils";
 import { nanoid } from "nanoid";
 import type { NextRequest } from "next/server";
@@ -54,7 +54,17 @@ export async function POST(request: NextRequest) {
 
   const totalMessages = messages.length;
   const lastMessageIndex = totalMessages - 1;
-  const messagesToProcess = totalMessages > 10 ? messages.slice(-10) : messages;
+  const messagesToProcess =
+    totalMessages > 10
+      ? messages
+          //@ts-ignore
+          .filter((message: Message) => message?.metadata?.isSystem !== true)
+          .slice(-10)
+      : messages.filter(
+          //@ts-ignore
+          (message: Message) => message?.metadata?.isSystem !== true
+        );
+  console.log("messagesToProcess", messagesToProcess);
   const messagesToSendRouter = messagesToProcess.map(
     (message: Message, index: number) => {
       if (index === lastMessageIndex && message.role === "user") {
@@ -76,8 +86,6 @@ export async function POST(request: NextRequest) {
   const { enhancedPrompt, agent } = await routerAgent(
     JSON.stringify(messagesToSendRouter)
   );
-
-  console.log({ enhancedPrompt, agent });
 
   const messageToSendDeveloper = messagesToSendRouter.map(
     (message: Message, index: number) => {
@@ -109,11 +117,26 @@ export async function POST(request: NextRequest) {
 
     const groupId = nanoid(6);
 
+    console.log("appendedMessages", appendedMessages);
+
+    // Get Landing Page Version
+    const landingPageVersion = await fetchQuery(
+      api.collections.landingPageVersions.queries
+        .getLandingPageVersionByMessageId,
+      {
+        landingPageId: projectId,
+        messageId: appendedMessages[appendedMessages.length - 1].id,
+      },
+      { token }
+    );
+
     // Save the messages to the database
     await fetchMutation(
       api.collections.landingPageMessages.mutations.createLandingPageMessages,
       {
         landingPageId: projectId,
+        landingPageVersionId: landingPageVersion._id,
+        landingPageVersionNumber: landingPageVersion.number,
         messages: appendedMessages.slice(-2).map((message) => ({
           id: message.id,
           groupId,

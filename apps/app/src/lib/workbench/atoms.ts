@@ -26,6 +26,8 @@ export interface Artifact {
   title: string;
   closed: boolean;
   versionId?: string;
+  versionNumber?: number;
+  isSaving: boolean;
   isInitial: boolean;
 }
 
@@ -62,16 +64,7 @@ export type MessageQueueItem =
     };
 
 export const workbenchStore = createStore();
-
 export const projectIdAtom = atomWithReset<string | null>(null);
-
-// Preview Panel Handlers
-export const closePreviewPanelHandlerAtom = atomWithReset<(() => void) | null>(
-  null
-);
-export const openPreviewPanelHandlerAtom = atomWithReset<(() => void) | null>(
-  null
-);
 
 // Group server-related state
 export const isDependenciesInstalledAtom = atomWithReset(false);
@@ -86,7 +79,8 @@ export const isDevServerRunningAtom = atom(
 );
 export const selectedElementAtom = atomWithReset<SelectedElement | null>(null);
 export const isIframeLoadedAtom = atomWithReset(false);
-export const isElementSelectionEnabledAtom = atom<boolean>(false);
+export const isElementSelectionEnabledAtom = atomWithReset<boolean>(false);
+export const isIframeFullScreenAtom = atomWithReset<boolean>(false);
 
 // Parsed Data
 export const parsedMessagesAtom = atomWithReset<{ [id: string]: string }>({});
@@ -98,6 +92,30 @@ export const messageQueueAtom = atomWithReset<MessageQueueItem[]>([]);
 export const parsedFilesAtom = atomWithReset<Map<string, ParsedFile>>(
   new Map<string, ParsedFile>()
 );
+
+// Versions
+export const currentVersionAtom = atomWithReset<{
+  _id: string;
+  number: number;
+  signedUrl: string;
+} | null>(null);
+
+export const currentPreviewVersionAtom = atomWithReset<{
+  _id: string;
+  number: number;
+  signedUrl: string;
+} | null>(null);
+
+export const isPreviewVersionDifferentAtom = atom((get) => {
+  const currentVersion = get(currentVersionAtom);
+  const currentPreviewVersion = get(currentPreviewVersionAtom);
+
+  if (!currentPreviewVersion || !currentVersion) {
+    return false;
+  }
+
+  return currentVersion._id !== currentPreviewVersion._id;
+});
 
 export const currentFilesTreeAtom = atom((get) => {
   const parsedFiles = get(parsedFilesAtom);
@@ -133,6 +151,8 @@ export const resetState = () => {
   workbenchStore.set(portAtom, RESET);
   workbenchStore.set(selectedElementAtom, RESET);
   workbenchStore.set(isIframeLoadedAtom, RESET);
+  workbenchStore.set(isIframeFullScreenAtom, RESET);
+  workbenchStore.set(isElementSelectionEnabledAtom, RESET);
   workbenchStore.set(errorsAtom, RESET);
   workbenchStore.set(devServerLogsAtom, RESET);
   workbenchStore.set(messageQueueAtom, RESET);

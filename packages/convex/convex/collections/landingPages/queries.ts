@@ -83,9 +83,16 @@ export const getLandingPageById = query({
       throw new ConvexError("Landing page version not found");
     }
 
-    // Get current version files download url
-    const key = `landing-page-versions/${landingPage._id}/${landingPage.landingPageVersionId}.txt`;
-    const signedUrl = await r2.getUrl(key);
+    // Get current version
+    const landingPageVersion = await ctx.db.get(
+      landingPage.landingPageVersionId
+    );
+
+    if (!landingPageVersion || !landingPageVersion.key) {
+      throw new ConvexError("Landing page version not found");
+    }
+
+    const signedUrl = await r2.getUrl(landingPageVersion.key);
 
     return {
       ...landingPage,

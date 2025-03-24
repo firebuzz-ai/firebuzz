@@ -36,8 +36,6 @@ export const useWorkbench = (initialFiles: FileSystemTree, id: string) => {
   const setInitialFiles = useSetAtom(parsedFilesAtom);
   const setProjectId = useSetAtom(projectIdAtom);
 
-  // We don't need the isElementSelectionEnabled atom here since we're using it in the toolbar component
-
   const initialize = useCallback(async () => {
     if (!webcontainerInstance) {
       return;

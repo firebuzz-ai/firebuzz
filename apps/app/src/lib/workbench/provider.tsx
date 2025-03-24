@@ -34,9 +34,10 @@ export const WebcontainerProvider = ({
           port,
           url,
         });
-      } else {
+      } /*  else {
+        console.log({ port, type, url });
         resetState();
-      }
+      } */
     });
 
     // Client Error Listener

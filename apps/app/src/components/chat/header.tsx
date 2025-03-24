@@ -7,8 +7,8 @@ export function ChatHeader({ title, type }: { title: string; type: string }) {
   const { openRightPanel, isRightPanelClosing, isRightPanelOpen } =
     useTwoPanelsLayout();
   return (
-    <div className="flex items-center justify-between px-2 border-b h-10">
-      <div className="flex items-center gap-2">
+    <div className="flex items-center justify-between border-b px-2 py-3">
+      <div className="flex items-center gap-2 h-8">
         <Badge variant="outline">{type}</Badge>
         <div>{title}</div>
       </div>

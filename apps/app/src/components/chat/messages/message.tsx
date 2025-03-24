@@ -2,7 +2,6 @@ import type { Message as MessageType } from "ai";
 import type { Dispatch, SetStateAction } from "react";
 import { AssistantMessage } from "./assistant/assistant-message";
 import { UserMessage } from "./user/user-message";
-
 interface MessageProps {
   message: MessageType;
   isLoading: boolean;

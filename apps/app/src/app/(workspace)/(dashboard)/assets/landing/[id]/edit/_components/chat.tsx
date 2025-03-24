@@ -2,19 +2,18 @@ import { ChatHeader } from "@/components/chat/header";
 import { ChatInput } from "@/components/chat/input/chat-input";
 import { ChatMessages } from "@/components/chat/messages/messages";
 import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
-import {
-  currentFilesTreeAtom,
-  currentImportantFilesAtom,
-  isElementSelectionEnabledAtom,
-  selectedElementAtom,
-} from "@/lib/workbench/atoms";
+import { currentVersionAtom } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useChat } from "@ai-sdk/react";
 import type { Doc, Id } from "@firebuzz/convex";
-import { api, useStableReversedPaginatedMessagesQuery } from "@firebuzz/convex";
+import {
+  api,
+  useRichQuery,
+  useStableReversedPaginatedMessagesQuery,
+} from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import type { Message } from "ai";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useSetAtom } from "jotai";
 import {
   type Dispatch,
   type SetStateAction,
@@ -35,13 +34,7 @@ const EmptyState = () => {
 };
 
 export const Chat = ({ id }: { id: string }) => {
-  const currentFileTree = useAtomValue(currentFilesTreeAtom);
-  const currentImportantFiles = useAtomValue(currentImportantFilesAtom);
-  const setIsElementSelectionEnabled = useSetAtom(
-    isElementSelectionEnabledAtom
-  );
-  const setSelectedElement = useSetAtom(selectedElementAtom);
-
+  const setCurrentVersion = useSetAtom(currentVersionAtom);
   const {
     results: landingPageMessages,
     status: messagesStatus,
@@ -49,16 +42,23 @@ export const Chat = ({ id }: { id: string }) => {
   } = useStableReversedPaginatedMessagesQuery(
     api.collections.landingPageMessages.queries.getPaginatedLandingPageMessages,
     { landingPageId: id as Id<"landingPages"> },
-    { initialNumItems: 2 }
+    { initialNumItems: 8 }
+  );
+
+  const { data: currentVersion } = useRichQuery(
+    api.collections.landingPageVersions.queries.getLandingPageCurrentVersion,
+    {
+      landingPageId: id as Id<"landingPages">,
+    }
   );
 
   const handleLoadMore = useCallback(() => {
     if (messagesStatus === "CanLoadMore") {
-      loadMore(2);
+      loadMore(8);
     }
   }, [messagesStatus, loadMore]);
 
-  const { closeRightPanel, openRightPanel } = useTwoPanelsLayout();
+  const { openRightPanel } = useTwoPanelsLayout();
 
   // Format messages from backend to AI SDK format
   const formattedMessages = useMemo(() => {
@@ -72,6 +72,7 @@ export const Chat = ({ id }: { id: string }) => {
       metadata: {
         initial: true,
         versionId: message.landingPageVersionId,
+        versionNumber: message.landingPageVersionNumber,
         createdAt: message.createdAt,
       },
     }));
@@ -111,6 +112,13 @@ export const Chat = ({ id }: { id: string }) => {
     }
   }, [messages, parsedMessages]);
 
+  // Set current version
+  useEffect(() => {
+    if (currentVersion) {
+      setCurrentVersion(currentVersion);
+    }
+  }, [currentVersion, setCurrentVersion]);
+
   if (messagesStatus === "LoadingFirstPage") {
     return (
       <div className="flex flex-col items-center justify-center h-full">
@@ -144,36 +152,8 @@ export const Chat = ({ id }: { id: string }) => {
         onLoadMoreClick={handleLoadMore}
         showLoadMoreButton={true}
       />
-      <ChatInput
-        onSubmit={async (message) => {
-          closeRightPanel();
-          setIsElementSelectionEnabled(false);
-          setSelectedElement(null);
-
-          // Let the useChat hook handle messages state management
-          await append(
-            {
-              role: "user",
-              content: message,
-            },
-            {
-              body: {
-                projectId: id,
-                currentFileTree,
-                currentImportantFiles: Object.entries(currentImportantFiles)
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join("\n"),
-              },
-            }
-          ).finally(() => {
-            // Update the isSending state in ChatInput after append completes
-            const chatInput = document.querySelector("textarea");
-            if (chatInput) {
-              (chatInput as HTMLTextAreaElement).disabled = false;
-            }
-          });
-        }}
-      />
+      {/* biome-ignore lint/suspicious/noExplicitAny: <explanation> */}
+      <ChatInput append={append as unknown as any} />
     </div>
   );
 };

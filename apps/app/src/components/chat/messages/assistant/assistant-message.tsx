@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { Markdown } from "../markdown";
 import { MessageActions } from "../message-actions";
+
 interface AssistantMessageProps {
   message: MessageType;
   isLoading: boolean;
@@ -16,6 +17,7 @@ export const AssistantMessage = ({
   message,
   isLoading,
   chatId,
+  setMessages,
 }: AssistantMessageProps) => {
   return (
     <AnimatePresence>
@@ -36,7 +38,9 @@ export const AssistantMessage = ({
             {message.content && (
               <div className="flex flex-row gap-2 items-start w-full">
                 <div className="flex flex-col gap-4 w-full">
-                  <Markdown html>{message.content as string}</Markdown>
+                  <Markdown setMessages={setMessages} html>
+                    {message.content as string}
+                  </Markdown>
                 </div>
               </div>
             )}

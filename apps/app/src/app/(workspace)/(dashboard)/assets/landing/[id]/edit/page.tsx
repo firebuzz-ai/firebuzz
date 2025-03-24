@@ -34,14 +34,6 @@ export default async function LandingPageEditPage({
       { token }
     );
 
-    /* const initialMessages = await fetchQuery(
-      api.collections.landingPageMessages.queries.getLandingPageMessages,
-      {
-        landingPageId: id as Id<"landingPages">,
-      },
-      { token }
-    ); */
-
     const initialFiles = await fetch(landingPage.signedUrl).then((res) =>
       res.json()
     );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useUser as useClerkUser } from "@clerk/nextjs";
+import { useAuth, useUser as useClerkUser } from "@clerk/nextjs";
+import type { GetToken } from "@clerk/types";
 import {
   type Doc,
   type Id,
@@ -19,15 +20,18 @@ const userContext = createContext<{
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  getToken: GetToken;
 }>({
   user: null,
   isAuthenticated: false,
   isLoading: true,
+  getToken: () => Promise.resolve(""),
 });
 
 const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const { isLoading, isAuthenticated } = useConvexAuth();
   const { user: clerkUser, isLoaded } = useClerkUser();
+  const { getToken } = useAuth();
   const { data: user, isPending } = useCachedRichQuery(
     api.collections.users.queries.getCurrent,
     isLoading || !isAuthenticated || !isLoaded || !clerkUser
@@ -39,6 +43,7 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
     user: user ?? null,
     isAuthenticated,
     isLoading: isLoading || !isLoaded || isPending,
+    getToken,
   };
 
   return (

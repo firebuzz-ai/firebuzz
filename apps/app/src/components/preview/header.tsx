@@ -18,7 +18,7 @@ export function Header({ publish }: { publish: () => Promise<void> }) {
     isElementSelectionEnabledAtom
   );
   return (
-    <div className="flex items-center justify-between px-2 border-b h-10">
+    <div className="flex items-center justify-between border-b px-2 py-3">
       {/* Left Part */}
       <div className="flex items-center gap-2">
         <Button
@@ -39,7 +39,7 @@ export function Header({ publish }: { publish: () => Promise<void> }) {
       {/* Right Part */}
       <div className="flex items-center gap-2">
         <Button
-          className="h-6"
+          size="sm"
           onClick={async () => {
             setIsPublishing(true);
             await publish();

@@ -13,6 +13,7 @@ export const createLandingPageVersionInternal = async (
     campaignId,
     landingPageId,
     filesString,
+    messageId,
   }: {
     userId: Id<"users">;
     landingPageId: Id<"landingPages">;
@@ -20,6 +21,7 @@ export const createLandingPageVersionInternal = async (
     projectId: Id<"projects">;
     campaignId: Id<"campaigns">;
     filesString: string;
+    messageId: string | undefined;
   }
 ) => {
   // Check last count of landing page versions
@@ -29,6 +31,8 @@ export const createLandingPageVersionInternal = async (
     bounds: {},
   });
 
+  const key = `landing-page-versions/${landingPageId}/${crypto.randomUUID()}.txt`;
+
   // Create the landing page version
   const landingPageVersion = await ctx.db.insert("landingPageVersions", {
     number: lastCount + 1,
@@ -37,6 +41,8 @@ export const createLandingPageVersionInternal = async (
     projectId: projectId,
     campaignId: campaignId,
     landingPageId: landingPageId,
+    messageId: messageId,
+    key: key,
   });
 
   // Store the files in R2
@@ -44,7 +50,7 @@ export const createLandingPageVersionInternal = async (
     ctx,
     internal.collections.landingPageVersions.actions.storeLandingPageVersion,
     {
-      key: `landing-page-versions/${landingPageId}/${landingPageVersion}.txt`,
+      key,
       filesString: filesString,
       metadata: {
         landingPageId: landingPageId,
@@ -61,5 +67,8 @@ export const createLandingPageVersionInternal = async (
     landingPageVersionId: landingPageVersion,
   });
 
-  return landingPageVersion;
+  return {
+    landingPageVersionId: landingPageVersion,
+    number: lastCount + 1,
+  };
 };

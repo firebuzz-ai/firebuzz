@@ -7,6 +7,7 @@ import { createLandingPageVersionInternal } from "./utils";
 export const createLandingPageVersion = mutationWithTrigger({
   args: {
     landingPageId: v.id("landingPages"),
+    messageId: v.string(),
     filesString: v.string(),
   },
   handler: async (ctx, args) => {
@@ -21,16 +22,21 @@ export const createLandingPageVersion = mutationWithTrigger({
       throw new ConvexError("Unauthorized");
     }
 
-    const landingPageVersionId = await createLandingPageVersionInternal(ctx, {
-      landingPageId: args.landingPageId,
-      filesString: args.filesString,
-      userId: user._id,
-      workspaceId: user.currentWorkspaceId,
-      projectId: landingPage.projectId,
-      campaignId: landingPage.campaignId,
-    });
+    const { landingPageVersionId, number } =
+      await createLandingPageVersionInternal(ctx, {
+        landingPageId: args.landingPageId,
+        filesString: args.filesString,
+        userId: user._id,
+        workspaceId: user.currentWorkspaceId,
+        projectId: landingPage.projectId,
+        campaignId: landingPage.campaignId,
+        messageId: args.messageId,
+      });
 
-    return landingPageVersionId;
+    return {
+      landingPageVersionId,
+      number,
+    };
   },
 });
 

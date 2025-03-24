@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
-import { internalMutation } from "../../_generated/server";
+import { mutation } from "../../_generated/server";
 import { retrier } from "../../helpers/retrier";
 import {
   internalMutationWithTrigger,
@@ -54,13 +54,14 @@ export const createLandingPage = mutationWithTrigger({
       workspaceId: user.currentWorkspaceId,
       projectId: args.projectId,
       campaignId: args.campaignId,
+      messageId: undefined,
     });
 
     return landingPageId;
   },
 });
 
-export const updateLandingPageVersion = internalMutation({
+export const updateLandingPageVersion = mutation({
   args: {
     id: v.id("landingPages"),
     landingPageVersionId: v.id("landingPageVersions"),

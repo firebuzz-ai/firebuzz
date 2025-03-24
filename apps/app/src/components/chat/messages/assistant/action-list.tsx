@@ -1,7 +1,7 @@
 import type { Action } from "@/lib/workbench/atoms";
 import { javascript } from "@codemirror/lang-javascript";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { CheckIcon, XIcon } from "@firebuzz/ui/icons/lucide";
+import { CircleCheck, XIcon } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import CodeMirror from "@uiw/react-codemirror";
 import { motion } from "motion/react";
@@ -56,70 +56,6 @@ const ActionItem = ({ action, isLast }: ActionItemProps) => {
           <TerminalCode code={action.content} />
         </div>
       )}
-
-      {action.type === "quick-edit" && action.from && action.to && (
-        <div
-          className={cn("mt-2", {
-            "mb-3.5": !isLast,
-          })}
-        >
-          <div className="text-xs text-muted-foreground">
-            <div className="mb-1">
-              <span className="font-semibold">File:</span> {action.filePath}
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <div>
-                <span className="font-semibold">From:</span>
-                <div className="terminal-code relative rounded mt-1 overflow-hidden">
-                  <CodeMirror
-                    value={action.from}
-                    height="auto"
-                    readOnly
-                    extensions={[javascript({ jsx: true })]}
-                    basicSetup={{
-                      lineNumbers: false,
-                      foldGutter: false,
-                      dropCursor: false,
-                      allowMultipleSelections: false,
-                      indentOnInput: false,
-                      highlightActiveLine: false,
-                      highlightSelectionMatches: false,
-                      autocompletion: false,
-                      rectangularSelection: false,
-                      crosshairCursor: false,
-                      closeBrackets: false,
-                    }}
-                  />
-                </div>
-              </div>
-              <div>
-                <span className="font-semibold">To:</span>
-                <div className="terminal-code relative rounded mt-1 overflow-hidden">
-                  <CodeMirror
-                    value={action.to}
-                    height="auto"
-                    readOnly
-                    extensions={[javascript({ jsx: true })]}
-                    basicSetup={{
-                      lineNumbers: false,
-                      foldGutter: false,
-                      dropCursor: false,
-                      allowMultipleSelections: false,
-                      indentOnInput: false,
-                      highlightActiveLine: false,
-                      highlightSelectionMatches: false,
-                      autocompletion: false,
-                      rectangularSelection: false,
-                      crosshairCursor: false,
-                      closeBrackets: false,
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </motion.li>
   );
 };
@@ -168,7 +104,7 @@ const StatusIcon = ({ status }: { status: Action["status"] }) => {
     case "pending":
       return <Spinner size="xs" className="mb-0.5" />;
     case "success":
-      return <CheckIcon className={cn(iconClass, "text-brand")} />;
+      return <CircleCheck className={cn(iconClass, "text-brand")} />;
     case "error":
       return <XIcon className={cn(iconClass, "text-destructive")} />;
   }

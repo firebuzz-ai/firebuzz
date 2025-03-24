@@ -10,6 +10,7 @@ export const landingPageMessagesSchema = v.object({
   // Relations
   landingPageId: v.id("landingPages"),
   landingPageVersionId: v.optional(v.id("landingPageVersions")),
+  landingPageVersionNumber: v.optional(v.number()),
   workspaceId: v.id("workspaces"),
   projectId: v.id("projects"),
   campaignId: v.id("campaigns"),
