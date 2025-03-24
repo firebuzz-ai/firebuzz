@@ -14,7 +14,7 @@ import { anthropic } from "@/lib/ai/anthropic";
 import { azureOpenAI } from "@/lib/ai/azure";
 import { openAI } from "@/lib/ai/openai";
 import { api, fetchMutation, fetchQuery } from "@firebuzz/convex/nextjs";
-import { stripIndents } from "@firebuzz/utils";
+import { sleep, stripIndents } from "@firebuzz/utils";
 import { nanoid } from "nanoid";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
@@ -116,8 +116,7 @@ export async function POST(request: NextRequest) {
     });
 
     const groupId = nanoid(6);
-
-    console.log("appendedMessages", appendedMessages);
+    await sleep(1000);
 
     // Get Landing Page Version
     const landingPageVersion = await fetchQuery(
@@ -180,6 +179,8 @@ export async function POST(request: NextRequest) {
       }),
       onFinish,
     });
+
+    console.log("response", response);
 
     return response.toDataStreamResponse();
   } catch (error) {
