@@ -239,7 +239,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
           </div>
         </div>
         {/* Right Part */}
-        {isClosed && isSaving && (
+        {isClosed && isSaving && !versionId && (
           <div className="text-sm text-muted-foreground">Saving...</div>
         )}
         {isClosed && versionId && (
@@ -281,7 +281,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
             </div>
           </div>
         )}
-        {isClosed && !versionId && (
+        {!versionId && !isSaving && (
           <div className="text-sm text-muted-foreground">Unsaved</div>
         )}
       </div>

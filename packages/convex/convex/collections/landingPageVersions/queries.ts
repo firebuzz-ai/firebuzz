@@ -11,6 +11,8 @@ export const getLandingPageVersionById = query({
     const user = await getCurrentUser(ctx);
     const landingPageVersion = await ctx.db.get(args.id);
 
+    console.log("landingPageVersion", landingPageVersion);
+
     if (!landingPageVersion || !landingPageVersion.key) {
       throw new ConvexError("Landing page version not found");
     }
@@ -34,6 +36,8 @@ export const getLandingPageVersionByMessageId = query({
     messageId: v.string(),
   },
   handler: async (ctx, args) => {
+    console.log("args", args);
+
     const landingPageVersion = await ctx.db
       .query("landingPageVersions")
       .withIndex("by_landing_page_id", (q) =>

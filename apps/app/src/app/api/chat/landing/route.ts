@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
           //@ts-ignore
           (message: Message) => message?.metadata?.isSystem !== true
         );
-  console.log("messagesToProcess", messagesToProcess);
+
   const messagesToSendRouter = messagesToProcess.map(
     (message: Message, index: number) => {
       if (index === lastMessageIndex && message.role === "user") {
@@ -107,9 +107,7 @@ export async function POST(request: NextRequest) {
 
   const onFinish: StreamTextOnFinishCallback<ToolSet> = async ({
     response,
-    usage,
   }) => {
-    console.log(usage);
     const appendedMessages = appendResponseMessages({
       messages,
       responseMessages: response.messages,
