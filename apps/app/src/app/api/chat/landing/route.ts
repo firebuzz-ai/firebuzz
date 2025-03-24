@@ -151,11 +151,13 @@ export async function POST(request: NextRequest) {
     );
   };
 
+  console.log({ agent });
+
   try {
     const response = streamText({
       model:
         agent === "senior-developer"
-          ? anthropic("claude-3-7-sonnet-20250219")
+          ? anthropic("claude-3-5-sonnet-latest")
           : openAI("o3-mini"),
       system: getSystemPrompt(`${WORK_DIR}/workspace/${projectId}`),
       messages: messageToSendDeveloper,
@@ -177,8 +179,6 @@ export async function POST(request: NextRequest) {
       }),
       onFinish,
     });
-
-    console.log("response", response);
 
     return response.toDataStreamResponse();
   } catch (error) {

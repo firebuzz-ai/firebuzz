@@ -41,7 +41,7 @@ const navLinks = [
     items: [
       {
         title: "Ads",
-        url: "/assets/ad",
+        url: "/",
       },
       {
         title: "Landing Pages",
@@ -49,11 +49,11 @@ const navLinks = [
       },
       {
         title: "Forms",
-        url: "/assets/landing-pages/edit/1",
+        url: "/",
       },
       {
         title: "Email Templates",
-        url: "/assets/landing-pages/edit/2",
+        url: "/",
       },
     ],
   },
