@@ -48,7 +48,9 @@ export const UserMessage = ({
             {message.content && mode === "view" && (
               <div className="flex flex-row gap-2 items-start w-full">
                 <div className="flex flex-col gap-4 w-full">
-                  <Markdown>{message.content as string}</Markdown>
+                  <Markdown setMessages={setMessages}>
+                    {message.content as string}
+                  </Markdown>
                 </div>
               </div>
             )}

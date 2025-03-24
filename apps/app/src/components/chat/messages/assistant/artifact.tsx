@@ -53,7 +53,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
   const versionNumber = artifact?.versionNumber;
   const isPreviewCurrent = useMemo(() => {
     return currentPreviewVersion?._id === versionId;
-  }, [currentPreviewVersion, currentVersion, versionId]);
+  }, [currentPreviewVersion, versionId]);
   const isCurrentVersion = useMemo(() => {
     return currentVersion?._id === versionId;
   }, [currentVersion, versionId]);
