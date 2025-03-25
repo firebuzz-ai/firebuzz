@@ -159,3 +159,31 @@ export const publishLandingPage = mutationWithTrigger({
     );
   },
 });
+
+export const publishPreviewLandingPage = mutationWithTrigger({
+  args: {
+    id: v.id("landingPages"),
+    html: v.string(),
+    js: v.string(),
+    css: v.string(),
+  },
+  handler: async (ctx, { id, html, js, css }) => {
+    await getCurrentUser(ctx);
+
+    await ctx.db.patch(id, {
+      previewPublishedAt: new Date().toISOString(),
+      previewUrl: `${process.env.PREVIEW_URL}/${id}`,
+    });
+
+    await retrier.run(
+      ctx,
+      internal.collections.landingPages.actions.storeLandingPageFilesinKV,
+      {
+        key: `preview-${id}`,
+        html,
+        js,
+        css,
+      }
+    );
+  },
+});

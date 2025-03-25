@@ -1,11 +1,16 @@
 import { Hono } from 'hono';
 import { apiRoutes } from './api';
 import type { Env } from './env';
+import { domainRouting } from './middleware';
+import { previewApp } from './preview';
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env }>().use(domainRouting);
 
 // API Routes
 app.route('/api/v1/', apiRoutes);
+
+// Preview Routes for non-preview domain
+app.route('/preview', previewApp);
 
 // Host
 app.get('/:siteid', async (c) => {

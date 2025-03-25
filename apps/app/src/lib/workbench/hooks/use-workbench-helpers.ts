@@ -46,7 +46,7 @@ export const useWorkbenchHelpers = () => {
     return true;
   };
 
-  const getBuildFiles = async (id: string) => {
+  const getBuildFiles = async (id: string, type: "preview" | "production") => {
     const indexHTML = await webcontainerInstance.fs.readFile(
       `./${WORK_DIR}/workspace/${id}/dist/index.html`,
       "utf-8"
@@ -69,9 +69,11 @@ export const useWorkbenchHelpers = () => {
     const indexJS = assets.find((asset) => asset.name.includes(".js"));
     const indexCSS = assets.find((asset) => asset.name.includes(".css"));
 
+    const slug = type === "preview" ? `preview-${id}` : id;
+
     const updatedHTML = indexHTML
-      .replace(`/assets/${indexJS?.name}`, `/${id}/assets/script`)
-      .replace(`/assets/${indexCSS?.name}`, `/${id}/assets/styles`);
+      .replace(`/assets/${indexJS?.name}`, `/${slug}/assets/script`)
+      .replace(`/assets/${indexCSS?.name}`, `/${slug}/assets/styles`);
 
     return {
       indexHTML: updatedHTML,

@@ -11,6 +11,7 @@ import type { Id } from "@firebuzz/convex/nextjs";
 import { toast } from "@firebuzz/ui/lib/utils";
 import type { FileSystemTree } from "@webcontainer/api";
 import { Chat } from "./chat";
+
 export function EditLandingPage({
   id,
   initialFiles,
@@ -23,6 +24,10 @@ export function EditLandingPage({
 
   const publishMutation = useMutation(
     api.collections.landingPages.mutations.publishLandingPage
+  );
+
+  const publishPreviewMutation = useMutation(
+    api.collections.landingPages.mutations.publishPreviewLandingPage
   );
 
   const publish = async () => {
@@ -39,7 +44,7 @@ export function EditLandingPage({
       }
 
       // Get build files
-      const files = await getBuildFiles(id);
+      const files = await getBuildFiles(id, "production");
 
       await publishMutation({
         id: id as Id<"landingPages">,
@@ -61,13 +66,49 @@ export function EditLandingPage({
     }
   };
 
+  const publishPreview = async () => {
+    try {
+      // Build project
+      const isBuildFinished = await buildProject(id);
+
+      if (!isBuildFinished) {
+        toast.error("Failed to build", {
+          description: "Please try again",
+          id: "build-process",
+        });
+        return;
+      }
+
+      // Get build files
+      const files = await getBuildFiles(id, "preview");
+
+      await publishPreviewMutation({
+        id: id as Id<"landingPages">,
+        html: files.indexHTML,
+        js: files.indexJS,
+        css: files.indexCSS,
+      });
+
+      toast.success("Preview Published", {
+        description: "Landing page preview published successfully",
+        id: "publish-preview-process",
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to publish preview", {
+        description: "Please try again",
+        id: "publish-preview-process",
+      });
+    }
+  };
+
   return (
     <>
       <ChatLayout>
         <Chat id={id} />
       </ChatLayout>
       <PreviewLayout>
-        <Preview publish={publish} />
+        <Preview publish={publish} publishPreview={publishPreview} />
       </PreviewLayout>
     </>
   );

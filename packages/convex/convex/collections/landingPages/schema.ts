@@ -8,6 +8,8 @@ export const landingPagesSchema = v.object({
   isArchived: v.boolean(),
   deletedAt: v.optional(v.string()),
   publishedAt: v.optional(v.string()),
+  previewPublishedAt: v.optional(v.string()),
+  previewUrl: v.optional(v.string()),
   // Relations
   workspaceId: v.id("workspaces"),
   projectId: v.id("projects"),
