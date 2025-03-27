@@ -1,4 +1,3 @@
-import type { FileSystemTree } from "@webcontainer/api";
 import { nanoid } from "nanoid";
 import {
   ARTIFACT_ACTION_TAG_CLOSE,
@@ -10,19 +9,16 @@ import {
 // **Interfaces and Types**
 export interface ArtifactData {
   id: string;
-  title?: string;
-  files?: FileSystemTree;
-  isInitial: boolean;
+  title: string;
 }
 
 export type ActionType = "file" | "shell" | "quick-edit";
 
 export interface BaseAction {
+  id: string;
   type: ActionType;
   content: string;
   title: string;
-  isInitial: boolean;
-  id: string;
 }
 
 export interface FileAction extends BaseAction {
@@ -47,12 +43,14 @@ export interface ArtifactCallbackData extends ArtifactData {
   messageId: string;
   versionId?: string;
   versionNumber?: number;
+  isInitial: boolean;
 }
 
 export interface ActionCallbackData {
   artifactId: string;
   messageId: string;
   actionId: string;
+  isInitial: boolean;
   action: Action;
 }
 
@@ -72,19 +70,11 @@ interface MessageState {
   insideAction: boolean;
   currentArtifact?: ArtifactData;
   currentAction?: BaseAction;
-  actionId: string;
-  isInitial: boolean;
-  versionId: string | undefined;
-  versionNumber: number | undefined;
 }
 
 interface ElementFactoryProps {
-  messageId: string;
-  artifactId: string;
-  title?: string;
-  versionId?: string;
-  versionNumber?: number;
-  actionId: string;
+  title: string;
+  id: string;
 }
 
 export type ElementFactory = (props: ElementFactoryProps) => string;
@@ -93,12 +83,8 @@ export type ElementFactory = (props: ElementFactoryProps) => string;
 export const createArtifactElement: ElementFactory = (props) => {
   const elementProps = [
     'class="__firebuzzArtifact__"',
-    `data-message-id="${props.messageId}"`,
-    `data-artifact-id="${props.artifactId}"`,
-    props.title ? `data-title="${props.title}"` : "",
-    props.versionId ? `data-version-id="${props.versionId}"` : "",
-    props.versionNumber ? `data-version-number="${props.versionNumber}"` : "",
-    props.actionId ? `data-action-id="${props.actionId}"` : "",
+    `data-title="${props.title}"`,
+    `data-artifact-id="${props.id}"`,
   ].filter(Boolean); // Remove empty strings
 
   return `<div ${elementProps.join(" ")}></div>`;
@@ -134,10 +120,6 @@ export class MessageParser {
         position: 0,
         insideArtifact: false,
         insideAction: false,
-        actionId: nanoid(10),
-        isInitial: initial,
-        versionId,
-        versionNumber,
       };
       this.#messages.set(messageId, state);
     }
@@ -162,21 +144,19 @@ export class MessageParser {
               );
             }
 
+            // ONCLOSE - ACTION
             const actionData = { ...state.currentAction } as Action;
             this.#options.callbacks?.onActionClose?.({
               artifactId: state.currentArtifact!.id,
               messageId,
               actionId: state.currentAction!.id,
               action: actionData,
+              isInitial: initial,
             });
 
             state.insideAction = false;
             state.currentAction = undefined;
             i = closeIndex + ARTIFACT_ACTION_TAG_CLOSE.length;
-            console.log("[Parser] Action closed:", {
-              actionId: state.actionId,
-              action: actionData,
-            });
           } else {
             // Incomplete action content, wait for more input
             break;
@@ -193,19 +173,18 @@ export class MessageParser {
             const tagEnd = input.indexOf(">", actionOpenIndex);
             if (tagEnd !== -1) {
               const actionTag = input.slice(actionOpenIndex, tagEnd + 1);
-              state.currentAction = this.#parseActionTag(
-                actionTag,
-                state.isInitial
-              );
-              const actionId = nanoid(10);
-              (state.currentAction as Action).id = actionId;
+              const actionData = this.#parseActionTag(actionTag);
+
+              state.currentAction = { ...actionData, id: nanoid(10) };
               state.insideAction = true;
 
+              // ONOPEN - ACTION
               this.#options.callbacks?.onActionOpen?.({
                 artifactId: state.currentArtifact!.id,
                 messageId,
-                actionId: actionId,
+                actionId: state.currentAction!.id,
                 action: state.currentAction as Action,
+                isInitial: initial,
               });
 
               i = tagEnd + 1;
@@ -214,13 +193,14 @@ export class MessageParser {
               break;
             }
           } else if (artifactCloseIndex !== -1) {
+            // ONCLOSE - ARTIFACT
             this.#options.callbacks?.onArtifactClose?.({
               messageId,
               id: state.currentArtifact!.id,
               title: state.currentArtifact!.title,
-              versionId: state.versionId,
-              versionNumber: state.versionNumber,
-              isInitial: state.isInitial,
+              versionId: versionId,
+              versionNumber: versionNumber,
+              isInitial: initial,
             });
 
             state.insideArtifact = false;
@@ -243,31 +223,25 @@ export class MessageParser {
             }
 
             const artifactTag = input.slice(artifactOpenIndex, tagEnd + 1);
-            const artifactData = this.#parseArtifactTag(
-              artifactTag,
-              state.isInitial
-            );
-            state.currentArtifact = artifactData;
+            const artifactData = this.#parseArtifactTag(artifactTag);
+            state.currentArtifact = { ...artifactData, id: nanoid(10) };
             state.insideArtifact = true;
 
+            // ONOPEN - ARTIFACT
             this.#options.callbacks?.onArtifactOpen?.({
               messageId,
-              versionId: state.versionId,
-              versionNumber: state.versionNumber,
-              id: artifactData.id,
+              id: state.currentArtifact!.id,
               title: artifactData.title,
-              isInitial: state.isInitial,
+              versionId: versionId,
+              versionNumber: versionNumber,
+              isInitial: initial,
             });
 
             const factory =
               this.#options.artifactElement ?? createArtifactElement;
             output += factory({
-              messageId,
-              artifactId: artifactData.id,
               title: artifactData.title,
-              versionId: state.versionId,
-              versionNumber: state.versionNumber,
-              actionId: state.actionId,
+              id: state.currentArtifact!.id,
             });
 
             i = tagEnd + 1;
@@ -290,17 +264,15 @@ export class MessageParser {
   }
 
   /** Parse attributes from an action tag */
-  #parseActionTag(tag: string, isInitial: boolean): BaseAction {
+  #parseActionTag(tag: string): Pick<BaseAction, "type" | "content" | "title"> {
     const type = (this.#extractAttribute(tag, "type") as ActionType) ?? "shell";
-    const title = this.#extractAttribute(tag, "title") || "";
-    const actionId = this.#extractAttribute(tag, "id") || nanoid(10);
+    const title = this.#extractAttribute(tag, "title") || "Untitled";
+    const content = this.#extractAttribute(tag, "content") || ""; // Shell actions have content
 
-    const action: BaseAction = {
+    const action = {
       type,
-      content: "",
+      content,
       title,
-      isInitial,
-      id: actionId,
     };
 
     if (type === "file") {
@@ -324,10 +296,9 @@ export class MessageParser {
   }
 
   /** Parse attributes from an artifact tag */
-  #parseArtifactTag(tag: string, isInitial: boolean): ArtifactData {
-    const id = this.#extractAttribute(tag, "id") || nanoid(10);
-    const title = this.#extractAttribute(tag, "title");
-    return { id, title, isInitial };
+  #parseArtifactTag(tag: string): Pick<ArtifactData, "title"> {
+    const title = this.#extractAttribute(tag, "title") ?? "Untitled";
+    return { title };
   }
 
   /** Extract an attribute value from a tag */
@@ -343,6 +314,7 @@ export class MessageParser {
     const toMatch = content.match(/<to>([\s\S]*?)<\/to>/);
 
     if (fromMatch && toMatch) {
+      // Store raw values from the matches
       action.from = fromMatch[1];
       action.to = toMatch[1];
     }

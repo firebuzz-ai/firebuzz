@@ -11,7 +11,6 @@ interface ActionListProps {
 }
 
 export const ActionList = ({ actions }: ActionListProps) => {
-  console.log(actions);
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -48,7 +47,7 @@ const ActionItem = ({ action, isLast }: ActionItemProps) => {
         <div>{getActionLabel(action)}</div>
       </div>
 
-      {action.type === "shell" && (
+      {action.type === "shell" && action.content !== "" && (
         <div
           className={cn("mt-2", {
             "mb-3.5": !isLast,

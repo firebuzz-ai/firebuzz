@@ -43,9 +43,8 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [isViewing, setIsViewing] = useState(false);
   const { getToken } = useUser();
-
-  const artifact = artifacts.find((a) => a.messageId === id);
-  const artifactActions = actions.filter((action) => action.messageId === id);
+  const artifact = artifacts.find((a) => a.id === id);
+  const artifactActions = actions.filter((action) => action.artifactId === id);
   const [isActionsVisible, setIsActionsVisible] = useState(!artifact?.closed);
   const isClosed = artifact?.closed;
   const isSaving = artifact?.isSaving;

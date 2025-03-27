@@ -20,7 +20,7 @@ import { webcontainerInstance } from "../webcontainer";
 
 export function useMessageQueue() {
   const [messageQueue, setMessageQueue] = useAtom(messageQueueAtom);
-  console.log("messageQueue", messageQueue);
+
   const setFailedActions = useSetAtom(failedActionsAtom);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -59,8 +59,6 @@ export function useMessageQueue() {
             return [...prev, artifact];
           });
         } else if (item.callbackType === "close") {
-          console.log("Closing artifact", item);
-
           setCurrentPreviewVersion(null);
 
           // Update artifact closed state
@@ -75,7 +73,6 @@ export function useMessageQueue() {
 
           // Save version if not initial
           if (!item.isInitial && landingPageId) {
-            console.log("Saving version", item);
             try {
               // Set is saving to true
               setArtifacts((prev) => {
@@ -243,6 +240,19 @@ export function useMessageQueue() {
               throw new Error("Quick-edit action missing from or to values");
             }
 
+            // Decode HTML entities in from and to values
+            const decodeHtmlEntities = (str: string): string => {
+              return str
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&quot;/g, '"')
+                .replace(/&apos;/g, "'")
+                .replace(/&amp;/g, "&");
+            };
+
+            const decodedFrom = decodeHtmlEntities(from);
+            const decodedTo = decodeHtmlEntities(to);
+
             // Replace the text
             const normalizeWhitespace = (str: string) => {
               return str.replace(/\s+/g, " ").trim();
@@ -250,7 +260,7 @@ export function useMessageQueue() {
 
             // Create a regex that's more flexible with whitespace
             const fromRegex = new RegExp(
-              normalizeWhitespace(from)
+              normalizeWhitespace(decodedFrom)
                 .replace(/[.*+?^${}()|[\]\\]/g, "\\$&") // Escape regex special chars
                 .replace(/ /g, "\\s+"), // Make whitespace flexible
               "g" // Global flag to replace all occurrences
@@ -258,12 +268,12 @@ export function useMessageQueue() {
 
             // Attempt to find the content with flexible matching
             let newContent = fileContent;
-            if (fileContent.includes(from)) {
+            if (fileContent.includes(decodedFrom)) {
               // If exact match found, use it
-              newContent = fileContent.replace(from, to);
+              newContent = fileContent.replace(decodedFrom, decodedTo);
             } else {
               // Try with regex for more flexible matching
-              newContent = fileContent.replace(fromRegex, to);
+              newContent = fileContent.replace(fromRegex, decodedTo);
             }
 
             // Make sure the replacement happened (the 'from' text was found)
@@ -314,9 +324,6 @@ export function useMessageQueue() {
                   arg !== "\r" &&
                   arg !== "\t"
               );
-
-            console.log("Running shell command");
-            console.log(args);
 
             const process = await webcontainerInstance.spawn(
               args[0],
@@ -415,16 +422,6 @@ export function useMessageQueue() {
 
     const processQueue = async () => {
       setIsProcessing(true);
-      console.log("[Queue] Processing started:", {
-        queueLength: messageQueue.length,
-        items: messageQueue.map((item) => ({
-          type: item.type,
-          callbackType: item.callbackType,
-          messageId: item.data.messageId,
-          artifactId:
-            "artifactId" in item.data ? item.data.artifactId : item.data.id,
-        })),
-      });
 
       try {
         // Process all items in the queue
@@ -448,7 +445,6 @@ export function useMessageQueue() {
       } catch (error) {
         console.error("[Queue] Processing error:", error);
       } finally {
-        console.log("[Queue] Processing completed");
         setIsProcessing(false);
       }
     };
