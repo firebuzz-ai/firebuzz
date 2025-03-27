@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/((?!api/images).*)",
         headers: [
           {
             key: "Cross-Origin-Embedder-Policy",
