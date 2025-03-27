@@ -1,14 +1,14 @@
 import { CampaignTopbar } from "@/components/navigation/campaign/topbar";
 
 export default function CampaignLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  return (
-    <div className="flex flex-col flex-1">
-      <CampaignTopbar />
-      <div className="flex flex-1"> {children}</div>
-    </div>
-  );
+	return (
+		<div className="flex flex-col flex-1">
+			<CampaignTopbar />
+			<div className="flex flex-1"> {children}</div>
+		</div>
+	);
 }

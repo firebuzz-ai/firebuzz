@@ -3,5 +3,5 @@ import { envOpenai } from "@firebuzz/env";
 import "server-only";
 
 export const openAI = createOpenAI({
-  apiKey: envOpenai().OPENAI_API_KEY,
+	apiKey: envOpenai().OPENAI_API_KEY,
 });

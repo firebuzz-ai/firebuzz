@@ -1,70 +1,70 @@
 /* Terminal code styling */
 .terminal-code {
-  font-family: var(--font-geist-mono), "SF Mono", "Menlo", "Monaco", "Consolas",
-    "Liberation Mono", "Courier New", monospace;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  position: relative;
+	font-family: var(--font-geist-mono), "SF Mono", "Menlo", "Monaco", "Consolas",
+		"Liberation Mono", "Courier New", monospace;
+	border-radius: 0.5rem;
+	overflow: hidden;
+	position: relative;
 }
 
 /* Remove default border and set background using project colors */
 .terminal-code .cm-editor {
-  border: none !important;
-  background-color: hsl(var(--muted)) !important;
+	border: none !important;
+	background-color: hsl(var(--muted)) !important;
 }
 
 /* Add a subtle terminal header with "Terminal" text */
 .terminal-code::before {
-  content: "Terminal";
-  display: flex;
-  align-items: center;
-  justify-content: start;
-  padding-left: 1rem;
-  height: 28px;
-  background-color: hsl(var(--accent)) !important;
-  border-top-left-radius: 0.5rem;
-  border-top-right-radius: 0.5rem;
-  position: relative;
-  font-family: var(--font-geist-mono), "SF Mono", "Menlo", "Monaco", "Consolas",
-    "Liberation Mono", "Courier New", monospace;
-  font-size: 0.75rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: hsl(var(--muted-foreground));
-  text-transform: uppercase;
+	content: "Terminal";
+	display: flex;
+	align-items: center;
+	justify-content: start;
+	padding-left: 1rem;
+	height: 28px;
+	background-color: hsl(var(--accent)) !important;
+	border-top-left-radius: 0.5rem;
+	border-top-right-radius: 0.5rem;
+	position: relative;
+	font-family: var(--font-geist-mono), "SF Mono", "Menlo", "Monaco", "Consolas",
+		"Liberation Mono", "Courier New", monospace;
+	font-size: 0.75rem;
+	font-weight: 500;
+	letter-spacing: 0.05em;
+	color: hsl(var(--muted-foreground));
+	text-transform: uppercase;
 }
 
 /* No header dots */
 .terminal-code::after {
-  display: none;
+	display: none;
 }
 
 /* Terminal content styling */
 .terminal-code .cm-content {
-  padding: 0.5rem 0.75rem !important;
-  font-size: 0.875rem !important;
-  line-height: 1.25rem !important;
-  color: hsl(var(--foreground)) !important;
-  background-color: hsl(var(--muted)) !important;
+	padding: 0.5rem 0.75rem !important;
+	font-size: 0.875rem !important;
+	line-height: 1.25rem !important;
+	color: hsl(var(--foreground)) !important;
+	background-color: hsl(var(--muted)) !important;
 }
 
 /* Terminal cursor */
 .terminal-code .cm-cursor {
-  border-left-color: hsl(var(--primary)) !important;
-  border-left-width: 2px !important;
+	border-left-color: hsl(var(--primary)) !important;
+	border-left-width: 2px !important;
 }
 
 /* Add a subtle terminal prompt */
 .terminal-code .cm-line::before {
-  content: "$ ";
-  color: hsl(var(--brand));
-  font-weight: bold;
+	content: "$ ";
+	color: hsl(var(--brand));
+	font-weight: bold;
 }
 
 /* Ensure proper spacing for prompt */
 .terminal-code .cm-line {
-  padding-left: 0.75rem;
-  text-indent: -0.75rem;
+	padding-left: 0.75rem;
+	text-indent: -0.75rem;
 }
 
 /* Override ALL syntax highlighting for using project colors */
@@ -84,11 +84,11 @@
 .terminal-code .cm-qualifier,
 .terminal-code .cm-builtin,
 .terminal-code .cm-function {
-  color: hsl(var(--foreground)) !important;
+	color: hsl(var(--foreground)) !important;
 }
 
 .terminal-code .cm-comment {
-  color: hsl(var(--muted-foreground)) !important;
+	color: hsl(var(--muted-foreground)) !important;
 }
 
 /* Use project colors for backgrounds */
@@ -97,24 +97,24 @@
 .terminal-code .cm-gutters,
 .terminal-code .cm-lineNumbers,
 .terminal-code .cm-foldGutter {
-  background-color: hsl(var(--muted)) !important;
-  color: hsl(var(--muted-foreground)) !important;
-  border-color: hsl(var(--border)) !important;
+	background-color: hsl(var(--muted)) !important;
+	color: hsl(var(--muted-foreground)) !important;
+	border-color: hsl(var(--border)) !important;
 }
 
 /* Hide scrollbars or make them subtle */
 .terminal-code .cm-scroller::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+	width: 6px;
+	height: 6px;
 }
 
 .terminal-code .cm-scroller::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 3px;
+	background: hsl(var(--muted-foreground) / 0.3);
+	border-radius: 3px;
 }
 
 .terminal-code .cm-scroller::-webkit-scrollbar-track {
-  background: hsl(var(--muted) / 0.5);
+	background: hsl(var(--muted) / 0.5);
 }
 
 /* Remove possible highlighted backgrounds from searches or selections */
@@ -122,8 +122,8 @@
 .terminal-code .cm-searchMatch,
 .terminal-code .cm-matchingBracket,
 .terminal-code .cm-nonmatchingBracket {
-  background-color: transparent !important;
-  outline: 1px solid hsl(var(--border)) !important;
+	background-color: transparent !important;
+	outline: 1px solid hsl(var(--border)) !important;
 }
 
 /* Support for both light and dark mode */
@@ -134,9 +134,9 @@
 .dark .terminal-code .cm-gutters,
 .dark .terminal-code .cm-lineNumbers,
 .dark .terminal-code .cm-foldGutter {
-  background-color: hsl(var(--muted)) !important;
+	background-color: hsl(var(--muted)) !important;
 }
 
 .dark .terminal-code::before {
-  background-color: hsl(var(--accent)) !important;
+	background-color: hsl(var(--accent)) !important;
 }

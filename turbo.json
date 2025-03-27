@@ -1,75 +1,75 @@
 {
-  "$schema": "https://turbo.build/schema.json",
-  "ui": "tui",
-  "globalDependencies": [".env.local"],
-  "tasks": {
-    "build": {
-      "dependsOn": ["^build"],
-      "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"],
-      "env": [
-        "NEXT_PUBLIC_*",
-        "VERCEL_URL",
-        "VERCEL_ENV",
-        "PORT",
-        "NODE_ENV",
-        "CLERK_SECRET_KEY",
-        "CLERK_WEBHOOK_SECRET",
-        "RESEND_API_KEY",
-        "RESEND_DOMAIN",
-        "CONVEX_DEPLOYMENT",
-        "CONVEX_URL",
-        "ENGINE_URL",
-        "OPENAI_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "GOOGLE_GENERATIVE_AI_API_KEY",
-        "FAL_KEY",
-        "UNSPLASH_ACCESS_KEY",
-        "AZURE_OPENAI_API_KEY",
-        "AZURE_OPENAI_RESOURCE_NAME"
-      ]
-    },
-    "lint": {
-      "dependsOn": ["^lint"]
-    },
-    "format": {
-      "cache": false
-    },
-    "check-types": {
-      "dependsOn": ["^check-types"]
-    },
-    "dev": {
-      "cache": false,
-      "persistent": true,
-      "env": [
-        "NEXT_PUBLIC_*",
-        "VERCEL_URL",
-        "VERCEL_ENV",
-        "PORT",
-        "NODE_ENV",
-        "CLERK_SECRET_KEY",
-        "CLERK_WEBHOOK_SECRET",
-        "RESEND_API_KEY",
-        "RESEND_DOMAIN",
-        "CONVEX_DEPLOYMENT",
-        "CONVEX_URL",
-        "ENGINE_URL",
-        "OPENAI_API_KEY",
-        "ANTHROPIC_API_KEY",
-        "GOOGLE_GENERATIVE_AI_API_KEY",
-        "FAL_KEY",
-        "UNSPLASH_ACCESS_KEY",
-        "AZURE_OPENAI_API_KEY",
-        "AZURE_OPENAI_RESOURCE_NAME"
-      ]
-    },
-    "test": {
-      "cache": false,
-      "persistent": true,
-      "env": ["NODE_ENV"]
-    },
-    "clean": {
-      "cache": false
-    }
-  }
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"globalDependencies": [".env.local"],
+	"tasks": {
+		"build": {
+			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"outputs": [".next/**", "!.next/cache/**"],
+			"env": [
+				"NEXT_PUBLIC_*",
+				"VERCEL_URL",
+				"VERCEL_ENV",
+				"PORT",
+				"NODE_ENV",
+				"CLERK_SECRET_KEY",
+				"CLERK_WEBHOOK_SECRET",
+				"RESEND_API_KEY",
+				"RESEND_DOMAIN",
+				"CONVEX_DEPLOYMENT",
+				"CONVEX_URL",
+				"ENGINE_URL",
+				"OPENAI_API_KEY",
+				"ANTHROPIC_API_KEY",
+				"GOOGLE_GENERATIVE_AI_API_KEY",
+				"FAL_KEY",
+				"UNSPLASH_ACCESS_KEY",
+				"AZURE_OPENAI_API_KEY",
+				"AZURE_OPENAI_RESOURCE_NAME"
+			]
+		},
+		"lint": {
+			"dependsOn": ["^lint"]
+		},
+		"format": {
+			"cache": false
+		},
+		"check-types": {
+			"dependsOn": ["^check-types"]
+		},
+		"dev": {
+			"cache": false,
+			"persistent": true,
+			"env": [
+				"NEXT_PUBLIC_*",
+				"VERCEL_URL",
+				"VERCEL_ENV",
+				"PORT",
+				"NODE_ENV",
+				"CLERK_SECRET_KEY",
+				"CLERK_WEBHOOK_SECRET",
+				"RESEND_API_KEY",
+				"RESEND_DOMAIN",
+				"CONVEX_DEPLOYMENT",
+				"CONVEX_URL",
+				"ENGINE_URL",
+				"OPENAI_API_KEY",
+				"ANTHROPIC_API_KEY",
+				"GOOGLE_GENERATIVE_AI_API_KEY",
+				"FAL_KEY",
+				"UNSPLASH_ACCESS_KEY",
+				"AZURE_OPENAI_API_KEY",
+				"AZURE_OPENAI_RESOURCE_NAME"
+			]
+		},
+		"test": {
+			"cache": false,
+			"persistent": true,
+			"env": ["NODE_ENV"]
+		},
+		"clean": {
+			"cache": false
+		}
+	}
 }

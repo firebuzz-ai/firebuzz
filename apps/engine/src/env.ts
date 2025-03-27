@@ -1,4 +1,4 @@
-import type { KVNamespace } from '@cloudflare/workers-types';
+import type { KVNamespace } from "@cloudflare/workers-types";
 
 export interface Env {
 	ASSETS: KVNamespace;

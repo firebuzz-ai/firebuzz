@@ -3,5 +3,5 @@ import { envAnthropic } from "@firebuzz/env";
 import "server-only";
 
 export const anthropic = createAnthropic({
-  apiKey: envAnthropic().ANTHROPIC_API_KEY,
+	apiKey: envAnthropic().ANTHROPIC_API_KEY,
 });

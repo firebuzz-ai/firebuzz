@@ -6,22 +6,22 @@ import { WebcontainerProvider } from "@/lib/workbench/provider";
 import { Provider } from "jotai";
 
 export const Providers = ({
-  children,
-  previewPanelSize,
-  panelId,
+	children,
+	previewPanelSize,
+	panelId,
 }: {
-  children: React.ReactNode;
-  previewPanelSize: number;
-  panelId: string;
+	children: React.ReactNode;
+	previewPanelSize: number;
+	panelId: string;
 }) => {
-  return (
-    <Provider store={workbenchStore}>
-      <TwoPanelsProvider
-        rightPanelSizeFromCookie={previewPanelSize}
-        id={panelId}
-      >
-        <WebcontainerProvider>{children}</WebcontainerProvider>
-      </TwoPanelsProvider>
-    </Provider>
-  );
+	return (
+		<Provider store={workbenchStore}>
+			<TwoPanelsProvider
+				rightPanelSizeFromCookie={previewPanelSize}
+				id={panelId}
+			>
+				<WebcontainerProvider>{children}</WebcontainerProvider>
+			</TwoPanelsProvider>
+		</Provider>
+	);
 };

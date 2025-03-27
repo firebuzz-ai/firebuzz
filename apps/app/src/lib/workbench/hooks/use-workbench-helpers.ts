@@ -4,86 +4,86 @@ import { WORK_DIR } from "../constants";
 import { webcontainerInstance } from "../webcontainer";
 
 export const useWorkbenchHelpers = () => {
-  const setErrors = useSetAtom(errorsAtom);
-  // Handlers
-  const buildProject = async (id: string) => {
-    // Start building process
-    const buildProcess = await webcontainerInstance.spawn(
-      "pnpm",
-      ["run", "build"],
-      {
-        cwd: `./${WORK_DIR}/workspace/${id}`,
-      }
-    );
+	const setErrors = useSetAtom(errorsAtom);
+	// Handlers
+	const buildProject = async (id: string) => {
+		// Start building process
+		const buildProcess = await webcontainerInstance.spawn(
+			"pnpm",
+			["run", "build"],
+			{
+				cwd: `./${WORK_DIR}/workspace/${id}`,
+			},
+		);
 
-    // Improved logging - collect all output in a readable format
-    let buildOutput = "";
-    buildProcess.output.pipeTo(
-      new WritableStream({
-        write(data) {
-          // Remove ANSI escape codes for cleaner output
-          // biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
-          const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
-          buildOutput += cleanedData;
-        },
-      })
-    );
+		// Improved logging - collect all output in a readable format
+		let buildOutput = "";
+		buildProcess.output.pipeTo(
+			new WritableStream({
+				write(data) {
+					// Remove ANSI escape codes for cleaner output
+					// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
+					const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
+					buildOutput += cleanedData;
+				},
+			}),
+		);
 
-    const exitCode = await buildProcess.exit;
+		const exitCode = await buildProcess.exit;
 
-    if (exitCode !== 0) {
-      setErrors((prev) => [
-        ...prev,
-        {
-          type: "build",
-          message: buildOutput,
-          rawError: null,
-        },
-      ]);
-      return false;
-    }
+		if (exitCode !== 0) {
+			setErrors((prev) => [
+				...prev,
+				{
+					type: "build",
+					message: buildOutput,
+					rawError: null,
+				},
+			]);
+			return false;
+		}
 
-    return true;
-  };
+		return true;
+	};
 
-  const getBuildFiles = async (id: string, type: "preview" | "production") => {
-    const indexHTML = await webcontainerInstance.fs.readFile(
-      `./${WORK_DIR}/workspace/${id}/dist/index.html`,
-      "utf-8"
-    );
+	const getBuildFiles = async (id: string, type: "preview" | "production") => {
+		const indexHTML = await webcontainerInstance.fs.readFile(
+			`./${WORK_DIR}/workspace/${id}/dist/index.html`,
+			"utf-8",
+		);
 
-    const files = await webcontainerInstance.fs.readdir(
-      `./${WORK_DIR}/workspace/${id}/dist/assets`
-    );
+		const files = await webcontainerInstance.fs.readdir(
+			`./${WORK_DIR}/workspace/${id}/dist/assets`,
+		);
 
-    const assets = await Promise.all(
-      files.map(async (file) => ({
-        name: file,
-        content: await webcontainerInstance.fs.readFile(
-          `./${WORK_DIR}/workspace/${id}/dist/assets/${file}`,
-          "utf-8"
-        ),
-      }))
-    );
+		const assets = await Promise.all(
+			files.map(async (file) => ({
+				name: file,
+				content: await webcontainerInstance.fs.readFile(
+					`./${WORK_DIR}/workspace/${id}/dist/assets/${file}`,
+					"utf-8",
+				),
+			})),
+		);
 
-    const indexJS = assets.find((asset) => asset.name.includes(".js"));
-    const indexCSS = assets.find((asset) => asset.name.includes(".css"));
+		const indexJS = assets.find((asset) => asset.name.includes(".js"));
+		const indexCSS = assets.find((asset) => asset.name.includes(".css"));
 
-    const slug = type === "preview" ? `preview-${id}` : id;
+		const slug = type === "preview" ? `preview-${id}` : id;
 
-    const updatedHTML = indexHTML
-      .replace(`/assets/${indexJS?.name}`, `/${slug}/assets/script`)
-      .replace(`/assets/${indexCSS?.name}`, `/${slug}/assets/styles`);
+		const updatedHTML = indexHTML
+			.replace(`/assets/${indexJS?.name}`, `/${slug}/assets/script`)
+			.replace(`/assets/${indexCSS?.name}`, `/${slug}/assets/styles`);
 
-    return {
-      indexHTML: updatedHTML,
-      indexJS: indexJS?.content ?? "",
-      indexCSS: indexCSS?.content ?? "",
-    };
-  };
+		return {
+			indexHTML: updatedHTML,
+			indexJS: indexJS?.content ?? "",
+			indexCSS: indexCSS?.content ?? "",
+		};
+	};
 
-  return {
-    buildProject,
-    getBuildFiles,
-  };
+	return {
+		buildProject,
+		getBuildFiles,
+	};
 };

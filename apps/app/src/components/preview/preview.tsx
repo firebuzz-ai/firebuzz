@@ -6,20 +6,20 @@ import { Header } from "./header";
 import { Toolbar } from "./toolbar";
 
 export const Preview = ({
-  publish,
-  publishPreview,
+	publish,
+	publishPreview,
 }: {
-  publish: () => Promise<void>;
-  publishPreview: () => Promise<void>;
+	publish: () => Promise<void>;
+	publishPreview: () => Promise<void>;
 }) => {
-  const frameRef = useRef<HTMLIFrameElement>(null);
+	const frameRef = useRef<HTMLIFrameElement>(null);
 
-  return (
-    <>
-      <FullScreenModal />
-      <Header publish={publish} publishPreview={publishPreview} />
-      <Toolbar url="https://www.firebuzz.ai" iframeRef={frameRef} />
-      <Frame ref={frameRef} />
-    </>
-  );
+	return (
+		<>
+			<FullScreenModal />
+			<Header publish={publish} publishPreview={publishPreview} />
+			<Toolbar url="https://www.firebuzz.ai" iframeRef={frameRef} />
+			<Frame ref={frameRef} />
+		</>
+	);
 };
