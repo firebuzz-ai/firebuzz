@@ -176,11 +176,19 @@ export async function POST(request: NextRequest) {
             Current important files:
             ${currentImportantFiles}
             `),
-            // Keep the original experimental_attachments if present
-            experimental_attachments: message.experimental_attachments,
+            // Only include attachments for senior developer
+            ...(agent === "senior-developer" && {
+              experimental_attachments: message.experimental_attachments,
+            }),
           };
         }
-        return message;
+
+        return {
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          createdAt: message.createdAt,
+        };
       }
     );
 
