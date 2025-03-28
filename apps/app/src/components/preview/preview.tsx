@@ -1,5 +1,7 @@
 "use client";
-import { useRef } from "react";
+import { previewRefAtom } from "@/lib/workbench/atoms";
+import { useSetAtom } from "jotai";
+import { useEffect, useRef } from "react";
 import { Frame } from "./frame";
 import { FullScreenModal } from "./full-screen-modal";
 import { Header } from "./header";
@@ -13,6 +15,13 @@ export const Preview = ({
 	publishPreview: () => Promise<void>;
 }) => {
 	const frameRef = useRef<HTMLIFrameElement>(null);
+	const setPreviewRef = useSetAtom(previewRefAtom);
+
+	useEffect(() => {
+		if (frameRef.current) {
+			setPreviewRef(frameRef.current);
+		}
+	}, [setPreviewRef]);
 
 	return (
 		<>

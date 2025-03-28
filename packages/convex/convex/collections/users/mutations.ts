@@ -29,7 +29,7 @@ export const upsertFromClerk = internalMutation({
 				title: `${data.first_name}'s Workspace`,
 				color: "sky",
 				icon: "cup",
-				onboardingCompleted: false,
+				onboardingCompleted: true,
 			});
 		} else {
 			// If the user exists, update the user

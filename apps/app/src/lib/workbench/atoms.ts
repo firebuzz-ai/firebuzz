@@ -87,6 +87,7 @@ export const errorsAtom = atomWithReset<Error[]>([]);
 export const isDevServerRunningAtom = atom(
 	(get) => get(portAtom)?.port !== null,
 );
+export const previewRefAtom = atomWithReset<HTMLIFrameElement | null>(null);
 export const selectedElementAtom = atomWithReset<SelectedElement | null>(null);
 export const isIframeLoadedAtom = atomWithReset(false);
 export const isElementSelectionEnabledAtom = atomWithReset<boolean>(false);
@@ -177,4 +178,8 @@ export const resetState = () => {
 	workbenchStore.set(actionsAtom, RESET);
 	workbenchStore.set(parsedFilesAtom, RESET);
 	workbenchStore.set(parsedMessagesAtom, RESET);
+	workbenchStore.set(failedActionsAtom, RESET);
+	workbenchStore.set(currentVersionAtom, RESET);
+	workbenchStore.set(currentPreviewVersionAtom, RESET);
+	workbenchStore.set(previewRefAtom, RESET);
 };
