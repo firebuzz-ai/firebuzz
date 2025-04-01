@@ -4,43 +4,43 @@ import { useAtomValue } from "jotai";
 import { useEffect } from "react";
 
 export function Frame({
-	ref,
+  ref,
 }: {
-	ref: React.RefObject<HTMLIFrameElement | null>;
+  ref: React.RefObject<HTMLIFrameElement | null>;
 }) {
-	const port = useAtomValue(portAtom);
-	const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
+  const port = useAtomValue(portAtom);
+  const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
 
-	// Regenerate iframe key when port changes to force proper remount
-	useEffect(() => {
-		if (port?.url && ref.current) {
-			ref.current.src = port.url;
-		}
+  // Regenerate iframe key when port changes to force proper remount
+  useEffect(() => {
+    if (port?.url && ref.current) {
+      ref.current.src = port.url;
+    }
 
-		return () => {
-			if (ref.current) {
-				ref.current.src = "about:blank";
-			}
-		};
-	}, [port?.url, ref]);
+    return () => {
+      if (ref.current) {
+        ref.current.src = "about:blank";
+      }
+    };
+  }, [port?.url, ref]);
 
-	return (
-		<div className="relative size-full overflow-hidden">
-			{/* Overlay */}
-			{!isIframeLoaded && !port?.url && (
-				<div className="absolute inset-0 bg-muted flex items-center justify-center">
-					<p className="text-white">Loading...</p>
-				</div>
-			)}
-			<iframe
-				ref={ref}
-				sandbox="allow-same-origin allow-scripts allow-forms"
-				referrerPolicy="no-referrer"
-				allow="geolocation cross-origin-isolated"
-				title="Preview"
-				className="border-none w-full h-full bg-white"
-				rel="noopener"
-			/>
-		</div>
-	);
+  return (
+    <div className="relative size-full overflow-hidden">
+      {/* Overlay */}
+      {(!isIframeLoaded || !port?.url) && (
+        <div className="absolute inset-0 bg-muted flex items-center justify-center">
+          <p className="text-white">Loading...</p>
+        </div>
+      )}
+      <iframe
+        ref={ref}
+        sandbox="allow-same-origin allow-scripts allow-forms"
+        referrerPolicy="no-referrer"
+        allow="geolocation cross-origin-isolated"
+        title="Preview"
+        className="border-none w-full h-full bg-white"
+        rel="noopener"
+      />
+    </div>
+  );
 }

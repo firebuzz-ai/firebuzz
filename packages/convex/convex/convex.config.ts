@@ -4,6 +4,8 @@ import migrations from "@convex-dev/migrations/convex.config";
 import r2 from "@convex-dev/r2/convex.config";
 import { defineApp } from "convex/server";
 
+import workpool from "@convex-dev/workpool/convex.config";
+
 const app = defineApp();
 
 // Aggregate
@@ -20,5 +22,9 @@ app.use(r2);
 
 // Action Retrier
 app.use(actionRetrier);
+
+// Workpools
+app.use(workpool, { name: "cascadeOperations" });
+app.use(workpool, { name: "batchDeleteStorage" });
 
 export default app;

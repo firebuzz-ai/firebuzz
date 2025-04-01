@@ -11,17 +11,20 @@
 import type * as aggregates from "../aggregates.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
-import type * as collections_landingPageMessages_mutations from "../collections/landingPageMessages/mutations.js";
-import type * as collections_landingPageMessages_queries from "../collections/landingPageMessages/queries.js";
-import type * as collections_landingPageTemplates_mutations from "../collections/landingPageTemplates/mutations.js";
-import type * as collections_landingPageTemplates_queries from "../collections/landingPageTemplates/queries.js";
-import type * as collections_landingPageVersions_actions from "../collections/landingPageVersions/actions.js";
-import type * as collections_landingPageVersions_mutations from "../collections/landingPageVersions/mutations.js";
-import type * as collections_landingPageVersions_queries from "../collections/landingPageVersions/queries.js";
-import type * as collections_landingPageVersions_utils from "../collections/landingPageVersions/utils.js";
+import type * as collections_campaigns_utils from "../collections/campaigns/utils.js";
 import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
+import type * as collections_landingPages_messages_mutations from "../collections/landingPages/messages/mutations.js";
+import type * as collections_landingPages_messages_queries from "../collections/landingPages/messages/queries.js";
+import type * as collections_landingPages_messages_utils from "../collections/landingPages/messages/utils.js";
 import type * as collections_landingPages_mutations from "../collections/landingPages/mutations.js";
 import type * as collections_landingPages_queries from "../collections/landingPages/queries.js";
+import type * as collections_landingPages_templates_mutations from "../collections/landingPages/templates/mutations.js";
+import type * as collections_landingPages_templates_queries from "../collections/landingPages/templates/queries.js";
+import type * as collections_landingPages_utils from "../collections/landingPages/utils.js";
+import type * as collections_landingPages_versions_actions from "../collections/landingPages/versions/actions.js";
+import type * as collections_landingPages_versions_mutations from "../collections/landingPages/versions/mutations.js";
+import type * as collections_landingPages_versions_queries from "../collections/landingPages/versions/queries.js";
+import type * as collections_landingPages_versions_utils from "../collections/landingPages/versions/utils.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
 import type * as collections_projects_queries from "../collections/projects/queries.js";
 import type * as collections_projects_utils from "../collections/projects/utils.js";
@@ -31,13 +34,14 @@ import type * as collections_users_utils from "../collections/users/utils.js";
 import type * as collections_workspaces_mutations from "../collections/workspaces/mutations.js";
 import type * as collections_workspaces_queries from "../collections/workspaces/queries.js";
 import type * as collections_workspaces_utils from "../collections/workspaces/utils.js";
-import type * as helpers_batch from "../helpers/batch.js";
+import type * as crons from "../crons.js";
 import type * as helpers_r2 from "../helpers/r2.js";
 import type * as helpers_retrier from "../helpers/retrier.js";
 import type * as helpers_storage from "../helpers/storage.js";
 import type * as helpers_system from "../helpers/system.js";
 import type * as http from "../http.js";
 import type * as triggers from "../triggers.js";
+import type * as workpools from "../workpools.js";
 
 import type {
   ApiFromModules,
@@ -57,17 +61,20 @@ declare const fullApi: ApiFromModules<{
   aggregates: typeof aggregates;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
-  "collections/landingPageMessages/mutations": typeof collections_landingPageMessages_mutations;
-  "collections/landingPageMessages/queries": typeof collections_landingPageMessages_queries;
-  "collections/landingPageTemplates/mutations": typeof collections_landingPageTemplates_mutations;
-  "collections/landingPageTemplates/queries": typeof collections_landingPageTemplates_queries;
-  "collections/landingPageVersions/actions": typeof collections_landingPageVersions_actions;
-  "collections/landingPageVersions/mutations": typeof collections_landingPageVersions_mutations;
-  "collections/landingPageVersions/queries": typeof collections_landingPageVersions_queries;
-  "collections/landingPageVersions/utils": typeof collections_landingPageVersions_utils;
+  "collections/campaigns/utils": typeof collections_campaigns_utils;
   "collections/landingPages/actions": typeof collections_landingPages_actions;
+  "collections/landingPages/messages/mutations": typeof collections_landingPages_messages_mutations;
+  "collections/landingPages/messages/queries": typeof collections_landingPages_messages_queries;
+  "collections/landingPages/messages/utils": typeof collections_landingPages_messages_utils;
   "collections/landingPages/mutations": typeof collections_landingPages_mutations;
   "collections/landingPages/queries": typeof collections_landingPages_queries;
+  "collections/landingPages/templates/mutations": typeof collections_landingPages_templates_mutations;
+  "collections/landingPages/templates/queries": typeof collections_landingPages_templates_queries;
+  "collections/landingPages/utils": typeof collections_landingPages_utils;
+  "collections/landingPages/versions/actions": typeof collections_landingPages_versions_actions;
+  "collections/landingPages/versions/mutations": typeof collections_landingPages_versions_mutations;
+  "collections/landingPages/versions/queries": typeof collections_landingPages_versions_queries;
+  "collections/landingPages/versions/utils": typeof collections_landingPages_versions_utils;
   "collections/projects/mutations": typeof collections_projects_mutations;
   "collections/projects/queries": typeof collections_projects_queries;
   "collections/projects/utils": typeof collections_projects_utils;
@@ -77,13 +84,14 @@ declare const fullApi: ApiFromModules<{
   "collections/workspaces/mutations": typeof collections_workspaces_mutations;
   "collections/workspaces/queries": typeof collections_workspaces_queries;
   "collections/workspaces/utils": typeof collections_workspaces_utils;
-  "helpers/batch": typeof helpers_batch;
+  crons: typeof crons;
   "helpers/r2": typeof helpers_r2;
   "helpers/retrier": typeof helpers_retrier;
   "helpers/storage": typeof helpers_storage;
   "helpers/system": typeof helpers_system;
   http: typeof http;
   triggers: typeof triggers;
+  workpools: typeof workpools;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
@@ -998,6 +1006,110 @@ export declare const components: {
               | { type: "canceled" };
             type: "completed";
           }
+      >;
+    };
+  };
+  cascadeOperations: {
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
+      >;
+    };
+  };
+  batchDeleteStorage: {
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
       >;
     };
   };
