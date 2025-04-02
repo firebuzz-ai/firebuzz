@@ -6,8 +6,7 @@ import { landingPageMessagesSchema } from "./schema";
 export const create = mutation({
   args: {
     landingPageId: v.id("landingPages"),
-    landingPageVersionId: v.optional(v.id("landingPageVersions")),
-    landingPageVersionNumber: v.optional(v.number()),
+
     messages: v.array(
       v.object({
         id: v.string(),
@@ -47,8 +46,6 @@ export const create = mutation({
       workspaceId: user.currentWorkspaceId,
       projectId: landingPage.projectId,
       campaignId: landingPage.campaignId,
-      landingPageVersionId: args.landingPageVersionId,
-      landingPageVersionNumber: args.landingPageVersionNumber,
       attachments: message.attachments,
     }));
 

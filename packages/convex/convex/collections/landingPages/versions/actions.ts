@@ -1,6 +1,7 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { ConvexError, v } from "convex/values";
 import { internalAction } from "../../../_generated/server";
+import { S3 } from "../../../helpers/r2";
 
 export const store = internalAction({
   args: {
@@ -10,20 +11,13 @@ export const store = internalAction({
   },
   handler: async (_ctx, args) => {
     try {
-      const S3 = new S3Client({
-        region: "auto",
-        endpoint: process.env.R2_ENDPOINT!,
-        credentials: {
-          accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
-        },
-      });
-
+      const file = new TextEncoder().encode(args.filesString);
       const command = new PutObjectCommand({
         Bucket: process.env.R2_BUCKET!,
         Key: args.key,
-        Body: new TextEncoder().encode(args.filesString),
+        Body: file,
         Metadata: args.metadata,
+        ContentType: "text/plain",
       });
 
       await S3.send(command);

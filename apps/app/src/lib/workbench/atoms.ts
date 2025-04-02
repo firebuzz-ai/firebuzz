@@ -77,18 +77,38 @@ export const workbenchStore = createStore();
 export const projectIdAtom = atomWithReset<string | null>(null);
 
 // Group server-related state
-export const isInitializedAtom = atomWithReset(false);
-export const isInitilizingAtom = atomWithReset(false);
+export const workbenchStateAtom = atom((get) => {
+  // Is Iframe Loaded
+  const isIframeLoaded = get(isIframeLoadedAtom);
+  // Is Dependencies Installed
+  const isDependenciesInstalled = get(isDependenciesInstalledAtom);
+  // Port
+  const port = get(portAtom);
+  // Is Project Mounted
+  const isProjectMounted = get(isProjectMountedAtom);
+  // Errors
+  const errors = get(errorsAtom);
+
+  if (errors.length > 0) return "error";
+  if (isIframeLoaded) return "ready";
+  if (port) return "dev-server-running";
+  if (isDependenciesInstalled) return "dependencies-installed";
+  if (isProjectMounted) return "project-mounted";
+  return "initializing";
+});
+export const isProjectMountedAtom = atomWithReset(false);
 export const isDependenciesInstalledAtom = atomWithReset(false);
 export const portAtom = atomWithReset<ServerState | null>(null);
 export const devServerInstanceAtom = atomWithReset<WebContainerProcess | null>(
   null
 );
-export const devServerLogsAtom = atomWithReset<string>("");
-export const errorsAtom = atomWithReset<Error[]>([]);
 export const isDevServerRunningAtom = atom(
   (get) => get(portAtom)?.port !== null
 );
+export const devServerLogsAtom = atomWithReset<string>("");
+export const errorsAtom = atomWithReset<Error[]>([]);
+
+// Preview
 export const previewRefAtom = atomWithReset<HTMLIFrameElement | null>(null);
 export const selectedElementAtom = atomWithReset<SelectedElement | null>(null);
 export const isIframeLoadedAtom = atomWithReset(false);
@@ -107,10 +127,33 @@ export const parsedFilesAtom = atomWithReset<Map<string, ParsedFile>>(
   new Map<string, ParsedFile>()
 );
 
-// Attachments
-export const attachmentsAtom = atomWithReset<
-  Doc<"landingPageMessages">["attachments"]
->([]);
+export const currentFilesTreeAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  return generateFileTreeString(parsedFiles);
+});
+export const currentImportantFilesAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  return Array.from(parsedFiles.values())
+    .filter(
+      (file) =>
+        (file.path.includes("src") ||
+          file.path.includes("tailwind") ||
+          file.path.includes("package.json")) &&
+        !file.path.includes("src/components/ui")
+    )
+    .reduce(
+      (acc, file) => {
+        acc[file.path] = file.content;
+        return acc;
+      },
+      {} as Record<string, string>
+    );
+});
+
+export const filesCountAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  return parsedFiles.size;
+});
 
 // Versions
 export const currentVersionAtom = atomWithReset<{
@@ -136,32 +179,10 @@ export const isPreviewVersionDifferentAtom = atom((get) => {
   return currentVersion._id !== currentPreviewVersion._id;
 });
 
-export const currentFilesTreeAtom = atom((get) => {
-  const parsedFiles = get(parsedFilesAtom);
-  return generateFileTreeString(parsedFiles);
-});
-export const currentImportantFilesAtom = atom((get) => {
-  const parsedFiles = get(parsedFilesAtom);
-  return Array.from(parsedFiles.values())
-    .filter(
-      (file) =>
-        (file.path.includes("src") ||
-          file.path.includes("tailwind") ||
-          file.path.includes("package.json")) &&
-        !file.path.includes("src/components/ui")
-    )
-    .reduce(
-      (acc, file) => {
-        acc[file.path] = file.content;
-        return acc;
-      },
-      {} as Record<string, string>
-    );
-});
-export const filesCountAtom = atom((get) => {
-  const parsedFiles = get(parsedFilesAtom);
-  return parsedFiles.size;
-});
+// Attachments
+export const attachmentsAtom = atomWithReset<
+  Doc<"landingPageMessages">["attachments"]
+>([]);
 
 // Reset all state
 export const resetState = async () => {
@@ -170,9 +191,8 @@ export const resetState = async () => {
     devServerInstance.kill();
   }
   workbenchStore.set(projectIdAtom, RESET);
-  workbenchStore.set(isInitializedAtom, RESET);
-  workbenchStore.set(isInitilizingAtom, RESET);
   workbenchStore.set(isDependenciesInstalledAtom, RESET);
+  workbenchStore.set(isProjectMountedAtom, RESET);
   workbenchStore.set(portAtom, RESET);
   workbenchStore.set(selectedElementAtom, RESET);
   workbenchStore.set(isIframeLoadedAtom, RESET);

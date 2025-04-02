@@ -1,5 +1,5 @@
 import type { FileSystemTree } from "@webcontainer/api";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
 
 import {
@@ -7,124 +7,37 @@ import {
   devServerLogsAtom,
   errorsAtom,
   isDependenciesInstalledAtom,
-  isDevServerRunningAtom,
-  isIframeLoadedAtom,
-  portAtom,
+  isProjectMountedAtom,
 } from "../atoms";
+import {
+  checkDependenciesInstalled,
+  checkProjectMounted,
+  installDependencies,
+  mountProjectFiles,
+  startDevServer,
+} from "../utils";
 import { webcontainerInstance } from "../webcontainer";
 
-const checkProjectMounted = async (id: string) => {
-  const projectMounted = await webcontainerInstance.fs
-    .readdir(id)
-    .then((files) => files.length > 0)
-    .catch(() => false);
-  return projectMounted;
-};
-
-const mountProjectFiles = async (id: string, initialFiles: FileSystemTree) => {
-  try {
-    await webcontainerInstance.fs.mkdir(id);
-    await webcontainerInstance.mount(initialFiles, { mountPoint: id });
-    return true;
-  } catch (error) {
-    console.error("Failed to mount initial files:", error);
-    return false;
-  }
-};
-
-const checkDependenciesInstalled = async (id: string) => {
-  const isDependenciesInstalled = await webcontainerInstance.fs
-    .readdir(`${id}/node_modules`)
-    .then((files) => files.length > 0)
-    .catch(() => false);
-
-  if (isDependenciesInstalled) {
-    // Set pnpm store config
-    await webcontainerInstance.spawn(
-      "pnpm",
-      ["config", "set", "store-dir", "false/v3"],
-      {
-        cwd: `/${id}`,
-      }
-    );
-  }
-
-  return isDependenciesInstalled;
-};
-
-const installDependencies = async (id: string) => {
-  try {
-    const installProcess = await webcontainerInstance.spawn(
-      "pnpm",
-      ["install", "--store-dir", "false/v3"],
-      {
-        cwd: `/${id}`,
-      }
-    );
-
-    const exitCode = await installProcess.exit;
-    if (exitCode !== 0) {
-      console.log("Failed to install dependencies", exitCode);
-      return false;
-    }
-
-    // Set pnpm store config
-    await webcontainerInstance.spawn(
-      "pnpm",
-      ["config", "set", "store-dir", "false/v3"],
-      {
-        cwd: `/${id}`,
-      }
-    );
-
-    return true;
-  } catch (error) {
-    console.error("Failed to install dependencies:", error);
-    return false;
-  }
-};
-
-const startDevServer = async (id: string) => {
-  try {
-    const devProcess = await webcontainerInstance.spawn(
-      "pnpm",
-      ["run", "dev"],
-      {
-        cwd: `/${id}`,
-      }
-    );
-    return devProcess;
-  } catch (error) {
-    console.error("Failed to start dev server:", error);
-    return null;
-  }
-};
 export const useWorkbench = (
   initialFiles: FileSystemTree | undefined,
   id: string
 ) => {
-  const initilization = useRef({
-    isInitilizing: false,
-    isInitialized: false,
-  });
-  const [isDependenciesInstalled, setIsDependenciesInstalled] = useAtom(
-    isDependenciesInstalledAtom
-  );
-  const port = useAtomValue(portAtom);
-  const isDevServerRunning = useAtomValue(isDevServerRunningAtom);
+  const isInitilizing = useRef(false);
+  const setIsDependenciesInstalled = useSetAtom(isDependenciesInstalledAtom);
   const setErrors = useSetAtom(errorsAtom);
   const setDevServerLogs = useSetAtom(devServerLogsAtom);
+  const setIsProjectMounted = useSetAtom(isProjectMountedAtom);
 
   const [devServerInstance, setDevServerInstance] = useAtom(
     devServerInstanceAtom
   );
-  const isIframeLoaded = useAtomValue(isIframeLoadedAtom);
 
   const initialize = useCallback(async () => {
     if (!webcontainerInstance || !initialFiles) {
       return false;
     }
 
+    isInitilizing.current = true;
     let projectMounted = false;
 
     // Check project dir
@@ -135,9 +48,20 @@ export const useWorkbench = (
     }
 
     if (!projectMounted) {
-      console.log("Failed to mount initial files");
+      setErrors((prev) => {
+        return [
+          ...prev,
+          {
+            type: "container",
+            message: "Failed to mount initial files",
+            rawError: null,
+          },
+        ];
+      });
       return false;
     }
+
+    setIsProjectMounted(true);
 
     let isDependenciesInstalled = await checkDependenciesInstalled(id);
 
@@ -146,7 +70,16 @@ export const useWorkbench = (
     }
 
     if (!isDependenciesInstalled) {
-      console.log("Failed to install dependencies");
+      setErrors((prev) => {
+        return [
+          ...prev,
+          {
+            type: "container",
+            message: "Failed to install dependencies",
+            rawError: null,
+          },
+        ];
+      });
       return false;
     }
 
@@ -155,14 +88,30 @@ export const useWorkbench = (
     // Start the dev server and store the process
     const devProcess = await startDevServer(id);
     if (!devProcess) {
-      console.log("Failed to start dev server");
+      setErrors((prev) => {
+        return [
+          ...prev,
+          {
+            type: "dev-server",
+            message: "Failed to start dev server",
+            rawError: null,
+          },
+        ];
+      });
       return false;
     }
 
     setDevServerInstance(devProcess);
 
     return true;
-  }, [initialFiles, id, setIsDependenciesInstalled, setDevServerInstance]);
+  }, [
+    initialFiles,
+    id,
+    setIsDependenciesInstalled,
+    setDevServerInstance,
+    setIsProjectMounted,
+    setErrors,
+  ]);
 
   useEffect(() => {
     if (devServerInstance) {
@@ -195,24 +144,8 @@ export const useWorkbench = (
   }, [devServerInstance, setErrors, setDevServerLogs]);
 
   useEffect(() => {
-    if (!initilization.current.isInitilizing && !devServerInstance) {
-      initilization.current.isInitilizing = true;
-      initialize()
-        .then((isInitialized) => {
-          if (isInitialized) {
-            initilization.current.isInitialized = true;
-          }
-        })
-        .finally(() => {
-          initilization.current.isInitilizing = false;
-        });
+    if (!isInitilizing.current && !devServerInstance) {
+      initialize();
     }
   }, [initialize, devServerInstance]);
-
-  return {
-    port,
-    isDevServerRunning,
-    isDependenciesInstalled,
-    isIframeLoaded,
-  };
 };

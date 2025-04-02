@@ -6,7 +6,6 @@ import {
   currentVersionAtom,
   parsedFilesAtom,
 } from "@/lib/workbench/atoms";
-import { WORK_DIR } from "@/lib/workbench/constants";
 import type { ParsedFile } from "@/lib/workbench/parser/current-files-parser";
 import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
 import { webcontainerInstance } from "@/lib/workbench/webcontainer";
@@ -124,7 +123,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
 
       // 5. Mount files
       await webcontainerInstance.mount(initialFiles, {
-        mountPoint: `${WORK_DIR}/workspace/${landingPageId}`,
+        mountPoint: `${landingPageId}`,
       });
 
       // 6. Add system message about version restoration
@@ -149,8 +148,6 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
       // 7. Save this message to the database
       await createLandingPageMessage({
         landingPageId: landingPageId as Id<"landingPages">,
-        landingPageVersionId: versionId as Id<"landingPageVersions">,
-        landingPageVersionNumber: versionNumber || 0,
         messages: [
           {
             id: `version-restored-${Date.now()}`,
@@ -204,7 +201,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
 
       // Mount files
       await webcontainerInstance.mount(initialFiles, {
-        mountPoint: `${WORK_DIR}/workspace/${landingPageId}`,
+        mountPoint: `${landingPageId}`,
       });
 
       // Set current preview version
@@ -227,7 +224,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
     <div
       className={cn("border rounded-md overflow-hidden w-full", {
         "border-brand": isCurrentVersion,
-        "border-primary": isPreviewCurrent,
+        "border-primary": isPreviewCurrent && !isCurrentVersion,
       })}
     >
       {/* Header */}

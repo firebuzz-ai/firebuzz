@@ -2,6 +2,7 @@
 import { isIframeLoadedAtom, portAtom } from "@/lib/workbench/atoms";
 import { useAtomValue } from "jotai";
 import { useEffect } from "react";
+import { Loading } from "./loading";
 
 export function Frame({
   ref,
@@ -26,12 +27,8 @@ export function Frame({
 
   return (
     <div className="relative size-full overflow-hidden">
-      {/* Overlay */}
-      {(!isIframeLoaded || !port?.url) && (
-        <div className="absolute inset-0 bg-muted flex items-center justify-center">
-          <p className="text-white">Loading...</p>
-        </div>
-      )}
+      {/* Loading Component */}
+      {(!isIframeLoaded || !port?.url) && <Loading />}
       <iframe
         ref={ref}
         sandbox="allow-same-origin allow-scripts allow-forms"

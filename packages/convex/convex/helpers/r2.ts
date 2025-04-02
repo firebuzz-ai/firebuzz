@@ -1,8 +1,18 @@
+import { S3Client } from "@aws-sdk/client-s3";
 import { R2 } from "@convex-dev/r2";
 import { ConvexError, v } from "convex/values";
 import { components } from "../_generated/api";
 import { internalMutation, mutation, query } from "../_generated/server";
 import { getCurrentUser } from "../collections/users/utils";
+
+export const S3 = new S3Client({
+  region: "auto",
+  endpoint: process.env.R2_ENDPOINT!,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
 
 export const r2 = new R2(components.r2);
 
