@@ -222,13 +222,13 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
 
   return (
     <div
-      className={cn("border rounded-md overflow-hidden w-full", {
+      className={cn("border rounded-md overflow-hidden w-full max-w-full", {
         "border-brand": isCurrentVersion,
         "border-primary": isPreviewCurrent && !isCurrentVersion,
       })}
     >
       {/* Header */}
-      <div className="flex items-center justify-between pr-3 pl-2 py-2 max-w-full overflow-hidden">
+      <div className="flex items-center justify-between gap-2 pr-3 pl-2 py-2 max-w-full overflow-hidden">
         {/* Left Part */}
         <div className="flex items-center gap-1 overflow-hidden">
           <Button
@@ -238,8 +238,8 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
           >
             {isActionsVisible ? <ChevronDown /> : <ChevronRight />}
           </Button>
-          <div className="text-left truncate">
-            <div className="font-medium text-sm text-primary">
+          <div className="text-left truncate pr-1">
+            <div className="font-medium text-sm text-primary truncate">
               {artifact.title}
             </div>
           </div>

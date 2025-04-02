@@ -84,7 +84,7 @@ export const ChatMessages = ({
     <div
       ref={scrollContainerRef}
       className={cn(
-        "flex flex-col min-w-0 h-full max-h-full justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll px-4 py-4"
+        "flex flex-col min-w-0 h-full max-h-full justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll py-4"
       )}
     >
       <div className="flex flex-col gap-6 w-full">
