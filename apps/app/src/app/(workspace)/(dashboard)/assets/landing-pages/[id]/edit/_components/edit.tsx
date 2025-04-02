@@ -11,20 +11,45 @@ import {
   workbenchStore,
 } from "@/lib/workbench/atoms";
 import { useWorkbenchHelpers } from "@/lib/workbench/hooks/use-workbench-helpers";
+import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
+import { useAuth } from "@clerk/nextjs";
 import { api, useMutation } from "@firebuzz/convex";
-import type { Id } from "@firebuzz/convex/nextjs";
+import { type Doc, type Id, fetchQuery } from "@firebuzz/convex/nextjs";
 import { toast } from "@firebuzz/ui/lib/utils";
 import type { FileSystemTree } from "@webcontainer/api";
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Chat } from "./chat";
-import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
-export function EditLandingPage({
-  id,
-  initialFiles,
-}: {
-  id: string;
-  initialFiles: FileSystemTree;
-}) {
+export function EditLandingPage({ id }: { id: string }) {
+  const { getToken } = useAuth();
+  const [initialFiles, setInitialFiles] = useState<FileSystemTree>();
+  const [initialLandingPage, setInitialLandingPage] =
+    useState<Doc<"landingPages"> | null>(null);
+
+  const getLandingPageWithInitialFiles = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "convex" });
+      if (!token) {
+        throw new Error("No token");
+      }
+      const landingPage = await fetchQuery(
+        api.collections.landingPages.queries.getById,
+        {
+          id: id as Id<"landingPages">,
+        },
+        { token }
+      );
+
+      const initialFiles = await fetch(landingPage.signedUrl).then((res) =>
+        res.json()
+      );
+
+      return { landingPage, initialFiles };
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }, [getToken, id]);
+
   useWorkbench(initialFiles, id);
 
   const { buildProject, getBuildFiles } = useWorkbenchHelpers();
@@ -112,14 +137,23 @@ export function EditLandingPage({
   };
 
   useEffect(() => {
+    if (!initialFiles) return;
     workbenchStore.set(parsedFilesAtom, parseFileSystemTree(initialFiles));
     workbenchStore.set(projectIdAtom, id);
   }, [id, initialFiles]);
 
+  useEffect(() => {
+    getLandingPageWithInitialFiles().then((data) => {
+      if (!data) return;
+      setInitialLandingPage(data.landingPage);
+      setInitialFiles(data.initialFiles);
+    });
+  }, [getLandingPageWithInitialFiles]);
+
   return (
     <div className="flex w-full h-screen overflow-hidden">
       <ChatLayout>
-        <Chat id={id} />
+        <Chat id={id} initialLandingPage={initialLandingPage} />
       </ChatLayout>
       <PreviewLayout>
         <Preview publish={publish} publishPreview={publishPreview} />

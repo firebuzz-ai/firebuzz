@@ -1,5 +1,4 @@
 import { auth } from "@clerk/nextjs/server";
-import { type Id, api, fetchQuery } from "@firebuzz/convex/nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { EditLandingPage } from "./_components/edit";
@@ -26,7 +25,7 @@ export default async function LandingPageEditPage({
     : 30;
 
   try {
-    const landingPage = await fetchQuery(
+    /*  const landingPage = await fetchQuery(
       api.collections.landingPages.queries.getById,
       {
         id: id as Id<"landingPages">,
@@ -36,11 +35,11 @@ export default async function LandingPageEditPage({
 
     const initialFiles = await fetch(landingPage.signedUrl).then((res) =>
       res.json()
-    );
+    ); */
 
     return (
       <Providers previewPanelSize={previewPanelSize} panelId={panelId}>
-        <EditLandingPage id={id} initialFiles={initialFiles} />
+        <EditLandingPage id={id} />
       </Providers>
     );
   } catch (error) {

@@ -19,6 +19,7 @@ import {
   ChevronDown,
   ChevronsRight,
   ExternalLink,
+  GitPullRequest,
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
@@ -33,6 +34,7 @@ export function Header({
   publishPreview: () => Promise<void>;
 }) {
   const { id: landingPageId } = useParams<{ id: Id<"landingPages"> }>();
+  const [open, setOpen] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [selectedDomains, setSelectedDomains] = useState<{
     preview: boolean;
@@ -107,16 +109,23 @@ export function Header({
       </div>
       {/* Right Part */}
       <div className="flex items-center gap-2">
-        <DropdownMenu>
+        <DropdownMenu open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger asChild>
-            <Button size="sm">
+            <Button className="!py-0" size="sm" variant="outline">
               {isPublishing ? <Spinner size="xs" /> : "Publish"}
-              <ChevronDown className="ml-1 size-3" />
+              <div className="border-l  ml-1 h-full flex items-center justify-center pl-2">
+                <ChevronDown className="size-3" />
+              </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-[350px]">
-            <div className="p-2 text-sm font-medium">
-              CHOOSE PUBLISH DESTINATION:
+          <DropdownMenuContent
+            sideOffset={10}
+            align="end"
+            className="w-[350px] !p-0"
+          >
+            <div className="p-2 text-sm font-medium bg-muted flex items-center gap-2 border-b">
+              <GitPullRequest className="!size-3" />
+              Choose Domains
             </div>
 
             <div className="px-2 py-2 flex items-center gap-3">
@@ -132,6 +141,9 @@ export function Header({
               />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
+                  {!landingPage?.previewUrl && (
+                    <div className="text-sm font-medium">Preview Domain</div>
+                  )}
                   <span className="text-xs font-medium">
                     {landingPage?.previewUrl?.split("/").pop()}
                   </span>
@@ -198,7 +210,11 @@ export function Header({
                   "Publish to Selected Domains"
                 )}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button
+                onClick={() => setOpen(false)}
+                variant="outline"
+                size="sm"
+              >
                 Cancel
               </Button>
             </div>
