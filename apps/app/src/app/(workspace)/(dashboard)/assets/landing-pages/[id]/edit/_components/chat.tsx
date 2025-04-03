@@ -24,7 +24,7 @@ import {
 const EmptyState = () => {
   return (
     <div className="space-y-1">
-      <p className="font-bold text-lg">How can I help you?</p>
+      <p className="text-lg font-bold">How can I help you?</p>
       <p className="text-sm text-muted-foreground">
         Ask the me to help you create a landing page for your business.
       </p>
@@ -118,9 +118,10 @@ export const Chat = ({ id, initialLandingPage }: ChatProps) => {
   }, [currentVersion, setCurrentVersion]);
 
   return (
-    <div className="flex flex-col overflow-hidden w-full h-full max-h-full">
+    <div className="flex flex-col w-full h-full max-h-full overflow-hidden">
       <ChatHeader
-        title={initialLandingPage?.title ?? "..."}
+        title={initialLandingPage?.title ?? ""}
+        isLoading={!initialLandingPage}
         type="landing-page"
         showLoadMore={false}
       />

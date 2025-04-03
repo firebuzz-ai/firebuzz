@@ -1,50 +1,76 @@
 "use client";
 
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
-import { buttonVariants } from "@firebuzz/ui/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@firebuzz/ui/components/ui/breadcrumb";
+import { SidebarTrigger } from "@firebuzz/ui/components/ui/sidebar";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
-import { ChevronRight, SendToBack } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
+import { useMemo } from "react";
 export const CampaignTopbar = () => {
+  const pathname = usePathname();
   const { id } = useParams<{ id: string | undefined }>();
-  const { data: campaign, isPending: isLoading } = useRichQuery(
+  const { data: campaign, isPending: isLoadingCampaign } = useRichQuery(
     api.collections.campaigns.queries.getById,
     id ? { id: id as Id<"campaigns"> } : "skip"
   );
 
-  return (
-    <div className="border-b px-2 py-3">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1">
-        <Link
-          className={buttonVariants({
-            variant: "ghost",
-            className: "h-8 !px-1.5 text-muted-foreground",
-          })}
-          href="/campaigns"
-        >
-          <SendToBack className="!size-3.5" />
-          <p>Campaigns</p>
-        </Link>
+  const breadcrumbItems = useMemo(() => {
+    if (campaign && id) {
+      return ["campaigns", campaign.title];
+    }
+    return pathname.split("/").slice(1) ?? [];
+  }, [pathname, campaign, id]);
 
-        {isLoading && id ? (
-          <Skeleton className="h-8 w-24" />
-        ) : campaign ? (
-          <>
-            <ChevronRight className="!size-3.5" />
-            <Link
-              className={buttonVariants({
-                variant: "ghost",
-                className: "h-8 !px-1.5",
-              })}
-              href={`/campaigns/${id}`}
-            >
-              <p>{campaign.title}</p>
-            </Link>
-          </>
-        ) : null}
-      </div>
+  const isLoading = isLoadingCampaign && id;
+
+  return (
+    <div className="px-2 py-3 border-b">
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <SidebarTrigger />
+          </BreadcrumbItem>
+          {isLoading ? (
+            <BreadcrumbPage>
+              <Skeleton className="w-20 h-4" />
+            </BreadcrumbPage>
+          ) : (
+            breadcrumbItems.flatMap((item, index, array) => {
+              const isLast = index === array.length - 1;
+              return [
+                <BreadcrumbSeparator key={`sep-${item}`} />,
+                <BreadcrumbItem key={`item-${item}`}>
+                  {isLast ? (
+                    <BreadcrumbPage>
+                      {item
+                        .replace(/-/g, " ")
+                        .replace(/\b\w/g, (char) => char.toUpperCase())}
+                    </BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink asChild>
+                      <Link
+                        href={`/${breadcrumbItems.slice(0, index + 1).join("/")}`}
+                      >
+                        {item
+                          .replace(/-/g, " ")
+                          .replace(/\b\w/g, (char) => char.toUpperCase())}
+                      </Link>
+                    </BreadcrumbLink>
+                  )}
+                </BreadcrumbItem>,
+              ];
+            })
+          )}
+        </BreadcrumbList>
+      </Breadcrumb>
     </div>
   );
 };

@@ -24,26 +24,9 @@ export default async function LandingPageEditPage({
     ? Number.parseInt(previewPanelValue)
     : 30;
 
-  try {
-    /*  const landingPage = await fetchQuery(
-      api.collections.landingPages.queries.getById,
-      {
-        id: id as Id<"landingPages">,
-      },
-      { token }
-    );
-
-    const initialFiles = await fetch(landingPage.signedUrl).then((res) =>
-      res.json()
-    ); */
-
-    return (
-      <Providers previewPanelSize={previewPanelSize} panelId={panelId}>
-        <EditLandingPage id={id} />
-      </Providers>
-    );
-  } catch (error) {
-    console.error(error);
-    return <div>Error</div>;
-  }
+  return (
+    <Providers previewPanelSize={previewPanelSize} panelId={panelId}>
+      <EditLandingPage id={id} />
+    </Providers>
+  );
 }

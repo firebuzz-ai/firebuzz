@@ -1,13 +1,13 @@
-import { LandingTopbar } from "@/components/navigation/landing-pages/topbar";
+import { AssetsTopbar } from "@/components/navigation/assets/topbar";
 
-export default function LandingLayout({
+export default function AssetsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col flex-1">
-      <LandingTopbar />
+      <AssetsTopbar />
       <div className="flex flex-1">{children}</div>
     </div>
   );

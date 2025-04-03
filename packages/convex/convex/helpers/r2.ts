@@ -24,7 +24,7 @@ export const { syncMetadata } = r2.clientApi({
       throw new ConvexError("Unauthorized");
     }
   },
-  /*  onUpload: async (ctx, bucket, key) => {
+  /* onUpload: async (ctx, bucket, key) => {
     const currentUser = await getCurrentUser(ctx);
 
     const workspaceId = currentUser.currentWorkspaceId;

@@ -37,7 +37,6 @@ import type * as collections_workspaces_utils from "../collections/workspaces/ut
 import type * as crons from "../crons.js";
 import type * as helpers_r2 from "../helpers/r2.js";
 import type * as helpers_retrier from "../helpers/retrier.js";
-import type * as helpers_storage from "../helpers/storage.js";
 import type * as helpers_system from "../helpers/system.js";
 import type * as http from "../http.js";
 import type * as triggers from "../triggers.js";
@@ -87,7 +86,6 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   "helpers/r2": typeof helpers_r2;
   "helpers/retrier": typeof helpers_retrier;
-  "helpers/storage": typeof helpers_storage;
   "helpers/system": typeof helpers_system;
   http: typeof http;
   triggers: typeof triggers;

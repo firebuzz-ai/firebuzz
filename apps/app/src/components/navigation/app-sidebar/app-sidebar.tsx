@@ -13,7 +13,7 @@ import {
 } from "@firebuzz/ui/components/ui/sidebar";
 
 import {
-  ChevronRight,
+  Fingerprint,
   Folder,
   Settings2,
   SquareTerminal,
@@ -30,14 +30,19 @@ import { ProjectSwitcher } from "./project-switcher";
 import { ProjectsSidebarList } from "./projects-list";
 import { SidebarGroupButton } from "./sidebar-group-button";
 import { SidebarLink } from "./sidebar-link";
+import { SidebarSingleLink } from "./sidebar-single-link";
 
 // This is sample data.
 const navLinks = [
   {
+    title: "Campaign",
+    url: "/campaigns",
+    icon: Workflow,
+  },
+  {
     title: "Asset",
     url: "/assets",
     icon: SquareTerminal,
-    isActive: true,
     items: [
       {
         title: "Ads",
@@ -55,32 +60,32 @@ const navLinks = [
     ],
   },
   {
-    title: "Campaign",
-    url: "/campaigns",
-    icon: Workflow,
-    items: [
-      {
-        title: "New Campaign",
-        url: "/campaigns/new",
-      },
-      {
-        title: "All Campaigns",
-        url: "/campaigns",
-      },
-    ],
-  },
-  {
     title: "Storage",
     url: "/storage",
     icon: Folder,
     items: [
       {
-        title: "Knowledge Base",
-        url: "/components/buttons",
+        title: "Media",
+        url: "/storage/media",
       },
       {
-        title: "Images",
-        url: "/storage/images",
+        title: "Documents",
+        url: "/storage/documents",
+      },
+    ],
+  },
+  {
+    title: "Brand",
+    url: "/brand",
+    icon: Fingerprint,
+    items: [
+      {
+        title: "Identity",
+        url: "#",
+      },
+      {
+        title: "Knowledge Base",
+        url: "#",
       },
     ],
   },
@@ -141,34 +146,50 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel>Platform</SidebarGroupLabel>
           <SidebarMenu>
-            {navLinks.map((item) => (
-              <Collapsible
-                key={item.title}
-                asChild
-                defaultOpen={item.isActive}
-                className="group/collapsible"
-              >
-                <SidebarMenuItem>
-                  <SidebarGroupButton title={item.title} url={item.url}>
-                    {item.icon && <item.icon />}
-                    <span>{item.title}</span>
-                    <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                  </SidebarGroupButton>
-                  <CollapsibleContent>
-                    <SidebarMenuSub>
-                      {item.items?.map((subItem) => (
-                        <SidebarMenuSubItem key={subItem.title}>
-                          <SidebarLink
-                            href={subItem.url}
-                            label={subItem.title}
-                          />
-                        </SidebarMenuSubItem>
-                      ))}
-                    </SidebarMenuSub>
-                  </CollapsibleContent>
+            {navLinks.map((navItem) => {
+              const items = navItem.items;
+              // Collapsible
+              if (items && items.length > 0) {
+                return (
+                  <Collapsible
+                    key={navItem.title}
+                    asChild
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <SidebarGroupButton
+                        icon={navItem.icon && <navItem.icon />}
+                        title={navItem.title}
+                        url={navItem.url}
+                      />
+
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {items?.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.title}>
+                              <SidebarLink
+                                href={subItem.url}
+                                label={subItem.title}
+                              />
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                );
+              }
+              // Single Item
+              return (
+                <SidebarMenuItem key={navItem.title}>
+                  <SidebarSingleLink
+                    href={navItem.url}
+                    label={navItem.title}
+                    icon={navItem.icon && <navItem.icon size={16} />}
+                  />
                 </SidebarMenuItem>
-              </Collapsible>
-            ))}
+              );
+            })}
           </SidebarMenu>
         </SidebarGroup>
         <ProjectsSidebarList />

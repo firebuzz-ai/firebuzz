@@ -5,6 +5,7 @@ import { landingPagesSchema } from "./collections/landingPages/schema";
 import { landingPageTemplatesSchema } from "./collections/landingPages/templates/schema";
 import { landingPageVersionsSchema } from "./collections/landingPages/versions/schema";
 import { projectSchema } from "./collections/projects/schema";
+import { mediaSchema } from "./collections/storage/media/schema";
 import { userSchema } from "./collections/users/schema";
 import { workspaceSchema } from "./collections/workspaces/schema";
 
@@ -45,4 +46,9 @@ export default defineSchema({
     .index("by_campaign_id", ["campaignId"])
     .index("by_created_at", ["createdAt"])
     .index("by_message_id", ["messageId"]),
+  media: defineTable(mediaSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_created_by", ["createdBy"])
+    .index("by_deleted_at", ["deletedAt"]),
 });
