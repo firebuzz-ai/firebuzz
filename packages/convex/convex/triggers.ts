@@ -14,6 +14,7 @@ import {
   aggregateLandingPageTemplates,
   aggregateLandingPageVersions,
   aggregateLandingPages,
+  aggregateMedia,
 } from "./aggregates";
 import { cascadePool } from "./workpools";
 
@@ -194,6 +195,32 @@ triggers.register("landingPageTemplates", async (ctx, change) => {
     const newDoc = change.newDoc;
     const oldDoc = change.oldDoc;
     await aggregateLandingPageTemplates.replace(ctx, oldDoc, newDoc);
+  }
+});
+
+// Media Aggregate
+triggers.register("media", async (ctx, change) => {
+  if (change.operation === "insert") {
+    const doc = change.newDoc;
+    await aggregateMedia.insert(ctx, doc);
+  } else if (change.operation === "update") {
+    const newDoc = change.newDoc;
+    const oldDoc = change.oldDoc;
+
+    // If the media is being deleted, delete the aggregate
+    if (!oldDoc.deletedAt && newDoc.deletedAt) {
+      await aggregateMedia.delete(ctx, oldDoc);
+    }
+
+    // If the media is being restored, insert the aggregate
+    else if (oldDoc.deletedAt && !newDoc.deletedAt) {
+      await aggregateMedia.insert(ctx, newDoc);
+    }
+
+    // If the media is being updated, replace the aggregate
+    else {
+      await aggregateMedia.replace(ctx, oldDoc, newDoc);
+    }
   }
 });
 

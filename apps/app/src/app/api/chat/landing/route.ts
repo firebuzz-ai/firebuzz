@@ -19,16 +19,100 @@ import { nanoid } from "nanoid";
 import type { NextRequest } from "next/server";
 import { z } from "zod";
 
+const routerPrompt = stripIndents(`
+Task: Route the user’s request to the appropriate agent (Senior Developer or Junior Developer) and provide an enhanced prompt based on the request and any attachments.
+
+1) Agents
+Senior Developer: 
+- More experienced, deep project knowledge, expensive.
+- Assign tasks requiring creativity or complexity, such as:
+  - Complete re-designs.
+  - New feature implementations.
+
+Junior Developer: 
+- Less experienced, cheaper.
+- Assign simpler tasks, such as:
+  - Code reviews.
+  - Refactoring.
+  - Fixing small to medium bugs.
+  - Adding small features (low creativity).
+  - Content changes.
+
+2) Handling Attachments
+Definition: An attachment means the user uploaded file(s). (You can find the attachement in the last user message as experimental_attachments)
+
+Action: If an attachment(s) exists, determine its intent:
+MEDIA SOURCE: Media (image, video, audio) to be used in the landing page (e.g., background image, hero video, audio).
+
+MEDIA EXPLANATION: Image to explain the request (e.g., screenshot, mockup). Not used in the landing page.
+
+DOCUMENT SOURCE: Document (PDF, DOC, etc.) to be used in the landing page (e.g., terms, policy).
+
+DOCUMENT EXPLANATION: Document to explain the request (e.g., resume, portfolio). Not used in the landing page.
+
+3) Routing Rules
+With Attachment:
+If intent is MEDIA EXPLANATION or DOCUMENT EXPLANATION:
+- Agent: Senior Developer.
+- Enhanced Prompt: Include the user’s request and add: “The attached file(s) are for explanation (e.g., screenshot or document). Use them to understand the request.”
+- isExperimentalAttachments: TRUE.
+
+If intent is MEDIA SOURCE or DOCUMENT SOURCE:
+- Agent: Choose based on task nature:
+  - Complex (re-design, new feature) → Senior Developer.
+  - Simple (review, bug fix, content) → Junior Developer.
+- Enhanced Prompt: Include the user’s request and add: “The attached file(s) are content for the landing page (e.g., image or document). Use this URL: [attachment URL].”
+- isExperimentalAttachments: FALSE.
+
+No Attachment:
+- Agent: Choose based on task nature:
+  - Complex → Senior Developer.
+  - Simple → Junior Developer.
+- Enhanced Prompt: Restate the user’s request clearly for the agent.
+- isExperimentalAttachments: Not applicable (omit or default to FALSE).
+
+Key Notes
+attachmentPurpose:
+- attachment-explanation means the attachment is for explanation only (not for direct use in the landing page).
+- attachment-content means the attachment is content for the landing page.
+
+Prompt Enhancement: Always tailor the prompt to the agent, specifying the task and attachment details (if any).
+`);
+
 const routerSchema = z.object({
-  agent: z
-    .enum(["senior-developer", "junior-developer"])
+  agent: z.enum(["senior-developer", "junior-developer"]).describe(
+    stripIndents(`
+      Select the appropriate developer based on the task's complexity and requirements:
+
+- **Senior Developer**: Highly experienced, deep project knowledge, but expensive. Assign for:
+  - Complete re-designs
+  - New feature implementations
+  - Tasks requiring creativity or extensive project understanding
+
+- **Junior Developer**: Less experienced, more affordable. Assign for:
+  - Code reviews
+  - Refactoring
+  - Fixing small to medium bugs
+  - Adding minor features with low creativity
+  - Content updates
+      `)
+  ),
+  enhancedPrompt: z.string().describe(
+    stripIndents(`
+      Provide an enhanced version of the user's request to guide the developer. This refined prompt should:
+- Clarify and specify the task details
+- Incorporate any relevant context or attachments
+- Enable the developer to deliver a more accurate and relevant solution
+      `)
+  ),
+  attachmentPurpose: z
+    .enum(["attachment-explanation", "attachment-content"])
     .describe(
-      "The agent to use for this request. Senior developer has more experience and better knowledge of the project but is more expensive. Junior developer is less experienced but cheaper. Tasks we want to assign to the senior developer are: Complete re-design or complete new feature implementation. Tasks need more creativity and deeper knowledge of the project. Tasks we should assign to the junior developer are: Code review, refactoring, fixing small-medium size bugs, adding small features that don't require much creativity and content changes. "
-    ),
-  enhancedPrompt: z
-    .string()
-    .describe(
-      "The enhanced prompt to use for this request. This prompt will be used to generate the final response. It will be used to enhance the original prompt and make it more specific and detailed. It will be used to make the response more accurate and relevant to the user's request."
+      stripIndents(`
+      Indicate the purpose of any attachments:
+- **attachment-explanation**: Attachments are for explanation only (e.g., screenshots, mockups to clarify the request). They should not be used directly in the landing page.
+- **attachment-content**: Attachments are content or sources for the landing page (e.g., images, documents to be incorporated directly). Include their URLs in the enhanced prompt.
+      `)
     ),
 });
 
@@ -37,6 +121,7 @@ const routerAgent = async (prompt: string) => {
     model: azureOpenAI("gpt-4o-mini"),
     schema: routerSchema,
     prompt: prompt,
+    system: routerPrompt,
   });
 
   return response.object;
@@ -45,6 +130,10 @@ const routerAgent = async (prompt: string) => {
 export async function POST(request: NextRequest) {
   const { messages, projectId, currentFileTree, currentImportantFiles } =
     await request.json();
+
+  console.log({
+    messages,
+  });
 
   const token = await (await auth()).getToken({ template: "convex" });
 
@@ -150,29 +239,42 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const { enhancedPrompt, agent } = await routerAgent(
+    const { enhancedPrompt, agent, attachmentPurpose } = await routerAgent(
       JSON.stringify(messagesToSendRouter)
     );
+
+    console.log({
+      enhancedPrompt,
+      agent,
+      attachmentPurpose,
+    });
 
     // Prepare messages for the developer agent - include both text and images
     const messageToSendDeveloper = messagesToProcess.map(
       (message: Message, index: number) => {
         if (index === lastMessageIndex && message.role === "user") {
           // Create a message with enhanced prompt and attachments if present
+
           return {
             ...message,
             content: stripIndents(`
-            ${enhancedPrompt}
-            -----------------
-            Current files: ${currentFileTree}
-            Current important files:
-            ${currentImportantFiles}
-            
+              Original user message:
+              ${message.content}
+              -----------------
+              Enhanced user message:
+              ${enhancedPrompt}
+              -----------------
+              Current files: ${currentFileTree}
+              Current important files:
+              ${currentImportantFiles}
+              
             `),
             // Only include attachments for senior developer
-            ...(agent === "senior-developer" && {
-              experimental_attachments: message.experimental_attachments,
-            }),
+            experimental_attachments:
+              agent === "senior-developer" &&
+              attachmentPurpose === "attachment-explanation"
+                ? message.experimental_attachments
+                : undefined,
           };
         }
 

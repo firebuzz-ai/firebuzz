@@ -2,6 +2,10 @@ import { v } from "convex/values";
 
 export const mediaSchema = v.object({
   key: v.string(),
+  name: v.string(),
+  extension: v.string(),
+  size: v.number(),
+  type: v.union(v.literal("image"), v.literal("video"), v.literal("audio")),
   source: v.union(
     v.literal("ai-generated"),
     v.literal("uploaded"),

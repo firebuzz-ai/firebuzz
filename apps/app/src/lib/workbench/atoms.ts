@@ -2,6 +2,7 @@ import type { Doc } from "@firebuzz/convex";
 import type { WebContainerProcess } from "@webcontainer/api";
 import { atom, createStore } from "jotai";
 import { RESET, atomWithReset } from "jotai/utils";
+import type { ActionError } from "./action-error";
 import type { ParsedFile } from "./parser/current-files-parser";
 import { generateFileTreeString } from "./parser/file-tree-parser";
 import type {
@@ -69,8 +70,8 @@ export type MessageQueueItem =
 
 export type FailedAction = {
   messageId: string;
-  error: unknown;
-  data: ArtifactCallbackData | ActionCallbackData;
+  error: ActionError;
+  data: ActionCallbackData;
 };
 
 export const workbenchStore = createStore();

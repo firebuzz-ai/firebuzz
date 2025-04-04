@@ -16,32 +16,13 @@ export const S3 = new S3Client({
 
 export const r2 = new R2(components.r2);
 
-export const { syncMetadata } = r2.clientApi({
-  checkUpload: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new ConvexError("Unauthorized");
-    }
-  },
-  /* onUpload: async (ctx, bucket, key) => {
-    const currentUser = await getCurrentUser(ctx);
-
-    const workspaceId = currentUser.currentWorkspaceId;
-    const projectId = currentUser.currentProject;
-
-    // Get Metadata
-
-    const metadata = await r2.getMetadata(ctx, key);
-  }, */
-});
+export const { syncMetadata } = r2.clientApi();
 
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
-    const currentUser = await getCurrentUser(ctx);
-
-    const key = `/${currentUser.currentWorkspaceId}/${currentUser.currentProject}/${crypto.randomUUID()}`;
+    const user = await getCurrentUser(ctx);
+    const key = `${user.currentWorkspaceId}/${user.currentProject}/${crypto.randomUUID()}`;
     return r2.generateUploadUrl(key);
   },
 });

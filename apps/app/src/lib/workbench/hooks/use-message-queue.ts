@@ -2,6 +2,7 @@ import { type Id, api, useMutation } from "@firebuzz/convex";
 import { reloadPreview } from "@webcontainer/api";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useState } from "react";
+import { ActionError } from "../action-error";
 import {
   type Action,
   type Artifact,
@@ -242,17 +243,25 @@ export function useMessageQueue() {
               .readFile(`${landingPageId}/${filePath}`, "utf-8")
               .catch((error) => {
                 console.error("Error reading file:", error);
+                throw new ActionError(
+                  `Error reading file: ${filePath}`,
+                  item.data,
+                  { cause: error }
+                );
               })
               .then((content) => {
                 if (!content) {
-                  throw new Error("File content is empty");
+                  throw new ActionError("File content is empty", item.data);
                 }
                 return content;
               });
 
             // Ensure from and to are defined
             if (!from || !to) {
-              throw new Error("Quick-edit action missing from or to values");
+              throw new ActionError(
+                "Quick-edit action missing from or to values",
+                item.data
+              );
             }
 
             // Decode HTML entities in from and to values
@@ -293,7 +302,10 @@ export function useMessageQueue() {
 
             // Make sure the replacement happened (the 'from' text was found)
             if (newContent === fileContent) {
-              throw new Error(`Could not find text to replace in ${filePath}`);
+              throw new ActionError(
+                `Could not find text to replace in ${filePath}`,
+                item.data
+              );
             }
 
             // Write the updated content back to the file
@@ -359,6 +371,8 @@ export function useMessageQueue() {
             const exitCode = await process.exit;
             // If the command failed, update the action status
             if (exitCode !== 0) {
+              const errorMessage = `Shell command failed with exit code ${exitCode}: ${item.data.action.content}`;
+
               // Update action status
               workbenchStore.set(actionsAtom, (prev) => {
                 return prev.map((action) => {
@@ -372,21 +386,23 @@ export function useMessageQueue() {
                   return action;
                 });
               });
-            } else {
-              // Update action status to success
-              workbenchStore.set(actionsAtom, (prev) => {
-                return prev.map((action) => {
-                  if (action.id === item.data.actionId) {
-                    return {
-                      ...action,
-                      status: "success",
-                      content: item.data.action.content,
-                    };
-                  }
-                  return action;
-                });
-              });
+
+              throw new ActionError(errorMessage, item.data);
             }
+
+            // Update action status to success
+            workbenchStore.set(actionsAtom, (prev) => {
+              return prev.map((action) => {
+                if (action.id === item.data.actionId) {
+                  return {
+                    ...action,
+                    status: "success",
+                    content: item.data.action.content,
+                  };
+                }
+                return action;
+              });
+            });
           }
         }
       } catch (error) {
@@ -400,18 +416,28 @@ export function useMessageQueue() {
           });
         });
 
+        // Create a new ActionError with detailed information
+        const actionError =
+          error instanceof ActionError
+            ? error
+            : new ActionError(
+                error instanceof Error ? error.message : String(error),
+                item.data,
+                { cause: error }
+              );
+
         setFailedActions((prev) => {
           return [
             ...prev,
             {
               messageId: item.data.messageId,
-              error: error,
+              error: actionError,
               data: item.data,
             },
           ];
         });
 
-        console.log("Error processing action:", error);
+        console.log("Error processing action:", actionError);
       } finally {
         setMessageQueue((prev) => {
           return prev.map((i) => {

@@ -13,6 +13,7 @@ app.use(aggregate, { name: "aggregateCampaigns" });
 app.use(aggregate, { name: "aggregateLandingPages" });
 app.use(aggregate, { name: "aggregateLandingPageVersions" });
 app.use(aggregate, { name: "aggregateLandingPageTemplates" });
+app.use(aggregate, { name: "aggregateMedia" });
 
 // Migrations
 app.use(migrations);

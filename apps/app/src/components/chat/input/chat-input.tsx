@@ -1,5 +1,4 @@
 "use client";
-import { useUser } from "@/hooks/auth/use-user";
 import {
   attachmentsAtom,
   currentFilesTreeAtom,
@@ -9,8 +8,9 @@ import {
   selectedElementAtom,
   workbenchStore,
 } from "@/lib/workbench/atoms";
-import { useUploadFile } from "@firebuzz/convex";
-import { api, fetchQuery } from "@firebuzz/convex/nextjs";
+import { useMutation, useUploadFile } from "@firebuzz/convex";
+import { api } from "@firebuzz/convex/nextjs";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import {
@@ -19,11 +19,13 @@ import {
   Loader2,
   Plus,
 } from "@firebuzz/ui/icons/lucide";
+import { getFileType, getMediaContentType } from "@firebuzz/utils";
 import type { ChatRequestOptions, CreateMessage, Message } from "ai";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { useParams } from "next/navigation";
 import { memo, useCallback, useRef, useState } from "react";
+import { ActionErrors } from "./action-errors";
 import { Attachment } from "./attachment";
 import { Errors } from "./errors";
 import { SelectedElement } from "./selected-element";
@@ -57,11 +59,11 @@ export const ChatInput = memo(
     ) => Promise<string | null | undefined>;
   }) => {
     const { id } = useParams();
+    const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
     const selectedElement = useAtomValue(selectedElementAtom);
     const [isSending, setIsSending] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [inputValue, setInputValue] = useState("");
-    const { getToken } = useUser();
     const [showShakeAnimation, setShowShakeAnimation] = useState(false);
     const [attachments, setAttachments] = useAtom(attachmentsAtom);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,21 +77,42 @@ export const ChatInput = memo(
     const setSelectedElement = useSetAtom(selectedElementAtom);
 
     const uploadFile = useUploadFile(api.helpers.r2);
+    const createMedia = useMutation(
+      api.collections.storage.media.mutations.create
+    );
 
     const uploadHandler = useCallback(
       async (file: File) => {
         try {
           setIsUploading(true);
+          // Upload file to R2
           const key = await uploadFile(file);
-          const token = await getToken({ template: "convex" });
-          const url = await fetchQuery(
-            api.helpers.r2.getImageUrl,
-            { key },
-            {
-              token: token ?? undefined,
-            }
-          );
-          return url;
+          const { type, extension } = getFileType(file);
+
+          // Create media
+          if (type === "media") {
+            const mediaType = getMediaContentType(file);
+            await createMedia({
+              key,
+              type: mediaType,
+              extension,
+              size: file.size,
+              name: file.name,
+              source: "uploaded",
+            });
+
+            return {
+              type: "media",
+              mediaType,
+              url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
+            };
+          }
+
+          return {
+            type: "document",
+            documentType: extension,
+            url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
+          };
         } catch (error) {
           console.error("Failed to upload file:", error);
           return null;
@@ -97,7 +120,7 @@ export const ChatInput = memo(
           setIsUploading(false);
         }
       },
-      [uploadFile, getToken]
+      [uploadFile, createMedia, NEXT_PUBLIC_R2_PUBLIC_URL]
     );
 
     const onSubmit = useCallback(
@@ -112,7 +135,13 @@ export const ChatInput = memo(
           },
           {
             experimental_attachments:
-              attachments && attachments.length > 0 ? attachments : undefined,
+              attachments && attachments.length > 0
+                ? attachments.map((attachment) => ({
+                    name: attachment.name,
+                    url: attachment.url,
+                    contentType: attachment.contentType,
+                  }))
+                : undefined,
             body: {
               projectId: id,
               currentFileTree,
@@ -120,7 +149,13 @@ export const ChatInput = memo(
                 .map(([key, value]) => `${key}: ${value}`)
                 .join("\n"),
               attachments:
-                attachments && attachments.length > 0 ? attachments : undefined,
+                attachments && attachments.length > 0
+                  ? attachments.map((attachment) => ({
+                      name: attachment.name,
+                      url: attachment.url,
+                      contentType: attachment.contentType,
+                    }))
+                  : undefined,
             },
           }
         );
@@ -203,13 +238,13 @@ export const ChatInput = memo(
 
         try {
           setIsUploading(true);
-          const url = await uploadHandler(file);
+          const uploadedFile = await uploadHandler(file);
 
-          if (url) {
+          if (uploadedFile) {
             const newAttachment: ChatAttachment = {
               name: file.name,
               contentType: file.type,
-              url,
+              url: uploadedFile.url,
               size: file.size,
             };
 
@@ -223,8 +258,9 @@ export const ChatInput = memo(
 
     return (
       <AnimatePresence>
-        <div className="max-w-4xl w-full mx-auto relative bg-transparent">
+        <div className="relative w-full max-w-4xl mx-auto bg-transparent">
           <Errors onSubmit={onSubmit} />
+          <ActionErrors onSubmit={onSubmit} />
           <SelectedElement />
           <VersionWarning inputValue={inputValue} shake={showShakeAnimation} />
           <Attachment
@@ -232,7 +268,7 @@ export const ChatInput = memo(
             clearAttachments={clearAttachments}
           />
 
-          <div className="px-4 pb-4 relative">
+          <div className="relative px-4 pb-4">
             <Textarea
               className="w-full bg-background-subtle bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary/10 resize-none pb-16 max-h-[200px] overflow-y-auto"
               placeholder={
@@ -284,7 +320,7 @@ export const ChatInput = memo(
             </div>
 
             {/* Send and Upload buttons */}
-            <div className="absolute bottom-6 right-6 text-xs text-muted-foreground flex gap-2">
+            <div className="absolute flex gap-2 text-xs bottom-6 right-6 text-muted-foreground">
               <Button
                 size="sm"
                 variant="outline"
@@ -293,12 +329,12 @@ export const ChatInput = memo(
               >
                 {isUploading ? (
                   <>
-                    <Loader2 className="size-3 mr-1 animate-spin" />
+                    <Loader2 className="mr-1 size-3 animate-spin" />
                     Uploading...
                   </>
                 ) : (
                   <>
-                    <ImageIcon className="size-3 mr-1" />
+                    <ImageIcon className="mr-1 size-3" />
                     Image
                   </>
                 )}

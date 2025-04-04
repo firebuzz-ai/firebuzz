@@ -72,19 +72,6 @@ export const updateLandingPageVersion = mutation({
   },
 });
 
-export const deleteInternal = internalMutationWithTrigger({
-  args: {
-    id: v.id("landingPages"),
-  },
-  handler: async (ctx, { id }) => {
-    try {
-      await ctx.db.delete(id);
-    } catch (error) {
-      console.error(error);
-    }
-  },
-});
-
 export const archive = mutationWithTrigger({
   args: {
     id: v.id("landingPages"),
@@ -109,6 +96,19 @@ export const restore = mutationWithTrigger({
   },
 });
 
+export const deleteInternal = internalMutationWithTrigger({
+  args: {
+    id: v.id("landingPages"),
+  },
+  handler: async (ctx, { id }) => {
+    try {
+      await ctx.db.delete(id);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+});
+
 export const deleteTemporary = mutationWithTrigger({
   args: {
     id: v.id("landingPages"),
@@ -129,6 +129,7 @@ export const deletePermanent = internalMutationWithTrigger({
     await ctx.db.delete(id);
   },
 });
+
 export const publish = mutationWithTrigger({
   args: {
     html: v.string(),

@@ -50,5 +50,6 @@ export default defineSchema({
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
     .index("by_created_by", ["createdBy"])
-    .index("by_deleted_at", ["deletedAt"]),
+    .index("by_deleted_at", ["deletedAt"])
+    .searchIndex("by_fileName", { searchField: "name" }),
 });
