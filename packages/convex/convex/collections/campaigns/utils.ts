@@ -33,7 +33,11 @@ export const batchDelete = internalMutation({
     );
 
     // If there are more campaigns, delete them
-    if (continueCursor && continueCursor !== cursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.campaigns.utils.batchDelete,
@@ -81,7 +85,11 @@ export const deleteCleanup = internalMutation({
     );
 
     // If there are more campaigns, delete them
-    if (continueCursor && continueCursor !== cursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.campaigns.utils.deleteCleanup,

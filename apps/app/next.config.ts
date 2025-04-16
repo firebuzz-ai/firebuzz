@@ -4,8 +4,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   async headers() {
     return [
+      // Apply strict headers only for WebContainer routes
       {
-        source: "/assets/landing-pages/(.*)",
+        source: "/(.*)",
         headers: [
           {
             key: "Cross-Origin-Embedder-Policy",

@@ -36,7 +36,11 @@ export const batchDelete = internalMutation({
     );
 
     // If there are more landing pages, delete them
-    if (continueCursor && continueCursor !== cursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.landingPages.utils.batchDelete,
@@ -85,7 +89,11 @@ export const deleteCleanup = internalMutation({
     );
 
     // If there are more landing pages, delete them
-    if (continueCursor && continueCursor !== cursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.landingPages.utils.deleteCleanup,

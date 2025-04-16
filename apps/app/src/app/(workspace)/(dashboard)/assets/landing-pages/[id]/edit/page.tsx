@@ -1,13 +1,14 @@
+import { LandingPageSettingsSheet } from "@/components/sheets/settings/landing-page/sheet";
 import { auth } from "@clerk/nextjs/server";
+import type { Id } from "@firebuzz/convex/nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { EditLandingPage } from "./_components/edit";
 import { Providers } from "./_components/providers";
-
 export default async function LandingPageEditPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: Id<"landingPages"> }>;
 }) {
   const token = await (await auth()).getToken({ template: "convex" });
 
@@ -27,6 +28,8 @@ export default async function LandingPageEditPage({
   return (
     <Providers previewPanelSize={previewPanelSize} panelId={panelId}>
       <EditLandingPage id={id} />
+      {/* Sheets */}
+      <LandingPageSettingsSheet landingPageId={id} />
     </Providers>
   );
 }

@@ -5,7 +5,6 @@ import { r2 } from "../../../helpers/r2";
 export const store = internalAction({
   args: {
     key: v.string(),
-    metadata: v.record(v.string(), v.string()),
     filesString: v.string(),
   },
   handler: async (ctx, args) => {

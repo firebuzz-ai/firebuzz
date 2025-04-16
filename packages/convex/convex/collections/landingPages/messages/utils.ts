@@ -22,7 +22,11 @@ export const batchDelete = internalMutation({
     await asyncMap(page, (document) => ctx.db.delete(document._id));
 
     // Continue deleting landing page messages if there are more
-    if (continueCursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.landingPages.messages.utils.batchDelete,

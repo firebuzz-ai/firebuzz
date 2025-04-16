@@ -5,7 +5,7 @@ import { currentVersionAtom } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useMessageQueue } from "@/lib/workbench/hooks/use-message-queue";
 import { useChat } from "@ai-sdk/react";
-import type { Doc, Id } from "@firebuzz/convex";
+import type { Id } from "@firebuzz/convex";
 import {
   api,
   useRichQuery,
@@ -34,10 +34,9 @@ const EmptyState = () => {
 
 interface ChatProps {
   id: string;
-  initialLandingPage: Doc<"landingPages"> | null;
 }
 
-export const Chat = ({ id, initialLandingPage }: ChatProps) => {
+export const Chat = ({ id }: ChatProps) => {
   const setCurrentVersion = useSetAtom(currentVersionAtom);
   const {
     results: landingPageMessages,
@@ -120,8 +119,7 @@ export const Chat = ({ id, initialLandingPage }: ChatProps) => {
   return (
     <div className="flex flex-col w-full h-full max-h-full overflow-hidden">
       <ChatHeader
-        title={initialLandingPage?.title ?? ""}
-        isLoading={!initialLandingPage}
+        landingPageId={id as Id<"landingPages">}
         type="landing-page"
         showLoadMore={false}
       />

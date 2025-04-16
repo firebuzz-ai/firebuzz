@@ -32,7 +32,11 @@ export const batchDelete = internalMutation({
     );
 
     // Continue deleting landing page versions if there are more
-    if (continueCursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.storage.media.utils.batchDelete,
@@ -81,7 +85,11 @@ export const deleteCleanup = internalMutation({
     );
 
     // If there are more medias, delete them
-    if (continueCursor && continueCursor !== cursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.storage.media.utils.deleteCleanup,

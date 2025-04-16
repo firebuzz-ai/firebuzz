@@ -55,13 +55,6 @@ export const createInternal = async (
     {
       key,
       filesString: filesString,
-      metadata: {
-        landingPageId: landingPageId,
-        landingPageVersionId: landingPageVersion,
-        workspaceId: workspaceId,
-        projectId: projectId,
-        campaignId: campaignId,
-      },
     }
   );
 
@@ -106,7 +99,11 @@ export const batchDelete = internalMutation({
     );
 
     // Continue deleting landing page versions if there are more
-    if (continueCursor) {
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
       await cascadePool.enqueueMutation(
         ctx,
         internal.collections.landingPages.versions.utils.batchDelete,

@@ -156,6 +156,19 @@ export const filesCountAtom = atom((get) => {
   return parsedFiles.size;
 });
 
+// Configuration Files
+export const seoConfigAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  const seoConfig = parsedFiles.get("src/configuration/seo.ts");
+  return seoConfig;
+});
+
+export const tagsConfigAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  const tagsConfig = parsedFiles.get("src/configuration/tags.ts");
+  return tagsConfig;
+});
+
 // Versions
 export const currentVersionAtom = atomWithReset<{
   _id: string;

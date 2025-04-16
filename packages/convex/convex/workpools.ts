@@ -9,6 +9,5 @@ export const batchDeleteStoragePool = new Workpool(
   components.batchDeleteStorage,
   {
     maxParallelism: 50,
-    retryActionsByDefault: true,
   }
 );

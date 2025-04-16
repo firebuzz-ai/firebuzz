@@ -8,67 +8,41 @@ import {
   useQuery,
 } from "@firebuzz/convex";
 import {
-  Button,
-  ButtonShortcut,
-  buttonVariants,
-} from "@firebuzz/ui/components/ui/button";
+  AnimatedTabs,
+  type TabItem,
+} from "@firebuzz/ui/components/ui/animated-tabs";
+import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { ChartBar, Settings, Table, Workflow } from "@firebuzz/ui/icons/lucide";
-import { cn, toast } from "@firebuzz/ui/lib/utils";
+import { toast } from "@firebuzz/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import React, { useEffect, useRef } from "react";
 
 interface CampaignTabsProps {
   id: string;
 }
 
-interface TabButtonProps {
-  href: string;
-  children: React.ReactNode;
-  active: boolean;
-}
-
-const TabButton = React.forwardRef<HTMLAnchorElement, TabButtonProps>(
-  ({ href, children, active }, ref) => {
-    return (
-      <Link
-        ref={ref}
-        className={buttonVariants({
-          variant: active ? "outline" : "ghost",
-          className: cn(
-            "!h-8 !px-2 flex items-center gap-1 !border",
-            active
-              ? "bg-muted text-foreground"
-              : "text-muted-foreground !border-transparent"
-          ),
-        })}
-        href={href}
-      >
-        {children}
-      </Link>
-    );
-  }
-);
-TabButton.displayName = "TabButton";
-
-const TABS = [
+const TABS: TabItem[] = [
   {
-    slug: "edit",
+    value: "edit",
+    href: "/edit",
     icon: Workflow,
     label: "Edit",
   },
   {
-    slug: "data",
+    value: "data",
+    href: "/data",
     icon: Table,
     label: "Data",
   },
   {
-    slug: "analytics",
+    value: "analytics",
+    href: "/analytics",
     icon: ChartBar,
     label: "Analytics",
   },
   {
-    slug: "settings",
+    value: "settings",
+    href: "/settings",
     icon: Settings,
     label: "Settings",
   },
@@ -76,17 +50,6 @@ const TABS = [
 
 export const CampaignTabs = ({ id }: CampaignTabsProps) => {
   const pathname = usePathname();
-  const activeTab = pathname.split("/").pop();
-  const activeTabIndex = TABS.findIndex((tab) => tab.slug === activeTab);
-
-  // Add refs to track the tab elements
-  const tabsRef = useRef<(HTMLAnchorElement | null)[]>([]);
-  const [indicatorStyle, setIndicatorStyle] =
-    React.useState<React.CSSProperties>({
-      width: 0,
-      left: 0,
-      opacity: 0,
-    });
 
   // Mutations
   const updateCampaign = useMutation(
@@ -101,31 +64,11 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
     id: id as Id<"campaigns">,
   });
 
-  // Function to set ref at specific index
-  const setTabRef = (index: number) => (el: HTMLAnchorElement | null) => {
-    tabsRef.current[index] = el;
-  };
-
-  // Update indicator position when active tab changes
-  useEffect(() => {
-    if (activeTabIndex >= 0 && tabsRef.current[activeTabIndex]) {
-      const activeTabElement = tabsRef.current[activeTabIndex];
-      if (activeTabElement) {
-        const tabRect = activeTabElement.getBoundingClientRect();
-        const containerRect =
-          activeTabElement.parentElement?.getBoundingClientRect();
-
-        if (containerRect) {
-          setIndicatorStyle({
-            width: tabRect.width,
-            left: tabRect.left - containerRect.left + 8,
-            opacity: 1,
-            transform: "translateX(0)",
-          });
-        }
-      }
-    }
-  }, [activeTabIndex]);
+  // Update tabs with complete hrefs
+  const tabsWithFullPaths: TabItem[] = TABS.map((tab) => ({
+    ...tab,
+    href: `/campaigns/${id}${tab.href}`,
+  }));
 
   // Handle save
   const handleSave = async () => {
@@ -166,21 +109,19 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
   const isDisabled = isLoading || !campaign;
 
   return (
-    <div className="border-b p-2 relative flex items-center justify-between">
+    <div className="relative flex items-center justify-between px-2 border-b">
       {/* Tabs */}
-      <div className="flex items-center gap-2">
-        {TABS.map((tab, index) => (
-          <TabButton
-            key={tab.slug}
-            href={`/campaigns/${id}/${tab.slug}`}
-            active={activeTab === tab.slug}
-            ref={setTabRef(index)}
-          >
-            <tab.icon className="!size-3.5" />
-            <p>{tab.label}</p>
-          </TabButton>
-        ))}
-      </div>
+      <AnimatedTabs
+        tabs={tabsWithFullPaths}
+        asLinks
+        currentPath={pathname}
+        indicatorPadding={0}
+        tabsContainerClassName="flex items-center gap-2"
+        linkComponent={Link}
+        withBorder={false}
+        indicatorRelativeToParent
+      />
+
       {/* Buttons */}
       <div className="flex items-center gap-2">
         <Button
@@ -202,11 +143,6 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
           <ButtonShortcut>⌘↵</ButtonShortcut>
         </Button>
       </div>
-      {/* Active tab indicator */}
-      <div
-        className="absolute bottom-0 h-px bg-primary transition-all duration-300"
-        style={indicatorStyle}
-      />
     </div>
   );
 };

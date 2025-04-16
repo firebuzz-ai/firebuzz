@@ -5,6 +5,7 @@ import {
   aggregateLandingPageVersions,
   aggregateLandingPages,
 } from "../aggregates";
+import { batchDeleteStoragePool, cascadePool } from "../workpools";
 
 export const cleanCampaignAggregates = internalMutation({
   args: { projectId: v.id("projects") },
@@ -30,5 +31,19 @@ export const cleanLandingPageVersionAggregates = internalMutation({
     return await aggregateLandingPageVersions.clear(ctx, {
       namespace: args.landingPageId,
     });
+  },
+});
+
+export const cancelAllCascadeWork = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    return await cascadePool.cancelAll(ctx);
+  },
+});
+
+export const cancelAllBatchDeleteStorageWork = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    return await batchDeleteStoragePool.cancelAll(ctx);
   },
 });

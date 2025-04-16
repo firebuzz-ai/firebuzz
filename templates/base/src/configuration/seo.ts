@@ -3,23 +3,27 @@
 // - You can change the values based on user requests e.g. "I want to change the meta title to 'My new title'"
 
 export const seoConfiguration = {
-  title: "Hello World",
-  description: "My custom description",
-  canonical: "http://mysite.com/example",
-  iconType: "image/svg+xml",
-  icon: "/vite.svg",
+  title: "Firebuzz",
+  description:
+    "Firebuzz is an AI-powered landing page builder and marketing platform.",
+  canonical: "https://getfirebuzz.com",
+  indexable: true,
+  iconType: "image/png",
+  icon: "https://cdn.getfirebuzz.com/firebuzz-favicon.png",
   openGraph: {
-    title: "Hello World",
-    description: "My custom description",
-    image: "https://mysite.com/image.png",
-    url: "http://mysite.com/example",
+    title: "Firebuzz",
+    description:
+      "Firebuzz is an AI-powered landing page builder and marketing platform.",
+    image: "https://cdn.getfirebuzz.com/firebuzz-og-image.png",
+    url: "https://firebuzz.com",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Hello World",
-    description: "My custom description",
-    image: "https://mysite.com/image.png",
-    url: "http://mysite.com/example",
+    title: "Firebuzz",
+    description:
+      "Firebuzz is an AI-powered landing page builder and marketing platform.",
+    image: "https://cdn.getfirebuzz.com/firebuzz-og-image.png",
+    url: "https://getfirebuzz.com",
   },
 };

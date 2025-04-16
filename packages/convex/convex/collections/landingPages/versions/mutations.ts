@@ -1,5 +1,8 @@
 import { ConvexError, v } from "convex/values";
+import { internal } from "../../../_generated/api";
+import { mutation } from "../../../_generated/server";
 import { r2 } from "../../../helpers/r2";
+import { retrier } from "../../../helpers/retrier";
 import { mutationWithTrigger } from "../../../triggers";
 import { getCurrentUser } from "../../users/utils";
 import { createInternal } from "./utils";
@@ -7,7 +10,7 @@ import { createInternal } from "./utils";
 export const create = mutationWithTrigger({
   args: {
     landingPageId: v.id("landingPages"),
-    messageId: v.string(),
+    messageId: v.optional(v.string()),
     filesString: v.string(),
   },
   handler: async (ctx, args) => {
@@ -36,6 +39,52 @@ export const create = mutationWithTrigger({
       landingPageVersionId,
       number,
     };
+  },
+});
+
+export const updateCurrentVersionFiles = mutation({
+  args: {
+    landingPageId: v.id("landingPages"),
+    filesString: v.string(),
+  },
+  handler: async (ctx, { landingPageId, filesString }) => {
+    const user = await getCurrentUser(ctx);
+
+    const landingPage = await ctx.db.get(landingPageId);
+
+    if (!landingPage) {
+      throw new ConvexError("Landing page not found");
+    }
+
+    if (landingPage.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    if (!landingPage.landingPageVersionId) {
+      throw new ConvexError("Landing page version not found");
+    }
+
+    // Get the landing page version
+    const landingPageVersion = await ctx.db.get(
+      landingPage.landingPageVersionId
+    );
+
+    if (!landingPageVersion || !landingPageVersion.key) {
+      throw new ConvexError("Landing page version not found");
+    }
+
+    // Delete the files from R2
+    await r2.deleteObject(ctx, landingPageVersion.key);
+
+    // Update the files in R2
+    await retrier.run(
+      ctx,
+      internal.collections.landingPages.versions.actions.store,
+      {
+        key: landingPageVersion.key,
+        filesString: filesString,
+      }
+    );
   },
 });
 

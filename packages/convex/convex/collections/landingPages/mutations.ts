@@ -60,6 +60,34 @@ export const create = mutationWithTrigger({
   },
 });
 
+export const update = mutation({
+  args: {
+    id: v.id("landingPages"),
+    title: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    // Check same workspace
+    const landingPage = await ctx.db.get(args.id);
+
+    if (!landingPage) {
+      throw new ConvexError("Landing page not found");
+    }
+
+    if (landingPage.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("You are not allowed to update this landing page");
+    }
+
+    await ctx.db.patch(args.id, {
+      title: args.title,
+      description: args.description,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
 export const updateLandingPageVersion = mutation({
   args: {
     id: v.id("landingPages"),
