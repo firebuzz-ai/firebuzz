@@ -10,6 +10,7 @@ import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { ChevronsRight } from "@firebuzz/ui/icons/lucide";
 import { useSetAtom } from "jotai";
 import { useParams } from "next/navigation";
+import { CreateVariantButton } from "./create-variant-button";
 import { PublishButton } from "./publish-button";
 import { SettingsButton } from "./settings-button";
 
@@ -42,9 +43,12 @@ export function Header() {
         </div>
       </div>
       {/* Right Part */}
-      <div className="flex items-center gap-2">
-        <SettingsButton landingPageId={landingPageId} />
-        <Separator orientation="vertical" className="h-4" />
+      <div className="flex items-center">
+        <div className="flex items-center gap-0.5">
+          <CreateVariantButton landingPageId={landingPageId} />
+          <SettingsButton landingPageId={landingPageId} />
+        </div>
+        <Separator orientation="vertical" className="h-4 ml-2 mr-4" />
         <PublishButton landingPageId={landingPageId} />
       </div>
     </div>

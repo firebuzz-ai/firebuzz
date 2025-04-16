@@ -21,7 +21,7 @@ export const SettingsButton = (_props: SettingsButtonProps) => {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
           className="!size-8"
           onClick={() => setIsOpen(true)}
@@ -33,5 +33,3 @@ export const SettingsButton = (_props: SettingsButtonProps) => {
     </Tooltip>
   );
 };
-
-export default SettingsButton;

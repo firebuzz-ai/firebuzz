@@ -60,6 +60,77 @@ export const create = mutationWithTrigger({
   },
 });
 
+export const createVariant = mutationWithTrigger({
+  args: {
+    parentId: v.id("landingPages"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    // Check parent landing page exists
+    const parentLandingPage = await ctx.db.get(args.parentId);
+
+    if (!parentLandingPage) {
+      throw new ConvexError("Parent landing page not found");
+    }
+
+    // Check campaign exists
+    const campaign = await ctx.db.get(parentLandingPage.campaignId);
+
+    if (!campaign) {
+      throw new ConvexError("Campaign not found");
+    }
+
+    if (!parentLandingPage.landingPageVersionId) {
+      throw new ConvexError("Parent landing page version not found");
+    }
+
+    // Get parent landing page version
+    const parentLandingPageVersion = await ctx.db.get(
+      parentLandingPage.landingPageVersionId
+    );
+
+    if (!parentLandingPageVersion) {
+      throw new ConvexError("Parent landing page version not found");
+    }
+
+    // Create New Variant
+    const variantId = await ctx.db.insert("landingPages", {
+      parentId: args.parentId,
+      createdBy: user._id,
+      updatedAt: Date.now(),
+      status: "draft",
+      isPublished: false,
+      projectId: parentLandingPage.projectId,
+      campaignId: parentLandingPage.campaignId,
+      templateId: parentLandingPage.templateId,
+      title: parentLandingPage.title,
+      description: parentLandingPage.description,
+      workspaceId: user.currentWorkspaceId,
+      isArchived: false,
+    });
+
+    // Create landing page version
+    const landingPageVersionId = await ctx.db.insert("landingPageVersions", {
+      landingPageId: variantId,
+      createdBy: user._id,
+      workspaceId: parentLandingPageVersion.workspaceId,
+      number: 0,
+      projectId: parentLandingPage.projectId,
+      campaignId: parentLandingPage.campaignId,
+      messageId: undefined,
+      key: parentLandingPageVersion.key,
+    });
+
+    // Update landing page with landing page version id
+    await ctx.db.patch(variantId, {
+      landingPageVersionId,
+    });
+
+    return variantId;
+  },
+});
+
 export const update = mutation({
   args: {
     id: v.id("landingPages"),

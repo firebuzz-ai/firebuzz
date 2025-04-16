@@ -14,6 +14,7 @@ export function Head() {
           seoConfiguration.indexable ? "index, follow" : "noindex, nofollow"
         }
       />
+      <meta name="description" content={seoConfiguration.description} />
       <title>{seoConfiguration.title}</title>
       <link
         rel="icon"
