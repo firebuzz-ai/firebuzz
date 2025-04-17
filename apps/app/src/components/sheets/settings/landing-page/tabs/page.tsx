@@ -1,6 +1,11 @@
 "use client";
 
-import { api, useMutation, useQuery } from "@firebuzz/convex";
+import {
+  api,
+  useCachedRichQuery,
+  useMutation,
+  useQuery,
+} from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import {
@@ -45,9 +50,10 @@ export const PageTab = ({
   const [isLoading, setIsLoading] = useState(false);
 
   // Get landing page data
-  const landingPage = useQuery(api.collections.landingPages.queries.getById, {
-    id: landingPageId,
-  });
+  const { data: landingPage, isPending: isLandingPageLoading } =
+    useCachedRichQuery(api.collections.landingPages.queries.getById, {
+      id: landingPageId,
+    });
 
   // Get campaign data
   const campaign = landingPage?.campaignId
@@ -228,7 +234,7 @@ export const PageTab = ({
                 <div className="flex items-center justify-center w-8 h-8 rounded-md bg-muted">
                   <Layers className="size-4 text-muted-foreground" />
                 </div>
-                {campaign ? (
+                {!isLandingPageLoading && campaign ? (
                   <div>
                     <div className="font-medium">{campaign.title}</div>
                     <div className="text-xs text-muted-foreground">

@@ -1,3 +1,4 @@
+import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
 import {
   internalMutationWithTrigger,
@@ -5,25 +6,6 @@ import {
 } from "../../../triggers";
 import { getCurrentUser } from "../../users/utils";
 import { mediaSchema } from "./schema";
-
-/*  key: v.string(),
-  name: v.string(),
-  extension: v.string(),
-  size: v.number(),
-  type: v.union(v.literal("image"), v.literal("video"), v.literal("audio")),
-  source: v.union(
-    v.literal("ai-generated"),
-    v.literal("uploaded"),
-    v.literal("unsplash"),
-    v.literal("pexels")
-  ),
-  aiMetadata: v.optional(
-    v.object({
-      prompt: v.string(),
-      seed: v.number(),
-      size: v.string(),
-    })
-  ), */
 
 export const create = mutationWithTrigger({
   args: {
@@ -96,6 +78,87 @@ export const deletePermanent = internalMutationWithTrigger({
     id: v.id("media"),
   },
   handler: async (ctx, { id }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to delete this image");
+    }
+
     await ctx.db.delete(id);
+  },
+});
+
+export const archive = mutationWithTrigger({
+  args: {
+    id: v.id("media"),
+  },
+  handler: async (ctx, { id }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to archive this image");
+    }
+
+    await ctx.db.patch(id, { isArchived: true });
+  },
+});
+
+export const restore = mutationWithTrigger({
+  args: {
+    id: v.id("media"),
+  },
+  handler: async (ctx, { id }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to restore this image");
+    }
+
+    await ctx.db.patch(id, { isArchived: false });
+  },
+});
+
+export const archiveMultiple = mutationWithTrigger({
+  args: {
+    ids: v.array(v.id("media")),
+  },
+  handler: async (ctx, { ids }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to archive multiple images");
+    }
+
+    await asyncMap(ids, async (id) => {
+      await ctx.db.patch(id, { isArchived: true });
+    });
+  },
+});
+
+export const restoreMultiple = mutationWithTrigger({
+  args: {
+    ids: v.array(v.id("media")),
+  },
+  handler: async (ctx, { ids }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to restore multiple images");
+    }
+
+    await asyncMap(ids, async (id) => {
+      await ctx.db.patch(id, { isArchived: false });
+    });
+  },
+});
+
+export const deleteTemporaryMultiple = mutationWithTrigger({
+  args: {
+    ids: v.array(v.id("media")),
+  },
+  handler: async (ctx, { ids }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new Error("You are not allowed to delete multiple images");
+    }
+
+    await asyncMap(ids, async (id) => {
+      await ctx.db.patch(id, { deletedAt: new Date().toISOString() });
+    });
   },
 });

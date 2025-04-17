@@ -17,15 +17,7 @@ export const getPaginated = query({
   },
   handler: async (
     ctx,
-    {
-      paginationOpts,
-
-      sortOrder,
-      source,
-      type,
-      searchQuery,
-      isArchived,
-    }
+    { paginationOpts, sortOrder, source, type, searchQuery, isArchived }
   ) => {
     const user = await getCurrentUser(ctx);
     const projectId = user?.currentProject;
