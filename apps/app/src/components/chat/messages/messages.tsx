@@ -3,8 +3,8 @@ import { Button } from "@firebuzz/ui/components/ui/button";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { Message as MessageType } from "ai";
 import { useEffect } from "react";
+import { LoadingMessage } from "./loading-message";
 import { Message } from "./message";
-import { ThinkingMessage } from "./thinkinh-message";
 
 type PaginationStatus =
   | "LoadingFirstPage"
@@ -75,7 +75,7 @@ export const ChatMessages = ({
   }, [isStreaming, messages, scrollToBottom]);
 
   // Check if thinking message should be shown
-  const isThinking =
+  const isWaitingForResponse =
     isSubmitted &&
     messages.length > 0 &&
     messages[messages.length - 1].role === "user";
@@ -87,7 +87,7 @@ export const ChatMessages = ({
         "flex flex-col min-w-0 h-full max-h-full justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll py-4"
       )}
     >
-      <div className="flex flex-col gap-6 w-full">
+      <div className="flex flex-col w-full gap-6">
         {/* Show overview if no messages */}
         {messages.length === 0 && !isInitialMessageLoading && (
           <div className="w-full p-3">{overviewComponent}</div>
@@ -95,7 +95,7 @@ export const ChatMessages = ({
 
         {/* Show load more button at the top if enabled */}
         {messagesStatus === "CanLoadMore" && messages.length > 0 && (
-          <div className="w-full flex justify-center py-2 sticky -top-4 bg-background/80 backdrop-blur-sm z-10">
+          <div className="sticky z-10 flex justify-center w-full py-2 -top-4 bg-background/80 backdrop-blur-sm">
             <Button
               size="sm"
               variant="outline"
@@ -128,14 +128,14 @@ export const ChatMessages = ({
         ))}
 
         {/* Show thinking indicator when waiting for response */}
-        {isThinking && (
-          <div className="w-full p-3">
-            <ThinkingMessage />
+        {isWaitingForResponse && (
+          <div className="w-full pl-6">
+            <LoadingMessage />
           </div>
         )}
 
         {/* Invisible element used to track if we're at the bottom */}
-        <div ref={bottomRef} className="h-24 w-full" />
+        <div ref={bottomRef} className="w-full h-24" />
       </div>
     </div>
   );

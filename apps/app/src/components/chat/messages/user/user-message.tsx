@@ -38,20 +38,20 @@ export const UserMessage = ({
         animate={{ y: 0, opacity: 1 }}
         data-role={message.role}
       >
-        <div className="flex gap-4 w-full">
-          <Avatar className="size-8 flex items-center rounded-full overflow-hidden justify-center ring-1 shrink-0 ring-border bg-background">
+        <div className="flex w-full gap-4">
+          <Avatar className="flex items-center justify-center overflow-hidden rounded-full size-8 ring-1 shrink-0 ring-border bg-background">
             <AvatarFallback className="rounded-none">
               {user?.firstName?.charAt(0)}
             </AvatarFallback>
             <AvatarImage src={user?.imageUrl} className="w-full h-full" />
           </Avatar>
 
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex flex-col w-full gap-4">
             <Attachments message={message} />
 
             {message.content && mode === "view" && (
-              <div className="flex flex-row gap-2 items-start w-full">
-                <div className="flex flex-col gap-4 w-full">
+              <div className="flex flex-row items-start w-full gap-2">
+                <div className="flex flex-col w-full gap-4">
                   <Markdown setMessages={setMessages}>
                     {message.content as string}
                   </Markdown>
@@ -60,7 +60,7 @@ export const UserMessage = ({
             )}
 
             {message.content && mode === "edit" && (
-              <div className="flex flex-row gap-2 items-start w-full">
+              <div className="flex flex-row items-start w-full gap-2">
                 <div className="size-8" />
 
                 <MessageEditor

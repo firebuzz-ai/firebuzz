@@ -8,7 +8,7 @@ export default function AssetsLayout({
   return (
     <div className="flex flex-col flex-1">
       <AssetsTopbar />
-      <div className="flex flex-1">{children}</div>
+      <div className="flex flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }

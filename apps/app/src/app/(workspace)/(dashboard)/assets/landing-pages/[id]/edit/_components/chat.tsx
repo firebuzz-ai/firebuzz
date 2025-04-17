@@ -73,6 +73,15 @@ export const Chat = ({ id }: ChatProps) => {
       (message): Message => ({
         id: message.messageId.replace(`${id}-`, ""),
         content: message.message,
+        parts: message.reasoning
+          ? [
+              {
+                type: "reasoning",
+                reasoning: message.reasoning,
+                details: [{ type: "text", text: message.reasoning }],
+              },
+            ]
+          : undefined,
         role: message.role,
         experimental_attachments: message.attachments,
         // @ts-expect-error

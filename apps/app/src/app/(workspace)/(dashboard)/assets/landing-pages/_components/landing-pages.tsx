@@ -70,7 +70,7 @@ export const LandingPages = () => {
   }, [status, loadMore]);
 
   return (
-    <div className="overflow-hidden flex-1 flex flex-col max-w-full max-h-full">
+    <div className="flex flex-col w-full h-full max-h-full overflow-hidden">
       <Controls
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -80,14 +80,14 @@ export const LandingPages = () => {
         setIsArchived={setIsArchived}
       />
 
-      <div className="flex flex-col flex-1 overflow-hidden max-h-full max-w-full">
+      <div className="flex flex-1 max-h-full overflow-hidden">
         {status === "LoadingFirstPage" ? (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex items-center justify-center flex-1">
             <Spinner size="sm" />
           </div>
         ) : landingPages.length === 0 ? (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground text-sm text-center">
+            <p className="text-sm text-center text-muted-foreground">
               No landing pages found. Create a new landing page to get started.
             </p>
           </div>

@@ -20,6 +20,7 @@ export const create = mutation({
           })
         ),
         attachments: landingPageMessagesSchema.fields.attachments,
+        reasoning: v.optional(v.string()),
       })
     ),
   },
@@ -47,6 +48,7 @@ export const create = mutation({
       projectId: landingPage.projectId,
       campaignId: landingPage.campaignId,
       attachments: message.attachments,
+      reasoning: message.reasoning,
     }));
 
     await Promise.all(

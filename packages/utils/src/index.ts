@@ -164,9 +164,7 @@ export const getConvexHttpUrl = (convexUrl: string) => {
 };
 export const isValidUrlFormat = (url: string): boolean => {
   try {
-    const urlObject = new URL(url);
-    console.log(urlObject);
-
+    new URL(url);
     return true;
   } catch {
     return false;

@@ -1,13 +1,14 @@
 "use client";
 
 import { errorsAtom } from "@/lib/workbench/atoms";
+import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Bug } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect } from "react";
 
 import { z } from "zod";
 
@@ -23,42 +24,25 @@ export const Errors = ({
   onSubmit: (message: string) => Promise<void>;
 }) => {
   const [errors, setErrors] = useAtom(errorsAtom);
-  const [isHandlingError, setIsHandlingError] = useState(false);
 
-  const getErrorExplanation = async (error: string) => {
-    const response = await fetch("/api/chat/landing/fix-error", {
-      method: "POST",
-      body: JSON.stringify({ prompt: error }),
-    });
-    const data = await response.json();
-    return data;
-  };
+  const {
+    object,
+    submit,
+    isLoading: isHandlingError,
+  } = useObject({
+    api: "/api/chat/landing/fix-error",
+    schema: z.array(schema),
+  });
 
   const handleErrorClick = async () => {
     try {
-      setIsHandlingError(true);
       // Get the error explanations
-      const explanations: z.infer<typeof schema>[] = [];
-      for (const error of errors) {
-        const explanation = await getErrorExplanation(JSON.stringify(error));
-        explanations.push(explanation);
-      }
-
-      // Clear the errors
-      setErrors([]);
-
-      // Submit the explanations as a structured message
-      await onSubmit(
-        JSON.stringify({
-          type: "error-explanation",
-          errors: explanations,
-        })
-      );
-      setIsHandlingError(false);
+      submit({
+        prompt: errors.map((error) => error).join("\n"),
+      });
     } catch (error) {
       console.error(error);
       toast.error("Failed to fix errors");
-      setIsHandlingError(false);
     }
   };
 
@@ -66,12 +50,24 @@ export const Errors = ({
     setErrors([]);
   };
 
+  useEffect(() => {
+    if (object) {
+      setErrors([]);
+      onSubmit(
+        JSON.stringify({
+          type: "error-explanation",
+          errors: object,
+        })
+      );
+    }
+  }, [object, onSubmit, setErrors]);
+
   if (errors.length === 0) return null;
 
   return (
-    <div className="absolute -top-16 px-4 w-full">
+    <div className="absolute w-full px-4 -top-16">
       <motion.div
-        className="px-3 py-2 bg-muted border rounded-lg shadow-sm flex w-full items-center justify-between"
+        className="flex items-center justify-between w-full px-3 py-2 border rounded-lg shadow-sm bg-muted"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
       >
