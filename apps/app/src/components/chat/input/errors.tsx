@@ -38,7 +38,7 @@ export const Errors = ({
     try {
       // Get the error explanations
       submit({
-        prompt: errors.map((error) => error).join("\n"),
+        prompt: JSON.stringify(errors, null, 2),
       });
     } catch (error) {
       console.error(error);

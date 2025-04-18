@@ -17,7 +17,7 @@ interface MarkdownProps {
   children: string;
   html?: boolean;
   limitedMarkdown?: boolean;
-  setMessages: Dispatch<SetStateAction<Message[]>>;
+  setMessages?: Dispatch<SetStateAction<Message[]>>;
 }
 
 export const Markdown = memo(
@@ -84,7 +84,7 @@ export const Markdown = memo(
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             (node as any)?.properties?.dataArtifactId;
 
-          if (isArtifact) {
+          if (isArtifact && setMessages) {
             // biome-ignore lint/suspicious/noExplicitAny: <explanation>
             const artifactId = (node as any)?.properties
               ?.dataArtifactId as string;

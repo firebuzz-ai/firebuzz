@@ -21,9 +21,11 @@ export function useMessageParser() {
 
       for (const [_, message] of messages.entries()) {
         if (message.role === "assistant") {
+          const textParts =
+            message.parts?.filter((part) => part.type === "text") ?? [];
           const newParsedContent = messageParser.parse(
             message.id,
-            message.content,
+            textParts,
             // @ts-ignore (metadata is not always present)
             message.metadata?.initial ?? false,
             // @ts-ignore

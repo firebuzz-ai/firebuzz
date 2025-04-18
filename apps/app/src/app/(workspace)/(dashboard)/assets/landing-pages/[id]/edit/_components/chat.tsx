@@ -139,6 +139,9 @@ export const Chat = ({ id }: ChatProps) => {
             return message as Message;
           }
 
+          const parts = message.parts;
+          const textParts = parts?.filter((part) => part.type === "text");
+
           return {
             ...message,
             content: parsedMessages[message.id] ?? "",

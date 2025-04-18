@@ -2,11 +2,10 @@ import { Icon } from "@firebuzz/ui/components/brand/icon";
 import type { Message as MessageType } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
-import { useMemo } from "react";
-import { Attachments } from "../attachments";
 import { Markdown } from "../markdown";
 import { MessageActions } from "../message-actions";
 import { Reasoning } from "./reasoning";
+import { ToolCall } from "./tool-calls";
 
 interface AssistantMessageProps {
   message: MessageType & {
@@ -26,20 +25,7 @@ export const AssistantMessage = ({
   chatId,
   setMessages,
 }: AssistantMessageProps) => {
-  // Extract reasoning content
-  const reasoningContent = useMemo(() => {
-    if (
-      !message.parts ||
-      !message.parts.filter((part) => part.type === "reasoning").length
-    ) {
-      return null;
-    }
-
-    return message.parts
-      .filter((part) => part.type === "reasoning")
-      .map((part) => part.reasoning)
-      .join("\n");
-  }, [message.parts]);
+  console.log(message);
 
   return (
     <AnimatePresence>
@@ -57,26 +43,47 @@ export const AssistantMessage = ({
           </div>
 
           <div className="flex flex-col w-full max-w-full gap-4 overflow-hidden">
-            <Attachments message={message} />
+            {message.parts?.map((part) => {
+              /* TEXT */
+              if (part.type === "text") {
+                return (
+                  <div
+                    key={`text-${message.id}`}
+                    className="flex flex-row items-start w-full gap-2"
+                  >
+                    <div className="flex flex-col w-full gap-4">
+                      <Markdown setMessages={setMessages} html>
+                        {part.text}
+                      </Markdown>
+                    </div>
+                  </div>
+                );
+              }
 
-            {/* Reasoning Component */}
-            {reasoningContent && (
-              <Reasoning
-                content={reasoningContent}
-                setMessages={setMessages}
-                isOver={message.content !== ""}
-              />
-            )}
+              /* TOOL CALLS */
+              if (part.type === "tool-invocation") {
+                return (
+                  <ToolCall
+                    key={`tool-call-${part.toolInvocation.toolCallId}`}
+                    toolCall={part.toolInvocation}
+                  />
+                );
+              }
 
-            {message.content && (
-              <div className="flex flex-row items-start w-full gap-2">
-                <div className="flex flex-col w-full gap-4">
-                  <Markdown setMessages={setMessages} html>
-                    {message.content as string}
-                  </Markdown>
-                </div>
-              </div>
-            )}
+              /* REASONING */
+              if (part.type === "reasoning") {
+                return (
+                  <Reasoning
+                    key={`reasoning-${message.id}`}
+                    content={part.reasoning}
+                    setMessages={setMessages}
+                    isOver={message.content !== ""}
+                  />
+                );
+              }
+
+              return null;
+            })}
 
             <MessageActions
               key={`action-${message.id}`}

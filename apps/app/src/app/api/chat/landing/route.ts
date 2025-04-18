@@ -10,6 +10,7 @@ import {
   streamText,
 } from "ai";
 
+import { searchStockImage } from "@/lib/ai/tools/search-stock-image";
 import { anthropic } from "@ai-sdk/anthropic";
 import { api, fetchMutation } from "@firebuzz/convex/nextjs";
 import { stripIndents } from "@firebuzz/utils";
@@ -164,6 +165,9 @@ export async function POST(request: NextRequest) {
         chunking: "word", // optional: defaults to 'word'
       }),
       onFinish,
+      tools: {
+        searchStockImage,
+      },
     });
 
     return response.toDataStreamResponse({

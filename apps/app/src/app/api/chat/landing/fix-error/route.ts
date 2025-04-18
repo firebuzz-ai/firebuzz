@@ -6,7 +6,9 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 export async function POST(request: NextRequest) {
-  const context = await request.json();
+  const { prompt } = await request.json();
+
+  console.log(JSON.stringify(prompt, null, 2));
 
   const user = await auth();
 
@@ -20,7 +22,7 @@ export async function POST(request: NextRequest) {
 		You are a helpful assistant that can help me fix errors in my code.
 		Read all the errors provided and return unique errors with their explanations and hints.
 		Here are the errors:
-		${context}
+		${prompt}
 		`,
     output: "array",
     schema: z.object({
