@@ -5,16 +5,15 @@ import { cn } from "@firebuzz/ui/lib/utils";
 import type { ToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Markdown } from "../markdown";
+import { Markdown } from "../../markdown";
 
 interface ToolCallProps {
   toolCall: ToolInvocation;
 }
 
-export const ToolCall = ({ toolCall }: ToolCallProps) => {
+export const SearchStockImages = ({ toolCall }: ToolCallProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const status = toolCall.state;
-  const statusText = status === "result" ? "completed" : status;
 
   return (
     <div className="mb-2 overflow-hidden border rounded-md">
@@ -37,17 +36,14 @@ export const ToolCall = ({ toolCall }: ToolCallProps) => {
               <ChevronRight className="size-3.5" />
             )}
           </Button>
-          <div className="flex items-center gap-1.5">
-            <span className="text-sm font-medium">{toolCall.toolName}</span>
-            <TextShimmer
-              as="span"
-              duration={1.5}
-              className="ml-2 text-sm italic"
-              active={status !== "result"}
-            >
-              {statusText}
-            </TextShimmer>
-          </div>
+          <TextShimmer
+            as="span"
+            duration={1.5}
+            className="ml-2 text-sm italic"
+            active={status !== "result"}
+          >
+            {toolCall.toolName}
+          </TextShimmer>
         </div>
       </div>
 

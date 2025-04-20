@@ -1,98 +1,110 @@
 import { tool } from "ai";
 import { z } from "zod";
 
-export const parametersSchema = z.object({
-  query: z.string(),
-  orientation: z.enum(["landscape", "portrait", "squarish"]),
-  color: z.optional(
-    z.enum([
-      "black_and_white",
-      "black",
-      "white",
-      "yellow",
-      "orange",
-      "red",
-      "purple",
-      "magenta",
-      "green",
-      "teal",
-      "blue",
-    ])
-  ),
-});
-
-/* {
-  "total": 133,
-  "total_pages": 7,
-  "results": [
-    {
-      "id": "eOLpJytrbsQ",
-      "created_at": "2014-11-18T14:35:36-05:00",
-      "width": 4000,
-      "height": 3000,
-      "color": "#A7A2A1",
-      "blur_hash": "LaLXMa9Fx[D%~q%MtQM|kDRjtRIU",
-      "likes": 286,
-      "liked_by_user": false,
-      "description": "A man drinking a coffee.",
-      "user": {
-        "id": "Ul0QVz12Goo",
-        "username": "ugmonk",
-        "name": "Jeff Sheldon",
-        "first_name": "Jeff",
-        "last_name": "Sheldon",
-        "instagram_username": "instantgrammer",
-        "twitter_username": "ugmonk",
-        "portfolio_url": "http://ugmonk.com/",
-        "profile_image": {
-          "small": "https://images.unsplash.com/profile-1441298803695-accd94000cac?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&cs=tinysrgb&fit=crop&h=32&w=32&s=7cfe3b93750cb0c93e2f7caec08b5a41",
-          "medium": "https://images.unsplash.com/profile-1441298803695-accd94000cac?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&cs=tinysrgb&fit=crop&h=64&w=64&s=5a9dc749c43ce5bd60870b129a40902f",
-          "large": "https://images.unsplash.com/profile-1441298803695-accd94000cac?ixlib=rb-0.3.5&q=80&fm=jpg&crop=faces&cs=tinysrgb&fit=crop&h=128&w=128&s=32085a077889586df88bfbe406692202"
-        },
-        "links": {
-          "self": "https://api.unsplash.com/users/ugmonk",
-          "html": "http://unsplash.com/@ugmonk",
-          "photos": "https://api.unsplash.com/users/ugmonk/photos",
-          "likes": "https://api.unsplash.com/users/ugmonk/likes"
-        }
-      },
-      "current_user_collections": [],
-      "urls": {
-        "raw": "https://images.unsplash.com/photo-1416339306562-f3d12fefd36f",
-        "full": "https://hd.unsplash.com/photo-1416339306562-f3d12fefd36f",
-        "regular": "https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=1080&fit=max&s=92f3e02f63678acc8416d044e189f515",
-        "small": "https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=400&fit=max&s=263af33585f9d32af39d165b000845eb",
-        "thumb": "https://images.unsplash.com/photo-1416339306562-f3d12fefd36f?ixlib=rb-0.3.5&q=80&fm=jpg&crop=entropy&cs=tinysrgb&w=200&fit=max&s=8aae34cf35df31a592f0bef16e6342ef"
-      },
-      "links": {
-        "self": "https://api.unsplash.com/photos/eOLpJytrbsQ",
-        "html": "http://unsplash.com/photos/eOLpJytrbsQ",
-        "download": "http://unsplash.com/photos/eOLpJytrbsQ/download"
-      }
-    },
-    // more photos ...
-  ]
-} */
+// Define type for Unsplash API results
+interface UnsplashResult {
+  id: string;
+  width: number;
+  height: number;
+  description: string | null;
+  urls: {
+    raw: string;
+    full: string;
+    regular: string;
+    small: string;
+    thumb: string;
+  };
+  links: {
+    self: string;
+    html: string;
+    download: string;
+  };
+  user: {
+    username: string;
+    name?: string;
+  };
+}
 
 export const searchStockImage = tool({
-  parameters: parametersSchema,
-  execute: async ({ query, orientation }) => {
+  description: "Search for stock images on Unsplash",
+  parameters: z.object({
+    query: z.string().describe("The search term for the image"),
+    orientation: z
+      .enum(["landscape", "portrait", "squarish"])
+      .describe("The orientation of the image"),
+    color: z
+      .enum([
+        "black_and_white",
+        "black",
+        "white",
+        "yellow",
+        "orange",
+        "red",
+        "purple",
+        "magenta",
+        "green",
+        "teal",
+        "blue",
+      ])
+      .optional()
+      .describe("Filter by a specific color"),
+  }),
+  execute: async ({ query, orientation, color }) => {
     try {
-      const response = await fetch(
-        `https://api.unsplash.com/search/photos?query=${query}&orientation=${orientation}`,
-        {
-          headers: {
-            Authorization:
-              "Client-ID q24Wb1VW0XWpcWhVxrb9-eY1_fmsrpjsOih_s8Mw55M",
-          },
-        }
-      );
+      let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}`;
+
+      if (color) {
+        url += `&color=${color}`;
+      }
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization:
+            "Client-ID q24Wb1VW0XWpcWhVxrb9-eY1_fmsrpjsOih_s8Mw55M",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Unsplash API responded with status: ${response.status}`
+        );
+      }
+
       const data = await response.json();
 
-      return data.results;
+      // Limit to 8 results to avoid overwhelming the UI
+      const results = data.results.slice(0, 8).map((result: UnsplashResult) => {
+        return {
+          id: result.id,
+          width: result.width,
+          height: result.height,
+          url: result.urls.regular,
+          downloadLink: result.links.download,
+          altText:
+            result.description ||
+            `Image by ${result.user.name || result.user.username}`,
+        };
+      });
+
+      if (results.length === 0) {
+        return {
+          success: false,
+          message: `No images found for query "${query}" with orientation "${orientation}"${color ? ` and color "${color}"` : ""}`,
+        };
+      }
+
+      return {
+        success: true,
+        count: results.length,
+        images: results,
+        message: `Found ${results.length} images for "${query}"`,
+      };
     } catch (error) {
-      console.error(error);
-      throw new Error("Failed to search stock image");
+      console.error("Error searching stock images:", error);
+      return {
+        success: false,
+        message: `Failed to search stock images: ${error instanceof Error ? error.message : String(error)}`,
+      };
     }
   },
 });

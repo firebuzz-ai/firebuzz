@@ -20,24 +20,31 @@ export function useMessageParser() {
       let hasChanges = false;
 
       for (const [_, message] of messages.entries()) {
+        // Only parse assistant messages
         if (message.role === "assistant") {
-          const textParts =
-            message.parts?.filter((part) => part.type === "text") ?? [];
-          const newParsedContent = messageParser.parse(
-            message.id,
-            textParts,
-            // @ts-ignore (metadata is not always present)
-            message.metadata?.initial ?? false,
-            // @ts-ignore
-            message.metadata?.versionId,
-            // @ts-ignore
-            message.metadata?.versionNumber
-          );
+          const parts = message.parts ?? [];
 
-          if (newParsedContent) {
-            newParsedMessages[message.id] =
-              (newParsedMessages[message.id] ?? "") + newParsedContent;
-            hasChanges = true;
+          for (const [index, part] of parts.entries()) {
+            if (part.type !== "text") continue;
+
+            const newParsedContent = messageParser.parse(
+              message.id,
+              `${message.id}-${index}`,
+              part.text ?? "",
+              // @ts-ignore (metadata is not always present)
+              message.metadata?.initial ?? false,
+              // @ts-ignore
+              message.metadata?.versionId,
+              // @ts-ignore
+              message.metadata?.versionNumber
+            );
+
+            if (newParsedContent) {
+              newParsedMessages[`${message.id}-${index}`] =
+                (newParsedMessages[`${message.id}-${index}`] ?? "") +
+                newParsedContent;
+              hasChanges = true;
+            }
           }
         }
       }

@@ -8,14 +8,13 @@ export const attachmentsSchema = v.object({
 });
 
 export const landingPageMessagesSchema = v.object({
-  message: v.string(),
   messageId: v.string(),
   groupId: v.string(),
   role: v.union(v.literal("user"), v.literal("assistant")),
   vote: v.optional(v.union(v.literal("up"), v.literal("down"))),
   createdAt: v.string(),
+  parts: v.array(v.any()),
   attachments: v.optional(v.array(attachmentsSchema)),
-  reasoning: v.optional(v.string()),
   // Relations
   landingPageId: v.id("landingPages"),
   workspaceId: v.id("workspaces"),

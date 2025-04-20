@@ -49,15 +49,23 @@ export const UserMessage = ({
           <div className="flex flex-col w-full gap-4">
             <Attachments message={message} />
 
-            {message.content && mode === "view" && (
-              <div className="flex flex-row items-start w-full gap-2">
-                <div className="flex flex-col w-full gap-4">
-                  <Markdown setMessages={setMessages}>
-                    {message.content as string}
-                  </Markdown>
-                </div>
-              </div>
-            )}
+            {mode === "view" &&
+              message.parts?.map((part, index) => {
+                if (part.type === "text") {
+                  return (
+                    <div
+                      key={`${message.id}-text-${index}`}
+                      className="flex flex-row items-start w-full gap-2"
+                    >
+                      <div className="flex flex-col w-full gap-4">
+                        <Markdown setMessages={setMessages}>
+                          {part.text}
+                        </Markdown>
+                      </div>
+                    </div>
+                  );
+                }
+              })}
 
             {message.content && mode === "edit" && (
               <div className="flex flex-row items-start w-full gap-2">

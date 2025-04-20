@@ -1,12 +1,9 @@
 "use client";
 import {
   attachmentsAtom,
-  currentFilesTreeAtom,
-  currentImportantFilesAtom,
   isElementSelectionEnabledAtom,
   isPreviewVersionDifferentAtom,
   selectedElementAtom,
-  workbenchStore,
 } from "@/lib/workbench/atoms";
 import { useMutation, useUploadFile } from "@firebuzz/convex";
 import { api } from "@firebuzz/convex/nextjs";
@@ -23,7 +20,6 @@ import { getFileType, getMediaContentType } from "@firebuzz/utils";
 import type { ChatRequestOptions, CreateMessage, Message } from "ai";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
-import { useParams } from "next/navigation";
 import { memo, useCallback, useRef, useState } from "react";
 import { ActionErrors } from "./action-errors";
 import { Attachment } from "./attachment";
@@ -39,16 +35,6 @@ interface ChatAttachment {
   size: number;
 }
 
-const getCurrentFileTree = () => {
-  const currentFileTree = workbenchStore.get(currentFilesTreeAtom);
-  const currentImportantFiles = workbenchStore.get(currentImportantFilesAtom);
-
-  return {
-    currentFileTree,
-    currentImportantFiles,
-  };
-};
-
 export const ChatInput = memo(
   ({
     append,
@@ -58,7 +44,6 @@ export const ChatInput = memo(
       chatRequestOptions?: ChatRequestOptions
     ) => Promise<string | null | undefined>;
   }) => {
-    const { id } = useParams();
     const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
     const selectedElement = useAtomValue(selectedElementAtom);
     const [isSending, setIsSending] = useState(false);
@@ -125,8 +110,6 @@ export const ChatInput = memo(
 
     const onSubmit = useCallback(
       async (message: string) => {
-        const { currentFileTree, currentImportantFiles } = getCurrentFileTree();
-
         // Let the useChat hook handle messages state management
         await append(
           {
@@ -142,25 +125,10 @@ export const ChatInput = memo(
                     contentType: attachment.contentType,
                   }))
                 : undefined,
-            body: {
-              projectId: id,
-              currentFileTree,
-              currentImportantFiles: Object.entries(currentImportantFiles)
-                .map(([key, value]) => `${key}: ${value}`)
-                .join("\n"),
-              attachments:
-                attachments && attachments.length > 0
-                  ? attachments.map((attachment) => ({
-                      name: attachment.name,
-                      url: attachment.url,
-                      contentType: attachment.contentType,
-                    }))
-                  : undefined,
-            },
           }
         );
       },
-      [append, id, attachments]
+      [append, attachments]
     );
 
     const clearAttachments = useCallback(() => {

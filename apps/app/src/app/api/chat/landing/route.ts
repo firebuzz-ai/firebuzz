@@ -10,6 +10,7 @@ import {
   streamText,
 } from "ai";
 
+import { askImageConfirmation } from "@/lib/ai/tools/ask-image-confirmation";
 import { searchStockImage } from "@/lib/ai/tools/search-stock-image";
 import { anthropic } from "@ai-sdk/anthropic";
 import { api, fetchMutation } from "@firebuzz/convex/nextjs";
@@ -18,8 +19,10 @@ import { nanoid } from "nanoid";
 import type { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
-  const { messages, projectId, currentFileTree, currentImportantFiles } =
-    await request.json();
+  const body = await request.json();
+
+  const { messages, requestBody } = body;
+  const { projectId, currentFileTree, currentImportantFiles } = requestBody;
 
   const token = await (await auth()).getToken({ template: "convex" });
 
@@ -57,15 +60,15 @@ export async function POST(request: NextRequest) {
 
     // Save the messages to the database
     await fetchMutation(
-      api.collections.landingPages.messages.mutations.create,
+      api.collections.landingPages.messages.mutations.upsert,
       {
         landingPageId: projectId,
         messages: appendedMessages.slice(-2).map((message) => {
           // Prepare base message data
           const messageData = {
-            id: `${projectId}-${message.id}`,
+            id: `${message.id}`,
             groupId,
-            message: message.content,
+            parts: message.parts ?? [],
             role: message.role as "user" | "assistant",
             createdAt:
               typeof message.createdAt === "string"
@@ -73,6 +76,8 @@ export async function POST(request: NextRequest) {
                 : message.createdAt instanceof Date
                   ? message.createdAt.toISOString()
                   : new Date().toISOString(),
+            // @ts-expect-error
+            isRevision: Boolean(message.revisionId),
           };
 
           // Add attachments if this is a user message and has attachments
@@ -92,17 +97,6 @@ export async function POST(request: NextRequest) {
                   size: attachment.size || 0,
                 })
               ),
-            };
-          }
-
-          // Add reasoning if this is an assistant message
-          if (message.role === "assistant") {
-            return {
-              ...messageData,
-              reasoning: message.parts
-                ?.filter((part) => part.type === "reasoning")
-                .map((part) => part.reasoning)
-                .join("\n"),
             };
           }
 
@@ -137,6 +131,7 @@ export async function POST(request: NextRequest) {
       id: message.id,
       role: message.role,
       content: message.content,
+      parts: message.parts,
       createdAt: message.createdAt,
     };
   });
@@ -158,15 +153,22 @@ export async function POST(request: NextRequest) {
         },
       },
       messages: messageToSendDeveloper,
-      maxSteps: 5,
+      maxSteps: 10,
       experimental_continueSteps: true,
       experimental_transform: smoothStream({
         delayInMs: 10, // optional: defaults to 10ms
         chunking: "word", // optional: defaults to 'word'
       }),
+      experimental_generateMessageId: () => {
+        return `${projectId}-${nanoid(8)}`;
+      },
       onFinish,
+      onError: (error) => {
+        console.error(error);
+      },
       tools: {
         searchStockImage,
+        askImageConfirmation,
       },
     });
 

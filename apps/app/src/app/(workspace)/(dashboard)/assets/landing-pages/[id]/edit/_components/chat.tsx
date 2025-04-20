@@ -1,7 +1,12 @@
 import { ChatHeader } from "@/components/chat/header";
 import { ChatInput } from "@/components/chat/input/chat-input";
 import { ChatMessages } from "@/components/chat/messages/messages";
-import { currentVersionAtom } from "@/lib/workbench/atoms";
+import {
+  currentFilesTreeAtom,
+  currentImportantFilesAtom,
+  currentVersionAtom,
+  workbenchStore,
+} from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
 import { useMessageQueue } from "@/lib/workbench/hooks/use-message-queue";
 import { useChat } from "@ai-sdk/react";
@@ -13,6 +18,7 @@ import {
 } from "@firebuzz/convex";
 import type { Message } from "ai";
 import { useSetAtom } from "jotai";
+import { nanoid } from "nanoid";
 import {
   type Dispatch,
   type SetStateAction,
@@ -71,17 +77,9 @@ export const Chat = ({ id }: ChatProps) => {
     // landingPageMessages are already sorted chronologically by the backend
     return landingPageMessages.map(
       (message): Message => ({
-        id: message.messageId.replace(`${id}-`, ""),
-        content: message.message,
-        parts: message.reasoning
-          ? [
-              {
-                type: "reasoning",
-                reasoning: message.reasoning,
-                details: [{ type: "text", text: message.reasoning }],
-              },
-            ]
-          : undefined,
+        id: message.messageId,
+        content: "",
+        parts: message.parts,
         role: message.role,
         experimental_attachments: message.attachments,
         // @ts-expect-error
@@ -93,13 +91,33 @@ export const Chat = ({ id }: ChatProps) => {
         },
       })
     );
-  }, [landingPageMessages, id]);
+  }, [landingPageMessages]);
 
-  const { messages, setMessages, status, append } = useChat({
+  const { messages, setMessages, status, append, addToolResult } = useChat({
     api: "/api/chat/landing",
-    // @ts-expect-error
     initialMessages: formattedMessages,
     sendExtraMessageFields: true,
+    experimental_prepareRequestBody: (options) => {
+      const currentFileTree = workbenchStore.get(currentFilesTreeAtom);
+      const currentImportantFiles = Object.entries(
+        workbenchStore.get(currentImportantFilesAtom)
+      )
+        .map(([key, value]) => `${key}: ${value}`)
+        .join("\n");
+
+      return {
+        ...options,
+        requestBody: {
+          ...options.requestBody,
+          projectId: id,
+          currentFileTree,
+          currentImportantFiles,
+        },
+      };
+    },
+    generateId: () => {
+      return `${id}-${nanoid(8)}`;
+    },
   });
 
   // Handle message queue
@@ -139,15 +157,23 @@ export const Chat = ({ id }: ChatProps) => {
             return message as Message;
           }
 
-          const parts = message.parts;
-          const textParts = parts?.filter((part) => part.type === "text");
+          const parts = message.parts?.map((part, index) => {
+            if (part.type !== "text") return part;
+
+            return {
+              ...part,
+              text: parsedMessages[`${message.id}-${index}`] ?? "",
+            };
+          });
 
           return {
             ...message,
             content: parsedMessages[message.id] ?? "",
+            parts,
           } as Message;
         })}
         overviewComponent={<EmptyState />}
+        addToolResult={addToolResult}
         setMessages={setMessages as Dispatch<SetStateAction<Message[]>>}
         reload={() => {}}
         chatStatus={status}

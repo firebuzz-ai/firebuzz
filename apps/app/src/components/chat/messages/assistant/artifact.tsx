@@ -151,13 +151,18 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
         messages: [
           {
             id: `version-restored-${Date.now()}`,
-            message: JSON.stringify({
-              type: "version-reference",
-              version: {
-                versionId: versionId as Id<"landingPageVersions">,
-                versionNumber: versionNumber || 0,
+            parts: [
+              {
+                type: "text",
+                text: JSON.stringify({
+                  type: "version-reference",
+                  version: {
+                    versionId: versionId as Id<"landingPageVersions">,
+                    versionNumber: versionNumber || 0,
+                  },
+                }),
               },
-            }),
+            ],
             role: "user",
             groupId: nanoid(5),
             createdAt: new Date().toISOString(),
@@ -228,7 +233,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
       })}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 pr-3 pl-2 py-2 max-w-full overflow-hidden">
+      <div className="flex items-center justify-between max-w-full gap-2 py-2 pl-2 pr-3 overflow-hidden">
         {/* Left Part */}
         <div className="flex items-center gap-1 overflow-hidden">
           <Button
@@ -238,8 +243,8 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
           >
             {isActionsVisible ? <ChevronDown /> : <ChevronRight />}
           </Button>
-          <div className="text-left truncate pr-1">
-            <div className="font-medium text-sm text-primary truncate">
+          <div className="pr-1 text-left truncate">
+            <div className="text-sm font-medium truncate text-primary">
               {artifact.title}
             </div>
           </div>
@@ -262,7 +267,7 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
                   ? "Preview"
                   : `Version ${versionNumber}`}
             </div>
-            <ChevronRight className="size-3 ml-2" />
+            <ChevronRight className="ml-2 size-3" />
             <div className="flex items-center gap-1">
               <Button
                 disabled={isPreviewCurrent || isCurrentVersion}

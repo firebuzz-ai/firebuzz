@@ -5,7 +5,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { Markdown } from "../markdown";
 import { MessageActions } from "../message-actions";
 import { Reasoning } from "./reasoning";
-import { ToolCall } from "./tool-calls";
+import { ToolCall } from "./tool-calls/tool-calls";
 
 interface AssistantMessageProps {
   message: MessageType & {
@@ -16,6 +16,14 @@ interface AssistantMessageProps {
   isLoading: boolean;
   chatId: string;
   setMessages: Dispatch<SetStateAction<MessageType[]>>;
+  addToolResult: ({
+    toolCallId,
+    result,
+  }: {
+    toolCallId: string;
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    result: any;
+  }) => void;
   reload: () => void;
 }
 
@@ -24,9 +32,8 @@ export const AssistantMessage = ({
   isLoading,
   chatId,
   setMessages,
+  addToolResult,
 }: AssistantMessageProps) => {
-  console.log(message);
-
   return (
     <AnimatePresence>
       <motion.div
@@ -43,12 +50,12 @@ export const AssistantMessage = ({
           </div>
 
           <div className="flex flex-col w-full max-w-full gap-4 overflow-hidden">
-            {message.parts?.map((part) => {
+            {message.parts?.map((part, index) => {
               /* TEXT */
               if (part.type === "text") {
                 return (
                   <div
-                    key={`text-${message.id}`}
+                    key={`text-${message.id}-${index}`}
                     className="flex flex-row items-start w-full gap-2"
                   >
                     <div className="flex flex-col w-full gap-4">
@@ -66,6 +73,7 @@ export const AssistantMessage = ({
                   <ToolCall
                     key={`tool-call-${part.toolInvocation.toolCallId}`}
                     toolCall={part.toolInvocation}
+                    addToolResult={addToolResult}
                   />
                 );
               }
@@ -77,7 +85,13 @@ export const AssistantMessage = ({
                     key={`reasoning-${message.id}`}
                     content={part.reasoning}
                     setMessages={setMessages}
-                    isOver={message.content !== ""}
+                    isOver={
+                      message.parts?.some(
+                        (part) =>
+                          part.type === "text" ||
+                          part.type === "tool-invocation"
+                      ) ?? false
+                    }
                   />
                 );
               }

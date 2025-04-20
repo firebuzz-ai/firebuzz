@@ -19,6 +19,14 @@ interface MessagesProps {
     messages: MessageType[] | ((messages: MessageType[]) => MessageType[])
   ) => void;
   reload: () => void;
+  addToolResult: ({
+    toolCallId,
+    result,
+  }: {
+    toolCallId: string;
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    result: any;
+  }) => void;
   overviewComponent: React.ReactNode;
   chatStatus: "submitted" | "streaming" | "error" | "ready";
   messagesStatus: PaginationStatus;
@@ -32,6 +40,7 @@ export const ChatMessages = ({
   overviewComponent,
   setMessages,
   reload,
+  addToolResult,
   chatStatus,
   messagesStatus,
   onLoadMoreClick,
@@ -113,6 +122,7 @@ export const ChatMessages = ({
             <Message
               chatId={chatId}
               message={message}
+              addToolResult={addToolResult}
               isLoading={
                 isSubmitted &&
                 message.role === "assistant" &&

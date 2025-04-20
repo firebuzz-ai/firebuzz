@@ -109,7 +109,7 @@ export function useMessageQueue() {
               const { landingPageVersionId, number } =
                 await createLandingPageVersion({
                   landingPageId: landingPageId as Id<"landingPages">,
-                  messageId: `${landingPageId}-${item.data.messageId}`,
+                  messageId: `${item.data.messageId}`,
                   filesString: JSON.stringify(files),
                 });
 

@@ -6,6 +6,14 @@ import { UserMessage } from "./user/user-message";
 interface MessageProps {
   message: MessageType;
   isLoading: boolean;
+  addToolResult: ({
+    toolCallId,
+    result,
+  }: {
+    toolCallId: string;
+    // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+    result: any;
+  }) => void;
   chatId: string;
   setMessages: Dispatch<SetStateAction<MessageType[]>>;
   reload: () => void;
@@ -14,7 +22,7 @@ interface MessageProps {
 export const Message = ({
   message,
   isLoading,
-
+  addToolResult,
   chatId,
   setMessages,
   reload,
@@ -31,6 +39,7 @@ export const Message = ({
     <AssistantMessage
       message={message}
       isLoading={isLoading}
+      addToolResult={addToolResult}
       chatId={chatId}
       setMessages={setMessages}
       reload={reload}
