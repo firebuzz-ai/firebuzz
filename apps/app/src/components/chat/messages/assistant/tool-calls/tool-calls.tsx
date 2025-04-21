@@ -1,9 +1,10 @@
-import type { ToolInvocation } from "ai";
+import type { Message, ToolInvocation } from "ai";
 import { AskImageConfirmation } from "./ask-image-confirmation";
 import { SearchStockImages } from "./search-stock-images";
 
 interface ToolCallProps {
   toolCall: ToolInvocation;
+  message: Message;
   addToolResult: ({
     toolCallId,
     result,
@@ -14,7 +15,11 @@ interface ToolCallProps {
   }) => void;
 }
 
-export const ToolCall = ({ toolCall, addToolResult }: ToolCallProps) => {
+export const ToolCall = ({
+  toolCall,
+  addToolResult,
+  message,
+}: ToolCallProps) => {
   switch (toolCall.toolName) {
     case "searchStockImage":
       return <SearchStockImages toolCall={toolCall} />;
@@ -23,6 +28,7 @@ export const ToolCall = ({ toolCall, addToolResult }: ToolCallProps) => {
         <AskImageConfirmation
           toolCall={toolCall}
           addToolResult={addToolResult}
+          message={message}
         />
       );
     default:

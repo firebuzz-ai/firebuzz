@@ -91,7 +91,7 @@ export const Reasoning = ({ content, setMessages, isOver }: ReasoningProps) => {
           { "border-b": isVisible }
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -108,7 +108,7 @@ export const Reasoning = ({ content, setMessages, isOver }: ReasoningProps) => {
             <TextShimmer
               as="span"
               duration={1.5}
-              className="text-sm font-medium"
+              className="text-sm italic font-medium"
               active={!isOver}
             >
               Thinking

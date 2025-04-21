@@ -71,6 +71,7 @@ export const AssistantMessage = ({
               if (part.type === "tool-invocation") {
                 return (
                   <ToolCall
+                    message={message}
                     key={`tool-call-${part.toolInvocation.toolCallId}`}
                     toolCall={part.toolInvocation}
                     addToolResult={addToolResult}

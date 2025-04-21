@@ -103,6 +103,34 @@ export const Markdown = memo(
             </div>
           );
         },
+        li: ({ className, children, node, ...props }) => {
+          return (
+            <li className="pl-6 space-y-2" {...props}>
+              {children}
+            </li>
+          );
+        },
+        ol: ({ className, children, node, ...props }) => {
+          return (
+            <ol className="pl-6 space-y-2 list-decimal" {...props}>
+              {children}
+            </ol>
+          );
+        },
+        ul: ({ className, children, node, ...props }) => {
+          return (
+            <ul className="pl-6 space-y-2 list-disc" {...props}>
+              {children}
+            </ul>
+          );
+        },
+        code: ({ className, children, node, ...props }) => {
+          return (
+            <code className="px-1 rounded text-brand bg-brand/10" {...props}>
+              {children}
+            </code>
+          );
+        },
       } satisfies Components;
     }, [setMessages]);
 

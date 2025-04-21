@@ -12,13 +12,14 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { getFileType, getMediaContentType } from "@firebuzz/utils";
-import type { ToolInvocation } from "ai";
+import type { Message, ToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { memo, useMemo, useState } from "react";
 
 interface ToolCallProps {
   toolCall: ToolInvocation;
+  message: Message;
   addToolResult: ({
     toolCallId,
     result,
@@ -45,7 +46,7 @@ const AskImageConfirmationPartial = memo(
             { "border-b": isExpanded }
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
@@ -100,7 +101,7 @@ const AskImageConfirmationPartial = memo(
 
 interface AskImageConfirmationContentProps
   extends AskImageConfirmationSharedProps {
-  images: {
+  images?: {
     id: string;
     width: number;
     height: number;
@@ -108,6 +109,7 @@ interface AskImageConfirmationContentProps
     altText: string;
     downloadLink: string;
   }[];
+  toolCallId: string;
   selectedImages: string[];
   toggleImage: (imageId: string) => void;
   uploadedUrls: Record<string, string>;
@@ -119,6 +121,7 @@ interface AskImageConfirmationContentProps
 
 const AskImageConfirmationContent = memo(
   ({
+    toolCallId,
     isExpanded,
     setIsExpanded,
     images,
@@ -138,7 +141,7 @@ const AskImageConfirmationContent = memo(
             { "border-b": isExpanded }
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
@@ -173,13 +176,13 @@ const AskImageConfirmationContent = memo(
             >
               <div className="p-4">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                  {images.map((image) => (
+                  {images?.map((image) => (
                     <div
-                      key={image.id}
+                      key={`${image.id}-${toolCallId}`}
                       className={cn(
                         "relative aspect-square overflow-hidden rounded-md border cursor-pointer group",
                         selectedImages.includes(image.id) &&
-                          "ring-2 ring-primary",
+                          "ring-2 ring-brand",
                         !selectedImages.includes(image.id) &&
                           status === "result" &&
                           "grayscale"
@@ -187,6 +190,7 @@ const AskImageConfirmationContent = memo(
                       onClick={() => toggleImage(image.id)}
                     >
                       <Image
+                        unoptimized
                         src={image.url}
                         alt={image.altText || `Image ${image.id}`}
                         fill
@@ -194,13 +198,8 @@ const AskImageConfirmationContent = memo(
                         sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                       />
                       {selectedImages.includes(image.id) && (
-                        <div className="absolute p-1 rounded-full top-2 right-2 bg-primary text-primary-foreground">
+                        <div className="absolute p-1 rounded-full top-2 right-2 bg-brand text-brand-foreground">
                           <Check className="w-4 h-4" />
-                        </div>
-                      )}
-                      {uploadedUrls[image.id] && (
-                        <div className="absolute bottom-0 left-0 right-0 px-2 py-1 text-xs text-center bg-primary/70 text-primary-foreground">
-                          Uploaded
                         </div>
                       )}
                     </div>
@@ -248,8 +247,17 @@ const AskImageConfirmationContent = memo(
   }
 );
 
+interface StockImage {
+  id: string;
+  width: number;
+  height: number;
+  url: string;
+  altText: string;
+  downloadLink: string;
+}
+
 export const AskImageConfirmation = memo(
-  ({ toolCall, addToolResult }: ToolCallProps) => {
+  ({ toolCall, addToolResult, message }: ToolCallProps) => {
     const result =
       toolCall.state === "result"
         ? (toolCall.result as Record<string, string>)
@@ -257,7 +265,7 @@ export const AskImageConfirmation = memo(
     const selectedIdsFromResult = result
       ? Object.keys(result).filter((key) => result[key])
       : [];
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(toolCall.state !== "result");
     const [selectedImages, setSelectedImages] = useState<string[]>(
       selectedIdsFromResult
     );
@@ -274,18 +282,42 @@ export const AskImageConfirmation = memo(
 
     const status = toolCall.state;
 
-    const images = useMemo(() => {
-      return toolCall.args?.images
-        ? (toolCall.args.images as {
-            id: string;
-            width: number;
-            height: number;
-            url: string;
-            altText: string;
-            downloadLink: string;
-          }[])
-        : [];
-    }, [toolCall.args?.images]);
+    const images = useMemo((): StockImage[] => {
+      if (!message?.parts?.length) return [];
+
+      const imageMap = new Map<string, StockImage>();
+
+      // Collect all images from searchStockImage tool calls
+      for (const part of message.parts) {
+        // Skip parts that aren't searchStockImage tool invocations with results
+        if (
+          part.type !== "tool-invocation" ||
+          part.toolInvocation.toolName !== "searchStockImage" ||
+          part.toolInvocation.state !== "result"
+        ) {
+          continue;
+        }
+
+        // Process the result images
+        const resultImages = part.toolInvocation.result.images || [];
+        for (const image of resultImages) {
+          if (!image?.id) continue;
+
+          imageMap.set(image.id, {
+            id: image.id,
+            width: image.width,
+            height: image.height,
+            url: image.url,
+            downloadLink: image.downloadLink,
+            altText: image.altText || "",
+          });
+        }
+      }
+
+      return Array.from(imageMap.values());
+    }, [message]);
+
+    console.log({ images });
 
     const toggleImage = (imageId: string) => {
       if (result) return;
@@ -309,7 +341,7 @@ export const AskImageConfirmation = memo(
 
       try {
         for (const imageId of selectedImages) {
-          const imageData = images.find((img) => img.id === imageId);
+          const imageData = images?.find((img) => img.id === imageId);
           if (!imageData) continue;
 
           try {
@@ -396,6 +428,7 @@ export const AskImageConfirmation = memo(
           />
         ) : (
           <AskImageConfirmationContent
+            toolCallId={toolCall.toolCallId}
             isExpanded={isExpanded}
             setIsExpanded={setIsExpanded}
             images={images}

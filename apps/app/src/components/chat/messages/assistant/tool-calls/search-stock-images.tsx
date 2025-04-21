@@ -1,11 +1,11 @@
 import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
+import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ChevronDown, ChevronRight } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { ToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { Markdown } from "../../markdown";
 
 interface ToolCallProps {
   toolCall: ToolInvocation;
@@ -14,7 +14,25 @@ interface ToolCallProps {
 export const SearchStockImages = ({ toolCall }: ToolCallProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const status = toolCall.state;
-
+  const result =
+    toolCall.state === "result"
+      ? (toolCall.result as
+          | {
+              success: true;
+              count: number;
+              images: {
+                id: string;
+                url: string;
+                downloadLink: string;
+                altText: string;
+              }[];
+              message: string;
+            }
+          | {
+              success: false;
+              message: string;
+            })
+      : undefined;
   return (
     <div className="mb-2 overflow-hidden border rounded-md">
       <div
@@ -23,7 +41,7 @@ export const SearchStockImages = ({ toolCall }: ToolCallProps) => {
           { "border-b": isExpanded }
         )}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -65,19 +83,16 @@ export const SearchStockImages = ({ toolCall }: ToolCallProps) => {
                 </pre>
               </div>
 
-              {toolCall.state === "result" && (
+              {result && (
                 <div>
                   <h4 className="mb-1 text-xs font-medium text-muted-foreground">
-                    Result:
+                    Result:{" "}
+                    <Badge variant="outline" className="ml-1">
+                      {result?.success ? "Success" : "Failed"}
+                    </Badge>
                   </h4>
                   <div className="p-2 overflow-x-auto text-xs rounded-sm bg-muted/50">
-                    {typeof toolCall.result === "string" ? (
-                      <Markdown>
-                        {JSON.stringify(toolCall.result, null, 2)}
-                      </Markdown>
-                    ) : (
-                      <pre>{JSON.stringify(toolCall.result, null, 2)}</pre>
-                    )}
+                    {result?.message}
                   </div>
                 </div>
               )}
