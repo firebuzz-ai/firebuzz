@@ -3,7 +3,7 @@ import { z } from "zod";
 
 export const askImageConfirmation = tool({
   description:
-    "Ask the user to confirm which images they want to use from search results.",
+    "Ask the user to confirm which images they want to use from search results. At least 3-5 images you should show to the user.",
   parameters: z.object({
     images: z.array(
       z.object({

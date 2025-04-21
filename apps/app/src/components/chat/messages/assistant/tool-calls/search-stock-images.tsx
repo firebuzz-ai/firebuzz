@@ -42,7 +42,7 @@ export const SearchStockImages = ({ toolCall }: ToolCallProps) => {
             className="ml-2 text-sm italic"
             active={status !== "result"}
           >
-            {toolCall.toolName}
+            Search stock images
           </TextShimmer>
         </div>
       </div>

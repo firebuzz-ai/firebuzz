@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
       },
       messages: messageToSendDeveloper,
       maxSteps: 10,
+      toolCallStreaming: true,
       experimental_continueSteps: true,
       experimental_transform: smoothStream({
         delayInMs: 10, // optional: defaults to 10ms

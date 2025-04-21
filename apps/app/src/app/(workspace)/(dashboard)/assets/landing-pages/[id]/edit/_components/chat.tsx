@@ -16,7 +16,7 @@ import {
   useRichQuery,
   useStableReversedPaginatedMessagesQuery,
 } from "@firebuzz/convex";
-import type { Message } from "ai";
+import type { ChatRequestOptions, CreateMessage, Message } from "ai";
 import { useSetAtom } from "jotai";
 import { nanoid } from "nanoid";
 import {
@@ -118,12 +118,46 @@ export const Chat = ({ id }: ChatProps) => {
     generateId: () => {
       return `${id}-${nanoid(8)}`;
     },
+    experimental_throttle: 50,
   });
+
+  const memoizedAppend = useCallback(
+    (
+      message: Message | CreateMessage,
+      chatRequestOptions?: ChatRequestOptions
+    ) => {
+      append(message, chatRequestOptions);
+    },
+    [append]
+  );
 
   // Handle message queue
   useMessageQueue();
 
   const { parsedMessages, parseMessages } = useMessageParser();
+
+  const memoizedMessages = useMemo(() => {
+    return messages.map((message) => {
+      if (message.role === "user") {
+        return message as Message;
+      }
+
+      const parts = message.parts?.map((part, index) => {
+        if (part.type !== "text") return part;
+
+        return {
+          ...part,
+          text: parsedMessages[`${message.id}-${index}`] ?? "",
+        };
+      });
+
+      return {
+        ...message,
+        content: parsedMessages[message.id] ?? "",
+        parts,
+      } as Message;
+    });
+  }, [messages, parsedMessages]);
 
   // Parse messages when assistant responds
   useEffect(() => {
@@ -152,26 +186,7 @@ export const Chat = ({ id }: ChatProps) => {
       />
       <ChatMessages
         chatId={id}
-        messages={messages.map((message) => {
-          if (message.role === "user") {
-            return message as Message;
-          }
-
-          const parts = message.parts?.map((part, index) => {
-            if (part.type !== "text") return part;
-
-            return {
-              ...part,
-              text: parsedMessages[`${message.id}-${index}`] ?? "",
-            };
-          });
-
-          return {
-            ...message,
-            content: parsedMessages[message.id] ?? "",
-            parts,
-          } as Message;
-        })}
+        messages={memoizedMessages}
         overviewComponent={<EmptyState />}
         addToolResult={addToolResult}
         setMessages={setMessages as Dispatch<SetStateAction<Message[]>>}
@@ -182,7 +197,7 @@ export const Chat = ({ id }: ChatProps) => {
         onLoadMoreClick={handleLoadMore}
       />
       {/* biome-ignore lint/suspicious/noExplicitAny: <explanation> */}
-      <ChatInput append={append as unknown as any} />
+      <ChatInput append={memoizedAppend as unknown as any} />
     </div>
   );
 };
