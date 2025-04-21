@@ -8,8 +8,6 @@ import { z } from "zod";
 export async function POST(request: NextRequest) {
   const { prompt } = await request.json();
 
-  console.log(JSON.stringify(prompt, null, 2));
-
   const user = await auth();
 
   if (!user.userId) {

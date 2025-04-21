@@ -8,7 +8,6 @@ import { AlertTriangle } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
-import { useEffect } from "react";
 import { z } from "zod";
 
 export const actionErrorSchema = z.object({
@@ -42,13 +41,18 @@ export const ActionErrors = ({
 }) => {
   const [failedActions, setFailedActions] = useAtom(failedActionsAtom);
 
-  const {
-    object,
-    submit,
-    isLoading: isHandlingError,
-  } = useObject({
+  const { submit, isLoading: isHandlingError } = useObject({
     api: "/api/chat/landing/fix-error",
     schema: z.array(actionErrorSchema),
+    onFinish: ({ object }) => {
+      setFailedActions([]);
+      onSubmit(
+        JSON.stringify({
+          type: "action-error-explanation",
+          errors: object,
+        })
+      );
+    },
   });
 
   const handleErrorClick = async () => {
@@ -75,18 +79,6 @@ export const ActionErrors = ({
   const handleMarkAsResolved = () => {
     setFailedActions([]);
   };
-
-  useEffect(() => {
-    if (object) {
-      setFailedActions([]);
-      onSubmit(
-        JSON.stringify({
-          type: "action-error-explanation",
-          errors: object,
-        })
-      );
-    }
-  }, [object, onSubmit, setFailedActions]);
 
   if (failedActions.length === 0) return null;
 

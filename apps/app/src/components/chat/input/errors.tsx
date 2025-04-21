@@ -8,7 +8,6 @@ import { Bug } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
-import { useEffect } from "react";
 
 import { z } from "zod";
 
@@ -25,13 +24,18 @@ export const Errors = ({
 }) => {
   const [errors, setErrors] = useAtom(errorsAtom);
 
-  const {
-    object,
-    submit,
-    isLoading: isHandlingError,
-  } = useObject({
+  const { submit, isLoading: isHandlingError } = useObject({
     api: "/api/chat/landing/fix-error",
     schema: z.array(schema),
+    onFinish: ({ object }) => {
+      setErrors([]);
+      onSubmit(
+        JSON.stringify({
+          type: "error-explanation",
+          errors: object,
+        })
+      );
+    },
   });
 
   const handleErrorClick = async () => {
@@ -49,18 +53,6 @@ export const Errors = ({
   const handleMarkAsResolved = () => {
     setErrors([]);
   };
-
-  useEffect(() => {
-    if (object) {
-      setErrors([]);
-      onSubmit(
-        JSON.stringify({
-          type: "error-explanation",
-          errors: object,
-        })
-      );
-    }
-  }, [object, onSubmit, setErrors]);
 
   if (errors.length === 0) return null;
 
