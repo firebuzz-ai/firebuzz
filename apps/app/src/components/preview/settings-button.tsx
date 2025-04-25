@@ -1,6 +1,6 @@
 "use client";
 
-import { useSettingsSheet } from "@/hooks/ui/use-settings-sheet";
+import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
@@ -15,7 +15,7 @@ interface SettingsButtonProps {
 }
 
 export const SettingsButton = (_props: SettingsButtonProps) => {
-  const { setIsOpen } = useSettingsSheet();
+  const { setIsOpen } = useSheet("landing-page-settings");
 
   return (
     <Tooltip>

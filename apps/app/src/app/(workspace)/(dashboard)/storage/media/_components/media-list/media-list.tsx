@@ -143,7 +143,7 @@ export const MediaList = () => {
             key,
             name: file.name,
             type: file.type.split("/")[0] as "image" | "video" | "audio",
-            extension: file.type,
+            contentType: file.type,
             size: file.size,
             source: "uploaded",
           });

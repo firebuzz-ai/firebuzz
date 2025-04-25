@@ -1,4 +1,3 @@
-import { ImageUpload } from "@/components/image-upload";
 import { parsedFilesAtom, seoConfigAtom } from "@/lib/workbench/atoms";
 import { webcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
@@ -21,6 +20,8 @@ import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
+import { ImagePreview } from "../image-preview";
+import { ImageSelect } from "../image-select";
 
 // Define schema for SEO configuration
 const seoSchema = z.object({
@@ -29,7 +30,7 @@ const seoSchema = z.object({
   canonical: z.string().url("Must be a valid URL"),
   indexable: z.boolean().default(true),
   iconType: z.string(),
-  icon: z.string(), // Allow any string format for icon paths
+  icon: z.string().url("Must be a valid URL"),
   openGraph: z.object({
     title: z.string().min(1, "Open Graph title is required"),
     description: z.string().min(1, "Open Graph description is required"),
@@ -289,13 +290,19 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                           disabled={isLoading}
                         />
                       </FormControl>
-                      <div>
-                        <ImageUpload
-                          value={field.value}
+                      {!field.value ? (
+                        <ImageSelect
                           onChange={field.onChange}
-                          disabled={isLoading}
+                          allowedTypes={["image/*"]}
                         />
-                      </div>
+                      ) : (
+                        <ImagePreview
+                          src={field.value}
+                          handleDeselect={() => {
+                            field.onChange("");
+                          }}
+                        />
+                      )}
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -394,11 +401,19 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                           disabled={isLoading}
                         />
                       </FormControl>
-                      <ImageUpload
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={isLoading}
-                      />
+                      {!field.value ? (
+                        <ImageSelect
+                          onChange={field.onChange}
+                          allowedTypes={["image/*"]}
+                        />
+                      ) : (
+                        <ImagePreview
+                          src={field.value}
+                          handleDeselect={() => {
+                            field.onChange("");
+                          }}
+                        />
+                      )}
                     </div>
                     <FormDescription>
                       Image that appears when shared on social media
@@ -476,11 +491,19 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                           disabled={isLoading}
                         />
                       </FormControl>
-                      <ImageUpload
-                        value={field.value}
-                        onChange={field.onChange}
-                        disabled={isLoading}
-                      />
+                      {!field.value ? (
+                        <ImageSelect
+                          onChange={field.onChange}
+                          allowedTypes={["image/*"]}
+                        />
+                      ) : (
+                        <ImagePreview
+                          src={field.value}
+                          handleDeselect={() => {
+                            field.onChange("");
+                          }}
+                        />
+                      )}
                     </div>
                     <FormDescription>
                       Image that appears when shared on Twitter (recommended

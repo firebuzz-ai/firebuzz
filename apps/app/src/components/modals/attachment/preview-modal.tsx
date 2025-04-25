@@ -1,19 +1,22 @@
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
+import { envCloudflarePublic } from "@firebuzz/env";
+import { Button } from "@firebuzz/ui/components/ui/button";
+import { X } from "@firebuzz/ui/icons/lucide";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import { parseAsString, useQueryStates } from "nuqs";
 import { useHotkeys } from "react-hotkeys-hook";
-import { DetailsSidebar } from "./sidebar";
 
 const MediaRenderer = ({
   mediaUrl,
   mediaType,
 }: {
   mediaUrl: string;
-  mediaType: string;
+  mediaType: "image" | "video" | "audio" | "pdf" | "unknown";
 }) => {
-  if (mediaType.startsWith("image")) {
+  if (mediaType === "image") {
     return (
       <Image
+        unoptimized
         src={mediaUrl}
         alt="Media content"
         fill
@@ -72,31 +75,20 @@ const MediaRenderer = ({
   );
 };
 
-export const MediaDetailsModal = () => {
-  const [{ mediaId, publicUrl, mediaType }, setMediaState] = useQueryStates(
-    {
-      mediaId: parseAsString,
-      publicUrl: parseAsString,
-      mediaType: parseAsString,
-    },
-    {
-      urlKeys: {
-        mediaId: "id",
-        publicUrl: "url",
-        mediaType: "type",
-      },
-    }
-  );
+export const AttachmentPreviewModal = () => {
+  const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
+  const [{ key, type, placement }, setAttachmentState] =
+    useAttachmentPreviewModal();
 
   const handleClose = () => {
-    setMediaState(null);
+    setAttachmentState(null);
   };
 
   useHotkeys("esc", handleClose);
 
   return (
     <AnimatePresence initial={false}>
-      {mediaId && publicUrl && (
+      {key && type && (
         <motion.div
           layout
           className="fixed inset-0 z-50 bg-background/95"
@@ -107,22 +99,29 @@ export const MediaDetailsModal = () => {
             className="container flex items-center justify-center h-full max-w-7xl"
           >
             <motion.div
-              layoutId={`media-${mediaId}`}
+              layoutId={`media-${key}-${placement}`}
               transition={{
                 duration: 0.3,
                 ease: "easeOut",
               }}
-              className="flex bg-background border border-border rounded-lg shadow-lg overflow-hidden h-full max-h-[90vh] w-full"
+              className="flex bg-background border border-border rounded-lg shadow-lg overflow-hidden h-full max-h-[90vh] w-full relative"
               onClick={(e) => e.stopPropagation()}
             >
+              {/* Close button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute z-10 top-2 right-2"
+                onClick={handleClose}
+              >
+                <X />
+              </Button>
               <div className="relative flex-1 p-2">
                 <MediaRenderer
-                  mediaUrl={publicUrl}
-                  mediaType={mediaType ?? "image"}
+                  mediaUrl={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`}
+                  mediaType={type}
                 />
               </div>
-
-              <DetailsSidebar />
             </motion.div>
           </motion.div>
         </motion.div>

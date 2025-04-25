@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
-import { getFileType, getMediaContentType } from "@firebuzz/utils";
+import { parseMediaFile } from "@firebuzz/utils";
 import type { Message, ToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
@@ -317,8 +317,6 @@ export const AskImageConfirmation = memo(
       return Array.from(imageMap.values());
     }, [message]);
 
-    console.log({ images });
-
     const toggleImage = (imageId: string) => {
       if (result) return;
       setSelectedImages((prev) =>
@@ -360,31 +358,21 @@ export const AskImageConfirmation = memo(
 
             // Upload to R2
             const key = await uploadFile(file);
-            const { type, extension } = getFileType(file);
 
             // Create media record
-            if (type === "media") {
-              const mediaType = getMediaContentType(file);
-              await createMedia({
-                key,
-                type: mediaType,
-                extension,
-                size: file.size,
-                name: file.name,
-                source: "unsplash",
-                aiMetadata: {
-                  size: `${imageData.width}x${imageData.height}`,
-                  prompt: imageData.altText || `Unsplash image ${imageData.id}`,
-                  seed: Date.now(),
-                },
-              });
+            const { type, contentType } = parseMediaFile(file);
+            await createMedia({
+              key,
+              type,
+              contentType,
+              size: file.size,
+              name: file.name,
+              source: "unsplash",
+            });
 
-              const cdnUrl = `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`;
-              uploadResults[imageId] = cdnUrl;
-              successfulUploads.push(imageId);
-            } else {
-              failedUploads.push(imageId);
-            }
+            const cdnUrl = `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`;
+            uploadResults[imageId] = cdnUrl;
+            successfulUploads.push(imageId);
           } catch (error) {
             console.error(`Failed to upload image ${imageId}:`, error);
             failedUploads.push(imageId);

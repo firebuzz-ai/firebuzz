@@ -5,35 +5,19 @@ import {
   isPreviewVersionDifferentAtom,
   selectedElementAtom,
 } from "@/lib/workbench/atoms";
-import { useMutation, useUploadFile } from "@firebuzz/convex";
-import { api } from "@firebuzz/convex/nextjs";
-import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
-import {
-  ChevronRight,
-  ImageIcon,
-  Loader2,
-  Plus,
-} from "@firebuzz/ui/icons/lucide";
-import { getFileType, getMediaContentType } from "@firebuzz/utils";
+import { ChevronRight, Plus } from "@firebuzz/ui/icons/lucide";
 import type { ChatRequestOptions, CreateMessage, Message } from "ai";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { AnimatePresence } from "motion/react";
 import { memo, useCallback, useRef, useState } from "react";
 import { ActionErrors } from "./action-errors";
 import { Attachment } from "./attachment";
+import { AttachmentButton } from "./attachment-button";
 import { Errors } from "./errors";
 import { SelectedElement } from "./selected-element";
 import { VersionWarning } from "./version-warning";
-
-// Define an interface for our attachment structure
-interface ChatAttachment {
-  name: string;
-  contentType: string;
-  url: string;
-  size: number;
-}
 
 export const ChatInput = memo(
   ({
@@ -44,7 +28,6 @@ export const ChatInput = memo(
       chatRequestOptions?: ChatRequestOptions
     ) => Promise<string | null | undefined>;
   }) => {
-    const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
     const selectedElement = useAtomValue(selectedElementAtom);
     const [isSending, setIsSending] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -61,55 +44,9 @@ export const ChatInput = memo(
     );
     const setSelectedElement = useSetAtom(selectedElementAtom);
 
-    const uploadFile = useUploadFile(api.helpers.r2);
-    const createMedia = useMutation(
-      api.collections.storage.media.mutations.create
-    );
-
-    const uploadHandler = useCallback(
-      async (file: File) => {
-        try {
-          setIsUploading(true);
-          // Upload file to R2
-          const key = await uploadFile(file);
-          const { type, extension } = getFileType(file);
-
-          // Create media
-          if (type === "media") {
-            const mediaType = getMediaContentType(file);
-            await createMedia({
-              key,
-              type: mediaType,
-              extension,
-              size: file.size,
-              name: file.name,
-              source: "uploaded",
-            });
-
-            return {
-              type: "media",
-              mediaType,
-              url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
-            };
-          }
-
-          return {
-            type: "document",
-            documentType: extension,
-            url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
-          };
-        } catch (error) {
-          console.error("Failed to upload file:", error);
-          return null;
-        } finally {
-          setIsUploading(false);
-        }
-      },
-      [uploadFile, createMedia, NEXT_PUBLIC_R2_PUBLIC_URL]
-    );
-
     const onSubmit = useCallback(
       async (message: string) => {
+        console.log("attachments", attachments);
         // Let the useChat hook handle messages state management
         await append(
           {
@@ -198,32 +135,6 @@ export const ChatInput = memo(
       ]
     );
 
-    const handleFileChange = async (
-      event: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      if (event.target.files && event.target.files.length > 0) {
-        const file = event.target.files[0];
-
-        try {
-          setIsUploading(true);
-          const uploadedFile = await uploadHandler(file);
-
-          if (uploadedFile) {
-            const newAttachment: ChatAttachment = {
-              name: file.name,
-              contentType: file.type,
-              url: uploadedFile.url,
-              size: file.size,
-            };
-
-            setAttachments([newAttachment]);
-          }
-        } catch (error) {
-          console.error("Failed to upload file:", error);
-        }
-      }
-    };
-
     return (
       <AnimatePresence>
         <div className="relative w-full max-w-4xl mx-auto bg-transparent">
@@ -240,11 +151,7 @@ export const ChatInput = memo(
             <Textarea
               className="w-full bg-background-subtle bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 focus:border-primary/10 resize-none pb-16 max-h-[200px] overflow-y-auto"
               placeholder={
-                isSending
-                  ? "Sending..."
-                  : isUploading
-                    ? "Uploading image..."
-                    : "Type your message here..."
+                isSending ? "Sending..." : "Type your message here..."
               }
               rows={2}
               value={inputValue}
@@ -261,17 +168,7 @@ export const ChatInput = memo(
                   handleSubmit(inputValue);
                 }
               }}
-              disabled={isSending || isUploading}
-            />
-
-            {/* Hidden file input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              className="hidden"
-              disabled={isUploading || isSending}
+              disabled={isSending}
             />
 
             {/* New line button */}
@@ -289,24 +186,10 @@ export const ChatInput = memo(
 
             {/* Send and Upload buttons */}
             <div className="absolute flex gap-2 text-xs bottom-6 right-6 text-muted-foreground">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isSending || isUploading}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-1 size-3 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon className="mr-1 size-3" />
-                    Image
-                  </>
-                )}
-              </Button>
+              <AttachmentButton
+                isUploading={isUploading}
+                setIsUploading={setIsUploading}
+              />
               <Button
                 disabled={isSending || isUploading}
                 onClick={() => handleSubmit(inputValue)}

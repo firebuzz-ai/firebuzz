@@ -2,6 +2,7 @@ import { useChatScroll } from "@/hooks/ui/use-chat-scroll";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { Message as MessageType } from "ai";
+import { motion } from "motion/react";
 import { useEffect } from "react";
 import { LoadingMessage } from "./loading-message";
 import { Message } from "./message";
@@ -90,7 +91,8 @@ export const ChatMessages = ({
     messages[messages.length - 1].role === "user";
 
   return (
-    <div
+    <motion.div
+      layoutId={`chat-messages-${chatId}`}
       ref={scrollContainerRef}
       className={cn(
         "flex flex-col min-w-0 h-full max-h-full justify-start w-full max-w-4xl mx-auto overflow-x-hidden overflow-y-scroll py-4"
@@ -147,6 +149,6 @@ export const ChatMessages = ({
         {/* Invisible element used to track if we're at the bottom */}
         <div ref={bottomRef} className="w-full h-24" />
       </div>
-    </div>
+    </motion.div>
   );
 };

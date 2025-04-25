@@ -2,6 +2,7 @@ import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
 import { internal } from "../../../_generated/api";
 import { internalMutation } from "../../../_generated/server";
+import { r2 } from "../../../helpers/r2";
 import { batchDeleteStoragePool, cascadePool } from "../../../workpools";
 
 export const batchDelete = internalMutation({
@@ -97,6 +98,38 @@ export const deleteCleanup = internalMutation({
           cursor: continueCursor,
           numItems,
         }
+      );
+    }
+  },
+});
+
+export const batchUpdateContentTypes = internalMutation({
+  args: {
+    cursor: v.optional(v.string()),
+    numItems: v.number(),
+  },
+  handler: async (ctx, { cursor, numItems }) => {
+    const { page, continueCursor } = await ctx.db
+      .query("media")
+      .withIndex("by_id")
+      .paginate({ numItems, cursor: cursor ?? null });
+
+    // Update the content types
+    await asyncMap(page, async (media) => {
+      const metadata = await r2.getMetadata(ctx, media.key);
+      await ctx.db.patch(media._id, { contentType: metadata?.contentType });
+    });
+
+    // Continue updating content types if there are more
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
+      await cascadePool.enqueueMutation(
+        ctx,
+        internal.collections.storage.media.utils.batchUpdateContentTypes,
+        { cursor: continueCursor, numItems }
       );
     }
   },

@@ -115,15 +115,22 @@ export async function POST(request: NextRequest) {
     ) {
       return {
         ...message,
-        content: stripIndents(`
+        parts: message.parts?.map((part) => {
+          if (part.type === "text") {
+            return {
+              ...part,
+              text: stripIndents(`
         ${message.content}
         // Attachment URLs
         ${message.experimental_attachments
-          .map((attachment) => {
+          ?.map((attachment) => {
             return `[${attachment.name}][${attachment.contentType}](${attachment.url})`;
           })
           .join("\n")}
       `),
+            };
+          }
+        }),
       };
     }
 

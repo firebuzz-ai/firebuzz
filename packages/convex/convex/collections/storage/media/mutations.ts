@@ -11,7 +11,7 @@ export const create = mutationWithTrigger({
   args: {
     key: v.string(),
     name: v.string(),
-    extension: v.string(),
+    contentType: v.string(),
     size: v.number(),
     type: mediaSchema.fields.type,
     source: mediaSchema.fields.source,

@@ -5,7 +5,9 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider defaultOpen={false} name="app-sidebar">
       <AppSidebar />
-      <main className="flex flex-1 overflow-hidden">{children}</main>
+      <main vaul-drawer-wrapper="true" className="flex flex-1 overflow-hidden">
+        {children}
+      </main>
     </SidebarProvider>
   );
 };

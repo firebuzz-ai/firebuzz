@@ -112,33 +112,91 @@ export const formatNumber = (num: number) => {
 };
 
 // File Operations
-export const getFileType = (
-  file: File
-): {
-  type: "media" | "document";
-  extension: string;
-} => {
-  const extension = file.name.split(".").pop() ?? "unknown";
-  const contentType = file.type;
-  const type =
-    contentType.startsWith("image/") ||
-    contentType.startsWith("video/") ||
-    contentType.startsWith("audio/")
-      ? "media"
-      : "document";
-
-  return { type, extension };
+export const isMediaFile = (file: File) => {
+  return (
+    file.type.startsWith("image/") ||
+    file.type.startsWith("video/") ||
+    file.type.startsWith("audio/")
+  );
 };
 
-export const getMediaContentType = (
+export const isDocumentFile = (file: File) => {
+  return !isMediaFile(file);
+};
+
+export const parseMediaFile = (
   file: File
-): "image" | "video" | "audio" => {
-  const contentType = file.type;
-  return contentType.startsWith("image/")
-    ? "image"
-    : contentType.startsWith("video/")
-      ? "video"
-      : "audio";
+): {
+  type: "image" | "video" | "audio";
+  extension: string;
+  size: number;
+  contentType: string;
+} => {
+  return {
+    type: file.type.startsWith("image/")
+      ? "image"
+      : file.type.startsWith("video/")
+        ? "video"
+        : "audio",
+    extension: file.name.split(".").pop() ?? "unknown",
+    size: file.size,
+    contentType: file.type,
+  };
+};
+
+export const parseDocumentFile = (file: File) => {
+  return {
+    type: file.type.startsWith("application/pdf")
+      ? "pdf"
+      : file.type.startsWith("application/msword")
+        ? "doc"
+        : file.type.startsWith(
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            )
+          ? "docx"
+          : file.type.startsWith("application/vnd.ms-excel")
+            ? "xls"
+            : file.type.startsWith(
+                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+              ? "xlsx"
+              : file.type.startsWith("application/vnd.ms-powerpoint")
+                ? "ppt"
+                : file.type.startsWith("application/vnd.ms-powerpoint")
+                  ? "pptx"
+                  : file.type.startsWith("application/csv")
+                    ? "csv"
+                    : "unknown",
+    extension: file.name.split(".").pop() ?? "unknown",
+    size: file.size,
+    contentType: file.type,
+  };
+};
+
+export const getAttachmentType = (contentType: string) => {
+  switch (contentType) {
+    case "image/png":
+    case "image/jpeg":
+    case "image/jpg":
+    case "image/gif":
+    case "image/webp":
+      return "image";
+    case "video/mp4":
+    case "video/webm":
+    case "video/ogg":
+      return "video";
+    case "audio/mpeg":
+    case "audio/mp3":
+    case "audio/mpga":
+    case "audio/m4a":
+    case "audio/wav":
+    case "audio/webm":
+      return "audio";
+    case "application/pdf":
+      return "pdf";
+    default:
+      return "unknown";
+  }
 };
 
 export const formatFileSize = (

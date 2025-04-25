@@ -5,6 +5,7 @@ import {
   currentFilesTreeAtom,
   currentImportantFilesAtom,
   currentVersionAtom,
+  lockFileAtom,
   workbenchStore,
 } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
@@ -17,7 +18,7 @@ import {
   useStableReversedPaginatedMessagesQuery,
 } from "@firebuzz/convex";
 import type { ChatRequestOptions, CreateMessage, Message } from "ai";
-import { useSetAtom } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import { nanoid } from "nanoid";
 import {
   type Dispatch,
@@ -44,6 +45,8 @@ interface ChatProps {
 
 export const Chat = ({ id }: ChatProps) => {
   const setCurrentVersion = useSetAtom(currentVersionAtom);
+  const lockFile = useAtomValue(lockFileAtom);
+  console.log("lockFile", lockFile);
   const {
     results: landingPageMessages,
     status: messagesStatus,

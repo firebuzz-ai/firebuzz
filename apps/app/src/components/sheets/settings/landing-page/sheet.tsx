@@ -1,6 +1,6 @@
 "use client";
 
-import { useSettingsSheet } from "@/hooks/ui/use-settings-sheet";
+import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
   AnimatedTabs,
@@ -29,7 +29,7 @@ interface LandingPageSettingsSheetProps {
 export const LandingPageSettingsSheet = ({
   landingPageId,
 }: LandingPageSettingsSheetProps) => {
-  const { isOpen, setIsOpen } = useSettingsSheet();
+  const { isOpen, setIsOpen } = useSheet("landing-page-settings");
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("page-settings");
   const [unsavedChanges, setUnsavedChanges] = useState(false);

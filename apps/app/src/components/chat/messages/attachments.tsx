@@ -1,6 +1,9 @@
 "use client";
 
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
+import { getAttachmentType } from "@firebuzz/utils";
 import type { Message as MessageType } from "ai";
+import { motion } from "motion/react";
 import Image from "next/image";
 
 // Helper type for attachments
@@ -45,43 +48,46 @@ export const getAttachments = (message: MessageType): Attachment[] => {
 
 export const Attachments = ({ message }: AttachmentsProps) => {
   const attachments = getAttachments(message);
+  const [, setAttachmentState] = useAttachmentPreviewModal();
+  const placement = "chat-attachment";
 
   if (attachments.length === 0) return null;
 
-  // Determine grid columns based on attachment count
-  const getGridClass = (count: number) => {
-    if (count === 1) return "grid-cols-2";
-    if (count === 2) return "grid-cols-2";
-    if (count === 3 || count === 4) return "grid-cols-2";
-    return "grid-cols-3"; // 5 or more
-  };
-
   return (
     <div className="mb-4">
-      <div
-        className={`grid gap-2 ${getGridClass(attachments.length)} max-w-2xl`}
-      >
-        {attachments.map((attachment, index) => (
-          <div
-            key={`${message.id}-attachment-${index}`}
-            className={`${attachments.length === 1 ? "col-span-1" : attachments.length === 3 && index === 2 ? "col-span-2" : ""}`}
-          >
-            <div className="relative w-full overflow-hidden border rounded-md aspect-square border-border">
-              <Image
-                unoptimized
-                src={attachment.url}
-                alt={attachment.name ?? `Image ${index + 1}`}
-                fill
-                className="object-cover object-center"
-              />
-            </div>
-            {attachment.name && (
-              <p className="mt-1 text-xs truncate text-muted-foreground">
-                {attachment.name}
-              </p>
-            )}
-          </div>
-        ))}
+      <div className="grid max-w-2xl grid-cols-5 gap-2">
+        {attachments.map((attachment) => {
+          const key = `${attachment.url.split(".com/")[1]}?messageId=${message.id}`;
+          return (
+            <motion.div
+              className="cursor-pointer"
+              layoutId={`media-${key}-${placement}`}
+              key={key}
+              onClick={() => {
+                setAttachmentState({
+                  key,
+                  type: getAttachmentType(attachment.contentType ?? ""),
+                  placement,
+                });
+              }}
+            >
+              <div className="relative w-full overflow-hidden border rounded-md aspect-square border-border">
+                <Image
+                  unoptimized
+                  src={attachment.url}
+                  alt={attachment.name ?? "Image"}
+                  fill
+                  className="object-cover object-center"
+                />
+              </div>
+              {attachment.name && (
+                <p className="mt-1 text-xs truncate text-muted-foreground">
+                  {attachment.name}
+                </p>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

@@ -169,6 +169,13 @@ export const tagsConfigAtom = atom((get) => {
   return tagsConfig;
 });
 
+export const lockFileAtom = atom((get) => {
+  const parsedFiles = get(parsedFilesAtom);
+  console.log("parsedFiles", parsedFiles);
+  const lockFile = parsedFiles.get("package-lock.json");
+  return lockFile;
+});
+
 // Versions
 export const currentVersionAtom = atomWithReset<{
   _id: string;

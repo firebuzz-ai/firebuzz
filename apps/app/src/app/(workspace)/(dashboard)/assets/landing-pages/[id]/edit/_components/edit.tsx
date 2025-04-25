@@ -5,6 +5,7 @@ import { PreviewLayout } from "@/components/layouts/two-panels/panels/generative
 import { Preview } from "@/components/preview/preview";
 import { useWorkbench } from "@/lib/workbench/hooks/use-workbench";
 
+import { AttachmentPreviewModal } from "@/components/modals/attachment/preview-modal";
 import {
   parsedFilesAtom,
   projectIdAtom,
@@ -69,6 +70,7 @@ export function EditLandingPage({ id }: { id: string }) {
       <PreviewLayout>
         <Preview />
       </PreviewLayout>
+      <AttachmentPreviewModal />
     </div>
   );
 }
