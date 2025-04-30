@@ -54,7 +54,7 @@ export const ReadonlyInputWithClipboard = ({
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                     >
-                      <CheckCheck className="w-3 h-3 text-emerald-500" />
+                      <CheckCheck className="w-3 h-3 text-brand" />
                     </motion.div>
                   )}
                   {state === "idle" && (

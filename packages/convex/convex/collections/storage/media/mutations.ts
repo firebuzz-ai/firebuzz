@@ -37,6 +37,23 @@ export const create = mutationWithTrigger({
   },
 });
 
+export const updateInternal = internalMutationWithTrigger({
+  args: {
+    id: v.id("media"),
+    name: v.optional(v.string()),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Check media is owned by user
+    const media = await ctx.db.get(args.id);
+
+    await ctx.db.patch(args.id, {
+      name: args.name ?? media?.name,
+      description: args.description ?? media?.description,
+    });
+  },
+});
+
 export const deleteInternal = internalMutationWithTrigger({
   args: {
     id: v.id("media"),

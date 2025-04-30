@@ -12,11 +12,12 @@ export const mediaSchema = v.object({
     v.literal("unsplash"),
     v.literal("pexels")
   ),
+  description: v.optional(v.string()),
   aiMetadata: v.optional(
     v.object({
       prompt: v.string(),
-      seed: v.number(),
       size: v.string(),
+      quality: v.string(),
     })
   ),
   // Relations

@@ -27,5 +27,6 @@ app.use(actionRetrier);
 // Workpools
 app.use(workpool, { name: "cascadeOperations" });
 app.use(workpool, { name: "batchDeleteStorage" });
+app.use(workpool, { name: "vectorization" });
 
 export default app;

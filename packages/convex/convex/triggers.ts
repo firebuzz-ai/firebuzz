@@ -16,7 +16,7 @@ import {
   aggregateLandingPages,
   aggregateMedia,
 } from "./aggregates";
-import { cascadePool } from "./workpools";
+import { cascadePool, vectorizationPool } from "./workpools";
 
 const triggers = new Triggers<DataModel>();
 
@@ -224,6 +224,23 @@ triggers.register("media", async (ctx, change) => {
   }
 });
 
+// Vectorization Trigger (Media)
+triggers.register("media", async (ctx, change) => {
+  // Insert
+  if (change.operation === "insert") {
+    const doc = change.newDoc;
+    await vectorizationPool.enqueueAction(
+      ctx,
+      internal.collections.storage.mediaVectors.actions.vectorize,
+      {
+        mediaId: doc._id,
+        mediaKey: doc.key,
+        projectId: doc.projectId,
+        workspaceId: doc.workspaceId,
+      }
+    );
+  }
+});
 export const mutationWithTrigger = customMutation(
   rawMutation,
   customCtx(triggers.wrapDB)

@@ -21,4 +21,13 @@ crons.interval(
   }
 );
 
+crons.interval(
+  "cleanup-media",
+  { hours: 10 },
+  internal.collections.storage.media.utils.deleteCleanup,
+  {
+    numItems: 25,
+  }
+);
+
 export default crons;

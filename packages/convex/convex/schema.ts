@@ -6,6 +6,7 @@ import { landingPageTemplatesSchema } from "./collections/landingPages/templates
 import { landingPageVersionsSchema } from "./collections/landingPages/versions/schema";
 import { projectSchema } from "./collections/projects/schema";
 import { mediaSchema } from "./collections/storage/media/schema";
+import { mediaVectorsSchema } from "./collections/storage/mediaVectors/schema";
 import { userSchema } from "./collections/users/schema";
 import { workspaceSchema } from "./collections/workspaces/schema";
 
@@ -52,4 +53,13 @@ export default defineSchema({
     .index("by_created_by", ["createdBy"])
     .index("by_deleted_at", ["deletedAt"])
     .searchIndex("by_fileName", { searchField: "name" }),
+  mediaVectors: defineTable(mediaVectorsSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_media_id", ["mediaId"])
+    .vectorIndex("by_emmbedings", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["projectId"],
+    }),
 });

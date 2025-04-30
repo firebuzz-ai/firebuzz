@@ -1,5 +1,13 @@
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { useNewMediaModal } from "@/hooks/ui/use-new-media-modal";
 import type { Doc } from "@firebuzz/convex";
-import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
+import { Button } from "@firebuzz/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@firebuzz/ui/components/ui/dropdown-menu";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
   Select,
@@ -15,7 +23,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Filter, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
+import {
+  ChevronDown,
+  Filter,
+  Layers2,
+  Search,
+  SortAsc,
+  Upload,
+  Wand,
+} from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
@@ -31,7 +47,6 @@ interface ControlsProps {
 }
 
 export const Controls = ({
-  open,
   searchQuery,
   setSearchQuery,
   sourceType,
@@ -40,6 +55,8 @@ export const Controls = ({
   setSortOrder,
 }: ControlsProps) => {
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+  const { setState } = useNewMediaModal();
+  const { setIsOpen: setAIImageModalIsOpen } = useAIImageModal();
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 border-b max-h-min border-border">
@@ -107,9 +124,46 @@ export const Controls = ({
             </Tooltip>
           </div>
           <Separator orientation="vertical" className="h-5" />
-          <Button variant="outline" onClick={() => open()} className="h-8">
-            New Media <ButtonShortcut>⌘N</ButtonShortcut>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="group" asChild>
+              <Button variant="outline" className="h-8 !p-0">
+                <div className="pl-3">New Media</div>
+                <div className="flex items-center justify-center h-full pl-2 pr-2 border-l">
+                  <ChevronDown className="transition-transform duration-100 ease-in-out !size-3.5 group-aria-expanded:rotate-180" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
+              <DropdownMenuItem
+                onClick={() =>
+                  setState((prev) => ({
+                    ...prev,
+                    type: "upload",
+                    isOpen: true,
+                  }))
+                }
+              >
+                <Upload className="w-4 h-4" />
+                Upload
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  setState((prev) => ({
+                    ...prev,
+                    type: "unsplash",
+                    isOpen: true,
+                  }))
+                }
+              >
+                <Layers2 className="w-4 h-4" />
+                Unsplash
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setAIImageModalIsOpen(true)}>
+                <Wand className="w-4 h-4" />
+                Generate
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Separator orientation="vertical" className="h-5" />
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>

@@ -1,29 +1,37 @@
 "use client";
 
+import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
 import { useProject } from "@/hooks/auth/use-project";
+import { useNewMediaModal } from "@/hooks/ui/use-new-media-modal";
 import {
   type Doc,
   api,
   useCachedQuery,
-  useMutation,
   usePaginatedQuery,
-  useUploadFile,
 } from "@firebuzz/convex";
-import { UploadProgressToast } from "@firebuzz/ui/components/reusable/upload-progress-toast";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Upload } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
-import { sleep } from "@firebuzz/utils";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { useDebounce } from "use-debounce";
 import { Controls } from "../controls";
 import { MediaDetailsModal } from "../modal/modal";
+import { NewMediaModal } from "../modal/new-media/modal";
 import { Footer } from "./footer";
 import { MediaItem } from "./media-item";
 import { SelectedMenu } from "./selected-menu";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Number.POSITIVE_INFINITY,
+    },
+  },
+});
 
 export const MediaList = () => {
   const { currentProject } = useProject();
@@ -32,6 +40,7 @@ export const MediaList = () => {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const [source, setSource] = useState<Doc<"media">["source"] | "all">("all");
+  const { setState } = useNewMediaModal();
 
   const totalSize = useCachedQuery(
     api.collections.storage.media.queries.getTotalSize,
@@ -66,10 +75,6 @@ export const MediaList = () => {
   );
 
   const loaderRef = useRef<HTMLDivElement>(null);
-  const uploadFile = useUploadFile(api.helpers.r2);
-  const createMedia = useMutation(
-    api.collections.storage.media.mutations.create
-  );
 
   // Why: 50MB in bytes
   const MAX_FILE_SIZE = 50 * 1024 * 1024;
@@ -90,86 +95,11 @@ export const MediaList = () => {
       return;
     }
 
-    try {
-      await Promise.all(
-        acceptedFiles.map(async (file) => {
-          if (file.size > MAX_FILE_SIZE) {
-            throw new Error(`File ${file.name} exceeds 4MB size limit`);
-          }
-
-          // Create a unique toast ID for this upload
-          const toastId = `upload-${file.name}-${Date.now()}`;
-
-          // Show initial toast
-          toast.loading(
-            <UploadProgressToast
-              fileName={file.name}
-              progress={0}
-              uploadedSize={0}
-              totalSize={file.size}
-              timeLeft="Calculating..."
-            />,
-            { id: toastId }
-          );
-
-          // Simulate upload time based on file size (larger files take longer)
-          const startTime = Date.now();
-          const uploadDuration = Math.max(2000, file.size / 256); // Scale duration with file size
-          const interval = setInterval(() => {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(90, (elapsed / uploadDuration) * 100);
-            const uploadedSize = Math.round((file.size * progress) / 100);
-            const remainingSize = file.size - uploadedSize;
-            // Estimate time left based on upload speed and remaining size
-            const uploadSpeed = uploadedSize / elapsed; // bytes per ms
-            const timeLeftMs = remainingSize / uploadSpeed;
-            const timeLeftSec = Math.ceil(timeLeftMs / 1000);
-
-            toast.loading(
-              <UploadProgressToast
-                fileName={file.name}
-                progress={Math.round(progress)}
-                uploadedSize={uploadedSize}
-                totalSize={file.size}
-                timeLeft={`${Math.max(0, timeLeftSec)} seconds left`}
-              />,
-              { id: toastId }
-            );
-          }, 100);
-
-          const key = await uploadFile(file);
-
-          await createMedia({
-            key,
-            name: file.name,
-            type: file.type.split("/")[0] as "image" | "video" | "audio",
-            contentType: file.type,
-            size: file.size,
-            source: "uploaded",
-          });
-
-          clearInterval(interval);
-
-          // Show success state
-          toast.success(
-            <UploadProgressToast
-              fileName={file.name}
-              progress={100}
-              uploadedSize={file.size}
-              totalSize={file.size}
-            />,
-            { id: toastId }
-          );
-
-          await sleep(1000);
-          toast.dismiss(toastId);
-        })
-      );
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Unknown error occurred"
-      );
-    }
+    setState({
+      files: acceptedFiles,
+      isOpen: true,
+      type: "upload",
+    });
   };
 
   const onDropRejected = (fileRejections: FileRejection[]) => {
@@ -331,6 +261,10 @@ export const MediaList = () => {
       />
 
       <MediaDetailsModal />
+      <QueryClientProvider client={queryClient}>
+        <NewMediaModal />
+      </QueryClientProvider>
+      <AIImageModal />
     </div>
   );
 };

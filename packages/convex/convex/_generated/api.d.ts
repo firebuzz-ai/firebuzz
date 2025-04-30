@@ -32,6 +32,9 @@ import type * as collections_storage_media_actions from "../collections/storage/
 import type * as collections_storage_media_mutations from "../collections/storage/media/mutations.js";
 import type * as collections_storage_media_queries from "../collections/storage/media/queries.js";
 import type * as collections_storage_media_utils from "../collections/storage/media/utils.js";
+import type * as collections_storage_mediaVectors_actions from "../collections/storage/mediaVectors/actions.js";
+import type * as collections_storage_mediaVectors_mutations from "../collections/storage/mediaVectors/mutations.js";
+import type * as collections_storage_mediaVectors_queries from "../collections/storage/mediaVectors/queries.js";
 import type * as collections_users_mutations from "../collections/users/mutations.js";
 import type * as collections_users_queries from "../collections/users/queries.js";
 import type * as collections_users_utils from "../collections/users/utils.js";
@@ -43,6 +46,7 @@ import type * as helpers_r2 from "../helpers/r2.js";
 import type * as helpers_retrier from "../helpers/retrier.js";
 import type * as helpers_system from "../helpers/system.js";
 import type * as http from "../http.js";
+import type * as lib_openai from "../lib/openai.js";
 import type * as triggers from "../triggers.js";
 import type * as workpools from "../workpools.js";
 
@@ -85,6 +89,9 @@ declare const fullApi: ApiFromModules<{
   "collections/storage/media/mutations": typeof collections_storage_media_mutations;
   "collections/storage/media/queries": typeof collections_storage_media_queries;
   "collections/storage/media/utils": typeof collections_storage_media_utils;
+  "collections/storage/mediaVectors/actions": typeof collections_storage_mediaVectors_actions;
+  "collections/storage/mediaVectors/mutations": typeof collections_storage_mediaVectors_mutations;
+  "collections/storage/mediaVectors/queries": typeof collections_storage_mediaVectors_queries;
   "collections/users/mutations": typeof collections_users_mutations;
   "collections/users/queries": typeof collections_users_queries;
   "collections/users/utils": typeof collections_users_utils;
@@ -96,6 +103,7 @@ declare const fullApi: ApiFromModules<{
   "helpers/retrier": typeof helpers_retrier;
   "helpers/system": typeof helpers_system;
   http: typeof http;
+  "lib/openai": typeof lib_openai;
   triggers: typeof triggers;
   workpools: typeof workpools;
 }>;
@@ -1211,6 +1219,58 @@ export declare const components: {
     };
   };
   batchDeleteStorage: {
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
+      >;
+    };
+  };
+  vectorization: {
     lib: {
       cancel: FunctionReference<
         "mutation",

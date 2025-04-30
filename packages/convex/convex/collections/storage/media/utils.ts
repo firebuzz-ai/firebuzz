@@ -85,6 +85,15 @@ export const deleteCleanup = internalMutation({
       )
     );
 
+    // Delete media vectors
+    await asyncMap(page, (media) =>
+      ctx.runMutation(
+        internal.collections.storage.mediaVectors.mutations
+          .deleteByMediaIdInternal,
+        { mediaId: media._id }
+      )
+    );
+
     // If there are more medias, delete them
     if (
       continueCursor &&

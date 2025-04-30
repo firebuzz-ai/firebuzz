@@ -23,7 +23,7 @@
         "OPENAI_API_KEY",
         "ANTHROPIC_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
-        "FAL_KEY",
+        "FAL_API_KEY",
         "UNSPLASH_ACCESS_KEY",
         "AZURE_OPENAI_API_KEY",
         "AZURE_OPENAI_RESOURCE_NAME"
@@ -57,7 +57,7 @@
         "OPENAI_API_KEY",
         "ANTHROPIC_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
-        "FAL_KEY",
+        "FAL_API_KEY",
         "UNSPLASH_ACCESS_KEY",
         "AZURE_OPENAI_API_KEY",
         "AZURE_OPENAI_RESOURCE_NAME"
@@ -83,7 +83,7 @@
         "OPENAI_API_KEY",
         "ANTHROPIC_API_KEY",
         "GOOGLE_GENERATIVE_AI_API_KEY",
-        "FAL_KEY",
+        "FAL_API_KEY",
         "UNSPLASH_ACCESS_KEY",
         "AZURE_OPENAI_API_KEY",
         "AZURE_OPENAI_RESOURCE_NAME"

@@ -161,10 +161,10 @@ export const envAnthropic = () =>
 export const envFal = () =>
   z
     .object({
-      FAL_KEY: z.string(),
+      FAL_API_KEY: z.string(),
     })
     .parse({
-      FAL_KEY: process.env.FAL_KEY,
+      FAL_API_KEY: process.env.FAL_API_KEY,
     });
 
 /* UNSPLASH */

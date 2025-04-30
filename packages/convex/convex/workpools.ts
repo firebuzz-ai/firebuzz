@@ -11,3 +11,9 @@ export const batchDeleteStoragePool = new Workpool(
     maxParallelism: 50,
   }
 );
+
+export const vectorizationPool = new Workpool(components.vectorization, {
+  maxParallelism: 10,
+  retryActionsByDefault: true,
+  defaultRetryBehavior: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 },
+});

@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 
 import { paginationOptsValidator } from "convex/server";
-import { query } from "../../../_generated/server";
+import { internalQuery, query } from "../../../_generated/server";
 import { aggregateMedia } from "../../../aggregates";
 import { getCurrentUser } from "../../users/utils";
 import { mediaSchema } from "./schema";
@@ -73,6 +73,15 @@ export const getById = query({
       ...media,
       createdBy,
     };
+  },
+});
+
+export const getByIdInternal = internalQuery({
+  args: {
+    id: v.id("media"),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
   },
 });
 
