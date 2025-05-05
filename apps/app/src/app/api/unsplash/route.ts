@@ -36,7 +36,5 @@ export const GET = async (req: NextRequest) => {
     orderBy: orderBy ?? "relevant",
   });
 
-  console.log(result);
-
   return NextResponse.json(result);
 };

@@ -4,6 +4,7 @@ import { useCallback, useMemo } from "react";
 
 export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536" | "auto";
 export type ImageQuality = "low" | "medium" | "high";
+export type BrushSize = "sm" | "md" | "lg" | "xl";
 export type GeneratedImage = {
   imageKey: string;
   prompt: string;
@@ -11,7 +12,7 @@ export type GeneratedImage = {
   size: ImageSize;
 };
 
-const aiImageModalAtom = atomWithReset<{
+export const aiImageModalAtom = atomWithReset<{
   isOpen: boolean;
   images: string[];
   generations: GeneratedImage[];
@@ -30,9 +31,43 @@ const aiImageModalAtom = atomWithReset<{
   selectedImageSize: "auto",
   selectedImagePrompt: "",
   isMasking: false,
-
   onInsert: null,
 });
+
+const brushAtom = atomWithReset<{
+  size: BrushSize;
+  scale: number;
+}>({
+  size: "md",
+  scale: 1,
+});
+
+export const useBrush = () => {
+  const [state, setState] = useAtom(brushAtom);
+
+  const reset = useCallback(() => {
+    setState(RESET);
+  }, [setState]);
+
+  return {
+    ...state,
+    setSize: (size: BrushSize | ((prev: BrushSize) => BrushSize)) => {
+      if (typeof size === "function") {
+        setState((prev) => ({ ...prev, size: size(prev.size) }));
+      } else {
+        setState((prev) => ({ ...prev, size }));
+      }
+    },
+    setScale: (scale: number | ((prev: number) => number)) => {
+      if (typeof scale === "function") {
+        setState((prev) => ({ ...prev, scale: scale(prev.scale) }));
+      } else {
+        setState((prev) => ({ ...prev, scale }));
+      }
+    },
+    reset,
+  };
+};
 
 export const useAIImageModal = () => {
   const [state, setState] = useAtom(aiImageModalAtom);

@@ -1,5 +1,5 @@
 import { useProject } from "@/hooks/auth/use-project";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { useAIImageModal, useBrush } from "@/hooks/ui/use-ai-image-modal";
 import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
@@ -27,6 +27,7 @@ export const ImagePreviewWithEdit = ({
   const { selectedImage, setSelectedImage, setImages, isSelectedImagePrimary } =
     useAIImageModal();
   const { setState } = useMediaGalleryModal();
+  const { size: brushSize } = useBrush();
 
   const { currentProject } = useProject();
   const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
@@ -193,6 +194,22 @@ export const ImagePreviewWithEdit = ({
     disabled: isUploading,
   });
 
+  // Function to convert brush size enum to pixel value
+  const getBrushSizeValue = useCallback(() => {
+    switch (brushSize) {
+      case "sm":
+        return 32;
+      case "md":
+        return 64;
+      case "lg":
+        return 96;
+      case "xl":
+        return 128;
+      default:
+        return 64;
+    }
+  }, [brushSize]);
+
   return (
     <div className="flex flex-col flex-1 max-h-full mt-8 overflow-hidden">
       {!selectedImage && (
@@ -301,7 +318,7 @@ export const ImagePreviewWithEdit = ({
                 >
                   <MaskCanvas
                     selectedImageKey={selectedImage}
-                    brushSize={64}
+                    brushSize={getBrushSizeValue()}
                     canvasRef={canvasRef}
                     naturalImageSize={naturalImageSize}
                     canvasSize={{

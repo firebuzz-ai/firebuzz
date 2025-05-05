@@ -79,8 +79,6 @@ export function CreateLandingPage() {
     { initialNumItems: 50 }
   );
 
-  console.log(templates);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {

@@ -1,3 +1,4 @@
+import { useBrush } from "@/hooks/ui/use-ai-image-modal";
 import paper from "paper";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useMaskState } from "./use-mask-state";
@@ -37,8 +38,10 @@ export const MaskCanvas = memo(
   }) => {
     const { current: currentMaskState, push: pushMaskState } =
       useMaskState(selectedImageKey);
+    const { scale: brushScale, setScale } = useBrush();
 
     const [isDrawing, setIsDrawing] = useState(false);
+    const isDrawingRef = useRef(isDrawing); // Ref to track drawing state
     const [cursorPosition, setCursorPosition] = useState({ x: 0, y: 0 });
     const [cursorVisible, setCursorVisible] = useState(false);
     const lastPointRef = useRef<paper.Point | null>(null);
@@ -51,6 +54,24 @@ export const MaskCanvas = memo(
       height: number;
     } | null>(null);
     const mainPaperProjectRef = useRef<paper.Project | null>(null);
+
+    // Adjust scale based on canvas size
+    useEffect(() => {
+      const baseWidth = 800; // Reference width to calculate scale
+      const baseHeight = 600; // Reference height to calculate scale
+
+      // Calculate scale based on the smaller dimension ratio to maintain proportionality
+      const widthRatio = canvasSize.width / baseWidth;
+      const heightRatio = canvasSize.height / baseHeight;
+
+      // Use the smaller ratio to ensure the brush isn't too large on any dimension
+      const newScale = Math.min(widthRatio, heightRatio);
+
+      // Only update if there's a significant difference
+      if (Math.abs(newScale - brushScale) > 0.1) {
+        setScale(newScale);
+      }
+    }, [canvasSize.width, canvasSize.height, brushScale, setScale]);
 
     // Helper function to update border styles based on drawing state
     const updateBorderStyles = useCallback((drawing: boolean) => {
@@ -379,8 +400,8 @@ export const MaskCanvas = memo(
               if (
                 currentUnitedPath.intersects(existingPath) ||
                 existingPath.intersects(currentUnitedPath) ||
-                currentUnitedPath.contains(existingPath.position) ||
-                existingPath.contains(currentUnitedPath.position)
+                currentUnitedPath.contains(existingPath.bounds) ||
+                existingPath.contains(currentUnitedPath.bounds)
               ) {
                 overlappingPaths.push(existingPath);
               }
@@ -537,18 +558,24 @@ export const MaskCanvas = memo(
       canvasSize.height,
     ]); // Added canvasSize dims
 
+    // Keep ref synchronized with state
+    useEffect(() => {
+      isDrawingRef.current = isDrawing;
+    }, [isDrawing]);
+
     // Draw a brush stroke at the given position
     const drawBrush = useCallback(
       (x: number, y: number) => {
         if (!paper.view || !maskGroupRef.current) return;
 
         const currentFillColor = new paper.Color(maskSolidColorString);
+        const radius = (brushSize * brushScale) / 2;
 
         // Create a circle at the position
         const circle = new paper.Path.Circle({
           center: new paper.Point(x, y),
-          radius: brushSize / 2,
-          fillColor: maskSolidColorString,
+          radius,
+          fillColor: currentFillColor,
           // No stroke needed for temporary segments
         });
 
@@ -563,7 +590,7 @@ export const MaskCanvas = memo(
 
           // Only draw connecting shape if points are not too far apart
           const distance = lastPoint.getDistance(currentPoint);
-          if (distance < brushSize * 2) {
+          if (distance < brushSize * brushScale * 2) {
             // Calculate a rectangle between the two points
             const vector = currentPoint.subtract(lastPoint);
             // Create perpendicular vector with length of half brush size
@@ -572,7 +599,7 @@ export const MaskCanvas = memo(
               const perpendicular = new paper.Point(
                 -vector.y / length,
                 vector.x / length
-              ).multiply(brushSize / 2);
+              ).multiply((brushSize * brushScale) / 2);
 
               const path = new paper.Path({
                 segments: [
@@ -598,7 +625,7 @@ export const MaskCanvas = memo(
         // Force view to update
         paper.view.update();
       },
-      [brushSize]
+      [brushSize, brushScale]
     );
 
     // Handle mouse events for drawing and cursor
@@ -616,7 +643,7 @@ export const MaskCanvas = memo(
         setCursorPosition({ x, y });
 
         // If drawing, add a brush stroke
-        if (isDrawing) {
+        if (isDrawingRef.current) {
           drawBrush(x, y);
         }
       };
@@ -624,31 +651,33 @@ export const MaskCanvas = memo(
       const handleMouseDown = (e: MouseEvent) => {
         if (!canvasRef.current) return;
 
-        // Hide borders before starting to draw
         updateBorderStyles(true);
-
         const rect = canvasRef.current.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
 
-        setIsDrawing(true);
-        lastPointRef.current = null; // Reset last point to start a new stroke
-
-        // Clear the current stroke items array at the start of a new stroke
+        setIsDrawing(true); // Update state
+        lastPointRef.current = null;
         currentStrokeItemsRef.current = [];
 
-        // Draw first brush stroke
-        drawBrush(x, y);
+        // Defer the first draw call slightly using requestAnimationFrame
+        requestAnimationFrame(() => {
+          // Check if still drawing using the ref
+          if (isDrawingRef.current) {
+            drawBrush(x, y);
+          }
+        });
       };
 
       const handleMouseUp = () => {
-        if (isDrawing) {
+        if (isDrawingRef.current) {
+          // Use ref for check
           if (currentStrokeItemsRef.current.length > 0) {
             uniteCurrentStroke();
           } else {
             updateBorderStyles(false);
           }
-          setIsDrawing(false);
+          setIsDrawing(false); // Update state (and ref via useEffect)
           lastPointRef.current = null;
         }
       };
@@ -659,38 +688,42 @@ export const MaskCanvas = memo(
 
       const handleMouseLeave = () => {
         setCursorVisible(false);
-        if (isDrawing) {
+        if (isDrawingRef.current) {
+          // Use ref for check
           if (currentStrokeItemsRef.current.length > 0) {
             uniteCurrentStroke();
           } else {
             updateBorderStyles(false);
           }
-          setIsDrawing(false);
+          setIsDrawing(false); // Update state (and ref via useEffect)
           lastPointRef.current = null;
         }
       };
 
       // Add event listeners
-      canvasRef.current?.addEventListener("mousemove", handleMouseMove);
-      canvasRef.current?.addEventListener("mousedown", handleMouseDown);
-      canvasRef.current?.addEventListener("mouseup", handleMouseUp);
-      canvasRef.current?.addEventListener("mouseenter", handleMouseEnter);
-      canvasRef.current?.addEventListener("mouseleave", handleMouseLeave);
+      const currentCanvas = canvasRef.current;
+      currentCanvas?.addEventListener("mousemove", handleMouseMove);
+      currentCanvas?.addEventListener("mousedown", handleMouseDown);
+      currentCanvas?.addEventListener("mouseup", handleMouseUp);
+      currentCanvas?.addEventListener("mouseenter", handleMouseEnter);
+      currentCanvas?.addEventListener("mouseleave", handleMouseLeave);
 
       return () => {
         // Remove event listeners
-        canvasRef.current?.removeEventListener("mousemove", handleMouseMove);
-        canvasRef.current?.removeEventListener("mousedown", handleMouseDown);
-        canvasRef.current?.removeEventListener("mouseup", handleMouseUp);
-        canvasRef.current?.removeEventListener("mouseenter", handleMouseEnter);
-        canvasRef.current?.removeEventListener("mouseleave", handleMouseLeave);
+        currentCanvas?.removeEventListener("mousemove", handleMouseMove);
+        currentCanvas?.removeEventListener("mousedown", handleMouseDown);
+        currentCanvas?.removeEventListener("mouseup", handleMouseUp);
+        currentCanvas?.removeEventListener("mouseenter", handleMouseEnter);
+        currentCanvas?.removeEventListener("mouseleave", handleMouseLeave);
       };
     }, [
-      isDrawing,
-      drawBrush,
-      uniteCurrentStroke,
-      updateBorderStyles,
+      // Include drawBrush and other necessary dependencies BUT NOT isDrawing
+      // because handleMouseDown/Up/Leave should close over the latest drawBrush
       canvasRef,
+      drawBrush,
+      updateBorderStyles,
+      uniteCurrentStroke,
+      // brushSize, brushScale, // drawBrush depends on these, so covered
     ]);
 
     // Keep useEffect for attaching natural dimensions if needed elsewhere
@@ -709,6 +742,28 @@ export const MaskCanvas = memo(
       };
     }, [canvasRef, naturalImageSize]); // Removed clearMask dependency
 
+    // Expose clearMask function to the canvas element
+    useEffect(() => {
+      if (canvasRef.current) {
+        const typedCanvas = canvasRef.current as MaskCanvasElement;
+
+        // Define the clearMask function
+        typedCanvas.clearMask = () => {
+          if (maskGroupRef.current) {
+            maskGroupRef.current.removeChildren();
+            paper.view.update();
+          }
+        };
+      }
+
+      return () => {
+        if (canvasRef.current) {
+          const typedCanvas = canvasRef.current as MaskCanvasElement;
+          typedCanvas.clearMask = undefined;
+        }
+      };
+    }, [canvasRef]);
+
     return (
       <div className="relative w-full h-full">
         <canvas
@@ -723,12 +778,12 @@ export const MaskCanvas = memo(
           <div
             className="absolute z-30 pointer-events-none"
             style={{
-              width: `${brushSize}px`,
-              height: `${brushSize}px`,
+              width: `${brushSize * brushScale}px`,
+              height: `${brushSize * brushScale}px`,
               borderRadius: "50%",
               backgroundColor: maskColorString,
-              transform: `translate(${cursorPosition.x - brushSize / 2}px, ${
-                cursorPosition.y - brushSize / 2
+              transform: `translate(${cursorPosition.x - (brushSize * brushScale) / 2}px, ${
+                cursorPosition.y - (brushSize * brushScale) / 2
               }px)`,
               top: 0,
               left: 0,

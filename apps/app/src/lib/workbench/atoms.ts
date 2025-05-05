@@ -171,7 +171,6 @@ export const tagsConfigAtom = atom((get) => {
 
 export const lockFileAtom = atom((get) => {
   const parsedFiles = get(parsedFilesAtom);
-  console.log("parsedFiles", parsedFiles);
   const lockFile = parsedFiles.get("package-lock.json");
   return lockFile;
 });

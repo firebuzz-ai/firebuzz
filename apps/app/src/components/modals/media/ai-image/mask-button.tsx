@@ -1,5 +1,11 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { useAIImageModal, useBrush } from "@/hooks/ui/use-ai-image-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@firebuzz/ui/components/ui/dropdown-menu";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
   Tooltip,
@@ -26,7 +32,7 @@ export const MaskButton = ({
   selectedImage: string;
 }) => {
   const { setIsMasking, isMasking, isSelectedImagePrimary } = useAIImageModal();
-
+  const { setSize, size } = useBrush();
   const { undo, redo, canUndo, canRedo, reset } = useMaskState(selectedImage);
 
   const hasHistory = useMemo(() => {
@@ -83,6 +89,56 @@ export const MaskButton = ({
             className="flex items-center gap-2"
           >
             <ChevronRight className="!size-3.5" />
+            <DropdownMenu>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      className="text-xs font-medium uppercase"
+                      size="iconSm"
+                      variant="outline"
+                    >
+                      {size}
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent
+                  className="text-xs"
+                  side="top"
+                  align="start"
+                  sideOffset={5}
+                >
+                  Brush size
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent side="top" align="start" sideOffset={10}>
+                <DropdownMenuItem
+                  className="justify-between"
+                  onClick={() => setSize("sm")}
+                >
+                  Small <div className="rounded-full size-2 bg-brand" />
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="justify-between"
+                  onClick={() => setSize("md")}
+                >
+                  Medium <div className="rounded-full size-3 bg-brand" />
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="justify-between"
+                  onClick={() => setSize("lg")}
+                >
+                  Large <div className="rounded-full size-4 bg-brand" />
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="justify-between"
+                  onClick={() => setSize("xl")}
+                >
+                  XLarge <div className="rounded-full size-5 bg-brand" />
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <Button
@@ -124,7 +180,12 @@ export const MaskButton = ({
                   <Trash className="!size-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="text-xs" side="top" sideOffset={5}>
+              <TooltipContent
+                className="text-xs"
+                side="top"
+                align="end"
+                sideOffset={5}
+              >
                 Clear mask
               </TooltipContent>
             </Tooltip>

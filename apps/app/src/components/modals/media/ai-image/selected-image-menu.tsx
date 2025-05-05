@@ -14,7 +14,6 @@ import {
 import { motion } from "motion/react";
 import { useMemo } from "react";
 export const SelectedImageMenu = () => {
-  console.log("selectedImageMenu");
   const {
     selectedImage,
     images,
@@ -68,9 +67,6 @@ export const SelectedImageMenu = () => {
     onInsert?.(key);
     setIsOpen(false);
   };
-
-  console.log("imageType", imageType);
-  console.log("selectedImage", selectedImage);
 
   if (imageType === "input" && selectedImage) {
     return (

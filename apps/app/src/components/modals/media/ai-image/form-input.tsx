@@ -215,7 +215,6 @@ export const GenerateImageFormInput = ({
   const hasMask = () => {
     const canvas = canvasRef.current;
     if (!canvas) {
-      console.log("hasMask: No canvas ref");
       return false;
     }
 
@@ -226,22 +225,16 @@ export const GenerateImageFormInput = ({
       return false;
     }
 
-    console.log(`hasMask: Checking canvas ${canvas.width}x${canvas.height}`);
-
     try {
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
 
       for (let i = 3; i < data.length; i += 4) {
         if (data[i] > 0) {
-          console.log(
-            `hasMask: Found non-transparent pixel at index ${i / 4} (alpha=${data[i]})`
-          );
           return true; // Found content
         }
       }
 
-      console.log("hasMask: No non-transparent pixels found");
       return false; // No content found
     } catch (error) {
       console.error("hasMask: Error getting image data:", error);
