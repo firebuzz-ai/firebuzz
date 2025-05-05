@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
@@ -136,6 +137,7 @@ export const LandingPageSettingsSheet = ({
           </SheetFooter>
         </div>
       </SheetContent>
+      <MediaGalleryModal />
     </Sheet>
   );
 };

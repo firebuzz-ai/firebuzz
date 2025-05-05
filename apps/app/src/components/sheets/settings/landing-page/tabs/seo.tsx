@@ -116,6 +116,7 @@ export const SeoTab = ({
       },
     },
     mode: "onChange", // Enable onChange validation mode
+    shouldUseNativeValidation: false,
   });
 
   // Save handler that will be exposed to parent component
@@ -216,7 +217,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
   return (
     <div className="py-4">
       <Form {...form}>
-        <form>
+        <form onSubmit={(e) => e.preventDefault()}>
           <div className="px-4 pb-4 space-y-6 border-b">
             <div className="">
               <h2 className="text-lg font-medium">General SEO Settings</h2>
@@ -291,10 +292,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect
-                          onChange={field.onChange}
-                          allowedTypes={["image/*"]}
-                        />
+                        <ImageSelect onChange={field.onChange} />
                       ) : (
                         <ImagePreview
                           src={field.value}
@@ -402,10 +400,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect
-                          onChange={field.onChange}
-                          allowedTypes={["image/*"]}
-                        />
+                        <ImageSelect onChange={field.onChange} />
                       ) : (
                         <ImagePreview
                           src={field.value}
@@ -492,10 +487,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect
-                          onChange={field.onChange}
-                          allowedTypes={["image/*"]}
-                        />
+                        <ImageSelect onChange={field.onChange} />
                       ) : (
                         <ImagePreview
                           src={field.value}
