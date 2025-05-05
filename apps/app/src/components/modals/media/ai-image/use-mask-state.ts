@@ -67,5 +67,10 @@ export const useMaskState = (imageId: string) => {
 export const checkHasHistory = (imageId: string): boolean => {
   const store = getDefaultStore();
   const historyAtomsMap = store.get(historyAtomsMapAtom);
-  return historyAtomsMap.has(imageId);
+  if (!historyAtomsMap.has(imageId)) return false;
+  const mainState = historyAtomsMap.get(imageId);
+  const canUndoAtom = mainState?.canUndoAtom;
+  const canRedoAtom = mainState?.canRedoAtom;
+  if (!canUndoAtom || !canRedoAtom) return false;
+  return store.get(canUndoAtom) || store.get(canRedoAtom);
 };

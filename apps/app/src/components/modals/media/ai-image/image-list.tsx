@@ -107,6 +107,8 @@ export const ImageList = ({
       if (image === selectedImageKey) return;
       const isFirstImage = image === images[0];
       const hasHistory = checkHasHistory(image);
+      console.log("hasHistory", hasHistory);
+      console.log("isFirstImage", isFirstImage);
       if (!isFirstImage) {
         // If selecting a non-primary image, assume isMasking is false
         setAIImageModalState((prev) => ({

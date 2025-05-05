@@ -264,23 +264,79 @@ export const MaskCanvas = memo(
       isUndoRedoOperation.current = true;
 
       try {
-        let currentUnitedPath: PathWithSegments | null = null;
+        // --- START: Path simplification step ---
+        // Simplify each path in the current stroke to reduce complexity before uniting
         for (const item of currentStrokeItemsRef.current) {
           const pathItem = item as paper.PathItem;
-          if (!currentUnitedPath) {
-            currentUnitedPath = pathItem.clone() as PathWithSegments;
-          } else {
+          // Check if it's a path with enough segments to warrant simplification
+          if (
+            pathItem instanceof paper.Path &&
+            pathItem.segments &&
+            pathItem.segments.length > 30
+          ) {
+            // Only simplify complex paths with many segments
             try {
-              const newUnion = currentUnitedPath.unite(
-                pathItem
+              pathItem.simplify(1.5); // Tolerance parameter - adjust as needed for balance between detail and performance
+            } catch (e) {
+              console.warn("Could not simplify path:", e);
+            }
+          }
+        }
+        // --- END: Path simplification step ---
+
+        let currentUnitedPath: PathWithSegments | null = null;
+        // Limit how many paths we unite at once for large strokes
+        const batchSize = 10;
+        for (
+          let i = 0;
+          i < currentStrokeItemsRef.current.length;
+          i += batchSize
+        ) {
+          // Process in batches
+          const batch = currentStrokeItemsRef.current.slice(i, i + batchSize);
+
+          // Create or update the united path
+          if (!currentUnitedPath) {
+            // For the first batch, clone the first item to start
+            currentUnitedPath = batch[0].clone() as PathWithSegments;
+            // Unite with the rest of the batch
+            for (let j = 1; j < batch.length; j++) {
+              try {
+                const newUnion = currentUnitedPath.unite(
+                  batch[j] as paper.PathItem
+                ) as PathWithSegments;
+                currentUnitedPath.remove();
+                currentUnitedPath = newUnion;
+              } catch (e) {
+                console.error("Error uniting batch segments:", e);
+              }
+            }
+          } else {
+            // For subsequent batches, unite the current united path with a temporary united batch
+            try {
+              // Unite all items in the current batch
+              let batchUnion = batch[0].clone() as PathWithSegments;
+              for (let j = 1; j < batch.length; j++) {
+                try {
+                  const newBatchUnion = batchUnion.unite(
+                    batch[j] as paper.PathItem
+                  ) as PathWithSegments;
+                  batchUnion.remove();
+                  batchUnion = newBatchUnion;
+                } catch (e) {
+                  console.error("Error uniting batch:", e);
+                }
+              }
+
+              // Unite the batch union with the current united path
+              const nextUnion = currentUnitedPath.unite(
+                batchUnion
               ) as PathWithSegments;
               currentUnitedPath.remove();
-              currentUnitedPath = newUnion;
+              batchUnion.remove();
+              currentUnitedPath = nextUnion;
             } catch (e) {
-              console.error("Error uniting current stroke segments:", e);
-              currentUnitedPath?.remove();
-              currentUnitedPath = null;
-              break;
+              console.error("Error uniting batches:", e);
             }
           }
         }
@@ -292,21 +348,42 @@ export const MaskCanvas = memo(
           return;
         }
 
+        // Optional: Simplify the final united path if it's very complex
+        if (
+          currentUnitedPath instanceof paper.Path &&
+          currentUnitedPath.segments &&
+          currentUnitedPath.segments.length > 100
+        ) {
+          try {
+            currentUnitedPath.simplify(2.0); // Higher tolerance for final path
+          } catch (e) {
+            console.warn("Could not simplify final united path:", e);
+          }
+        }
+
         const existingPaths = maskGroupRef.current.children.filter(
           (item) => !currentStrokeItemsRef.current.includes(item)
         ) as PathWithSegments[];
 
         const overlappingPaths: PathWithSegments[] = [];
+        // Get bounds of the newly united stroke path once
+        const currentBounds = currentUnitedPath.bounds;
         for (const existingPath of existingPaths) {
           try {
+            // --- Optimization: First check if bounds intersect ---
             if (
               existingPath.visible &&
-              (currentUnitedPath.intersects(existingPath) ||
+              currentBounds.intersects(existingPath.bounds)
+            ) {
+              // --- Only if bounds intersect, do the more expensive checks ---
+              if (
+                currentUnitedPath.intersects(existingPath) ||
                 existingPath.intersects(currentUnitedPath) ||
                 currentUnitedPath.contains(existingPath.position) ||
-                existingPath.contains(currentUnitedPath.position))
-            ) {
-              overlappingPaths.push(existingPath);
+                existingPath.contains(currentUnitedPath.position)
+              ) {
+                overlappingPaths.push(existingPath);
+              }
             }
           } catch (e) {
             console.error("Error checking intersection:", e);
@@ -316,23 +393,69 @@ export const MaskCanvas = memo(
         if (overlappingPaths.length > 0) {
           let finalCombinedPath = currentUnitedPath;
 
-          for (const overlappingPath of overlappingPaths) {
-            try {
-              const nextCombined = finalCombinedPath.unite(
-                overlappingPath
-              ) as PathWithSegments;
-              if (nextCombined && !nextCombined.isEmpty()) {
-                finalCombinedPath.remove();
-                overlappingPath.remove();
-                finalCombinedPath = nextCombined;
-              } else {
-                console.warn(
-                  "Unite operation resulted in empty or invalid path. Skipping merge for:",
-                  overlappingPath
-                );
+          // Sort overlapping paths by area (smallest first) to potentially improve unite operations
+          overlappingPaths.sort((a, b) => {
+            const areaA = a.area || 0;
+            const areaB = b.area || 0;
+            return areaA - areaB;
+          });
+
+          // Process overlapping paths in batches
+          const batchSize = 5; // Adjust based on testing
+          for (let i = 0; i < overlappingPaths.length; i += batchSize) {
+            const batch = overlappingPaths.slice(i, i + batchSize);
+
+            // United paths in this batch first
+            let batchUnion: PathWithSegments | null = null;
+            for (const path of batch) {
+              try {
+                if (!batchUnion) {
+                  batchUnion = path.clone() as PathWithSegments;
+                } else {
+                  const newUnion = batchUnion.unite(path) as PathWithSegments;
+                  if (newUnion && !newUnion.isEmpty()) {
+                    batchUnion.remove();
+                    batchUnion = newUnion;
+                  }
+                }
+                // Remove the original path as it's now part of the batch union
+                path.remove();
+              } catch (e) {
+                console.error("Error in batch unite:", e);
               }
-            } catch (e) {
-              console.error("Error uniting with overlapping path:", e);
+            }
+
+            // Now unite the batch with the final path
+            if (batchUnion) {
+              try {
+                const combinedResult = finalCombinedPath.unite(
+                  batchUnion
+                ) as PathWithSegments;
+                if (combinedResult && !combinedResult.isEmpty()) {
+                  finalCombinedPath.remove();
+                  batchUnion.remove();
+                  finalCombinedPath = combinedResult;
+
+                  // Simplify after each batch to keep complexity under control
+                  if (
+                    finalCombinedPath instanceof paper.Path &&
+                    finalCombinedPath.segments &&
+                    finalCombinedPath.segments.length > 150
+                  ) {
+                    try {
+                      finalCombinedPath.simplify(2.5);
+                    } catch (e) {
+                      console.warn("Could not simplify batch result:", e);
+                    }
+                  }
+                } else {
+                  batchUnion.remove();
+                  console.warn("Unite batch operation resulted in empty path");
+                }
+              } catch (e) {
+                console.error("Error uniting batch with final path:", e);
+                batchUnion.remove();
+              }
             }
           }
 
@@ -349,6 +472,7 @@ export const MaskCanvas = memo(
           }
         }
 
+        // Clean up temporary stroke items
         for (const item of currentStrokeItemsRef.current) {
           item.remove();
         }
