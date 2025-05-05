@@ -1,29 +1,61 @@
-import { atom, useAtom } from "jotai";
+import { useAtom } from "jotai";
+import { RESET, atomWithReset } from "jotai/utils";
+import { useCallback, useMemo } from "react";
 
 export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536" | "auto";
 export type ImageQuality = "low" | "medium" | "high";
+export type GeneratedImage = {
+  imageKey: string;
+  prompt: string;
+  quality: ImageQuality;
+  size: ImageSize;
+};
 
-const aiImageModalAtom = atom<{
+const aiImageModalAtom = atomWithReset<{
   isOpen: boolean;
+  images: string[];
+  generations: GeneratedImage[];
   selectedImage: string | undefined;
   selectedImageQuality: ImageQuality;
   selectedImageSize: ImageSize;
   selectedImagePrompt: string;
+  isMasking: boolean;
   onInsert: null | ((imageKey: string) => void);
 }>({
   isOpen: false,
+  images: [],
+  generations: [],
   selectedImage: undefined,
   selectedImageQuality: "medium",
   selectedImageSize: "auto",
   selectedImagePrompt: "",
+  isMasking: false,
+
   onInsert: null,
 });
 
 export const useAIImageModal = () => {
   const [state, setState] = useAtom(aiImageModalAtom);
 
+  const reset = useCallback(() => {
+    setState(RESET);
+  }, [setState]);
+
+  const openWithReset = useCallback(() => {
+    reset();
+    setState((prev) => ({ ...prev, isOpen: true }));
+  }, [reset, setState]);
+
+  const isSelectedImagePrimary = useMemo(() => {
+    return state.images.length > 0 && state.images[0] === state.selectedImage;
+  }, [state.images, state.selectedImage]);
+
   return {
     ...state,
+    isSelectedImagePrimary,
+    reset,
+    openWithReset,
+    setState,
     setIsOpen: (isOpen: boolean | ((prev: boolean) => boolean)) => {
       if (typeof isOpen === "function") {
         setState((prev) => ({ ...prev, isOpen: isOpen(prev.isOpen) }));
@@ -71,8 +103,8 @@ export const useAIImageModal = () => {
     },
     setSelectedImage: (
       selectedImage: string | undefined,
-      selectedImageQuality?: ImageQuality | undefined,
-      selectedImageSize?: ImageSize | undefined,
+      selectedImageQuality?: ImageQuality,
+      selectedImageSize?: ImageSize,
       selectedImagePrompt?: string | undefined
     ) => {
       setState((prev) => ({
@@ -83,8 +115,36 @@ export const useAIImageModal = () => {
         selectedImagePrompt: selectedImagePrompt ?? prev.selectedImagePrompt,
       }));
     },
+    setImages: (images: string[] | ((prev: string[]) => string[])) => {
+      if (typeof images === "function") {
+        setState((prev) => ({ ...prev, images: images(prev.images) }));
+      } else {
+        setState((prev) => ({ ...prev, images }));
+      }
+    },
     setOnInsert: (onInsert: null | ((imageKey: string) => void)) => {
       setState((prev) => ({ ...prev, onInsert }));
+    },
+    setIsMasking: (isMasking: boolean | ((prev: boolean) => boolean)) => {
+      if (typeof isMasking === "function") {
+        setState((prev) => ({ ...prev, isMasking: isMasking(prev.isMasking) }));
+      } else {
+        setState((prev) => ({ ...prev, isMasking }));
+      }
+    },
+    setGenerations: (
+      generations:
+        | GeneratedImage[]
+        | ((prev: GeneratedImage[]) => GeneratedImage[])
+    ) => {
+      if (typeof generations === "function") {
+        setState((prev) => ({
+          ...prev,
+          generations: generations(prev.generations),
+        }));
+      } else {
+        setState((prev) => ({ ...prev, generations }));
+      }
     },
   };
 };

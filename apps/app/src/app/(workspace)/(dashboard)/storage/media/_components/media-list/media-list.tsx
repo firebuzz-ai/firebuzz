@@ -1,6 +1,7 @@
 "use client";
 
 import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import { useProject } from "@/hooks/auth/use-project";
 import { useNewMediaModal } from "@/hooks/ui/use-new-media-modal";
 import {
@@ -13,7 +14,6 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Upload } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
@@ -24,14 +24,6 @@ import { NewMediaModal } from "../modal/new-media/modal";
 import { Footer } from "./footer";
 import { MediaItem } from "./media-item";
 import { SelectedMenu } from "./selected-menu";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: Number.POSITIVE_INFINITY,
-    },
-  },
-});
 
 export const MediaList = () => {
   const { currentProject } = useProject();
@@ -261,10 +253,11 @@ export const MediaList = () => {
       />
 
       <MediaDetailsModal />
-      <QueryClientProvider client={queryClient}>
-        <NewMediaModal />
-      </QueryClientProvider>
+      <NewMediaModal />
+
       <AIImageModal />
+
+      <MediaGalleryModal />
     </div>
   );
 };

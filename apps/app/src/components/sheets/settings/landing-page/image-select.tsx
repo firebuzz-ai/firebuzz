@@ -1,6 +1,6 @@
 "use client";
 
-import { MediaGalleryModal } from "@/components/modals/media/gallery-modal";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";

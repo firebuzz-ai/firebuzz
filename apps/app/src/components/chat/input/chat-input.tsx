@@ -1,4 +1,5 @@
 "use client";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import {
   attachmentsAtom,
   isElementSelectionEnabledAtom,
@@ -199,6 +200,9 @@ export const ChatInput = memo(
                 Send <ButtonShortcut>Enter</ButtonShortcut>
               </Button>
             </div>
+
+            {/* Modals */}
+            <MediaGalleryModal />
           </div>
         </div>
       </AnimatePresence>

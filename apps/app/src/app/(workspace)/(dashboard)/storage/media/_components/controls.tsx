@@ -56,7 +56,7 @@ export const Controls = ({
 }: ControlsProps) => {
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const { setState } = useNewMediaModal();
-  const { setIsOpen: setAIImageModalIsOpen } = useAIImageModal();
+  const { openWithReset: setAIImageModalIsOpen } = useAIImageModal();
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 border-b max-h-min border-border">
@@ -158,7 +158,7 @@ export const Controls = ({
                 <Layers2 className="w-4 h-4" />
                 Unsplash
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setAIImageModalIsOpen(true)}>
+              <DropdownMenuItem onClick={setAIImageModalIsOpen}>
                 <Wand className="w-4 h-4" />
                 Generate
               </DropdownMenuItem>

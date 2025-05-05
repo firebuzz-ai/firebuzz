@@ -1,7 +1,10 @@
 import { useProject } from "@/hooks/auth/use-project";
 import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
+import { Badge } from "@firebuzz/ui/components/ui/badge";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Upload } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { parseMediaFile } from "@firebuzz/utils";
@@ -10,6 +13,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { MaskCanvas } from "./mask-canvas";
+import { SelectedImageMenu } from "./selected-image-menu";
 
 interface ImagePreviewWithEditProps {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
@@ -20,7 +24,10 @@ export const ImagePreviewWithEdit = ({
   canvasRef,
   isMasking,
 }: ImagePreviewWithEditProps) => {
-  const { selectedImage, setSelectedImage } = useAIImageModal();
+  const { selectedImage, setSelectedImage, setImages, isSelectedImagePrimary } =
+    useAIImageModal();
+  const { setState } = useMediaGalleryModal();
+
   const { currentProject } = useProject();
   const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
   const uploadFile = useUploadFile(api.helpers.r2);
@@ -50,9 +57,6 @@ export const ImagePreviewWithEdit = ({
         width: img.naturalWidth,
         height: img.naturalHeight,
       });
-      console.log(
-        `Natural image size: ${img.naturalWidth}x${img.naturalHeight}`
-      );
 
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
@@ -85,15 +89,9 @@ export const ImagePreviewWithEdit = ({
         top: offsetY,
         left: offsetX,
       });
-      console.log(
-        `Rendered image rect: ${renderedWidth}x${renderedHeight} at ${offsetX},${offsetY}`
-      );
     } else {
       setNaturalImageSize({ width: 0, height: 0 });
       setRenderedImageRect({ width: 0, height: 0, top: 0, left: 0 });
-      console.log(
-        "updateImageSizes: Container/image ref not ready or natural dimensions zero."
-      );
     }
   }, []);
 
@@ -133,6 +131,23 @@ export const ImagePreviewWithEdit = ({
     };
   }, [isMasking, updateImageSizes]);
 
+  const openGalleryHandler = () => {
+    setState((prev) => ({
+      ...prev,
+      allowedTypes: ["image"],
+      allowMultiple: true,
+      isOpen: true,
+      maxFiles: 5,
+      activeTab: "gallery",
+      onSelect: (data) => {
+        const selectedImage = data[0].key;
+        const images = data.map((image) => image.key);
+        setSelectedImage(selectedImage);
+        setImages([...images]);
+      },
+    }));
+  };
+
   const onDrop = async (acceptedFiles: File[]) => {
     if (!currentProject) {
       toast.error("No project context");
@@ -167,19 +182,19 @@ export const ImagePreviewWithEdit = ({
   const onDropRejected = (_fileRejections: FileRejection[]) => {
     toast.error("File rejected. Please check the file type and size.");
   };
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop,
     onDropRejected,
-    accept: { "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"] },
+    accept: { "image/*": [".png", ".jpg", ".jpeg"] },
     maxSize: 50 * 1024 * 1024,
-    maxFiles: 1,
+    maxFiles: 5,
     noClick: true,
-    multiple: false,
+    multiple: true,
     disabled: isUploading,
   });
 
   return (
-    <div className="flex flex-col flex-1 max-h-full overflow-hidden">
+    <div className="flex flex-col flex-1 max-h-full mt-8 overflow-hidden">
       {!selectedImage && (
         <div
           className="flex flex-col items-center justify-center w-full h-full"
@@ -206,48 +221,98 @@ export const ImagePreviewWithEdit = ({
             </motion.div>
           )}
 
-          <div className="flex flex-col items-center justify-center gap-2">
-            <span className="max-w-xs text-base text-center text-muted-foreground">
-              You can generate a new image or select from gallery to start with.
-            </span>
-          </div>
+          {!isUploading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="relative flex flex-1 w-full p-8 rounded-lg"
+            >
+              <div className="absolute inset-0 bg-background bg-[linear-gradient(to_right,hsl(var(--brand)/0.15)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.15)_1px,transparent_1px)] bg-[size:20px_20px] opacity-20" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,hsl(var(--background)/1)_0%,transparent_70%)]" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,hsl(var(--background)/1)_70%)]" />
+              <div className="relative z-10 flex items-center justify-center flex-1 text-base text-center text-muted-foreground">
+                <span className="max-w-xs">
+                  You can <Badge variant="outline">Generate</Badge> a new image
+                  or{" "}
+                  <Badge
+                    onClick={openGalleryHandler}
+                    variant="outline"
+                    className="cursor-pointer"
+                  >
+                    Select
+                  </Badge>{" "}
+                  from gallery or{" "}
+                  <Badge
+                    onClick={open}
+                    variant="outline"
+                    className="cursor-pointer"
+                  >
+                    Upload
+                  </Badge>{" "}
+                  images.
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {isUploading && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <Spinner size="sm" />
+            </motion.div>
+          )}
         </div>
       )}
 
       {selectedImage && (
-        <div
-          ref={imageContainerRef}
-          className="relative flex flex-col flex-1 bg-muted/40"
-        >
-          <Image
-            unoptimized
-            fill
-            src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${selectedImage}`}
-            alt="Media content"
-            className="object-contain"
-            draggable={false}
-            ref={imageRef}
-            onLoad={updateImageSizes}
-          />
-          {isMasking && naturalImageSize.width > 0 && (
-            <div
-              style={{
-                position: "absolute",
-
-                top: `${renderedImageRect.top}px`,
-                left: `${renderedImageRect.left}px`,
-                width: `${renderedImageRect.width}px`,
-                height: `${renderedImageRect.height}px`,
-                zIndex: 10,
-              }}
-            >
-              <MaskCanvas
-                brushSize={64}
-                canvasRef={canvasRef}
-                canvasSize={naturalImageSize}
-              />
-            </div>
-          )}
+        <div className="flex flex-col flex-1 w-full max-w-5xl mx-auto">
+          <div
+            ref={imageContainerRef}
+            className="relative flex flex-col flex-1"
+          >
+            {/* Image Background */}
+            <div className="relative z-0 w-full h-full max-w-5xl mx-auto rounded-md bg-background-subtle" />
+            <Image
+              unoptimized
+              fill
+              src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${selectedImage}`}
+              alt="Media content"
+              className="object-contain"
+              draggable={false}
+              ref={imageRef}
+              onLoad={updateImageSizes}
+            />
+            {isMasking &&
+              naturalImageSize.width > 0 &&
+              isSelectedImagePrimary && (
+                <div
+                  style={{
+                    position: "absolute",
+                    top: `${renderedImageRect.top}px`,
+                    left: `${renderedImageRect.left}px`,
+                    width: `${renderedImageRect.width}px`,
+                    height: `${renderedImageRect.height}px`,
+                    zIndex: 10,
+                  }}
+                >
+                  <MaskCanvas
+                    selectedImageKey={selectedImage}
+                    brushSize={64}
+                    canvasRef={canvasRef}
+                    naturalImageSize={naturalImageSize}
+                    canvasSize={{
+                      width: renderedImageRect.width,
+                      height: renderedImageRect.height,
+                    }}
+                  />
+                </div>
+              )}
+            {!isMasking && <SelectedImageMenu />}
+          </div>
         </div>
       )}
     </div>

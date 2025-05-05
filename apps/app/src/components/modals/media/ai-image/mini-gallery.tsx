@@ -104,17 +104,13 @@ export const MiniGallery = () => {
     const selectedImageData = mediaItems.find((media) => media.key === id);
     setSelectedImage(
       isSelected ? undefined : id,
-      selectedImageData?.aiMetadata?.quality as
-        | "low"
-        | "medium"
-        | "high"
-        | undefined,
-      selectedImageData?.aiMetadata?.size as
+      (selectedImageData?.aiMetadata?.quality as "low" | "medium" | "high") ??
+        "medium",
+      (selectedImageData?.aiMetadata?.size as
         | "1024x1024"
         | "1536x1024"
         | "1024x1536"
-        | "auto"
-        | undefined,
+        | "auto") ?? "auto",
       selectedImageData?.aiMetadata?.prompt
     );
   };

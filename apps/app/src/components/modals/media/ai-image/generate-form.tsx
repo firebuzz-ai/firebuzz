@@ -1,5 +1,5 @@
 import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { GenerateImageFormInput } from "./form-input";
 import { ImagePreviewWithEdit } from "./image-preview-with-edit";
 
@@ -13,8 +13,9 @@ export const GenerateForm = ({ setState }: GenerateFormProps) => {
     selectedImageQuality,
     setSelectedImageSize,
     setSelectedImageQuality,
+    isMasking,
   } = useAIImageModal();
-  const [isMasking, setIsMasking] = useState(false);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   return (
@@ -23,8 +24,6 @@ export const GenerateForm = ({ setState }: GenerateFormProps) => {
       <GenerateImageFormInput
         selectedSize={selectedImageSize}
         setSelectedSize={setSelectedImageSize}
-        isMasking={isMasking}
-        setIsMasking={setIsMasking}
         canvasRef={canvasRef}
         setState={setState}
         quality={selectedImageQuality}

@@ -1,4 +1,3 @@
-import { MediaGalleryModal } from "@/components/modals/media/gallery-modal";
 import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { useMutation, useUploadFile } from "@firebuzz/convex";
 import { api } from "@firebuzz/convex/nextjs";
@@ -51,11 +50,7 @@ export const AttachmentButton = ({
 }) => {
   const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const {
-    setIsOpen: setGalleryOpen,
-    setAllowMultiple,
-    setOnSelect,
-  } = useMediaGalleryModal();
+  const { setState: setGalleryModalState } = useMediaGalleryModal();
   const [isOpen, setIsOpen] = useState(false);
   const [, setAttachments] = useAtom(attachmentsAtom);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -206,12 +201,15 @@ export const AttachmentButton = ({
                 disabled={isUploading}
               />
             </Button>
-            <MediaGalleryModal asChild>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAllowMultiple(true);
-                  setOnSelect((data) => {
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                setGalleryModalState((prev) => ({
+                  ...prev,
+                  allowMultiple: true,
+                  maxFiles: 5,
+                  onSelect: (data) => {
                     setAttachments((prev) => [
                       ...(prev || []),
                       ...data.map((item) => ({
@@ -221,15 +219,15 @@ export const AttachmentButton = ({
                         size: item.size,
                       })),
                     ]);
-                  });
-                  setGalleryOpen(true);
-                  setIsOpen(false);
-                }}
-              >
-                <GalleryHorizontal className="mr-2 size-3" />
-                Gallery
-              </Button>
-            </MediaGalleryModal>
+                  },
+                  isOpen: true,
+                }));
+              }}
+            >
+              <GalleryHorizontal className="mr-2 size-3" />
+              Gallery
+            </Button>
+
             <Button variant="outline">
               <File className="mr-2 size-3" />
               Select from Documents
@@ -282,12 +280,14 @@ export const AttachmentButton = ({
             disabled={isUploading}
           />
         </DropdownMenuItem>
-        <MediaGalleryModal asChild>
-          <DropdownMenuItem
-            onClick={(e) => {
-              e.preventDefault();
-              setAllowMultiple(true);
-              setOnSelect((data) => {
+        <DropdownMenuItem
+          onClick={(e) => {
+            e.preventDefault();
+            setGalleryModalState((prev) => ({
+              ...prev,
+              allowMultiple: true,
+              maxFiles: 5,
+              onSelect: (data) => {
                 setAttachments((prev) => [
                   ...(prev || []),
                   ...data.map((item) => ({
@@ -297,15 +297,14 @@ export const AttachmentButton = ({
                     size: item.size,
                   })),
                 ]);
-                setIsOpen(false);
-              });
-              setGalleryOpen(true);
-            }}
-          >
-            <GalleryHorizontal className="mr-2 size-3" />
-            Gallery
-          </DropdownMenuItem>
-        </MediaGalleryModal>
+              },
+              isOpen: true,
+            }));
+          }}
+        >
+          <GalleryHorizontal className="mr-2 size-3" />
+          Gallery
+        </DropdownMenuItem>
         <DropdownMenuItem>
           <File className="mr-2 size-3" />
           Documents

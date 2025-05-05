@@ -4,14 +4,14 @@ export const GeneratingAnimation = () => {
   return (
     <motion.div
       key="generating"
-      className="flex items-center justify-center w-full h-full p-8"
+      className="flex items-center justify-center w-full h-full px-12 py-8"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 40 }}
     >
-      <div className="grid w-full h-full grid-cols-12 gap-1 grid-rows-12">
-        {Array.from({ length: 12 }).map((_, rowIndex) =>
-          Array.from({ length: 12 }).map((_, colIndex) => (
+      <div className="grid w-full h-full gap-1 grid-cols-[repeat(24,minmax(0,1fr))] grid-rows-[repeat(24,minmax(0,1fr))]">
+        {Array.from({ length: 24 }).map((_, rowIndex) =>
+          Array.from({ length: 24 }).map((_, colIndex) => (
             <motion.div
               // biome-ignore lint/suspicious/noArrayIndexKey: grid animation
               key={`${rowIndex}-${colIndex}`}

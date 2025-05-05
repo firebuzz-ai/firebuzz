@@ -97,6 +97,9 @@ export async function POST(request: NextRequest) {
       // Determine if we pass a single file or an array
       const imageInput = imageFiles.length === 1 ? imageFiles[0] : imageFiles;
 
+      console.log("imageInput", imageInput);
+      console.log("maskFile", maskFile);
+
       const response = await openAIRaw.images.edit({
         image: imageInput,
         mask: maskFile,

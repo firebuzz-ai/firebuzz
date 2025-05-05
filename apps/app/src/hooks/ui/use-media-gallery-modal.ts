@@ -1,13 +1,17 @@
 import { atom, useAtom } from "jotai";
 
+type ActiveTab = "gallery" | "unsplash" | "upload";
+
 interface MediaModalAtom {
   allowedTypes: ("image" | "video" | "audio")[];
   allowMultiple: boolean;
   maxFiles: number;
   isOpen: boolean;
+  activeTab: ActiveTab;
   onSelect: (
     data: {
       url: string;
+      key: string;
       fileName: string;
       description: string;
       type: "image" | "video" | "audio";
@@ -23,17 +27,23 @@ export const mediaModalAtom = atom<MediaModalAtom>({
   maxFiles: 5,
   isOpen: false,
   onSelect: () => {},
+  activeTab: "gallery",
 });
 
 export const useMediaGalleryModal = () => {
   const [state, setState] = useAtom(mediaModalAtom);
 
   return {
-    isOpen: state.isOpen,
-    allowedTypes: state.allowedTypes,
-    allowMultiple: state.allowMultiple,
-    maxFiles: state.maxFiles,
-    onSelect: state.onSelect,
+    ...state,
+    setState: setState,
+    setActiveTab: (value: ActiveTab | ((prev: ActiveTab) => ActiveTab)) => {
+      setState((prev) => {
+        if (typeof value === "function") {
+          return { ...prev, activeTab: value(prev.activeTab) };
+        }
+        return { ...prev, activeTab: value };
+      });
+    },
     setIsOpen: (value: boolean | ((prev: boolean) => boolean)) => {
       setState((prev) => {
         if (typeof value === "boolean") {
@@ -54,6 +64,7 @@ export const useMediaGalleryModal = () => {
       handler: (
         data: {
           url: string;
+          key: string;
           fileName: string;
           description: string;
           type: "image" | "video" | "audio";

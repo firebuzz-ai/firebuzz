@@ -1,6 +1,14 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import {
+  type GeneratedImage,
+  useAIImageModal,
+} from "@/hooks/ui/use-ai-image-modal";
 import ImageGenClient from "@/lib/ai/image/client";
-import { api, useMutation, useUploadFile } from "@firebuzz/convex";
+import {
+  api,
+  useMutation,
+  useStableCachedQuery,
+  useUploadFile,
+} from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -10,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@firebuzz/ui/components/ui/select";
-import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -18,12 +25,14 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
   CornerDownRight,
-  Paintbrush,
   Ratio,
   SlidersHorizontal,
 } from "@firebuzz/ui/icons/lucide";
-import { cn, toast } from "@firebuzz/ui/lib/utils";
-import { useState } from "react";
+import { toast } from "@firebuzz/ui/lib/utils";
+import { useMemo, useState } from "react";
+import { Generations } from "./generations";
+import { ImageList } from "./image-list";
+import { MaskButton } from "./mask-button";
 
 const IMAGE_SIZES = {
   "1024x1024": "Square (1:1)",
@@ -36,13 +45,10 @@ type ImageSize = keyof typeof IMAGE_SIZES;
 
 interface GenerateImageFormInputProps {
   selectedSize: ImageSize;
-
   setSelectedSize: React.Dispatch<React.SetStateAction<ImageSize>>;
   setState: React.Dispatch<React.SetStateAction<"idle" | "generating">>;
   quality: "low" | "medium" | "high";
   setQuality: React.Dispatch<React.SetStateAction<"low" | "medium" | "high">>;
-  isMasking: boolean;
-  setIsMasking: React.Dispatch<React.SetStateAction<boolean>>;
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
 }
 
@@ -52,28 +58,68 @@ export const GenerateImageFormInput = ({
   setState,
   quality,
   setQuality,
-  isMasking,
-  setIsMasking,
   canvasRef,
 }: GenerateImageFormInputProps) => {
-  const { selectedImage, setSelectedImage } = useAIImageModal();
+  const {
+    selectedImage,
+    setSelectedImage,
+    images,
+    isMasking,
+    setIsMasking,
+    isSelectedImagePrimary,
+  } = useAIImageModal();
+
   const [prompt, setPrompt] = useState("");
+  const generations = useStableCachedQuery(
+    api.collections.storage.media.queries.getRecentGenerations
+  );
+
+  const memoizedGenerations = useMemo(() => {
+    return generations?.map((generation) => ({
+      imageKey: generation.key,
+      prompt: generation.aiMetadata?.prompt ?? "",
+      quality: generation.aiMetadata?.quality ?? "medium",
+      size: generation.aiMetadata?.size ?? "auto",
+    })) as GeneratedImage[];
+  }, [generations]);
+
   const uploadFile = useUploadFile(api.helpers.r2);
   const createMedia = useMutation(
     api.collections.storage.media.mutations.create
   );
 
-  // Return a Promise that resolves with the mask File or null
+  // Return a Promise that resolves with the mask File or null, scaled to natural dimensions stored on canvas
   const getMaskFile = (): Promise<File | null> => {
     return new Promise((resolve) => {
-      const canvas = canvasRef.current;
-      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+      // Cast canvasRef.current to include our custom properties
+      const canvas = canvasRef.current as
+        | (HTMLCanvasElement & {
+            naturalWidth?: number;
+            naturalHeight?: number;
+          })
+        | null;
+
+      const originalWidth = canvas?.naturalWidth;
+      const originalHeight = canvas?.naturalHeight;
+
+      if (
+        !canvas ||
+        canvas.width === 0 ||
+        canvas.height === 0 ||
+        !originalWidth || // Check if natural dimensions exist
+        !originalHeight ||
+        originalWidth <= 0 ||
+        originalHeight <= 0
+      ) {
         console.warn(
-          "getMaskFile: Canvas not available or has zero dimensions."
+          "getMaskFile: Canvas not available, has zero dimensions, or missing natural dimensions."
         );
         resolve(null);
         return;
       }
+
+      const renderedWidth = canvas.width;
+      const renderedHeight = canvas.height;
 
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
       if (!ctx) {
@@ -83,44 +129,52 @@ export const GenerateImageFormInput = ({
       }
 
       try {
-        // 1. Get the original ImageData drawn by MaskCanvas
-        const originalImageData = ctx.getImageData(
+        // 1. Get rendered ImageData
+        const renderedImageData = ctx.getImageData(
           0,
           0,
-          canvas.width,
-          canvas.height
+          renderedWidth,
+          renderedHeight
         );
-        const originalData = originalImageData.data;
+        const renderedData = renderedImageData.data;
 
-        // 2. Create a new ImageData for the inverted mask
-        const invertedImageData = new ImageData(canvas.width, canvas.height);
+        // 2. Create inverted ImageData at original dimensions
+        const invertedImageData = new ImageData(originalWidth, originalHeight);
         const invertedData = invertedImageData.data;
 
-        // 3. Iterate and invert the alpha logic
-        for (let i = 0; i < originalData.length; i += 4) {
-          const originalAlpha = originalData[i + 3];
+        // Scaling factors
+        const scaleX = renderedWidth / originalWidth;
+        const scaleY = renderedHeight / originalHeight;
 
-          if (originalAlpha > 0) {
-            // --- Area was brushed (EDIT this area) ---
-            // Make it fully transparent in the inverted mask
-            invertedData[i] = 0; // R
-            invertedData[i + 1] = 0; // G
-            invertedData[i + 2] = 0; // B
-            invertedData[i + 3] = 0; // A (Transparent)
-          } else {
-            // --- Area was NOT brushed (KEEP this area) ---
-            // Make it fully opaque white in the inverted mask
-            invertedData[i] = 255; // R
-            invertedData[i + 1] = 255; // G
-            invertedData[i + 2] = 255; // B
-            invertedData[i + 3] = 255; // A (Opaque)
+        // 3. Iterate through original dimensions, sample from rendered, invert
+        for (let oy = 0; oy < originalHeight; oy++) {
+          for (let ox = 0; ox < originalWidth; ox++) {
+            const sx = Math.floor(ox * scaleX);
+            const sy = Math.floor(oy * scaleY);
+            const safeSx = Math.max(0, Math.min(renderedWidth - 1, sx));
+            const safeSy = Math.max(0, Math.min(renderedHeight - 1, sy));
+            const sourceIndex = (safeSy * renderedWidth + safeSx) * 4;
+            const originalAlpha = renderedData[sourceIndex + 3];
+            const targetIndex = (oy * originalWidth + ox) * 4;
+
+            if (originalAlpha > 0) {
+              invertedData[targetIndex] = 0;
+              invertedData[targetIndex + 1] = 0;
+              invertedData[targetIndex + 2] = 0;
+              invertedData[targetIndex + 3] = 0;
+            } else {
+              invertedData[targetIndex] = 255;
+              invertedData[targetIndex + 1] = 255;
+              invertedData[targetIndex + 2] = 255;
+              invertedData[targetIndex + 3] = 255;
+            }
           }
         }
 
-        // 4. Use a temporary canvas to generate the blob from inverted data
+        // 4. Temp canvas at original dimensions
         const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
+        tempCanvas.width = originalWidth;
+        tempCanvas.height = originalHeight;
         const tempCtx = tempCanvas.getContext("2d");
 
         if (!tempCtx) {
@@ -131,11 +185,10 @@ export const GenerateImageFormInput = ({
           return;
         }
 
-        // 5. Put the inverted data onto the temp canvas and get blob
+        // 5. Put scaled/inverted data, get blob, check size, return file
         tempCtx.putImageData(invertedImageData, 0, 0);
         tempCanvas.toBlob((blob) => {
           if (blob) {
-            // Check blob size (optional but good practice)
             if (blob.size > 4 * 1024 * 1024) {
               console.warn("Generated mask blob exceeds 4MB limit.");
               toast.error("Mask image is too large (max 4MB).");
@@ -156,21 +209,6 @@ export const GenerateImageFormInput = ({
         resolve(null);
       }
     });
-  };
-
-  const clearMask = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // Use the clearMask method that was attached to the canvas by the MaskCanvas component
-    if ("clearMask" in canvas && typeof canvas.clearMask === "function") {
-      canvas.clearMask();
-    } else {
-      // Fallback to the original implementation
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
   };
 
   // Check if mask has content
@@ -294,19 +332,19 @@ export const GenerateImageFormInput = ({
 
     setState("generating");
     try {
-      // 1. Get mask file if needed
+      // 1. Get mask file - no arguments needed now
       const maskFile = isMasking && maskIsPresent ? await getMaskFile() : null;
+
       if (isMasking && maskIsPresent && !maskFile) {
-        // If masking was intended but failed to get file, stop here
         toast.error("Failed to process mask image.");
         setState("idle");
         return;
       }
-      // 2. Call the client's edit method
-      // The client handles FormData creation internally
+
+      // 2. Call client edit method
       const result = await imageGenClient.edit({
         prompt,
-        imageKeys: selectedImage,
+        imageKeys: images,
         quality,
         mask: maskFile ?? undefined,
         model: "gpt-image-1",
@@ -348,10 +386,10 @@ export const GenerateImageFormInput = ({
           source: "ai-generated",
           aiMetadata,
         });
+
+        setIsMasking(false);
         setSelectedImage(key);
         setPrompt("");
-
-        if (isMasking) clearMask();
       } else {
         throw new Error("No image data received");
       }
@@ -366,72 +404,59 @@ export const GenerateImageFormInput = ({
   };
 
   return (
-    <div className="flex items-center justify-center w-full py-10 border-t">
-      <div className="flex flex-col w-full max-w-3xl gap-3">
-        {/* Top-left AI settings */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Size Select */}
-          <Select
-            value={selectedSize}
-            onValueChange={(v) => setSelectedSize(v as ImageSize)}
-          >
-            <SelectTrigger className="h-8 max-w-fit">
-              <div className="flex items-center gap-2 pr-2 whitespace-nowrap">
-                <Ratio className="size-3.5" />
-                <SelectValue placeholder="Size" />
-              </div>
-            </SelectTrigger>
-            <SelectContent side="top" sideOffset={10}>
-              {Object.entries(IMAGE_SIZES).map(([key, value]) => (
-                <SelectItem key={key} value={key}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {/* Quality Select */}
-          <Select
-            value={quality}
-            onValueChange={(v) => setQuality(v as "low" | "medium" | "high")}
-          >
-            <SelectTrigger className="h-8 max-w-fit">
-              <div className="flex items-center gap-2 pr-2 whitespace-nowrap">
-                <SlidersHorizontal className="size-3.5" />
-                <SelectValue placeholder="Quality" />
-              </div>
-            </SelectTrigger>
-            <SelectContent side="top" sideOffset={10}>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-            </SelectContent>
-          </Select>
-          <Separator orientation="vertical" className="h-4" />
-          {/* Mask Toggle */}
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                disabled={!selectedImage}
-                variant="outline"
-                className={cn("h-8", {
-                  "text-brand hover:text-brand/80": isMasking,
-                })}
-                size="sm"
-                onClick={() => {
-                  if (isMasking) {
-                    // If turning off masking, clear any existing mask
-                    clearMask();
-                  }
-                  setIsMasking((v) => !v);
-                }}
-              >
-                <Paintbrush className="!size-3.5" /> Select
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-xs" side="top" sideOffset={5}>
-              Mask the image
-            </TooltipContent>
-          </Tooltip>
+    <div className="flex items-center justify-center w-full px-4 py-8">
+      <div className="flex flex-col w-full max-w-5xl gap-3">
+        {/* Generations */}
+        {memoizedGenerations?.length && memoizedGenerations.length > 0 && (
+          <Generations generations={memoizedGenerations} />
+        )}
+
+        <div className="flex items-center justify-between gap-3">
+          {/* Top-left AI settings */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Size Select */}
+            <Select
+              value={selectedSize}
+              onValueChange={(v) => setSelectedSize(v as ImageSize)}
+            >
+              <SelectTrigger className="h-8 max-w-fit">
+                <div className="flex items-center gap-2 pr-2 whitespace-nowrap">
+                  <Ratio className="size-3.5" />
+                  <SelectValue placeholder="Size" />
+                </div>
+              </SelectTrigger>
+              <SelectContent side="top" sideOffset={10}>
+                {Object.entries(IMAGE_SIZES).map(([key, value]) => (
+                  <SelectItem key={key} value={key}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Quality Select */}
+            <Select
+              value={quality}
+              onValueChange={(v) => setQuality(v as "low" | "medium" | "high")}
+            >
+              <SelectTrigger className="h-8 max-w-fit">
+                <div className="flex items-center gap-2 pr-2 whitespace-nowrap">
+                  <SlidersHorizontal className="size-3.5" />
+                  <SelectValue placeholder="Quality" />
+                </div>
+              </SelectTrigger>
+              <SelectContent side="top" sideOffset={10}>
+                <SelectItem value="low">Low</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+              </SelectContent>
+            </Select>
+            {/* Mask Button */}
+            {selectedImage && isSelectedImagePrimary && (
+              <MaskButton canvasRef={canvasRef} selectedImage={selectedImage} />
+            )}
+          </div>
+          {/* Right-side buttons */}
+          <ImageList selectedImageKey={selectedImage ?? ""} />
         </div>
         {/* Input + Buttons */}
         <div className="flex items-center gap-4 p-2 border rounded-lg shadow-lg bg-background-subtle">
@@ -469,7 +494,9 @@ export const GenerateImageFormInput = ({
                   size="sm"
                   variant="ghost"
                   className="h-8"
-                  disabled={!prompt.trim() || !selectedImage}
+                  disabled={
+                    !prompt.trim() || !selectedImage || !isSelectedImagePrimary
+                  }
                   onClick={handleEdit}
                 >
                   Edit <ButtonShortcut>⌘E</ButtonShortcut>

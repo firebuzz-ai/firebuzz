@@ -58,6 +58,27 @@ export const getPaginated = query({
   },
 });
 
+export const getRecentGenerations = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await getCurrentUser(ctx);
+    const projectId = user?.currentProject;
+
+    if (!user || !projectId) {
+      throw new ConvexError("Not authorized");
+    }
+
+    const generations = await ctx.db
+      .query("media")
+      .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+      .filter((q) => q.eq(q.field("source"), "ai-generated"))
+      .order("desc")
+      .take(5);
+
+    return generations;
+  },
+});
+
 export const getById = query({
   args: {
     id: v.id("media"),

@@ -1,0 +1,136 @@
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { Button } from "@firebuzz/ui/components/ui/button";
+import { Separator } from "@firebuzz/ui/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
+import {
+  ChevronRight,
+  Paintbrush,
+  Redo2,
+  Trash,
+  Undo2,
+} from "@firebuzz/ui/icons/lucide";
+import { cn } from "@firebuzz/ui/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useMemo } from "react";
+import { useMaskState } from "./use-mask-state";
+
+export const MaskButton = ({
+  canvasRef,
+  selectedImage,
+}: {
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  selectedImage: string;
+}) => {
+  const { setIsMasking, isMasking, isSelectedImagePrimary } = useAIImageModal();
+
+  const { undo, redo, canUndo, canRedo, reset } = useMaskState(selectedImage);
+
+  const hasHistory = useMemo(() => {
+    return canUndo || canRedo;
+  }, [canUndo, canRedo]);
+
+  const clearMask = useCallback(() => {
+    reset();
+    const canvas = canvasRef.current;
+    if (
+      canvas &&
+      "clearMask" in canvas &&
+      typeof canvas.clearMask === "function"
+    ) {
+      canvas.clearMask();
+    }
+  }, [canvasRef, reset]);
+
+  return (
+    <>
+      <Separator orientation="vertical" className="h-4" />
+      {/* Mask Toggle */}
+      <Tooltip delayDuration={0}>
+        <TooltipTrigger asChild>
+          <Button
+            disabled={!isSelectedImagePrimary}
+            variant="outline"
+            className={cn("h-8", {
+              "text-brand hover:text-brand/80": isMasking,
+            })}
+            size="sm"
+            onClick={() => {
+              if (isMasking) {
+                // If turning off masking, clear any existing mask
+                clearMask();
+              }
+              setIsMasking((v) => !v);
+            }}
+          >
+            <Paintbrush className="!size-3.5" /> Mask
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="text-xs" side="top" sideOffset={5}>
+          Mask the image
+        </TooltipContent>
+      </Tooltip>
+
+      <AnimatePresence>
+        {isMasking && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-2"
+          >
+            <ChevronRight className="!size-3.5" />
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  size="iconSm"
+                  variant="outline"
+                  onClick={undo}
+                  disabled={!canUndo}
+                >
+                  <Undo2 className="!size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs" side="top" sideOffset={5}>
+                Undo
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  size="iconSm"
+                  variant="outline"
+                  onClick={redo}
+                  disabled={!canRedo}
+                >
+                  <Redo2 className="!size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs" side="top" sideOffset={5}>
+                Redo
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <Button
+                  disabled={!hasHistory}
+                  size="iconSm"
+                  variant="outline"
+                  onClick={clearMask}
+                >
+                  <Trash className="!size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs" side="top" sideOffset={5}>
+                Clear mask
+              </TooltipContent>
+            </Tooltip>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
