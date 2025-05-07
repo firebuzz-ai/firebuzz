@@ -6,7 +6,7 @@ import { cascadePool } from "../../workpools";
 
 export const batchDelete = internalMutation({
   args: {
-    cursor: v.string(),
+    cursor: v.optional(v.string()),
     projectId: v.id("projects"),
     numItems: v.number(),
   },
@@ -17,7 +17,7 @@ export const batchDelete = internalMutation({
       .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
       .paginate({
         numItems,
-        cursor,
+        cursor: cursor ?? null,
       });
 
     // If there are no campaigns, return

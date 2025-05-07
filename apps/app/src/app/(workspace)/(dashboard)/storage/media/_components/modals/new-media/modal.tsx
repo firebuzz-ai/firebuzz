@@ -1,4 +1,4 @@
-import { useNewMediaModal } from "@/hooks/ui/use-new-media-modal";
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
 import {
   Dialog,
   DialogContent,

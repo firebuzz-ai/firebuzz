@@ -144,29 +144,53 @@ export const parseMediaFile = (
   };
 };
 
-export const parseDocumentFile = (file: File) => {
+interface ParsedDocumentFileResult {
+  type:
+    | "pdf"
+    | "doc"
+    | "docx"
+    | "csv"
+    | "md"
+    | "mdx"
+    | "html"
+    | "txt"
+    | "unknown";
+  extension: string;
+  size: number;
+  contentType: string;
+}
+
+export const parseDocumentFile = (file: File): ParsedDocumentFileResult => {
+  let type: ParsedDocumentFileResult["type"] = "unknown";
+
+  switch (file.type) {
+    case "application/pdf":
+      type = "pdf";
+      break;
+    case "application/msword":
+      type = "doc";
+      break;
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      type = "docx";
+      break;
+    case "text/csv":
+      type = "csv";
+      break;
+    case "text/markdown":
+      type = "md";
+      break;
+    case "text/markdownx":
+      type = "mdx";
+      break;
+    case "text/html":
+      type = "html";
+      break;
+    case "text/plain":
+      type = "txt";
+      break;
+  }
   return {
-    type: file.type.startsWith("application/pdf")
-      ? "pdf"
-      : file.type.startsWith("application/msword")
-        ? "doc"
-        : file.type.startsWith(
-              "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            )
-          ? "docx"
-          : file.type.startsWith("application/vnd.ms-excel")
-            ? "xls"
-            : file.type.startsWith(
-                  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-              ? "xlsx"
-              : file.type.startsWith("application/vnd.ms-powerpoint")
-                ? "ppt"
-                : file.type.startsWith("application/vnd.ms-powerpoint")
-                  ? "pptx"
-                  : file.type.startsWith("application/csv")
-                    ? "csv"
-                    : "unknown",
+    type,
     extension: file.name.split(".").pop() ?? "unknown",
     size: file.size,
     contentType: file.type,

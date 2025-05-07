@@ -1,23 +1,23 @@
-import { ConvexError, v } from "convex/values";
-
 import { paginationOptsValidator } from "convex/server";
+import { ConvexError } from "convex/values";
+
+import { v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
-import { aggregateMedia } from "../../../aggregates";
+import { aggregateDocuments } from "../../../aggregates";
 import { getCurrentUser } from "../../users/utils";
-import { mediaSchema } from "./schema";
+import { documentsSchema } from "./schema";
 
 export const getPaginated = query({
   args: {
     paginationOpts: paginationOptsValidator,
     sortOrder: v.union(v.literal("asc"), v.literal("desc")),
-    source: v.optional(mediaSchema.fields.source),
-    type: v.optional(mediaSchema.fields.type),
+    type: v.optional(documentsSchema.fields.type),
     searchQuery: v.optional(v.string()),
     isArchived: v.optional(v.boolean()),
   },
   handler: async (
     ctx,
-    { paginationOpts, sortOrder, source, type, searchQuery, isArchived }
+    { paginationOpts, sortOrder, type, searchQuery, isArchived }
   ) => {
     const user = await getCurrentUser(ctx);
     const projectId = user?.currentProject;
@@ -29,26 +29,23 @@ export const getPaginated = query({
     // If there's a search query, use the search index
     const query = searchQuery
       ? ctx.db
-          .query("media")
+          .query("documents")
           .withSearchIndex("by_fileName", (q) => q.search("name", searchQuery))
 
           .filter((q) => q.eq(q.field("projectId"), projectId))
-          .filter((q) => (source ? q.eq(q.field("source"), source) : true))
+
           .filter((q) => (type ? q.eq(q.field("type"), type) : true))
           .filter((q) =>
             isArchived ? q.eq(q.field("isArchived"), isArchived ?? false) : true
           )
-
           .filter((q) => q.eq(q.field("deletedAt"), undefined))
-
           .paginate(paginationOpts)
       : ctx.db
-          .query("media")
+          .query("documents")
           .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
           .filter((q) =>
             isArchived ? q.eq(q.field("isArchived"), isArchived ?? false) : true
           )
-          .filter((q) => (source ? q.eq(q.field("source"), source) : true))
           .filter((q) => (type ? q.eq(q.field("type"), type) : true))
           .filter((q) => q.eq(q.field("deletedAt"), undefined))
           .order(sortOrder)
@@ -60,17 +57,19 @@ export const getPaginated = query({
 
 export const getById = query({
   args: {
-    id: v.id("media"),
+    id: v.id("documents"),
   },
   handler: async (ctx, args) => {
     await getCurrentUser(ctx);
-    const media = await ctx.db.get(args.id);
-    if (!media) {
-      throw new ConvexError("Media not found");
+    const document = await ctx.db.get(args.id);
+    if (!document) {
+      throw new ConvexError("Document not found");
     }
-    const createdBy = await ctx.db.get(media.createdBy);
+    const createdBy = document.createdBy
+      ? await ctx.db.get(document.createdBy)
+      : null;
     return {
-      ...media,
+      ...document,
       createdBy,
     };
   },
@@ -78,7 +77,7 @@ export const getById = query({
 
 export const getByIdInternal = internalQuery({
   args: {
-    id: v.id("media"),
+    id: v.id("documents"),
   },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
@@ -90,7 +89,7 @@ export const getTotalSize = query({
     projectId: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    return await aggregateMedia.sum(ctx, {
+    return await aggregateDocuments.sum(ctx, {
       namespace: args.projectId,
       // @ts-ignore
       bounds: {},
@@ -103,30 +102,9 @@ export const getTotalCount = query({
     projectId: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    return await aggregateMedia.count(ctx, {
+    return await aggregateDocuments.count(ctx, {
       namespace: args.projectId,
       bounds: {},
     });
-  },
-});
-
-export const getRecentGenerations = query({
-  args: {},
-  handler: async (ctx) => {
-    const user = await getCurrentUser(ctx);
-    const projectId = user?.currentProject;
-
-    if (!user || !projectId) {
-      throw new ConvexError("Not authorized");
-    }
-
-    const generations = await ctx.db
-      .query("media")
-      .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
-      .filter((q) => q.eq(q.field("source"), "ai-generated"))
-      .order("desc")
-      .take(5);
-
-    return generations;
   },
 });

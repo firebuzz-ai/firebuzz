@@ -1,7 +1,5 @@
 "use client";
 
-import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import { useProject } from "@/hooks/auth/use-project";
 import {
   type Doc,
@@ -18,24 +16,23 @@ import { useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { useDebounce } from "use-debounce";
 import { Controls } from "../controls";
-import { MediaDetailsModal } from "../modals/modal";
-import { NewMediaModal } from "../modals/new-media/modal";
-import { useNewMediaModal } from "../modals/new-media/use-new-media-modal";
+import { DocumentDetailsModal } from "../modals/modal";
+import { useNewDocumentModal } from "../modals/new-document/use-new-document-modal";
+import { DocumentItem } from "./document-item";
 import { Footer } from "./footer";
-import { MediaItem } from "./media-item";
 import { SelectedMenu } from "./selected-menu";
 
-export const MediaList = () => {
+export function DocumentList() {
   const { currentProject } = useProject();
   const [selected, setSelected] = useState<string[]>([]);
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-  const [source, setSource] = useState<Doc<"media">["source"] | "all">("all");
-  const { setState } = useNewMediaModal();
+  const [type, setType] = useState<Doc<"documents">["type"] | "all">("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const { setState: setNewDocumentModalState } = useNewDocumentModal();
 
   const totalSize = useCachedQuery(
-    api.collections.storage.media.queries.getTotalSize,
+    api.collections.storage.documents.queries.getTotalSize,
     currentProject
       ? {
           projectId: currentProject?._id,
@@ -44,7 +41,7 @@ export const MediaList = () => {
   );
 
   const totalCount = useCachedQuery(
-    api.collections.storage.media.queries.getTotalCount,
+    api.collections.storage.documents.queries.getTotalCount,
     currentProject
       ? {
           projectId: currentProject?._id,
@@ -53,80 +50,107 @@ export const MediaList = () => {
   );
 
   const {
-    results: mediaItems,
+    results: documentItems,
     status,
     loadMore,
   } = usePaginatedQuery(
-    api.collections.storage.media.queries.getPaginated,
-    {
-      sortOrder,
-      searchQuery: debouncedSearchQuery,
-      source: source !== "all" ? source : undefined,
-    },
+    api.collections.storage.documents.queries.getPaginated,
+    currentProject
+      ? {
+          sortOrder,
+          searchQuery: debouncedSearchQuery,
+          type: type !== "all" ? type : undefined,
+        }
+      : "skip",
     { initialNumItems: 10 }
   );
 
   const loaderRef = useRef<HTMLDivElement>(null);
 
-  // Why: 50MB in bytes
-  const MAX_FILE_SIZE = 50 * 1024 * 1024;
-  const MAX_STORAGE = 1024 * 1024 * 1024;
+  const MAX_FILES_PER_UPLOAD = 5;
+  const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+  const MAX_STORAGE_BYTES = 1024 * 1024 * 1024;
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (!currentProject) return;
 
-    // Check if user has enough storage
-    const usedStorage = totalSize ?? 0;
-    const currentTotal =
-      usedStorage + acceptedFiles.reduce((acc, file) => acc + file.size, 0);
-
-    if (currentTotal > MAX_STORAGE) {
+    const currentFilesTotalSize = acceptedFiles.reduce(
+      (acc, file) => acc + file.size,
+      0
+    );
+    if ((totalSize ?? 0) + currentFilesTotalSize > MAX_STORAGE_BYTES) {
       toast.error("Not enough storage space.", {
         description: "You do not have enough storage to upload these files.",
       });
       return;
     }
 
-    setState({
+    if (acceptedFiles.length > MAX_FILES_PER_UPLOAD) {
+      toast.error(
+        `You can only upload up to ${MAX_FILES_PER_UPLOAD} files at a time.`
+      );
+      return;
+    }
+
+    setNewDocumentModalState({
       files: acceptedFiles,
       isOpen: true,
-      type: "upload",
+      isMemoryEnabled: false,
+      selectedMemory: null,
     });
   };
 
   const onDropRejected = (fileRejections: FileRejection[]) => {
     if (fileRejections.length > 0) {
-      for (const fileRejection of fileRejections) {
-        const message = fileRejection.errors[0].message;
-        if (message.includes("Too many files")) {
-          toast.error("You can only upload up to 5 files at a time.");
-        } else if (message.includes("File is larger than 52428800 bytes")) {
-          toast.error("File exceeds 50MB size limit.");
-        } else if (message.includes("Type not allowed")) {
-          toast.error("File type not allowed.");
-        } else {
-          toast.error(fileRejection.errors[0].message);
+      for (const rejection of fileRejections) {
+        for (const error of rejection.errors) {
+          if (error.code === "file-too-large") {
+            toast.error(
+              `File "${rejection.file.name}" is too large. Max size is ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB.`
+            );
+          } else if (error.code === "file-invalid-type") {
+            toast.error(`File "${rejection.file.name}" type is not allowed.`);
+          } else if (error.code === "too-many-files") {
+            toast.error(
+              `Cannot add all files. Maximum ${MAX_FILES_PER_UPLOAD} files allowed.`
+            );
+          } else {
+            toast.error(
+              `Error with file "${rejection.file.name}": ${error.message}`
+            );
+          }
         }
       }
     }
   };
 
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     onDropRejected,
     accept: {
-      "image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
-      "video/*": [".mp4", ".webm"],
-      "audio/*": [".mp3", ".wav"],
+      "application/pdf": [".pdf"],
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        [".docx"],
+      "application/msword": [".doc"],
+      "text/csv": [".csv"],
+      "text/plain": [".txt"],
+      "text/html": [".html"],
+      "text/markdown": [".md"],
+      "text/markdownx": [".mdx"],
     },
-    maxSize: MAX_FILE_SIZE,
-    maxFiles: 5,
+    maxSize: MAX_FILE_SIZE_BYTES,
+    maxFiles: MAX_FILES_PER_UPLOAD,
     noClick: true,
     multiple: true,
   });
 
   useEffect(() => {
-    if (status !== "CanLoadMore") return;
+    if (
+      status !== "CanLoadMore" ||
+      !documentItems ||
+      documentItems.length === 0
+    )
+      return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -142,28 +166,25 @@ export const MediaList = () => {
     }
 
     return () => observer.disconnect();
-  }, [status, loadMore]);
+  }, [status, loadMore, documentItems]);
 
   return (
     <div className="flex flex-col w-full h-full max-h-full overflow-hidden @container">
       <Controls
-        open={open}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
-        sourceType={source}
-        setSourceType={setSource}
+        type={type}
+        setType={setType}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
       />
 
-      {/* Gallery Content with Dropzone */}
       <div
         className="relative flex flex-col flex-1 overflow-hidden"
         {...getRootProps()}
       >
         <input {...getInputProps()} />
 
-        {/* Drag & Drop Overlay */}
         <AnimatePresence>
           {isDragActive && (
             <motion.div
@@ -176,17 +197,18 @@ export const MediaList = () => {
                 <Upload className="size-8 animate-pulse" />
               </div>
               <div className="text-center text-white">
-                <p className="text-lg font-bold">Drop media here to upload</p>
+                <p className="text-lg font-bold">
+                  Drop documents here to upload
+                </p>
                 <p className="max-w-xs mt-1 text-xs">
-                  Supported formats: PNG, JPG, JPEG, WebP, GIF, MP4, WebM, MP3,
-                  WAV and up to 5 files at a time.
+                  Supported formats: PDF, DOCX, DOC, CSV, TXT, HTML, MD, MDX. Up
+                  to {MAX_FILES_PER_UPLOAD} files.
                 </p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Scrollable Content */}
         <div
           onDoubleClick={(e) => {
             e.stopPropagation();
@@ -194,17 +216,17 @@ export const MediaList = () => {
           }}
           className="flex-1 p-4 overflow-y-auto select-none"
         >
-          {status === "LoadingFirstPage" ? (
-            <div className="grid grid-cols-6 gap-8">
-              {Array.from({ length: 8 }).map((_, index) => (
+          {status === "LoadingFirstPage" && !documentItems ? (
+            <div className="grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, index) => (
                 <Skeleton
-                  // biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton, index is fine
+                  // biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton
                   key={index}
-                  className="w-full col-span-1 rounded-md aspect-square"
+                  className="w-full rounded-md h-60"
                 />
               ))}
             </div>
-          ) : mediaItems.length === 0 ? (
+          ) : documentItems && documentItems.length === 0 ? (
             <div
               className={cn(
                 "flex items-center justify-center h-full transition-opacity duration-300 ease-in-out",
@@ -212,15 +234,15 @@ export const MediaList = () => {
               )}
             >
               <p className="text-sm text-center text-muted-foreground">
-                No images found. Upload an image to get started.
+                No documents found. Upload a document to get started.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-6 gap-8">
-              {mediaItems.map((media) => (
-                <MediaItem
-                  key={media._id}
-                  media={media}
+            <div className="grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 gap-4">
+              {documentItems.map((doc) => (
+                <DocumentItem
+                  key={doc._id}
+                  document={doc}
                   selected={selected}
                   setSelected={setSelected}
                 />
@@ -242,8 +264,12 @@ export const MediaList = () => {
 
       <Footer
         totalCount={totalCount ?? 0}
-        currentCount={mediaItems.length}
-        status={status}
+        currentCount={documentItems?.length ?? 0}
+        status={
+          status === "LoadingFirstPage" && !documentItems
+            ? "LoadingFirstPage"
+            : status
+        }
       />
 
       <SelectedMenu
@@ -252,12 +278,7 @@ export const MediaList = () => {
         totalCount={totalCount ?? 0}
       />
 
-      <MediaDetailsModal />
-      <NewMediaModal />
-
-      <AIImageModal />
-
-      <MediaGalleryModal />
+      <DocumentDetailsModal />
     </div>
   );
-};
+}

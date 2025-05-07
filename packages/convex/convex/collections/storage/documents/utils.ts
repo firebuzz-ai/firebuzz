@@ -12,16 +12,16 @@ export const batchDelete = internalMutation({
   },
   handler: async (ctx, { projectId, cursor, numItems }) => {
     const { page, continueCursor } = await ctx.db
-      .query("media")
+      .query("documents")
       .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
       .paginate({ numItems, cursor: cursor ?? null });
 
-    // If there are no media items, return
+    // If there are no documents, return
     if (page.length === 0) {
       return;
     }
 
-    // Delete the media
+    // Delete the documents
     await asyncMap(page, (document) => ctx.db.delete(document._id));
 
     // Delete files from R2
@@ -61,9 +61,9 @@ export const deleteCleanup = internalMutation({
     numItems: v.number(),
   },
   handler: async (ctx, { cursor, numItems }) => {
-    // Get the medias that are scheduled to be deleted
+    // Get the documents that are scheduled to be deleted
     const { page, continueCursor } = await ctx.db
-      .query("media")
+      .query("documents")
       .withIndex("by_deleted_at", (q) =>
         q.lte(
           "deletedAt",
@@ -76,29 +76,38 @@ export const deleteCleanup = internalMutation({
         cursor: cursor ?? null,
       });
 
-    // If there are no medias, return
+    // If there are no documents, return
     if (page.length === 0) {
       return;
     }
 
-    // Delete the medias
-    await asyncMap(page, (media) =>
+    // Delete the documents
+    await asyncMap(page, (document) =>
       ctx.runMutation(
-        internal.collections.storage.media.mutations.deleteInternal,
-        { id: media._id }
+        internal.collections.storage.documents.mutations.deleteInternal,
+        { id: document._id }
       )
     );
 
-    // Delete media vectors
-    await asyncMap(page, (media) =>
+    // Delete document chunks
+    await asyncMap(page, (document) =>
       ctx.runMutation(
-        internal.collections.storage.mediaVectors.mutations
-          .deleteByMediaIdInternal,
-        { mediaId: media._id }
+        internal.collections.storage.documentChunks.mutations
+          .deleteByDocumentId,
+        { documentId: document._id }
       )
     );
 
-    // If there are more medias, delete them
+    // Delete document vectors
+    await asyncMap(page, (document) =>
+      ctx.runMutation(
+        internal.collections.storage.documentVectors.mutations
+          .deleteByDocumentIdInternal,
+        { documentId: document._id }
+      )
+    );
+
+    // If there are more documents, delete them
     if (
       continueCursor &&
       continueCursor !== cursor &&
@@ -106,7 +115,7 @@ export const deleteCleanup = internalMutation({
     ) {
       await cascadePool.enqueueMutation(
         ctx,
-        internal.collections.storage.media.utils.deleteCleanup,
+        internal.collections.storage.documents.utils.deleteCleanup,
         {
           cursor: continueCursor,
           numItems,

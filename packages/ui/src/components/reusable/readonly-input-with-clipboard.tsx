@@ -34,7 +34,7 @@ export const ReadonlyInputWithClipboard = ({
         <Input
           readOnly
           value={value}
-          className={cn("pr-10", className)}
+          className={cn("pr-10 h-8", className)}
           onClick={(e) => e.currentTarget.select()}
         />
         <TooltipProvider>

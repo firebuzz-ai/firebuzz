@@ -30,4 +30,13 @@ crons.interval(
   }
 );
 
+crons.interval(
+  "cleanup-documents",
+  { hours: 10 },
+  internal.collections.storage.documents.utils.deleteCleanup,
+  {
+    numItems: 25,
+  }
+);
+
 export default crons;

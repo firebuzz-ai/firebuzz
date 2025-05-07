@@ -25,9 +25,19 @@ import type * as collections_landingPages_versions_actions from "../collections/
 import type * as collections_landingPages_versions_mutations from "../collections/landingPages/versions/mutations.js";
 import type * as collections_landingPages_versions_queries from "../collections/landingPages/versions/queries.js";
 import type * as collections_landingPages_versions_utils from "../collections/landingPages/versions/utils.js";
+import type * as collections_memory_mutations from "../collections/memory/mutations.js";
+import type * as collections_memory_queries from "../collections/memory/queries.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
 import type * as collections_projects_queries from "../collections/projects/queries.js";
 import type * as collections_projects_utils from "../collections/projects/utils.js";
+import type * as collections_storage_documentChunks_mutations from "../collections/storage/documentChunks/mutations.js";
+import type * as collections_storage_documentChunks_queries from "../collections/storage/documentChunks/queries.js";
+import type * as collections_storage_documentVectors_mutations from "../collections/storage/documentVectors/mutations.js";
+import type * as collections_storage_documentVectors_queries from "../collections/storage/documentVectors/queries.js";
+import type * as collections_storage_documents_actions from "../collections/storage/documents/actions.js";
+import type * as collections_storage_documents_mutations from "../collections/storage/documents/mutations.js";
+import type * as collections_storage_documents_queries from "../collections/storage/documents/queries.js";
+import type * as collections_storage_documents_utils from "../collections/storage/documents/utils.js";
 import type * as collections_storage_media_actions from "../collections/storage/media/actions.js";
 import type * as collections_storage_media_mutations from "../collections/storage/media/mutations.js";
 import type * as collections_storage_media_queries from "../collections/storage/media/queries.js";
@@ -42,6 +52,7 @@ import type * as collections_workspaces_mutations from "../collections/workspace
 import type * as collections_workspaces_queries from "../collections/workspaces/queries.js";
 import type * as collections_workspaces_utils from "../collections/workspaces/utils.js";
 import type * as crons from "../crons.js";
+import type * as helpers_chunks from "../helpers/chunks.js";
 import type * as helpers_r2 from "../helpers/r2.js";
 import type * as helpers_retrier from "../helpers/retrier.js";
 import type * as helpers_system from "../helpers/system.js";
@@ -82,9 +93,19 @@ declare const fullApi: ApiFromModules<{
   "collections/landingPages/versions/mutations": typeof collections_landingPages_versions_mutations;
   "collections/landingPages/versions/queries": typeof collections_landingPages_versions_queries;
   "collections/landingPages/versions/utils": typeof collections_landingPages_versions_utils;
+  "collections/memory/mutations": typeof collections_memory_mutations;
+  "collections/memory/queries": typeof collections_memory_queries;
   "collections/projects/mutations": typeof collections_projects_mutations;
   "collections/projects/queries": typeof collections_projects_queries;
   "collections/projects/utils": typeof collections_projects_utils;
+  "collections/storage/documentChunks/mutations": typeof collections_storage_documentChunks_mutations;
+  "collections/storage/documentChunks/queries": typeof collections_storage_documentChunks_queries;
+  "collections/storage/documentVectors/mutations": typeof collections_storage_documentVectors_mutations;
+  "collections/storage/documentVectors/queries": typeof collections_storage_documentVectors_queries;
+  "collections/storage/documents/actions": typeof collections_storage_documents_actions;
+  "collections/storage/documents/mutations": typeof collections_storage_documents_mutations;
+  "collections/storage/documents/queries": typeof collections_storage_documents_queries;
+  "collections/storage/documents/utils": typeof collections_storage_documents_utils;
   "collections/storage/media/actions": typeof collections_storage_media_actions;
   "collections/storage/media/mutations": typeof collections_storage_media_mutations;
   "collections/storage/media/queries": typeof collections_storage_media_queries;
@@ -99,6 +120,7 @@ declare const fullApi: ApiFromModules<{
   "collections/workspaces/queries": typeof collections_workspaces_queries;
   "collections/workspaces/utils": typeof collections_workspaces_utils;
   crons: typeof crons;
+  "helpers/chunks": typeof helpers_chunks;
   "helpers/r2": typeof helpers_r2;
   "helpers/retrier": typeof helpers_retrier;
   "helpers/system": typeof helpers_system;
@@ -692,6 +714,149 @@ export declare const components: {
     };
   };
   aggregateMedia: {
+    btree: {
+      aggregateBetween: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any },
+        { count: number; sum: number }
+      >;
+      atNegativeOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      atOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { key: any; namespace?: any },
+        null | { k: any; s: number; v: any }
+      >;
+      offset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; key: any; namespace?: any },
+        number
+      >;
+      offsetUntil: FunctionReference<
+        "query",
+        "internal",
+        { k2?: any; key: any; namespace?: any },
+        number
+      >;
+      paginate: FunctionReference<
+        "query",
+        "internal",
+        {
+          cursor?: string;
+          k1?: any;
+          k2?: any;
+          limit: number;
+          namespace?: any;
+          order: "asc" | "desc";
+        },
+        {
+          cursor: string;
+          isDone: boolean;
+          page: Array<{ k: any; s: number; v: any }>;
+        }
+      >;
+      paginateNamespaces: FunctionReference<
+        "query",
+        "internal",
+        { cursor?: string; limit: number },
+        { cursor: string; isDone: boolean; page: Array<any> }
+      >;
+      validate: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any },
+        any
+      >;
+    };
+    inspect: {
+      display: FunctionReference<"query", "internal", { namespace?: any }, any>;
+      dump: FunctionReference<"query", "internal", { namespace?: any }, string>;
+      inspectNode: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any; node?: string },
+        null
+      >;
+    };
+    public: {
+      clear: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      deleteIfExists: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        any
+      >;
+      delete_: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        null
+      >;
+      init: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      insert: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any; summand?: number; value: any },
+        null
+      >;
+      makeRootLazy: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: any },
+        null
+      >;
+      replace: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        null
+      >;
+      replaceOrInsert: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        any
+      >;
+    };
+  };
+  aggregateDocuments: {
     btree: {
       aggregateBetween: FunctionReference<
         "query",

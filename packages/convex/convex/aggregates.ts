@@ -55,3 +55,15 @@ export const aggregateMedia = new TableAggregate<{
   sortKey: (doc) => doc._id,
   sumValue: (doc) => doc.size,
 });
+
+// Documents
+export const aggregateDocuments = new TableAggregate<{
+  Namespace: Id<"projects">;
+  Key: string;
+  DataModel: DataModel;
+  TableName: "documents";
+}>(components.aggregateDocuments, {
+  namespace: (doc) => doc.projectId,
+  sortKey: (doc) => doc._id,
+  sumValue: (doc) => doc.size,
+});

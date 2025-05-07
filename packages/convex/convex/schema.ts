@@ -4,7 +4,11 @@ import { landingPageMessagesSchema } from "./collections/landingPages/messages/s
 import { landingPagesSchema } from "./collections/landingPages/schema";
 import { landingPageTemplatesSchema } from "./collections/landingPages/templates/schema";
 import { landingPageVersionsSchema } from "./collections/landingPages/versions/schema";
+import { memorySchema } from "./collections/memory/schema";
 import { projectSchema } from "./collections/projects/schema";
+import { documentChunksSchema } from "./collections/storage/documentChunks/schema";
+import { documentVectorsSchema } from "./collections/storage/documentVectors/schema";
+import { documentsSchema } from "./collections/storage/documents/schema";
 import { mediaSchema } from "./collections/storage/media/schema";
 import { mediaVectorsSchema } from "./collections/storage/mediaVectors/schema";
 import { userSchema } from "./collections/users/schema";
@@ -62,4 +66,29 @@ export default defineSchema({
       dimensions: 1536,
       filterFields: ["projectId"],
     }),
+  documents: defineTable(documentsSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_created_by", ["createdBy"])
+    .index("by_deleted_at", ["deletedAt"])
+    .searchIndex("by_fileName", { searchField: "name" }),
+  documentChunks: defineTable(documentChunksSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_document_id", ["documentId"]),
+  documentVectors: defineTable(documentVectorsSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_document_id", ["documentId"])
+    .index("by_chunk_id", ["chunkId"])
+    .vectorIndex("by_emmbedings", {
+      vectorField: "embedding",
+      dimensions: 1536,
+      filterFields: ["projectId", "tags"],
+    }),
+  memories: defineTable(memorySchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_created_by", ["createdBy"])
+    .index("by_updated_at", ["updatedAt"]),
 });

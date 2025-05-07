@@ -11,9 +11,15 @@ import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
+import {
   Check,
   FileAudio,
   FileVideo,
+  Plus,
   Upload,
   X,
 } from "@firebuzz/ui/icons/lucide";
@@ -399,18 +405,23 @@ export const UploadTab = ({
                       </Badge>
                     </div>
                     {/* Cancel Button */}
-                    <Button
-                      size="iconSm"
-                      variant="ghost"
-                      className="text-muted-foreground shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFile(index);
-                      }} // Stop propagation
-                      disabled={item.uploading}
-                    >
-                      <X className="size-3" />
-                    </Button>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="iconSm"
+                          variant="ghost"
+                          className="text-muted-foreground shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(index);
+                          }} // Stop propagation
+                          disabled={item.uploading}
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Remove</TooltipContent>
+                    </Tooltip>
                   </motion.div>
                 );
               })}
@@ -422,10 +433,12 @@ export const UploadTab = ({
                     e.stopPropagation();
                     open();
                   }}
-                  disabled={isUploading}
+                  disabled={
+                    isUploading || filesWithProgress.length >= currentMaxFiles
+                  }
                   className="flex items-center justify-center w-full h-16 gap-2 text-sm border-2 border-dashed rounded-md border-border/50 text-muted-foreground hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Upload className="size-4" /> Add More Files
+                  <Plus className="size-4" /> Add More
                 </motion.button>
               )}
             </motion.div>

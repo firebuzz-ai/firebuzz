@@ -1,7 +1,7 @@
 "use client";
 
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
 import { useProject } from "@/hooks/auth/use-project";
-import { useNewMediaModal } from "@/hooks/ui/use-new-media-modal";
 import {
   api,
   useCachedQuery,

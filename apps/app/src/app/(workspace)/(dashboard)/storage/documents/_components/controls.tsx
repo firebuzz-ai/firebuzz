@@ -1,13 +1,5 @@
-import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@firebuzz/ui/components/ui/dropdown-menu";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
   Select,
@@ -23,25 +15,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import {
-  ChevronDown,
-  Filter,
-  Layers2,
-  Search,
-  SortAsc,
-  Upload,
-  Wand,
-} from "@firebuzz/ui/icons/lucide";
+import { Filter, Plus, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
+import { useNewDocumentModal } from "./modals/new-document/use-new-document-modal";
 
 interface ControlsProps {
-  open: () => void;
   searchQuery: string;
   setSearchQuery: Dispatch<SetStateAction<string>>;
-  sourceType: Doc<"media">["source"] | "all";
-  setSourceType: Dispatch<SetStateAction<Doc<"media">["source"] | "all">>;
+  type: Doc<"documents">["type"] | "all"; // Changed from media source to document type
+  setType: Dispatch<SetStateAction<Doc<"documents">["type"] | "all">>;
   sortOrder: "asc" | "desc";
   setSortOrder: Dispatch<SetStateAction<"asc" | "desc">>;
 }
@@ -49,14 +33,33 @@ interface ControlsProps {
 export const Controls = ({
   searchQuery,
   setSearchQuery,
-  sourceType,
-  setSourceType,
+  type,
+  setType,
   sortOrder,
   setSortOrder,
 }: ControlsProps) => {
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-  const { setState } = useNewMediaModal();
-  const { openWithReset: setAIImageModalIsOpen } = useAIImageModal();
+  const { setState } = useNewDocumentModal();
+
+  // Updated document types to match the schema
+  const documentTypes = [
+    "all",
+    "document",
+    "spreadsheet",
+    "presentation",
+    "pdf",
+    "text",
+    "other",
+  ] as const; // Added 'as const' for better type inference if needed later
+
+  const handleOpenNewDocumentModal = () => {
+    setState((prev) => ({
+      ...prev,
+      isOpen: true,
+      isMemoryEnabled: false,
+      files: [],
+    }));
+  };
 
   return (
     <div className="flex flex-col gap-2 px-4 py-3 border-b max-h-min border-border">
@@ -70,7 +73,7 @@ export const Controls = ({
             <Input
               type="search"
               className="w-full h-8 pl-8"
-              placeholder="Search by name"
+              placeholder="Search by name" // Placeholder can remain generic or be updated
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -82,9 +85,9 @@ export const Controls = ({
           {/* Filters row */}
           <div className="flex items-center justify-end flex-1 gap-2">
             <Select
-              value={sourceType}
+              value={type}
               onValueChange={(value) =>
-                setSourceType(value as Doc<"media">["source"])
+                setType(value as Doc<"documents">["type"] | "all")
               }
             >
               <SelectTrigger className="w-full h-8 max-w-48">
@@ -94,10 +97,11 @@ export const Controls = ({
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="uploaded">Uploaded</SelectItem>
-                <SelectItem value="ai-generated">AI Generated</SelectItem>
-                <SelectItem value="unsplash">Unsplash</SelectItem>
+                {documentTypes.map((docType) => (
+                  <SelectItem key={docType} value={docType}>
+                    {docType === "all" ? "All" : docType.toUpperCase()}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -106,7 +110,7 @@ export const Controls = ({
                 <Button
                   variant="outline"
                   className="w-8 h-8"
-                  disabled={debouncedSearchQuery !== ""}
+                  disabled={debouncedSearchQuery !== ""} // Assuming same logic for search disabling sort
                   onClick={() =>
                     setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))
                   }
@@ -124,58 +128,27 @@ export const Controls = ({
             </Tooltip>
           </div>
           <Separator orientation="vertical" className="h-5" />
-          <DropdownMenu>
-            <DropdownMenuTrigger className="group" asChild>
-              <Button variant="outline" className="h-8 !p-0">
-                <div className="pl-3">New Media</div>
-                <div className="flex items-center justify-center h-full pl-2 pr-2 border-l">
-                  <ChevronDown className="transition-transform duration-100 ease-in-out !size-3.5 group-aria-expanded:rotate-180" />
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="end" sideOffset={10}>
-              <DropdownMenuItem
-                onClick={() =>
-                  setState((prev) => ({
-                    ...prev,
-                    type: "upload",
-                    isOpen: true,
-                  }))
-                }
-              >
-                <Upload className="w-4 h-4" />
-                Upload
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  setState((prev) => ({
-                    ...prev,
-                    type: "unsplash",
-                    isOpen: true,
-                  }))
-                }
-              >
-                <Layers2 className="w-4 h-4" />
-                Unsplash
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={setAIImageModalIsOpen}>
-                <Wand className="w-4 h-4" />
-                Generate
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            className="h-8"
+            onClick={handleOpenNewDocumentModal}
+          >
+            <Plus className="!size-3.5" />
+            <div>New Document</div>
+          </Button>
           <Separator orientation="vertical" className="h-5" />
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <SidebarTrigger
                 variant="outline"
                 side="right"
-                name="images-sidebar"
+                name="documents-sidebar" // Changed to documents-sidebar
                 className="!h-8 !w-8"
               />
             </TooltipTrigger>
             <TooltipContent sideOffset={10} className="flex items-center gap-2">
               <p>Toggle Sidebar</p>
+
               <kbd className="text-xs text-muted-foreground">⌘+L</kbd>
             </TooltipContent>
           </Tooltip>

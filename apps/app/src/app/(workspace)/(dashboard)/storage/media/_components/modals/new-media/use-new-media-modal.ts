@@ -37,12 +37,10 @@ export const useNewMediaModal = () => {
   };
 
   return {
-    isOpen: state.isOpen,
-    files: state.files,
-    type: state.type,
+    ...state,
+    setState,
     setIsOpen,
     setFiles,
     setType,
-    setState,
   };
 };

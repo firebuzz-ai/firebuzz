@@ -11,6 +11,7 @@ import { internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import {
   aggregateCampaigns,
+  aggregateDocuments,
   aggregateLandingPageTemplates,
   aggregateLandingPageVersions,
   aggregateLandingPages,
@@ -19,6 +20,8 @@ import {
 import { cascadePool, vectorizationPool } from "./workpools";
 
 const triggers = new Triggers<DataModel>();
+
+// @CASCADE
 
 // Cascade delete all workspaces when a user is deleted
 triggers.register("users", async (ctx, change) => {
@@ -49,27 +52,25 @@ triggers.register("workspaces", async (ctx, change) => {
 // Cascade delete all campaigns when a project is deleted
 triggers.register("projects", async (ctx, change) => {
   if (change.operation === "delete") {
-    // Get campaigns with pagination
-    const { continueCursor, page } = await ctx.db
-      .query("campaigns")
-      .withIndex("by_project_id", (q) => q.eq("projectId", change.id))
-      .paginate({ numItems: 50, cursor: null });
-
     // Delete campaigns
-    await asyncMap(page, (document) => ctx.db.delete(document._id));
+    await cascadePool.enqueueMutation(
+      ctx,
+      internal.collections.campaigns.utils.batchDelete,
+      {
+        projectId: change.id,
+        numItems: 50,
+      }
+    );
 
-    // Continue deleting campaigns if there are more
-    if (continueCursor) {
-      await cascadePool.enqueueMutation(
-        ctx,
-        internal.collections.campaigns.utils.batchDelete,
-        {
-          projectId: change.id,
-          cursor: continueCursor,
-          numItems: 50,
-        }
-      );
-    }
+    // Delete Media
+    await cascadePool.enqueueMutation(
+      ctx,
+      internal.collections.storage.media.utils.batchDelete,
+      {
+        projectId: change.id,
+        numItems: 50,
+      }
+    );
   }
 });
 
@@ -124,7 +125,9 @@ triggers.register("landingPages", async (ctx, change) => {
   }
 });
 
-// @aggregate
+// @AGGREGATE
+
+// Campaigns Aggregate
 triggers.register("campaigns", async (ctx, change) => {
   if (change.operation === "insert") {
     const doc = change.newDoc;
@@ -224,7 +227,35 @@ triggers.register("media", async (ctx, change) => {
   }
 });
 
-// Vectorization Trigger (Media)
+// Documents Aggregate
+triggers.register("documents", async (ctx, change) => {
+  if (change.operation === "insert") {
+    const doc = change.newDoc;
+    await aggregateDocuments.insert(ctx, doc);
+  } else if (change.operation === "update") {
+    const newDoc = change.newDoc;
+    const oldDoc = change.oldDoc;
+
+    // If the media is being deleted, delete the aggregate
+    if (!oldDoc.deletedAt && newDoc.deletedAt) {
+      await aggregateDocuments.delete(ctx, oldDoc);
+    }
+
+    // If the media is being restored, insert the aggregate
+    else if (oldDoc.deletedAt && !newDoc.deletedAt) {
+      await aggregateDocuments.insert(ctx, newDoc);
+    }
+
+    // If the media is being updated, replace the aggregate
+    else {
+      await aggregateDocuments.replace(ctx, oldDoc, newDoc);
+    }
+  }
+});
+
+// @VECTORIZATION
+
+// Media Vectorization
 triggers.register("media", async (ctx, change) => {
   // Insert
   if (change.operation === "insert") {
@@ -241,6 +272,7 @@ triggers.register("media", async (ctx, change) => {
     );
   }
 });
+
 export const mutationWithTrigger = customMutation(
   rawMutation,
   customCtx(triggers.wrapDB)
