@@ -11,9 +11,13 @@ import {
 } from "ai";
 
 import { askImageConfirmation } from "@/lib/ai/tools/ask-image-confirmation";
+import { readDocument } from "@/lib/ai/tools/read-document";
+import { readLongDocument } from "@/lib/ai/tools/read-long-document";
+import { searchKnowledgeBase } from "@/lib/ai/tools/search-knowledgebase";
 import { searchStockImage } from "@/lib/ai/tools/search-stock-image";
 import { anthropic } from "@ai-sdk/anthropic";
 import { api, fetchMutation } from "@firebuzz/convex/nextjs";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { stripIndents } from "@firebuzz/utils";
 import { nanoid } from "nanoid";
 import type { NextRequest } from "next/server";
@@ -23,6 +27,7 @@ export async function POST(request: NextRequest) {
 
   const { messages, requestBody } = body;
   const { projectId, currentFileTree, currentImportantFiles } = requestBody;
+  const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
   const token = await (await auth()).getToken({ template: "convex" });
 
@@ -113,18 +118,38 @@ export async function POST(request: NextRequest) {
       message.experimental_attachments?.length &&
       message.experimental_attachments.length > 0
     ) {
+      const experimentalAttachments = message.experimental_attachments
+        ?.filter(
+          (attachment) =>
+            attachment.contentType?.startsWith("image/") ||
+            attachment.contentType?.startsWith("application/pdf")
+        )
+        .map((attachment) => ({
+          name: attachment.name,
+          url: attachment.url,
+          contentType: attachment.contentType,
+        }));
+
       return {
         ...message,
+        experimental_attachments: experimentalAttachments,
         parts: message.parts?.map((part) => {
           if (part.type === "text") {
             return {
               ...part,
               text: stripIndents(`
         ${message.content}
-        // Attachment URLs
+        // Attachments
         ${message.experimental_attachments
-          ?.map((attachment) => {
-            return `[${attachment.name}][${attachment.contentType}](${attachment.url})`;
+          ?.map((attachment, index) => {
+            return stripIndents(`
+              <attachment index="${index}">
+                name: ${attachment.name}
+                contentType: ${attachment.contentType}
+                url: ${attachment.url}
+                key: ${attachment.url.split(`${NEXT_PUBLIC_R2_PUBLIC_URL}/`)[1]}
+              </attachment>
+              `);
           })
           .join("\n")}
       `),
@@ -177,6 +202,9 @@ export async function POST(request: NextRequest) {
       tools: {
         searchStockImage,
         askImageConfirmation,
+        readDocument,
+        readLongDocument,
+        searchKnowledgeBase,
       },
     });
 

@@ -59,17 +59,17 @@ export const deleteCleanup = internalMutation({
   args: {
     cursor: v.optional(v.string()),
     numItems: v.number(),
+    deletionThresholdTimestamp: v.optional(v.string()),
   },
-  handler: async (ctx, { cursor, numItems }) => {
+  handler: async (ctx, { cursor, numItems, deletionThresholdTimestamp }) => {
+    const threshold =
+      deletionThresholdTimestamp ??
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
     // Get the medias that are scheduled to be deleted
     const { page, continueCursor } = await ctx.db
       .query("media")
-      .withIndex("by_deleted_at", (q) =>
-        q.lte(
-          "deletedAt",
-          new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-        )
-      )
+      .withIndex("by_deleted_at", (q) => q.lte("deletedAt", threshold))
       .filter((q) => q.neq(q.field("deletedAt"), undefined))
       .paginate({
         numItems,
@@ -92,7 +92,7 @@ export const deleteCleanup = internalMutation({
     // Delete media vectors
     await asyncMap(page, (media) =>
       ctx.runMutation(
-        internal.collections.storage.mediaVectors.mutations
+        internal.collections.storage.media.vectors.mutations
           .deleteByMediaIdInternal,
         { mediaId: media._id }
       )
@@ -110,6 +110,7 @@ export const deleteCleanup = internalMutation({
         {
           cursor: continueCursor,
           numItems,
+          deletionThresholdTimestamp: threshold,
         }
       );
     }

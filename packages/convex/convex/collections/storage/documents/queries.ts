@@ -108,3 +108,72 @@ export const getTotalCount = query({
     });
   },
 });
+
+export const readFileContentByKey = query({
+  args: {
+    key: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user) {
+      throw new ConvexError("User not found");
+    }
+
+    const document = await ctx.db
+      .query("documents")
+      .withIndex("by_key", (q) => q.eq("key", args.key))
+      .first();
+
+    if (document?.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("You are not allowed to read this document");
+    }
+
+    if (!document) {
+      throw new ConvexError("Document not found");
+    }
+
+    // Check if the document is long
+    const isLong = document.isLongDocument;
+
+    if (isLong)
+      return {
+        summary: document.summary,
+        isLong,
+        contents: [],
+      };
+
+    // Get Chunks
+    const chunks = await ctx.db
+      .query("documentChunks")
+      .withIndex("by_document_id", (q) => q.eq("documentId", document._id))
+      .collect();
+
+    // Get Content
+    const chunkContents = chunks.map((chunk) => chunk.content);
+
+    return {
+      contents: chunkContents,
+      isLong: false,
+      summary: document.summary,
+    };
+  },
+});
+
+export const getDocumentIdByKey = query({
+  args: {
+    key: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user) {
+      throw new ConvexError("User not found");
+    }
+
+    return await ctx.db
+      .query("documents")
+      .withIndex("by_key", (q) => q.eq("key", args.key))
+      .first();
+  },
+});

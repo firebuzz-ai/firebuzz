@@ -1,4 +1,4 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { type ImageType, useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -87,14 +87,19 @@ export const ImageList = ({
         maxFiles: 5 - images.length,
         allowMultiple: 5 - images.length > 1,
         onSelect: (data) => {
-          const imagesFromModal = data.map((image) => image.key);
+          const imagesFromModal = data.map((image) => ({
+            key: image.key,
+            name: image.fileName,
+            contentType: image.contentType,
+            size: image.size,
+          }));
           setImages((prev) => {
             const newImages = imagesFromModal.filter(
               (image) => !prev.includes(image)
             );
             return [...prev, ...newImages];
           });
-          if (!images.includes(selectedImageKey)) {
+          if (!images.some((i) => i.key === selectedImageKey)) {
             setSelectedImage(imagesFromModal[0]);
           }
         },
@@ -103,10 +108,10 @@ export const ImageList = ({
   };
 
   const selectImageHandler = useCallback(
-    (image: string) => {
-      if (image === selectedImageKey) return;
-      const isFirstImage = image === images[0];
-      const hasHistory = checkHasHistory(image);
+    (image: ImageType) => {
+      if (image.key === selectedImageKey) return;
+      const isFirstImage = image.key === images[0].key;
+      const hasHistory = checkHasHistory(image.key);
 
       if (!isFirstImage) {
         // If selecting a non-primary image, assume isMasking is false
@@ -134,7 +139,7 @@ export const ImageList = ({
         values={images}
         onReorder={(newOrder) => {
           if (newOrder[0] !== images[0]) {
-            const hasHistory = checkHasHistory(newOrder[0]);
+            const hasHistory = checkHasHistory(newOrder[0].key);
             if (hasHistory) {
               setAIImageModalState((prev) => ({
                 ...prev,
@@ -156,9 +161,9 @@ export const ImageList = ({
         {images.map((image, index) => (
           <ImageItem
             onClick={() => selectImageHandler(image)}
-            key={image}
-            image={image}
-            isSelected={selectedImageKey === image}
+            key={image.key}
+            image={image.key}
+            isSelected={selectedImageKey === image.key}
             isPrimary={index === 0}
           />
         ))}

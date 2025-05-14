@@ -2,12 +2,13 @@
 
 import type { Doc } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Check, X } from "@firebuzz/ui/icons/lucide";
+import { AlertCircle, Check, X } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { formatFileSize } from "@firebuzz/utils";
 
@@ -23,7 +24,6 @@ interface UploadItemProps {
 const getTypeColor = (type: Doc<"documents">["type"]) => {
   switch (type) {
     case "md":
-    case "mdx":
       return { text: "text-blue-600" };
     case "html":
       return { text: "text-orange-600" };
@@ -34,7 +34,6 @@ const getTypeColor = (type: Doc<"documents">["type"]) => {
     case "csv":
       return { text: "text-green-600" };
     case "docx":
-    case "doc":
       return { text: "text-indigo-600" };
     default:
       return { text: "text-brand" };
@@ -48,6 +47,9 @@ export function UploadItem({
   key,
   error,
 }: UploadItemProps) {
+  const isError = error && error !== "";
+  const isSuccess = !error && key && !uploading;
+  const isUploading = uploading && !key && !error;
   return (
     <div
       className={cn(
@@ -58,47 +60,32 @@ export function UploadItem({
       <div className="flex items-center flex-1 max-w-full gap-3 overflow-hidden">
         <div
           className={cn(
-            "flex relative items-center justify-center size-12 text-xs font-semibold bg-background-subtle border rounded-sm shrink-0",
+            "flex relative items-center justify-center size-12 text-xs font-semibold bg-background-subtle border rounded-md shrink-0",
             getTypeColor(file.name.split(".").pop() as Doc<"documents">["type"])
               .text
           )}
         >
-          {file.name.split(".").pop()?.toUpperCase()}
-          {uploading && !key && !error && (
+          <span
+            className={cn(
+              "text-xs font-semibold",
+              (isSuccess || isError || isUploading) && "hidden"
+            )}
+          >
+            {file.name.split(".").pop()?.toUpperCase()}
+          </span>
+          {isUploading && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-muted/90">
-              <svg className="size-8 animate-spin text-primary">
-                <circle
-                  className="text-muted/30"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="15"
-                  cx="16"
-                  cy="16"
-                />
-                <circle
-                  className="text-primary"
-                  strokeWidth="2"
-                  strokeDasharray={94.2}
-                  strokeDashoffset={70}
-                  strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="transparent"
-                  r="15"
-                  cx="16"
-                  cy="16"
-                />
-              </svg>
+              <Spinner size="sm" />
             </div>
           )}
-          {!uploading && key && (
+          {isSuccess && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-success/10">
               <Check className="text-success size-8" />
             </div>
           )}
-          {!uploading && error && (
+          {isError && (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-destructive/10">
-              <X className="text-destructive size-8" />
+              <AlertCircle className="text-destructive size-8" />
             </div>
           )}
         </div>

@@ -1,10 +1,10 @@
 import { embed, generateText } from "ai";
 import { asyncMap } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
-import { internal } from "../../../_generated/api";
-import type { Doc } from "../../../_generated/dataModel";
-import { action, internalAction } from "../../../_generated/server";
-import { openai } from "../../../lib/openai";
+import { internal } from "../../../../_generated/api";
+import type { Doc } from "../../../../_generated/dataModel";
+import { action, internalAction } from "../../../../_generated/server";
+import { openai } from "../../../../lib/openai";
 
 export const vectorize = internalAction({
   args: {
@@ -43,7 +43,7 @@ export const vectorize = internalAction({
 
       // Create media vector
       await ctx.runMutation(
-        internal.collections.storage.mediaVectors.mutations.createInternal,
+        internal.collections.storage.media.vectors.mutations.createInternal,
         {
           mediaId,
           projectId,
@@ -97,7 +97,7 @@ export const vectorSearch = action({
     // Get Vector Results
     const mediaIds = await asyncMap(filteredResults, async (result) => {
       const vectorResult = await ctx.runQuery(
-        internal.collections.storage.mediaVectors.queries.getByIdInternal,
+        internal.collections.storage.media.vectors.queries.getByIdInternal,
         { id: result._id }
       );
 

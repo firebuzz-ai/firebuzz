@@ -11,10 +11,15 @@ const GenrationItem = ({ generation }: { generation: GeneratedImage }) => {
   const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
   const { setSelectedImage, selectedImage, setIsMasking } = useAIImageModal();
 
-  const isSelected = selectedImage === generation.imageKey;
+  const isSelected = selectedImage?.key === generation.imageKey;
 
   const onSelectHandler = () => {
-    setSelectedImage(generation.imageKey);
+    setSelectedImage({
+      key: generation.imageKey,
+      name: generation.name,
+      contentType: generation.contentType,
+      size: generation.fileSize,
+    });
     setIsMasking(false);
   };
 

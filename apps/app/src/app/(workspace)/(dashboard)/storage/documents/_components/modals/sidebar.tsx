@@ -30,7 +30,6 @@ import { parseAsString, useQueryStates } from "nuqs";
 const getDocumentTypeInfo = (type: Doc<"documents">["type"] | undefined) => {
   switch (type) {
     case "md":
-    case "mdx":
       return { icon: <FileCode className="size-3" />, label: "Markdown" };
     case "html":
       return { icon: <FileCode className="size-3" />, label: "HTML" };
@@ -41,7 +40,6 @@ const getDocumentTypeInfo = (type: Doc<"documents">["type"] | undefined) => {
     case "csv":
       return { icon: <FileSpreadsheet className="size-3" />, label: "CSV" };
     case "docx":
-    case "doc":
       return {
         icon: <FileArchive className="size-3" />,
         label: "Word Document",
@@ -56,25 +54,25 @@ const getVectorizationStatusInfo = (
   status: Doc<"documents">["vectorizationStatus"] | undefined
 ) => {
   switch (status) {
-    case "not-started":
+    case "not-indexed":
       return {
         color: "bg-gray-500",
-        label: "Not Started",
+        label: "Not Indexed",
       };
-    case "pending":
+    case "queued":
       return {
         color: "bg-yellow-500",
-        label: "Pending",
+        label: "Queued",
       };
     case "processing":
       return {
         color: "bg-blue-500",
         label: "Processing",
       };
-    case "completed":
+    case "indexed":
       return {
         color: "bg-green-500",
-        label: "Completed",
+        label: "Indexed",
       };
     case "failed":
       return {
@@ -244,7 +242,7 @@ export const DetailsSidebar = () => {
                 className="flex items-center gap-1.5 max-w-fit"
               >
                 <span
-                  className={`inline-block size-2 rounded-full ${vectorizationStatusInfo.color}`}
+                  className={`inline-block transition-colors duration-300 ease-in-out size-2 rounded-full ${vectorizationStatusInfo.color}`}
                 />
                 {vectorizationStatusInfo.label}
               </Badge>

@@ -1,4 +1,8 @@
-import { useAIImageModal, useBrush } from "@/hooks/ui/use-ai-image-modal";
+import {
+  type ImageType,
+  useAIImageModal,
+  useBrush,
+} from "@/hooks/ui/use-ai-image-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
   DropdownMenu,
@@ -29,11 +33,13 @@ export const MaskButton = ({
   selectedImage,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  selectedImage: string;
+  selectedImage: ImageType;
 }) => {
   const { setIsMasking, isMasking, isSelectedImagePrimary } = useAIImageModal();
   const { setSize, size } = useBrush();
-  const { undo, redo, canUndo, canRedo, reset } = useMaskState(selectedImage);
+  const { undo, redo, canUndo, canRedo, reset } = useMaskState(
+    selectedImage.key
+  );
 
   const hasHistory = useMemo(() => {
     return canUndo || canRedo;

@@ -1,10 +1,13 @@
 import { type Infer, v } from "convex/values";
 
 export const attachmentsSchema = v.object({
+  id: v.optional(v.union(v.id("documents"), v.id("media"))),
   name: v.string(),
   url: v.string(),
   contentType: v.string(),
   size: v.number(),
+  isLong: v.optional(v.boolean()),
+  summary: v.optional(v.string()),
 });
 
 export const landingPageMessagesSchema = v.object({

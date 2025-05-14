@@ -141,9 +141,20 @@ export const ImagePreviewWithEdit = ({
       maxFiles: 5,
       activeTab: "gallery",
       onSelect: (data) => {
-        const selectedImage = data[0].key;
-        const images = data.map((image) => image.key);
-        setSelectedImage(selectedImage);
+        const selectedImage = data[0];
+        const images = data.map((image) => ({
+          key: image.key,
+          name: image.fileName,
+          contentType: image.contentType,
+          size: image.size,
+        }));
+        const selectedImageData = {
+          key: selectedImage.key,
+          name: selectedImage.fileName,
+          contentType: selectedImage.contentType,
+          size: selectedImage.size,
+        };
+        setSelectedImage(selectedImageData);
         setImages([...images]);
       },
     }));
@@ -172,7 +183,12 @@ export const ImagePreviewWithEdit = ({
         size: file.size,
         source: "uploaded",
       });
-      setSelectedImage(key);
+      setSelectedImage({
+        key,
+        name: file.name,
+        contentType,
+        size: file.size,
+      });
       toast.success("Image uploaded successfully");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
@@ -296,7 +312,7 @@ export const ImagePreviewWithEdit = ({
             <Image
               unoptimized
               fill
-              src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${selectedImage}`}
+              src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${selectedImage.key}`}
               alt="Media content"
               className="object-contain"
               draggable={false}
@@ -317,7 +333,7 @@ export const ImagePreviewWithEdit = ({
                   }}
                 >
                   <MaskCanvas
-                    selectedImageKey={selectedImage}
+                    selectedImageKey={selectedImage.key}
                     brushSize={getBrushSizeValue()}
                     canvasRef={canvasRef}
                     naturalImageSize={naturalImageSize}

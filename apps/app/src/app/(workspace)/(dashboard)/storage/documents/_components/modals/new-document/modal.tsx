@@ -2,10 +2,11 @@
 
 import { useProject } from "@/hooks/auth/use-project";
 import {
+  ConvexError,
   type Id,
   api,
+  useAction,
   useCachedQuery,
-  useMutation,
   useUploadFile,
 } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -56,10 +57,10 @@ export function NewDocumentModal() {
     setIsOpen,
     files: initialFiles,
     setFiles: setInitialFiles,
-    isMemoryEnabled,
-    setIsMemoryEnabled,
-    selectedMemory,
-    setSelectedMemory,
+    isKnowledgeBaseEnabled,
+    setIsKnowledgeBaseEnabled,
+    selectedKnowledgeBase,
+    setSelectedKnowledgeBase,
   } = useNewDocumentModal();
   const [uploadState, setUploadState] = useState<"upload" | "files">("upload");
   const [filesWithProgress, setFilesWithProgress] = useState<
@@ -68,8 +69,8 @@ export function NewDocumentModal() {
   const { currentProject } = useProject();
 
   const uploadFile = useUploadFile(api.helpers.r2);
-  const createDocument = useMutation(
-    api.collections.storage.documents.mutations.create
+  const createDocument = useAction(
+    api.collections.storage.documents.actions.createDocumentWithChunks
   );
 
   const totalSize = useCachedQuery(
@@ -81,7 +82,9 @@ export function NewDocumentModal() {
       : "skip"
   );
 
-  const memories = useCachedQuery(api.collections.memory.queries.get);
+  const knowledgeBases = useCachedQuery(
+    api.collections.knowledgeBases.queries.get
+  );
   const MAX_STORAGE_BYTES = 1024 * 1024 * 1024; // 1GB, adjust as needed
 
   useEffect(() => {
@@ -167,13 +170,10 @@ export function NewDocumentModal() {
       "application/pdf": [".pdf"],
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [".docx"],
-      "application/msword": [".doc"],
       "text/csv": [".csv"],
       "text/plain": [".txt"],
       "text/html": [".html"],
       "text/markdown": [".md"],
-      "text/markdownx": [".mdx"],
-      // Add more supported document types here
     },
     maxSize: MAX_FILE_SIZE_BYTES,
     maxFiles: MAX_FILES_PER_UPLOAD,
@@ -238,18 +238,17 @@ export function NewDocumentModal() {
             contentType: parsedDocumentType.contentType,
             size: parsedDocumentType.size,
             type: parsedDocumentType.type,
-            memories:
-              isMemoryEnabled && selectedMemory
-                ? [selectedMemory as Id<"memories">]
-                : [],
+            knowledgeBases:
+              isKnowledgeBaseEnabled && selectedKnowledgeBase
+                ? [selectedKnowledgeBase as Id<"knowledgeBases">]
+                : undefined,
           });
           return { ...item, uploading: false, key: r2Key, error: undefined };
         } catch (error) {
           allSucceeded = false;
           const errorMsg =
-            error instanceof Error
-              ? `Failed to upload ${item.file.name}: ${error.message}`
-              : `Unknown error uploading ${item.file.name}`;
+            error instanceof ConvexError ? error.data : "Something went wrong.";
+
           toast.error(errorMsg);
           return { ...item, uploading: false, error: errorMsg, key: undefined };
         }
@@ -268,7 +267,6 @@ export function NewDocumentModal() {
         setUploadState("upload");
       }
     } else {
-      toast.warning("Some documents failed to upload. Please review.");
       // Filter out successfully uploaded files, keep only those with errors or not attempted (though all should be attempted)
       const filesToKeep = results.filter((item) => item.error);
       setFilesWithProgress(filesToKeep);
@@ -430,7 +428,7 @@ export function NewDocumentModal() {
               </motion.div>
             )}
 
-            {/* Memory Settings */}
+            {/* Knowledge Base Settings */}
 
             {uploadState === "files" && (
               <motion.div
@@ -446,15 +444,15 @@ export function NewDocumentModal() {
                 <div className="flex items-center justify-between px-4 py-2 border rounded-md shadow-sm bg-background-subtle">
                   <div className="flex items-center gap-4">
                     <Switch
-                      checked={isMemoryEnabled}
-                      onCheckedChange={setIsMemoryEnabled}
+                      checked={isKnowledgeBaseEnabled}
+                      onCheckedChange={setIsKnowledgeBaseEnabled}
                     />
                     <Separator orientation="vertical" className="h-4" />
                     <div className="flex items-center gap-2">
                       <p
                         className={cn(
                           "text-sm font-medium transition-colors duration-300 ease-in-out",
-                          !isMemoryEnabled && "text-muted-foreground"
+                          !isKnowledgeBaseEnabled && "text-muted-foreground"
                         )}
                       >
                         Add to Knowledge Base
@@ -462,7 +460,7 @@ export function NewDocumentModal() {
                       <Tooltip delayDuration={0}>
                         <TooltipTrigger
                           className="transition-colors duration-300 ease-in-out disabled:text-muted-foreground"
-                          disabled={!isMemoryEnabled}
+                          disabled={!isKnowledgeBaseEnabled}
                         >
                           <CircleHelp className="size-3.5" />
                         </TooltipTrigger>
@@ -471,7 +469,7 @@ export function NewDocumentModal() {
                           sideOffset={10}
                           className="max-w-xs"
                         >
-                          Knowledge Base is a collection of documents that are
+                          Knowledge Bases are a collection of documents that are
                           used to help our AI bots answer questions related to
                           your brand.
                         </TooltipContent>
@@ -479,19 +477,22 @@ export function NewDocumentModal() {
                     </div>
                   </div>
                   <Select
-                    onValueChange={setSelectedMemory}
-                    value={selectedMemory ?? undefined}
+                    onValueChange={setSelectedKnowledgeBase}
+                    value={selectedKnowledgeBase ?? undefined}
                   >
                     <SelectTrigger
-                      disabled={!isMemoryEnabled}
+                      disabled={!isKnowledgeBaseEnabled}
                       className="h-8 transition-opacity duration-300 ease-in-out max-w-fit"
                     >
-                      <SelectValue placeholder="Select a memory" />
+                      <SelectValue placeholder="Select a knowledge base" />
                     </SelectTrigger>
                     <SelectContent>
-                      {memories?.map((memory) => (
-                        <SelectItem key={memory._id} value={memory._id}>
-                          {memory.name}
+                      {knowledgeBases?.map((knowledgeBase) => (
+                        <SelectItem
+                          key={knowledgeBase._id}
+                          value={knowledgeBase._id}
+                        >
+                          {knowledgeBase.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

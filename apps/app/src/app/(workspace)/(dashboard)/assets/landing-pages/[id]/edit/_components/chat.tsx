@@ -1,3 +1,5 @@
+"use client";
+
 import { ChatHeader } from "@/components/chat/header";
 import { ChatInput } from "@/components/chat/input/chat-input";
 import { ChatMessages } from "@/components/chat/messages/messages";
@@ -5,7 +7,7 @@ import {
   currentFilesTreeAtom,
   currentImportantFilesAtom,
   currentVersionAtom,
-  lockFileAtom,
+  isIframeLoadedAtom,
   workbenchStore,
 } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
@@ -45,15 +47,15 @@ interface ChatProps {
 
 export const Chat = ({ id }: ChatProps) => {
   const setCurrentVersion = useSetAtom(currentVersionAtom);
-  const lockFile = useAtomValue(lockFileAtom);
-  console.log("lockFile", lockFile);
+  const isServerReady = useAtomValue(isIframeLoadedAtom);
+
   const {
     results: landingPageMessages,
     status: messagesStatus,
     loadMore,
   } = useStableReversedPaginatedMessagesQuery(
     api.collections.landingPages.messages.queries.getPaginated,
-    { landingPageId: id as Id<"landingPages"> },
+    isServerReady ? { landingPageId: id as Id<"landingPages"> } : "skip",
     { initialNumItems: 8 }
   );
 
@@ -79,7 +81,7 @@ export const Chat = ({ id }: ChatProps) => {
 
     // landingPageMessages are already sorted chronologically by the backend
     return landingPageMessages.map(
-      (message): Message => ({
+      (message, index, array): Message => ({
         id: message.messageId,
         content: "",
         parts: message.parts,
@@ -87,7 +89,9 @@ export const Chat = ({ id }: ChatProps) => {
         experimental_attachments: message.attachments,
         // @ts-expect-error
         metadata: {
-          initial: true,
+          initial: !(
+            index === array.length - 1 && !message.landingPageVersionId
+          ),
           versionId: message.landingPageVersionId,
           versionNumber: message.landingPageVersionNumber,
           createdAt: message.createdAt,
@@ -181,24 +185,30 @@ export const Chat = ({ id }: ChatProps) => {
   }, [currentVersion, setCurrentVersion]);
 
   return (
-    <div className="flex flex-col w-full h-full max-h-full overflow-hidden">
+    <div className="flex flex-col w-full h-full max-h-screen overflow-hidden">
       <ChatHeader
         landingPageId={id as Id<"landingPages">}
         type="landing-page"
         showLoadMore={false}
       />
-      <ChatMessages
-        chatId={id}
-        messages={memoizedMessages}
-        overviewComponent={<EmptyState />}
-        addToolResult={addToolResult}
-        setMessages={setMessages as Dispatch<SetStateAction<Message[]>>}
-        reload={() => {}}
-        chatStatus={status}
-        messagesStatus={messagesStatus}
-        loadMore={loadMore}
-        onLoadMoreClick={handleLoadMore}
-      />
+      {isServerReady ? (
+        <ChatMessages
+          chatId={id}
+          messages={memoizedMessages}
+          overviewComponent={<EmptyState />}
+          addToolResult={addToolResult}
+          setMessages={setMessages as Dispatch<SetStateAction<Message[]>>}
+          reload={() => {}}
+          chatStatus={status}
+          messagesStatus={messagesStatus}
+          loadMore={loadMore}
+          onLoadMoreClick={handleLoadMore}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center w-full h-full max-w-4xl max-h-full min-w-0 py-4 mx-auto overflow-x-hidden overflow-y-scroll">
+          Waiting for server to load...
+        </div>
+      )}
       {/* biome-ignore lint/suspicious/noExplicitAny: <explanation> */}
       <ChatInput append={memoizedAppend as unknown as any} />
     </div>

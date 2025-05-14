@@ -2,15 +2,15 @@ import { atom, useAtom } from "jotai";
 
 interface NewDocumentModal {
   isOpen: boolean;
-  isMemoryEnabled: boolean;
-  selectedMemory: string | null;
+  isKnowledgeBaseEnabled: boolean;
+  selectedKnowledgeBase: string | null;
   files: File[];
 }
 
 export const newDocumentModalAtom = atom<NewDocumentModal>({
   isOpen: false,
-  isMemoryEnabled: false,
-  selectedMemory: null,
+  isKnowledgeBaseEnabled: false,
+  selectedKnowledgeBase: null,
   files: [],
 });
 
@@ -31,32 +31,32 @@ export const useNewDocumentModal = () => {
     }));
   };
 
-  const setIsMemoryEnabled = (
+  const setIsKnowledgeBaseEnabled = (
     value: boolean | ((prev: boolean) => boolean)
   ) => {
     setState((prev) => ({
       ...prev,
-      isMemoryEnabled:
-        typeof value === "boolean" ? value : !prev.isMemoryEnabled,
+      isKnowledgeBaseEnabled:
+        typeof value === "boolean" ? value : !prev.isKnowledgeBaseEnabled,
     }));
   };
 
-  const setSelectedMemory = (
+  const setSelectedKnowledgeBase = (
     value: string | null | ((prev: string | null) => string | null)
   ) => {
     setState((prev) => ({
       ...prev,
-      selectedMemory:
-        typeof value === "function" ? value(prev.selectedMemory) : value,
+      selectedKnowledgeBase:
+        typeof value === "function" ? value(prev.selectedKnowledgeBase) : value,
     }));
   };
 
   return {
     ...state,
-    setSelectedMemory,
+    setSelectedKnowledgeBase,
     setState,
     setIsOpen,
     setFiles,
-    setIsMemoryEnabled,
+    setIsKnowledgeBaseEnabled,
   };
 };

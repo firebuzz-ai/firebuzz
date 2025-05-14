@@ -58,16 +58,7 @@ const DocumentRenderer = ({
 
 export const DocumentDetailsModal = () => {
   const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
-  const documentTypes = [
-    "md",
-    "mdx",
-    "html",
-    "txt",
-    "pdf",
-    "csv",
-    "docx",
-    "doc",
-  ] as const;
+  const documentTypes = ["md", "html", "txt", "pdf", "csv", "docx"] as const;
   const [{ documentId, documentKey, documentType }, setDocumentState] =
     useQueryStates(
       {

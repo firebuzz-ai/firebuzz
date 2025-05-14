@@ -35,7 +35,6 @@ const documentTypes = [
 const getTypeColor = (type: Doc<"documents">["type"]) => {
   switch (type) {
     case "md":
-    case "mdx":
       return { text: "text-blue-600" };
     case "html":
       return { text: "text-orange-600" };
@@ -46,7 +45,6 @@ const getTypeColor = (type: Doc<"documents">["type"]) => {
     case "csv":
       return { text: "text-green-600" };
     case "docx":
-    case "doc":
       return { text: "text-indigo-600" };
     default:
       return { text: "text-brand" };

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-export const memorySchema = v.object({
+export const knowledgeBaseSchema = v.object({
   name: v.string(),
   description: v.optional(v.string()),
   updatedAt: v.optional(v.string()),

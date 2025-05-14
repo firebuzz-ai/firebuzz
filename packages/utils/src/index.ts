@@ -145,16 +145,7 @@ export const parseMediaFile = (
 };
 
 interface ParsedDocumentFileResult {
-  type:
-    | "pdf"
-    | "doc"
-    | "docx"
-    | "csv"
-    | "md"
-    | "mdx"
-    | "html"
-    | "txt"
-    | "unknown";
+  type: "pdf" | "docx" | "csv" | "md" | "html" | "txt" | "unknown";
   extension: string;
   size: number;
   contentType: string;
@@ -167,9 +158,6 @@ export const parseDocumentFile = (file: File): ParsedDocumentFileResult => {
     case "application/pdf":
       type = "pdf";
       break;
-    case "application/msword":
-      type = "doc";
-      break;
     case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
       type = "docx";
       break;
@@ -178,9 +166,6 @@ export const parseDocumentFile = (file: File): ParsedDocumentFileResult => {
       break;
     case "text/markdown":
       type = "md";
-      break;
-    case "text/markdownx":
-      type = "mdx";
       break;
     case "text/html":
       type = "html";
@@ -218,6 +203,16 @@ export const getAttachmentType = (contentType: string) => {
       return "audio";
     case "application/pdf":
       return "pdf";
+    case "text/html":
+      return "html";
+    case "text/csv":
+      return "csv";
+    case "text/markdown":
+      return "md";
+    case "text/plain":
+      return "txt";
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      return "docx";
     default:
       return "unknown";
   }

@@ -14,7 +14,7 @@ export const create = mutationWithTrigger({
       throw new Error("Unauthorized");
     }
 
-    const memory = await ctx.db.insert("memories", {
+    const knowledgeBase = await ctx.db.insert("knowledgeBases", {
       name: args.name,
       description: args.description,
       createdBy: user._id,
@@ -22,6 +22,6 @@ export const create = mutationWithTrigger({
       projectId: user.currentProject,
     });
 
-    return memory;
+    return knowledgeBase;
   },
 });

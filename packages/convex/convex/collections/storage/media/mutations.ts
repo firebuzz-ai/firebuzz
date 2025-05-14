@@ -1,5 +1,6 @@
 import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
+import { r2 } from "../../../helpers/r2";
 import {
   internalMutationWithTrigger,
   mutationWithTrigger,
@@ -60,6 +61,12 @@ export const deleteInternal = internalMutationWithTrigger({
   },
   handler: async (ctx, { id }) => {
     try {
+      const media = await ctx.db.get(id);
+
+      if (media?.key) {
+        await r2.deleteObject(ctx, media.key);
+      }
+
       await ctx.db.delete(id);
     } catch (error) {
       console.error(error);

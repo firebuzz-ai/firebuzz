@@ -2,30 +2,30 @@ import { v } from "convex/values";
 
 export const documentType = v.union(
   v.literal("md"),
-  v.literal("mdx"),
   v.literal("html"),
   v.literal("txt"),
   v.literal("pdf"),
   v.literal("csv"),
-  v.literal("docx"),
-  v.literal("doc")
+  v.literal("docx")
 );
 
 export const documentsSchema = v.object({
   key: v.string(),
   name: v.string(),
+  summary: v.optional(v.string()),
+  isLongDocument: v.boolean(),
   size: v.number(),
   contentType: v.string(),
   type: documentType,
   vectorizationStatus: v.union(
-    v.literal("not-started"),
-    v.literal("pending"),
+    v.literal("not-indexed"),
+    v.literal("queued"),
     v.literal("processing"),
-    v.literal("completed"),
+    v.literal("indexed"),
     v.literal("failed")
   ),
   // Relations
-  memories: v.array(v.id("memories")),
+  knowledgeBases: v.array(v.id("knowledgeBases")),
   workspaceId: v.id("workspaces"),
   projectId: v.id("projects"),
   createdBy: v.id("users"),

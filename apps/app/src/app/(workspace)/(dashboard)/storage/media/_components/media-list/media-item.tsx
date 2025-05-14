@@ -131,7 +131,7 @@ export const MediaItem = ({ media, selected, setSelected }: MediaItemProps) => {
       {/* Media info */}
       <div className="flex flex-col p-3 space-y-1">
         <div className="flex items-start justify-between">
-          <h3 className="flex-1 text-sm font-medium truncate">{media.name}</h3>
+          <h3 className="flex-1 text-sm font-bold truncate">{media.name}</h3>
         </div>
 
         <div className="flex items-center justify-between mt-2">

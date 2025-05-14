@@ -72,22 +72,17 @@ const navLinks = [
         title: "Documents",
         url: "/storage/documents",
       },
+      {
+        title: "Knowledge Bases",
+        url: "/storage/knowledge-bases",
+      },
     ],
   },
   {
     title: "Brand",
     url: "/brand",
     icon: Fingerprint,
-    items: [
-      {
-        title: "Identity",
-        url: "#",
-      },
-      {
-        title: "Knowledge Base",
-        url: "#",
-      },
-    ],
+    items: [],
   },
   {
     title: "Settings",

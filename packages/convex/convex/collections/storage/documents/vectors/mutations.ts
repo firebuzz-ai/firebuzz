@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation } from "../../../_generated/server";
+import { internalMutation } from "../../../../_generated/server";
 
 export const createInternal = internalMutation({
   args: {
@@ -7,19 +7,25 @@ export const createInternal = internalMutation({
     projectId: v.id("projects"),
     workspaceId: v.id("workspaces"),
     embedding: v.array(v.float64()),
-    tags: v.array(v.id("memories")),
+    knowledgeBaseId: v.id("knowledgeBases"),
     chunkId: v.id("documentChunks"),
   },
   handler: async (ctx, args) => {
-    const { documentId, projectId, workspaceId, embedding, tags, chunkId } =
-      args;
+    const {
+      documentId,
+      projectId,
+      workspaceId,
+      embedding,
+      knowledgeBaseId,
+      chunkId,
+    } = args;
 
     const key = await ctx.db.insert("documentVectors", {
       documentId,
       projectId,
       workspaceId,
       embedding,
-      tags,
+      knowledgeBaseId,
       chunkId,
     });
 

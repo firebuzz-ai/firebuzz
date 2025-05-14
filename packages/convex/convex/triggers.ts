@@ -262,7 +262,7 @@ triggers.register("media", async (ctx, change) => {
     const doc = change.newDoc;
     await vectorizationPool.enqueueAction(
       ctx,
-      internal.collections.storage.mediaVectors.actions.vectorize,
+      internal.collections.storage.media.vectors.actions.vectorize,
       {
         mediaId: doc._id,
         mediaKey: doc.key,

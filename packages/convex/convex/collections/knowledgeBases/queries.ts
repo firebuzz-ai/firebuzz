@@ -11,11 +11,11 @@ export const get = query({
       throw new Error("Unauthorized");
     }
 
-    const memories = await ctx.db
-      .query("memories")
+    const knowledgeBases = await ctx.db
+      .query("knowledgeBases")
       .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
       .take(10);
 
-    return memories;
+    return knowledgeBases;
   },
 });

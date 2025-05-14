@@ -1,4 +1,6 @@
 "use client";
+import { DocumentsSelectorModal } from "@/components/modals/documents/selector/modal";
+import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
 import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
 import {
   attachmentsAtom,
@@ -31,7 +33,7 @@ export const ChatInput = memo(
   }) => {
     const selectedElement = useAtomValue(selectedElementAtom);
     const [isSending, setIsSending] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
+
     const [inputValue, setInputValue] = useState("");
     const [showShakeAnimation, setShowShakeAnimation] = useState(false);
     const [attachments, setAttachments] = useAtom(attachmentsAtom);
@@ -47,7 +49,16 @@ export const ChatInput = memo(
 
     const onSubmit = useCallback(
       async (message: string) => {
-        console.log("attachments", attachments);
+        const experimentalAttachments =
+          attachments && attachments.length > 0
+            ? attachments.map((attachment) => ({
+                name: attachment.name,
+                url: attachment.url,
+                contentType: attachment.contentType,
+                id: attachment.id,
+              }))
+            : undefined;
+
         // Let the useChat hook handle messages state management
         await append(
           {
@@ -55,14 +66,7 @@ export const ChatInput = memo(
             content: message,
           },
           {
-            experimental_attachments:
-              attachments && attachments.length > 0
-                ? attachments.map((attachment) => ({
-                    name: attachment.name,
-                    url: attachment.url,
-                    contentType: attachment.contentType,
-                  }))
-                : undefined,
+            experimental_attachments: experimentalAttachments,
           }
         );
       },
@@ -87,8 +91,7 @@ export const ChatInput = memo(
       async (message: string) => {
         if (
           (!message.trim() && attachments && attachments.length === 0) ||
-          isSending ||
-          isUploading
+          isSending
         )
           return;
 
@@ -131,7 +134,6 @@ export const ChatInput = memo(
         isSending,
         isPreviewVersionDifferent,
         attachments,
-        isUploading,
         clearStates,
       ]
     );
@@ -143,10 +145,7 @@ export const ChatInput = memo(
           <ActionErrors onSubmit={onSubmit} />
           <SelectedElement />
           <VersionWarning inputValue={inputValue} shake={showShakeAnimation} />
-          <Attachment
-            isUploading={isUploading}
-            clearAttachments={clearAttachments}
-          />
+          <Attachment clearAttachments={clearAttachments} />
 
           <div className="relative px-4 pb-4">
             <Textarea
@@ -187,12 +186,9 @@ export const ChatInput = memo(
 
             {/* Send and Upload buttons */}
             <div className="absolute flex gap-2 text-xs bottom-6 right-6 text-muted-foreground">
-              <AttachmentButton
-                isUploading={isUploading}
-                setIsUploading={setIsUploading}
-              />
+              <AttachmentButton />
               <Button
-                disabled={isSending || isUploading}
+                disabled={isSending}
                 onClick={() => handleSubmit(inputValue)}
                 size="sm"
                 variant="outline"
@@ -203,6 +199,8 @@ export const ChatInput = memo(
 
             {/* Modals */}
             <MediaGalleryModal />
+            <DocumentsSelectorModal />
+            <AIImageModal />
           </div>
         </div>
       </AnimatePresence>

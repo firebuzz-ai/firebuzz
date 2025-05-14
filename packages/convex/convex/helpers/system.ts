@@ -2,8 +2,10 @@ import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 import {
   aggregateCampaigns,
+  aggregateDocuments,
   aggregateLandingPageVersions,
   aggregateLandingPages,
+  aggregateMedia,
 } from "../aggregates";
 import { batchDeleteStoragePool, cascadePool } from "../workpools";
 
@@ -30,6 +32,24 @@ export const cleanLandingPageVersionAggregates = internalMutation({
   handler: async (ctx, args) => {
     return await aggregateLandingPageVersions.clear(ctx, {
       namespace: args.landingPageId,
+    });
+  },
+});
+
+export const cleanMediaAggregates = internalMutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await aggregateMedia.clear(ctx, {
+      namespace: args.projectId,
+    });
+  },
+});
+
+export const cleanDocumentAggregates = internalMutation({
+  args: { projectId: v.id("projects") },
+  handler: async (ctx, args) => {
+    return await aggregateDocuments.clear(ctx, {
+      namespace: args.projectId,
     });
   },
 });

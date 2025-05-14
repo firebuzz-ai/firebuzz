@@ -1,4 +1,4 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { type ImageType, useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
   Tooltip,
@@ -39,32 +39,38 @@ export const SelectedImageMenu = () => {
     return imageType === "generation" && onInsert;
   }, [imageType, onInsert]);
 
+  const isInInput = useMemo(() => {
+    return images.some((image) => image.key === selectedImage?.key);
+  }, [images, selectedImage]);
+
   const deleteImageHandler = () => {
-    const newImages = images.filter((image) => image !== selectedImage);
+    const newImages = images.filter(
+      (image) => image.key !== selectedImage?.key
+    );
     setImages(newImages);
     setSelectedImage(newImages[0]);
   };
 
-  const makePrimaryHandler = (key: string) => {
+  const makePrimaryHandler = (image: ImageType) => {
     if (imageType === "generation") return;
     setImages((prev) => {
-      const filteredImages = prev.filter((image) => image !== key);
-      return [key, ...filteredImages];
+      const filteredImages = prev.filter((i) => i.key !== image.key);
+      return [image, ...filteredImages];
     });
   };
 
-  const addToInputHandler = (key: string) => {
+  const addToInputHandler = (image: ImageType) => {
     setImages((prev) => {
       if (prev.length >= 5) {
         const poppedImages = prev.slice(0, -1);
-        return [...poppedImages, key];
+        return [...poppedImages, image];
       }
-      return [...prev, key];
+      return [...prev, image];
     });
   };
 
-  const insertHandler = (key: string) => {
-    onInsert?.(key);
+  const insertHandler = (image: ImageType) => {
+    onInsert?.(image);
     setIsOpen(false);
   };
 
@@ -153,19 +159,21 @@ export const SelectedImageMenu = () => {
           </Tooltip>
         )}
         {/* Add to Input Button */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              className="pointer-events-auto"
-              variant="outline"
-              size="iconSm"
-              onClick={() => addToInputHandler(selectedImage)}
-            >
-              <Plus className="!size-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Add to Input</TooltipContent>
-        </Tooltip>
+        {!isInInput && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                className="pointer-events-auto"
+                variant="outline"
+                size="iconSm"
+                onClick={() => addToInputHandler(selectedImage)}
+              >
+                <Plus className="!size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Add to Input</TooltipContent>
+          </Tooltip>
+        )}
       </motion.div>
     );
   }

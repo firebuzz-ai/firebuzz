@@ -95,8 +95,8 @@ export function DocumentList() {
     setNewDocumentModalState({
       files: acceptedFiles,
       isOpen: true,
-      isMemoryEnabled: false,
-      selectedMemory: null,
+      isKnowledgeBaseEnabled: false,
+      selectedKnowledgeBase: null,
     });
   };
 

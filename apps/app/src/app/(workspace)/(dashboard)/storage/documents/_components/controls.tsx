@@ -41,22 +41,42 @@ export const Controls = ({
   const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
   const { setState } = useNewDocumentModal();
 
-  // Updated document types to match the schema
   const documentTypes = [
-    "all",
-    "document",
-    "spreadsheet",
-    "presentation",
-    "pdf",
-    "text",
-    "other",
-  ] as const; // Added 'as const' for better type inference if needed later
+    {
+      label: "All",
+      value: "all",
+    },
+    {
+      label: "Markdown",
+      value: "md",
+    },
+    {
+      label: "CSV",
+      value: "csv",
+    },
+    {
+      label: "Text",
+      value: "txt",
+    },
+    {
+      label: "PDF",
+      value: "pdf",
+    },
+    {
+      label: "Word",
+      value: "docx",
+    },
+    {
+      label: "HTML",
+      value: "html",
+    },
+  ] as const;
 
   const handleOpenNewDocumentModal = () => {
     setState((prev) => ({
       ...prev,
       isOpen: true,
-      isMemoryEnabled: false,
+      isKnowledgeBaseEnabled: false,
       files: [],
     }));
   };
@@ -98,8 +118,8 @@ export const Controls = ({
               </SelectTrigger>
               <SelectContent>
                 {documentTypes.map((docType) => (
-                  <SelectItem key={docType} value={docType}>
-                    {docType === "all" ? "All" : docType.toUpperCase()}
+                  <SelectItem key={docType.value} value={docType.value}>
+                    {docType.label}
                   </SelectItem>
                 ))}
               </SelectContent>

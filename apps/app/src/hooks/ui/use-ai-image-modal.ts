@@ -6,22 +6,32 @@ export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536" | "auto";
 export type ImageQuality = "low" | "medium" | "high";
 export type BrushSize = "sm" | "md" | "lg" | "xl";
 export type GeneratedImage = {
+  name: string;
   imageKey: string;
   prompt: string;
   quality: ImageQuality;
   size: ImageSize;
+  contentType: string;
+  fileSize: number;
+};
+
+export type ImageType = {
+  key: string;
+  name: string;
+  contentType: string;
+  size: number;
 };
 
 export const aiImageModalAtom = atomWithReset<{
   isOpen: boolean;
-  images: string[];
+  images: ImageType[];
   generations: GeneratedImage[];
-  selectedImage: string | undefined;
+  selectedImage: ImageType | undefined;
   selectedImageQuality: ImageQuality;
   selectedImageSize: ImageSize;
   selectedImagePrompt: string;
   isMasking: boolean;
-  onInsert: null | ((imageKey: string) => void);
+  onInsert: null | ((image: ImageType) => void);
 }>({
   isOpen: false,
   images: [],
@@ -82,7 +92,10 @@ export const useAIImageModal = () => {
   }, [reset, setState]);
 
   const isSelectedImagePrimary = useMemo(() => {
-    return state.images.length > 0 && state.images[0] === state.selectedImage;
+    return (
+      state.images.length > 0 &&
+      state.images[0].key === state.selectedImage?.key
+    );
   }, [state.images, state.selectedImage]);
 
   return {
@@ -137,27 +150,35 @@ export const useAIImageModal = () => {
       }
     },
     setSelectedImage: (
-      selectedImage: string | undefined,
+      selectedImage: ImageType | undefined,
       selectedImageQuality?: ImageQuality,
       selectedImageSize?: ImageSize,
       selectedImagePrompt?: string | undefined
     ) => {
       setState((prev) => ({
         ...prev,
-        selectedImage,
+        selectedImage: selectedImage ?? undefined,
         selectedImageQuality: selectedImageQuality ?? prev.selectedImageQuality,
         selectedImageSize: selectedImageSize ?? prev.selectedImageSize,
         selectedImagePrompt: selectedImagePrompt ?? prev.selectedImagePrompt,
       }));
     },
-    setImages: (images: string[] | ((prev: string[]) => string[])) => {
+    setImages: (images: ImageType[] | ((prev: ImageType[]) => ImageType[])) => {
       if (typeof images === "function") {
-        setState((prev) => ({ ...prev, images: images(prev.images) }));
+        setState((prev) => ({
+          ...prev,
+          images: images(prev.images).map((image) => ({
+            key: image.key,
+            name: image.name,
+            contentType: image.contentType,
+            size: image.size,
+          })),
+        }));
       } else {
         setState((prev) => ({ ...prev, images }));
       }
     },
-    setOnInsert: (onInsert: null | ((imageKey: string) => void)) => {
+    setOnInsert: (onInsert: null | ((image: ImageType) => void)) => {
       setState((prev) => ({ ...prev, onInsert }));
     },
     setIsMasking: (isMasking: boolean | ((prev: boolean) => boolean)) => {

@@ -1,16 +1,16 @@
 import { defineSchema, defineTable } from "convex/server";
 import { campaignSchema } from "./collections/campaigns/schema";
+import { knowledgeBaseSchema } from "./collections/knowledgeBases/schema";
 import { landingPageMessagesSchema } from "./collections/landingPages/messages/schema";
 import { landingPagesSchema } from "./collections/landingPages/schema";
 import { landingPageTemplatesSchema } from "./collections/landingPages/templates/schema";
 import { landingPageVersionsSchema } from "./collections/landingPages/versions/schema";
-import { memorySchema } from "./collections/memory/schema";
 import { projectSchema } from "./collections/projects/schema";
-import { documentChunksSchema } from "./collections/storage/documentChunks/schema";
-import { documentVectorsSchema } from "./collections/storage/documentVectors/schema";
+import { documentChunksSchema } from "./collections/storage/documents/chunks/schema";
 import { documentsSchema } from "./collections/storage/documents/schema";
+import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
 import { mediaSchema } from "./collections/storage/media/schema";
-import { mediaVectorsSchema } from "./collections/storage/mediaVectors/schema";
+import { mediaVectorsSchema } from "./collections/storage/media/vectors/schema";
 import { userSchema } from "./collections/users/schema";
 import { workspaceSchema } from "./collections/workspaces/schema";
 
@@ -71,6 +71,7 @@ export default defineSchema({
     .index("by_project_id", ["projectId"])
     .index("by_created_by", ["createdBy"])
     .index("by_deleted_at", ["deletedAt"])
+    .index("by_key", ["key"])
     .searchIndex("by_fileName", { searchField: "name" }),
   documentChunks: defineTable(documentChunksSchema)
     .index("by_workspace_id", ["workspaceId"])
@@ -84,9 +85,9 @@ export default defineSchema({
     .vectorIndex("by_emmbedings", {
       vectorField: "embedding",
       dimensions: 1536,
-      filterFields: ["projectId", "tags"],
+      filterFields: ["projectId", "knowledgeBaseId", "documentId"],
     }),
-  memories: defineTable(memorySchema)
+  knowledgeBases: defineTable(knowledgeBaseSchema)
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
     .index("by_created_by", ["createdBy"])

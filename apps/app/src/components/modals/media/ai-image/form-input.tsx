@@ -1,7 +1,4 @@
-import {
-  type GeneratedImage,
-  useAIImageModal,
-} from "@/hooks/ui/use-ai-image-modal";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import ImageGenClient from "@/lib/ai/image/client";
 import {
   api,
@@ -77,10 +74,16 @@ export const GenerateImageFormInput = ({
   const memoizedGenerations = useMemo(() => {
     return generations?.map((generation) => ({
       imageKey: generation.key,
+      name: generation.name,
+      contentType: generation.contentType,
+      fileSize: generation.size,
       prompt: generation.aiMetadata?.prompt ?? "",
-      quality: generation.aiMetadata?.quality ?? "medium",
-      size: generation.aiMetadata?.size ?? "auto",
-    })) as GeneratedImage[];
+      quality: (generation.aiMetadata?.quality ?? "medium") as
+        | "low"
+        | "medium"
+        | "high",
+      size: (generation.aiMetadata?.size ?? "auto") as ImageSize,
+    }));
   }, [generations]);
 
   const uploadFile = useUploadFile(api.helpers.r2);
@@ -297,7 +300,12 @@ export const GenerateImageFormInput = ({
           source: "ai-generated",
           aiMetadata,
         });
-        setSelectedImage(key);
+        setSelectedImage({
+          key,
+          name: `generated-${Date.now()}.png`,
+          contentType: "image/png",
+          size: blob.size,
+        });
       } else {
         throw new Error("No image data received");
       }
@@ -337,7 +345,7 @@ export const GenerateImageFormInput = ({
       // 2. Call client edit method
       const result = await imageGenClient.edit({
         prompt,
-        imageKeys: images,
+        imageKeys: images.map((image) => image.key),
         quality,
         mask: maskFile ?? undefined,
         model: "gpt-image-1",
@@ -381,7 +389,12 @@ export const GenerateImageFormInput = ({
         });
 
         setIsMasking(false);
-        setSelectedImage(key);
+        setSelectedImage({
+          key,
+          name: file.name,
+          contentType: "image/png",
+          size: editedBlob.size,
+        });
         setPrompt("");
       } else {
         throw new Error("No image data received");
@@ -449,7 +462,7 @@ export const GenerateImageFormInput = ({
             )}
           </div>
           {/* Right-side buttons */}
-          <ImageList selectedImageKey={selectedImage ?? ""} />
+          <ImageList selectedImageKey={selectedImage?.key ?? ""} />
         </div>
         {/* Input + Buttons */}
         <div className="flex items-center gap-4 p-2 border rounded-lg shadow-lg bg-background-subtle">

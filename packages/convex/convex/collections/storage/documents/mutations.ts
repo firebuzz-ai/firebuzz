@@ -1,60 +1,38 @@
 import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
-import { internal } from "../../../_generated/api";
 import { internalMutation } from "../../../_generated/server";
+import { r2 } from "../../../helpers/r2";
 import {
   internalMutationWithTrigger,
   mutationWithTrigger,
 } from "../../../triggers";
-import { vectorizationPool } from "../../../workpools";
 import { getCurrentUser } from "../../users/utils";
 import { documentsSchema } from "./schema";
 
-export const create = mutationWithTrigger({
+export const create = internalMutationWithTrigger({
   args: {
     key: v.string(),
     name: v.string(),
     contentType: v.string(),
     size: v.number(),
-    memories: v.array(v.id("memories")),
+    knowledgeBases: v.optional(v.array(v.id("knowledgeBases"))),
     type: documentsSchema.fields.type,
+    workspaceId: v.id("workspaces"),
+    projectId: v.id("projects"),
+    createdBy: v.id("users"),
+    summary: v.string(),
+    isLongDocument: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    const projectId = user.currentProject;
-    const workspaceId = user.currentWorkspaceId;
-
-    if (!projectId || !workspaceId) {
-      throw new Error("You are not allowed to create a document");
-    }
-
-    // Check memories exist
-    const memories = args.memories;
-    const hasMemories = memories.length > 0;
+    // Check knowledgeBases exist
+    const knowledgeBases = args.knowledgeBases;
+    const hasKnowledgeBases = knowledgeBases && knowledgeBases.length > 0;
 
     const documentId = await ctx.db.insert("documents", {
       ...args,
-      workspaceId,
-      projectId,
-      createdBy: user._id,
-      vectorizationStatus: hasMemories ? "pending" : "not-started",
+      knowledgeBases: hasKnowledgeBases ? knowledgeBases : [],
+      vectorizationStatus: hasKnowledgeBases ? "queued" : "not-indexed",
     });
-
-    // Start chunking and vectorization process
-    if (hasMemories) {
-      await vectorizationPool.enqueueAction(
-        ctx,
-        internal.collections.storage.documents.actions.chunkAndVectorize,
-        {
-          documentId,
-          memories,
-          type: args.type,
-          workspaceId,
-          projectId,
-          key: args.key,
-        }
-      );
-    }
 
     return documentId;
   },
@@ -66,6 +44,12 @@ export const deleteInternal = internalMutationWithTrigger({
   },
   handler: async (ctx, { id }) => {
     try {
+      const document = await ctx.db.get(id);
+
+      if (document?.key) {
+        await r2.deleteObject(ctx, document.key);
+      }
+
       await ctx.db.delete(id);
     } catch (error) {
       console.error(error);
@@ -193,5 +177,17 @@ export const updateVectorizationStatus = internalMutation({
   },
   handler: async (ctx, { documentId, status }) => {
     await ctx.db.patch(documentId, { vectorizationStatus: status });
+  },
+});
+
+export const update = internalMutation({
+  args: {
+    documentId: v.id("documents"),
+    summary: v.optional(v.string()),
+    isLongDocument: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+  },
+  handler: async (ctx, { documentId, summary, isLongDocument, name }) => {
+    await ctx.db.patch(documentId, { summary, isLongDocument, name });
   },
 });
