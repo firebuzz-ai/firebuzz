@@ -1,6 +1,5 @@
 import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
-import { internalMutation } from "../../../_generated/server";
 import { r2 } from "../../../helpers/r2";
 import {
   internalMutationWithTrigger,
@@ -8,8 +7,9 @@ import {
 } from "../../../triggers";
 import { getCurrentUser } from "../../users/utils";
 import { documentsSchema } from "./schema";
+import { internalMutation } from "../../../_generated/server";
 
-export const create = internalMutationWithTrigger({
+export const create = mutationWithTrigger({
   args: {
     key: v.string(),
     name: v.string(),
@@ -17,32 +17,27 @@ export const create = internalMutationWithTrigger({
     size: v.number(),
     knowledgeBases: v.optional(v.array(v.id("knowledgeBases"))),
     type: documentsSchema.fields.type,
-    workspaceId: v.id("workspaces"),
-    projectId: v.id("projects"),
-    createdBy: v.id("users"),
-    summary: v.string(),
-    isLongDocument: v.boolean(),
   },
   handler: async (ctx, args) => {
+    // Check if user is allowed to create document
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId || !user.currentProject) {
+      throw new Error("You are not allowed to create a document");
+    }
+
     // Check knowledgeBases exist
     const knowledgeBases = args.knowledgeBases;
     const hasKnowledgeBases = knowledgeBases && knowledgeBases.length > 0;
 
     const documentId = await ctx.db.insert("documents", {
       ...args,
+      workspaceId: user.currentWorkspaceId,
+      createdBy: user._id,
+      projectId: user.currentProject,
       knowledgeBases: hasKnowledgeBases ? knowledgeBases : [],
       vectorizationStatus: hasKnowledgeBases ? "queued" : "not-indexed",
+      chunkingStatus: "queued",
     });
-
-    // Insert into memoizedDocuments
-    if (hasKnowledgeBases) {
-      await asyncMap(knowledgeBases, async (knowledgeBaseId) => {
-        await ctx.db.insert("memoizedDocuments", {
-          documentId,
-          knowledgeBaseId,
-        });
-      });
-    }
 
     return documentId;
   },
@@ -180,28 +175,78 @@ export const deleteTemporaryMultiple = mutationWithTrigger({
   },
 });
 
-export const updateVectorizationStatus = internalMutation({
+export const update = internalMutationWithTrigger({
   args: {
     documentId: v.id("documents"),
-    status: documentsSchema.fields.vectorizationStatus,
+    vectorizationStatus: v.optional(documentsSchema.fields.vectorizationStatus),
+    chunkingStatus: v.optional(documentsSchema.fields.chunkingStatus),
+    isLongDocument: v.optional(v.boolean()),
+    summary: v.optional(v.string()),
+    name: v.optional(v.string()),
   },
-  handler: async (ctx, { documentId, status }) => {
-    await ctx.db.patch(documentId, { vectorizationStatus: status });
+  handler: async (ctx, { documentId, ...args }) => {
+    const updates: Record<string, string | boolean | undefined> = {};
+
+    if (args.vectorizationStatus !== undefined) {
+      updates.vectorizationStatus = args.vectorizationStatus;
+    }
+
+    if (args.chunkingStatus !== undefined) {
+      updates.chunkingStatus = args.chunkingStatus;
+    }
+
+    if (args.isLongDocument !== undefined) {
+      updates.isLongDocument = args.isLongDocument;
+    }
+
+    if (args.summary !== undefined) {
+      updates.summary = args.summary;
+    }
+
+    if (args.name !== undefined) {
+      updates.name = args.name;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(documentId, updates);
+    }
   },
 });
 
-export const update = internalMutation({
+export const updateWithoutTrigger = internalMutation({
   args: {
     documentId: v.id("documents"),
-    summary: v.optional(v.string()),
+    vectorizationStatus: v.optional(documentsSchema.fields.vectorizationStatus),
+    chunkingStatus: v.optional(documentsSchema.fields.chunkingStatus),
     isLongDocument: v.optional(v.boolean()),
+    summary: v.optional(v.string()),
     name: v.optional(v.string()),
   },
-  handler: async (ctx, { documentId, summary, isLongDocument, name }) => {
-    await ctx.db.patch(documentId, {
-      summary,
-      isLongDocument,
-      name,
-    });
+  handler: async (ctx, { documentId, ...args }) => {
+    const updates: Record<string, string | boolean | undefined> = {};
+
+    if (args.vectorizationStatus !== undefined) {
+      updates.vectorizationStatus = args.vectorizationStatus;
+    }
+
+    if (args.chunkingStatus !== undefined) {
+      updates.chunkingStatus = args.chunkingStatus;
+    }
+
+    if (args.isLongDocument !== undefined) {
+      updates.isLongDocument = args.isLongDocument;
+    }
+
+    if (args.summary !== undefined) {
+      updates.summary = args.summary;
+    }
+
+    if (args.name !== undefined) {
+      updates.name = args.name;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(documentId, updates);
+    }
   },
 });

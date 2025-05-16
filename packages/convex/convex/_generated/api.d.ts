@@ -29,6 +29,7 @@ import type * as collections_projects_mutations from "../collections/projects/mu
 import type * as collections_projects_queries from "../collections/projects/queries.js";
 import type * as collections_projects_utils from "../collections/projects/utils.js";
 import type * as collections_storage_documents_actions from "../collections/storage/documents/actions.js";
+import type * as collections_storage_documents_chunks_actions from "../collections/storage/documents/chunks/actions.js";
 import type * as collections_storage_documents_chunks_mutations from "../collections/storage/documents/chunks/mutations.js";
 import type * as collections_storage_documents_chunks_queries from "../collections/storage/documents/chunks/queries.js";
 import type * as collections_storage_documents_memoized_mutations from "../collections/storage/documents/memoized/mutations.js";
@@ -99,6 +100,7 @@ declare const fullApi: ApiFromModules<{
   "collections/projects/queries": typeof collections_projects_queries;
   "collections/projects/utils": typeof collections_projects_utils;
   "collections/storage/documents/actions": typeof collections_storage_documents_actions;
+  "collections/storage/documents/chunks/actions": typeof collections_storage_documents_chunks_actions;
   "collections/storage/documents/chunks/mutations": typeof collections_storage_documents_chunks_mutations;
   "collections/storage/documents/chunks/queries": typeof collections_storage_documents_chunks_queries;
   "collections/storage/documents/memoized/mutations": typeof collections_storage_documents_memoized_mutations;
@@ -1583,6 +1585,58 @@ export declare const components: {
     };
   };
   vectorization: {
+    lib: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          id: string;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      cancelAll: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          before?: number;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+        },
+        any
+      >;
+      enqueue: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          fnArgs: any;
+          fnHandle: string;
+          fnName: string;
+          fnType: "action" | "mutation" | "query";
+          onComplete?: { context?: any; fnHandle: string };
+          retryBehavior?: {
+            base: number;
+            initialBackoffMs: number;
+            maxAttempts: number;
+          };
+          runAt: number;
+        },
+        string
+      >;
+      status: FunctionReference<
+        "query",
+        "internal",
+        { id: string },
+        | { previousAttempts: number; state: "pending" }
+        | { previousAttempts: number; state: "running" }
+        | { state: "finished" }
+      >;
+    };
+  };
+  summarization: {
     lib: {
       cancel: FunctionReference<
         "mutation",

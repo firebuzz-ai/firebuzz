@@ -13,7 +13,13 @@ export const batchDeleteStoragePool = new Workpool(
 );
 
 export const vectorizationPool = new Workpool(components.vectorization, {
-  maxParallelism: 10,
+  maxParallelism: 25,
+  retryActionsByDefault: true,
+  defaultRetryBehavior: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 },
+});
+
+export const summarizationPool = new Workpool(components.summarization, {
+  maxParallelism: 25,
   retryActionsByDefault: true,
   defaultRetryBehavior: { maxAttempts: 3, initialBackoffMs: 1000, base: 2 },
 });

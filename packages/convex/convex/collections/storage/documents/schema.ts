@@ -24,6 +24,12 @@ export const documentsSchema = v.object({
     v.literal("indexed"),
     v.literal("failed")
   ),
+  chunkingStatus: v.union(
+    v.literal("queued"),
+    v.literal("processing"),
+    v.literal("chunked"),
+    v.literal("failed")
+  ),
   // Relations
   knowledgeBases: v.array(v.id("knowledgeBases")),
   workspaceId: v.id("workspaces"),

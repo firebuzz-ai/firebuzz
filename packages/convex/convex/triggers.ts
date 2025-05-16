@@ -253,6 +253,25 @@ triggers.register("documents", async (ctx, change) => {
   }
 });
 
+// @CHUNKING
+
+// Chunk Document
+triggers.register("documents", async (ctx, change) => {
+  if (change.operation === "insert") {
+    await ctx.scheduler.runAfter(
+      0,
+      internal.collections.storage.documents.chunks.actions.chunkDocument,
+      {
+        documentId: change.newDoc._id,
+        key: change.newDoc.key,
+        type: change.newDoc.type,
+        workspaceId: change.newDoc.workspaceId,
+        projectId: change.newDoc.projectId,
+      }
+    );
+  }
+});
+
 // @VECTORIZATION
 
 // Media Vectorization
@@ -270,6 +289,31 @@ triggers.register("media", async (ctx, change) => {
         workspaceId: doc.workspaceId,
       }
     );
+  }
+});
+
+// Document Vectorization
+triggers.register("documents", async (ctx, change) => {
+  if (change.operation === "update") {
+    const doc = change.newDoc;
+    const oldDoc = change.oldDoc;
+    if (
+      doc.chunkingStatus === "chunked" &&
+      oldDoc.chunkingStatus !== "chunked" &&
+      doc.knowledgeBases &&
+      doc.knowledgeBases.length > 0
+    ) {
+      await vectorizationPool.enqueueAction(
+        ctx,
+        internal.collections.storage.documents.vectors.actions.vectorize,
+        {
+          documentId: doc._id,
+          projectId: doc.projectId,
+          workspaceId: doc.workspaceId,
+          knowledgeBases: doc.knowledgeBases,
+        }
+      );
+    }
   }
 });
 

@@ -245,11 +245,10 @@ export const vectorize = internalAction({
     try {
       // 1. Update Status to Processing
       await ctx.runMutation(
-        internal.collections.storage.documents.mutations
-          .updateVectorizationStatus,
+        internal.collections.storage.documents.mutations.updateWithoutTrigger,
         {
           documentId,
-          status: "processing",
+          vectorizationStatus: "processing",
         }
       );
 
@@ -287,11 +286,10 @@ export const vectorize = internalAction({
 
       // Update Status to Completed
       await ctx.runMutation(
-        internal.collections.storage.documents.mutations
-          .updateVectorizationStatus,
+        internal.collections.storage.documents.mutations.updateWithoutTrigger,
         {
           documentId,
-          status: "indexed",
+          vectorizationStatus: "indexed",
         }
       );
 
@@ -306,11 +304,10 @@ export const vectorize = internalAction({
     } catch (error) {
       // Update Status to Failed
       await ctx.runMutation(
-        internal.collections.storage.documents.mutations
-          .updateVectorizationStatus,
+        internal.collections.storage.documents.mutations.updateWithoutTrigger,
         {
           documentId,
-          status: "failed",
+          vectorizationStatus: "failed",
         }
       );
 
