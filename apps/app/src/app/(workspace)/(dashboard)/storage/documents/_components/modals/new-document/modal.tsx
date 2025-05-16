@@ -5,8 +5,8 @@ import {
   ConvexError,
   type Id,
   api,
-  useAction,
   useCachedQuery,
+  useMutation,
   useUploadFile,
 } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -69,8 +69,8 @@ export function NewDocumentModal() {
   const { currentProject } = useProject();
 
   const uploadFile = useUploadFile(api.helpers.r2);
-  const createDocument = useAction(
-    api.collections.storage.documents.actions.createDocumentWithChunks
+  const createDocument = useMutation(
+    api.collections.storage.documents.mutations.create
   );
 
   const totalSize = useCachedQuery(
@@ -83,7 +83,7 @@ export function NewDocumentModal() {
   );
 
   const knowledgeBases = useCachedQuery(
-    api.collections.knowledgeBases.queries.get
+    api.collections.storage.knowledgeBases.queries.getAll
   );
   const MAX_STORAGE_BYTES = 1024 * 1024 * 1024; // 1GB, adjust as needed
 
@@ -243,6 +243,7 @@ export function NewDocumentModal() {
                 ? [selectedKnowledgeBase as Id<"knowledgeBases">]
                 : undefined,
           });
+
           return { ...item, uploading: false, key: r2Key, error: undefined };
         } catch (error) {
           allSucceeded = false;
@@ -332,25 +333,18 @@ export function NewDocumentModal() {
           >
             <input {...getInputProps()} />
             {uploadState === "files" && filesWithProgress.length > 0 && (
-              <motion.div
-                key="files-list"
-                layout
-                className="relative flex flex-col flex-1 max-w-full max-h-full gap-2 px-4 overflow-y-scroll"
-              >
+              <motion.div className="relative flex flex-col flex-1 max-w-full max-h-full gap-2 px-4 overflow-y-scroll">
                 <div className="font-medium">
                   Files{" "}
                   <span className="text-sm text-muted-foreground">
                     ({filesWithProgress.length})
                   </span>
                 </div>
-                <motion.div
-                  key="files-list-items"
-                  layout
-                  className="max-w-full space-y-2"
-                >
+                <motion.div className="max-w-full space-y-2">
                   {filesWithProgress.map((item) => (
                     <motion.div
                       key={item.file.name}
+                      layoutId={`file-${item.file.name}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{

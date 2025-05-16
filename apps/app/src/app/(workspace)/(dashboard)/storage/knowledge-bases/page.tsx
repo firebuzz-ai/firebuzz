@@ -1,3 +1,5 @@
+import { KnowledgeBases } from "./_components/knowledge-bases";
+
 export default function Page() {
-  return <div>Knowledgebases</div>;
+  return <KnowledgeBases />;
 }

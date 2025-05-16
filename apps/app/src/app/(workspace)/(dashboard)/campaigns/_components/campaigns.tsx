@@ -78,7 +78,7 @@ export const Campaigns = () => {
   }, [status, loadMore]);
 
   return (
-    <div className="overflow-hidden flex-1 flex flex-col max-w-full max-h-full">
+    <div className="flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
       <Controls
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
@@ -89,15 +89,15 @@ export const Campaigns = () => {
       />
 
       {/* Table */}
-      <div className="flex flex-col flex-1 overflow-hidden max-h-full max-w-full">
+      <div className="flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
         {/* Table View */}
         {status === "LoadingFirstPage" ? (
-          <div className="flex flex-1 items-center justify-center">
+          <div className="flex items-center justify-center flex-1">
             <Spinner size="sm" />
           </div>
         ) : campaigns.length === 0 ? (
           <div className="flex items-center justify-center flex-1">
-            <p className="text-muted-foreground text-sm text-center">
+            <p className="text-sm text-center text-muted-foreground">
               No campaigns found. Create a new campaign to get started.
             </p>
           </div>
@@ -115,11 +115,6 @@ export const Campaigns = () => {
         totalCount={totalCount ?? 0}
         status={status}
       />
-      {/*  <SelectedMenu
-        selections={selection}
-        setSelections={setSelection}
-        totalCount={totalCount ?? 0}
-      /> */}
     </div>
   );
 };
