@@ -9,11 +9,11 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 import { MemoryItem } from "./memory-item";
 
-interface MemoriesProps {
+interface MemoryListProps {
   knowledgeBaseId: Id<"knowledgeBases"> | undefined;
 }
 
-export const Memories = ({ knowledgeBaseId }: MemoriesProps) => {
+export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
   const [sortOrder, _setSortOrder] = useState<"asc" | "desc">("desc");
 
   const {

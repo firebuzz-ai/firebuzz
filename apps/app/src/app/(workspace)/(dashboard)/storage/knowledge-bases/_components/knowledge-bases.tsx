@@ -4,7 +4,7 @@ import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
 
-import { Memories } from "./memories";
+import { MemoryList } from "./memory-list";
 import { NewKnowledgeBaseModal } from "./modals/new-knowledge-base/modal";
 
 export const KnowledgeBases = () => {
@@ -38,7 +38,7 @@ export const KnowledgeBases = () => {
   return (
     <div className="flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
       <KnowledgeBaseTabs tabs={tabs ?? []} id={id} setId={setId} />
-      <Memories knowledgeBaseId={id} />
+      <MemoryList knowledgeBaseId={id} />
       {/* Modal */}
       <NewKnowledgeBaseModal />
     </div>
