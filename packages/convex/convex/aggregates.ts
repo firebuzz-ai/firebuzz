@@ -67,3 +67,14 @@ export const aggregateDocuments = new TableAggregate<{
   sortKey: (doc) => doc._id,
   sumValue: (doc) => doc.size,
 });
+
+// Memoized Documents
+export const aggregateMemoizedDocuments = new TableAggregate<{
+  Namespace: Id<"knowledgeBases">;
+  Key: string;
+  DataModel: DataModel;
+  TableName: "memoizedDocuments";
+}>(components.aggregateMemoizedDocuments, {
+  namespace: (doc) => doc.knowledgeBaseId,
+  sortKey: (doc) => doc._id,
+});

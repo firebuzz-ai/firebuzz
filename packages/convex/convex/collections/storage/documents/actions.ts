@@ -1,21 +1,20 @@
 "use node";
+import type { Document } from "@llamaindex/core/schema";
+import { CSVReader } from "@llamaindex/readers/csv";
+import { DocxReader } from "@llamaindex/readers/docx";
+import { HTMLReader } from "@llamaindex/readers/html";
+import { MarkdownReader } from "@llamaindex/readers/markdown";
+import { PDFReader } from "@llamaindex/readers/pdf";
+import { TextFileReader } from "@llamaindex/readers/text";
 import { MDocument } from "@mastra/rag";
 import { generateObject } from "ai";
 import { ConvexError, v } from "convex/values";
 import { z } from "zod";
 import { api, internal } from "../../../_generated/api";
 import type { Id } from "../../../_generated/dataModel";
-import {
-  CSVReader,
-  type Document,
-  DocxReader,
-  HTMLReader,
-  MarkdownReader,
-  PDFReader,
-  TextFileReader,
-} from "../../../lib/documentReaders";
 
 import { stripIndents } from "@firebuzz/utils";
+import { asyncMap } from "convex-helpers";
 import { action } from "../../../_generated/server";
 import { r2 } from "../../../helpers/r2";
 import { openai } from "../../../lib/openai";
@@ -30,6 +29,16 @@ interface ChunkToInsert {
   content: string;
   index: number;
 }
+
+// Map of file types to their corresponding reader classes
+const DOCUMENT_READERS = {
+  md: MarkdownReader,
+  html: HTMLReader,
+  txt: TextFileReader,
+  pdf: PDFReader,
+  csv: CSVReader,
+  docx: DocxReader,
+} as const;
 
 export const createDocumentWithChunks = action({
   args: {
@@ -73,29 +82,14 @@ export const createDocumentWithChunks = action({
     let loadedDocs: Document[] = [];
 
     try {
-      switch (type) {
-        case "md":
-          loadedDocs = await new MarkdownReader().loadDataAsContent(uint8Array);
-          break;
-        case "html":
-          loadedDocs = await new HTMLReader().loadDataAsContent(uint8Array);
-          break;
-        case "txt":
-          loadedDocs = await new TextFileReader().loadDataAsContent(uint8Array);
-          break;
-        case "pdf":
-          loadedDocs = await new PDFReader().loadDataAsContent(uint8Array);
-          break;
-        case "csv":
-          loadedDocs = await new CSVReader().loadDataAsContent(uint8Array);
-          break;
-        case "docx":
-          loadedDocs = await new DocxReader().loadDataAsContent(uint8Array);
-          break;
-        default:
-          console.warn(`Unsupported content type encountered: ${type}`);
-          throw new Error(`Unsupported content type encountered: ${type}`);
+      const ReaderClass =
+        DOCUMENT_READERS[type as keyof typeof DOCUMENT_READERS];
+
+      if (!ReaderClass) {
+        throw new ConvexError(`Unsupported document type: ${type}`);
       }
+
+      loadedDocs = await new ReaderClass().loadDataAsContent(uint8Array);
     } catch (err) {
       console.error(`Failed to load data for type ${type}, key ${key}:`, err);
       throw new ConvexError(`Failed to process file content for type ${type}`);
@@ -138,15 +132,14 @@ export const createDocumentWithChunks = action({
     const mDoc = contents.map((content) => MDocument.fromText(content));
 
     // 7. Chunk the document using Mastra
-    const mastraChunks = await Promise.all(
-      mDoc.flatMap(
-        async (doc) =>
-          await doc.chunk({
-            strategy: "recursive",
-            size: 2048,
-            overlap: 256,
-          })
-      )
+    const mastraChunks = await asyncMap(
+      mDoc,
+      async (doc) =>
+        await doc.chunk({
+          strategy: "recursive",
+          size: 2048,
+          overlap: 256,
+        })
     ).then((chunks) => chunks.flat());
 
     // 8. Create Document
@@ -168,9 +161,8 @@ export const createDocumentWithChunks = action({
     );
 
     // 9. Build Chunks for Convex Insertion
-    const chunksToInsert: ChunkToInsert[] = mastraChunks.map(
+    const chunksToInsert: ChunkToInsert[] = mastraChunks.flatMap(
       (chunk, index: number) => ({
-        // Use Mastra chunk format { text: string }
         workspaceId,
         projectId,
         documentId,
@@ -180,23 +172,12 @@ export const createDocumentWithChunks = action({
     );
 
     // 10. Insert File Chunks into Convex
-    const fileChunkPromises = chunksToInsert.map(
-      async (chunk: ChunkToInsert) => {
-        const chunkId: Id<"documentChunks"> = await ctx.runMutation(
-          internal.collections.storage.documents.chunks.mutations.create,
-          {
-            workspaceId: chunk.workspaceId,
-            projectId: chunk.projectId,
-            documentId: chunk.documentId,
-            content: chunk.content,
-            index: chunk.index,
-          }
-        );
-        return chunkId;
-      }
-    );
-
-    await Promise.all(fileChunkPromises);
+    await asyncMap(chunksToInsert, async (chunk) => {
+      await ctx.runMutation(
+        internal.collections.storage.documents.chunks.mutations.create,
+        chunk
+      );
+    });
 
     // 11. Vectorize Chunks if There are KnowledgeBases
     if (knowledgeBases && knowledgeBases.length > 0) {

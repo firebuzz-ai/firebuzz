@@ -108,6 +108,15 @@ export const deleteCleanup = internalMutation({
       )
     );
 
+    // Delete memoized documents
+    await asyncMap(page, (document) =>
+      ctx.runMutation(
+        internal.collections.storage.documents.memoized.mutations
+          .deletePermanentByDocumentId,
+        { documentId: document._id }
+      )
+    );
+
     // If there are more documents, delete them
     if (
       continueCursor &&

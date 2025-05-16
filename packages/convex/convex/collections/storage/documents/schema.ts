@@ -13,7 +13,7 @@ export const documentsSchema = v.object({
   key: v.string(),
   name: v.string(),
   summary: v.optional(v.string()),
-  isLongDocument: v.boolean(),
+  isLongDocument: v.optional(v.boolean()),
   size: v.number(),
   contentType: v.string(),
   type: documentType,

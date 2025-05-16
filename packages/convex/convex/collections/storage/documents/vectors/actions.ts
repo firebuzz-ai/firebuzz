@@ -294,6 +294,15 @@ export const vectorize = internalAction({
           status: "indexed",
         }
       );
+
+      // Create Memoized Document
+      await ctx.runMutation(
+        internal.collections.storage.documents.memoized.mutations.create,
+        {
+          documentId,
+          knowledgeBases,
+        }
+      );
     } catch (error) {
       // Update Status to Failed
       await ctx.runMutation(

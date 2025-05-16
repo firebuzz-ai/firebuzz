@@ -3,7 +3,10 @@ import { ConvexError } from "convex/values";
 
 import { v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
-import { aggregateDocuments } from "../../../aggregates";
+import {
+  aggregateDocuments,
+  aggregateMemoizedDocuments,
+} from "../../../aggregates";
 import { getCurrentUser } from "../../users/utils";
 import { documentsSchema } from "./schema";
 
@@ -12,6 +15,7 @@ export const getPaginated = query({
     paginationOpts: paginationOptsValidator,
     sortOrder: v.union(v.literal("asc"), v.literal("desc")),
     type: v.optional(documentsSchema.fields.type),
+    knowledgeBaseId: v.optional(v.id("knowledgeBases")),
     searchQuery: v.optional(v.string()),
     isArchived: v.optional(v.boolean()),
   },
@@ -33,7 +37,6 @@ export const getPaginated = query({
           .withSearchIndex("by_fileName", (q) => q.search("name", searchQuery))
 
           .filter((q) => q.eq(q.field("projectId"), projectId))
-
           .filter((q) => (type ? q.eq(q.field("type"), type) : true))
           .filter((q) =>
             isArchived ? q.eq(q.field("isArchived"), isArchived ?? false) : true
@@ -175,5 +178,54 @@ export const getDocumentIdByKey = query({
       .query("documents")
       .withIndex("by_key", (q) => q.eq("key", args.key))
       .first();
+  },
+});
+
+export const getPaginatedByKnowledgeBase = query({
+  args: {
+    knowledgeBaseId: v.id("knowledgeBases"),
+    sortOrder: v.union(v.literal("asc"), v.literal("desc")),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, args) => {
+    const paginationResult = await ctx.db
+      .query("memoizedDocuments")
+      .withIndex("by_knowledge_base", (q) =>
+        q.eq("knowledgeBaseId", args.knowledgeBaseId)
+      )
+      .order(args.sortOrder)
+      .paginate(args.paginationOpts);
+
+    const documents = await Promise.all(
+      paginationResult.page.map(async (memoizedDocument) => {
+        const document = await ctx.db.get(memoizedDocument.documentId);
+
+        if (!document) {
+          return null;
+        }
+
+        return {
+          ...document,
+          createdBy: await ctx.db.get(document.createdBy),
+        };
+      })
+    ).then((docs) =>
+      docs.filter((doc): doc is NonNullable<typeof doc> => doc !== null)
+    );
+
+    return { ...paginationResult, page: documents };
+  },
+});
+
+export const getTotalCountByKnowledgeBase = query({
+  args: {
+    knowledgeBaseId: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, args) => {
+    return await aggregateMemoizedDocuments.count(ctx, {
+      namespace: args.knowledgeBaseId,
+      // @ts-ignore
+      bounds: {},
+    });
   },
 });

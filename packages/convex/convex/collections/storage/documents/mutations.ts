@@ -34,6 +34,16 @@ export const create = internalMutationWithTrigger({
       vectorizationStatus: hasKnowledgeBases ? "queued" : "not-indexed",
     });
 
+    // Insert into memoizedDocuments
+    if (hasKnowledgeBases) {
+      await asyncMap(knowledgeBases, async (knowledgeBaseId) => {
+        await ctx.db.insert("memoizedDocuments", {
+          documentId,
+          knowledgeBaseId,
+        });
+      });
+    }
+
     return documentId;
   },
 });
@@ -188,6 +198,10 @@ export const update = internalMutation({
     name: v.optional(v.string()),
   },
   handler: async (ctx, { documentId, summary, isLongDocument, name }) => {
-    await ctx.db.patch(documentId, { summary, isLongDocument, name });
+    await ctx.db.patch(documentId, {
+      summary,
+      isLongDocument,
+      name,
+    });
   },
 });
