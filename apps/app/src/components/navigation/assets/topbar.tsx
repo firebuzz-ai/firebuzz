@@ -1,62 +1,62 @@
 "use client";
 
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbLink,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
 } from "@firebuzz/ui/components/ui/breadcrumb";
 import { SidebarTrigger } from "@firebuzz/ui/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 export const AssetsTopbar = () => {
-  const pathname = usePathname();
+	const pathname = usePathname();
 
-  const breadcrumbItems = useMemo(() => {
-    return pathname.split("/").slice(1) ?? [];
-  }, [pathname]);
+	const breadcrumbItems = useMemo(() => {
+		return pathname.split("/").slice(1) ?? [];
+	}, [pathname]);
 
-  if (breadcrumbItems.length > 2) {
-    return null;
-  }
+	if (breadcrumbItems.length > 2) {
+		return null;
+	}
 
-  return (
-    <div className="px-2 py-3 border-b">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <SidebarTrigger />
-          </BreadcrumbItem>
-          {breadcrumbItems.flatMap((item, index, array) => {
-            const isLast = index === array.length - 1;
-            return [
-              <BreadcrumbSeparator key={`sep-${item}`} />,
-              <BreadcrumbItem key={`item-${item}`}>
-                {isLast ? (
-                  <BreadcrumbPage>
-                    {item
-                      .replace(/-/g, " ")
-                      .replace(/\b\w/g, (char) => char.toUpperCase())}
-                  </BreadcrumbPage>
-                ) : (
-                  <BreadcrumbLink asChild>
-                    <Link
-                      href={`/${breadcrumbItems.slice(0, index + 1).join("/")}`}
-                    >
-                      {item
-                        .replace(/-/g, " ")
-                        .replace(/\b\w/g, (char) => char.toUpperCase())}
-                    </Link>
-                  </BreadcrumbLink>
-                )}
-              </BreadcrumbItem>,
-            ];
-          })}
-        </BreadcrumbList>
-      </Breadcrumb>
-    </div>
-  );
+	return (
+		<div className="px-2 py-3 border-b">
+			<Breadcrumb>
+				<BreadcrumbList>
+					<BreadcrumbItem>
+						<SidebarTrigger />
+					</BreadcrumbItem>
+					{breadcrumbItems.flatMap((item, index, array) => {
+						const isLast = index === array.length - 1;
+						return [
+							<BreadcrumbSeparator key={`sep-${item}`} />,
+							<BreadcrumbItem key={`item-${item}`}>
+								{isLast ? (
+									<BreadcrumbPage>
+										{item
+											.replace(/-/g, " ")
+											.replace(/\b\w/g, (char) => char.toUpperCase())}
+									</BreadcrumbPage>
+								) : (
+									<BreadcrumbLink asChild>
+										<Link
+											href={`/${breadcrumbItems.slice(0, index + 1).join("/")}`}
+										>
+											{item
+												.replace(/-/g, " ")
+												.replace(/\b\w/g, (char) => char.toUpperCase())}
+										</Link>
+									</BreadcrumbLink>
+								)}
+							</BreadcrumbItem>,
+						];
+					})}
+				</BreadcrumbList>
+			</Breadcrumb>
+		</div>
+	);
 };

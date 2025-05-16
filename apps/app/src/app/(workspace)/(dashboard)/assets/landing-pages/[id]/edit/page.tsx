@@ -6,30 +6,30 @@ import { redirect } from "next/navigation";
 import { EditLandingPage } from "./_components/edit";
 import { Providers } from "./_components/providers";
 export default async function LandingPageEditPage({
-  params,
+	params,
 }: {
-  params: Promise<{ id: Id<"landingPages"> }>;
+	params: Promise<{ id: Id<"landingPages"> }>;
 }) {
-  const token = await (await auth()).getToken({ template: "convex" });
+	const token = await (await auth()).getToken({ template: "convex" });
 
-  if (!token) {
-    redirect("/");
-  }
-  const { id } = await params;
-  const panelId = "landing-page-chat";
-  const cookieStore = await cookies();
-  const previewPanelValue = cookieStore.get(
-    `${panelId}-right-panel-size`
-  )?.value;
-  const previewPanelSize = previewPanelValue
-    ? Number.parseInt(previewPanelValue)
-    : 30;
+	if (!token) {
+		redirect("/");
+	}
+	const { id } = await params;
+	const panelId = "landing-page-chat";
+	const cookieStore = await cookies();
+	const previewPanelValue = cookieStore.get(
+		`${panelId}-right-panel-size`,
+	)?.value;
+	const previewPanelSize = previewPanelValue
+		? Number.parseInt(previewPanelValue)
+		: 30;
 
-  return (
-    <Providers previewPanelSize={previewPanelSize} panelId={panelId}>
-      <EditLandingPage id={id} />
-      {/* Sheets */}
-      <LandingPageSettingsSheet landingPageId={id} />
-    </Providers>
-  );
+	return (
+		<Providers previewPanelSize={previewPanelSize} panelId={panelId}>
+			<EditLandingPage id={id} />
+			{/* Sheets */}
+			<LandingPageSettingsSheet landingPageId={id} />
+		</Providers>
+	);
 }

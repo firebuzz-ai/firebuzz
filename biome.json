@@ -13,7 +13,8 @@
 			".vitest",
 			".next",
 			"dist",
-			"_generated"
+			"_generated",
+			"templates"
 		]
 	},
 	"formatter": {
@@ -31,7 +32,8 @@
 			".vitest",
 			".next",
 			"dist",
-			"_generated"
+			"_generated",
+			"templates"
 		],
 		"rules": {
 			"recommended": true,

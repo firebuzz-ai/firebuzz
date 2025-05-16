@@ -15,72 +15,72 @@ import type { Edge, Node } from "@xyflow/react";
 import { useCallback } from "react";
 
 const nodeTypes = {
-  base: BaseNode,
-  placeholder: PlaceholderNode,
-  note: NoteNode,
-  traffic: TrafficNode,
-  segment: SegmentNode,
-  "advanced-targeting": AdvancedTargetingNode,
-  "ab-test": ABTestNode,
-  variant: VariantNode,
+	base: BaseNode,
+	placeholder: PlaceholderNode,
+	note: NoteNode,
+	traffic: TrafficNode,
+	segment: SegmentNode,
+	"advanced-targeting": AdvancedTargetingNode,
+	"ab-test": ABTestNode,
+	variant: VariantNode,
 };
 
 export const CampaignCanvas = ({
-  campaign,
+	campaign,
 }: {
-  campaign: Doc<"campaigns">;
+	campaign: Doc<"campaigns">;
 }) => {
-  const updateCampaign = useMutation(
-    api.collections.campaigns.mutations.update
-  );
+	const updateCampaign = useMutation(
+		api.collections.campaigns.mutations.update,
+	);
 
-  const onSaveHandler = useCallback(
-    (nodes: Node[], edges: Edge[]) => {
-      updateCampaign({
-        id: campaign._id,
-        projectId: campaign.projectId,
-        nodes: nodes.map((node) => ({
-          id: node.id,
-          type: node.type,
-          position: node.position,
-          data: node.data,
-          dragging: node.dragging,
-          selected: node.selected,
-          parentId: node.parentId,
-          dragHandle: node.dragHandle,
-          measured: node.measured,
-          width: node.width,
-          height: node.height,
-          initialWidth: node.initialWidth,
-          initialHeight: node.initialHeight,
-          zIndex: node.zIndex,
-          handles: node.handles,
-        })),
-        edges: edges.map((edge) => ({
-          id: edge.id,
-          source: edge.source,
-          target: edge.target,
-          type: edge.type,
-          animated: edge.animated,
-          selected: edge.selected,
-          data: edge.data,
-        })),
-      });
-    },
-    [campaign._id, updateCampaign, campaign.projectId]
-  );
+	const onSaveHandler = useCallback(
+		(nodes: Node[], edges: Edge[]) => {
+			updateCampaign({
+				id: campaign._id,
+				projectId: campaign.projectId,
+				nodes: nodes.map((node) => ({
+					id: node.id,
+					type: node.type,
+					position: node.position,
+					data: node.data,
+					dragging: node.dragging,
+					selected: node.selected,
+					parentId: node.parentId,
+					dragHandle: node.dragHandle,
+					measured: node.measured,
+					width: node.width,
+					height: node.height,
+					initialWidth: node.initialWidth,
+					initialHeight: node.initialHeight,
+					zIndex: node.zIndex,
+					handles: node.handles,
+				})),
+				edges: edges.map((edge) => ({
+					id: edge.id,
+					source: edge.source,
+					target: edge.target,
+					type: edge.type,
+					animated: edge.animated,
+					selected: edge.selected,
+					data: edge.data,
+				})),
+			});
+		},
+		[campaign._id, updateCampaign, campaign.projectId],
+	);
 
-  return (
-    <div className="flex flex-1 h-full">
-      <Canvas
-        initialNodes={campaign.nodes}
-        initialEdges={campaign.edges}
-        nodeTypes={nodeTypes}
-        onSaveHandler={onSaveHandler}
-      >
-        <Background />
-        <Controller />
-      </Canvas>
-    </div>
-  );
+	return (
+		<div className="flex flex-1 h-full">
+			<Canvas
+				initialNodes={campaign.nodes}
+				initialEdges={campaign.edges}
+				nodeTypes={nodeTypes}
+				onSaveHandler={onSaveHandler}
+			>
+				<Background />
+				<Controller />
+			</Canvas>
+		</div>
+	);
 };

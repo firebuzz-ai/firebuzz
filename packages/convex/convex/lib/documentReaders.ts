@@ -9,11 +9,11 @@ import { PDFReader } from "@llamaindex/readers/pdf";
 import { TextFileReader } from "@llamaindex/readers/text";
 
 export {
-  CSVReader,
-  DocxReader,
-  HTMLReader,
-  MarkdownReader,
-  PDFReader,
-  TextFileReader,
-  type Document,
+	CSVReader,
+	DocxReader,
+	HTMLReader,
+	MarkdownReader,
+	PDFReader,
+	TextFileReader,
+	type Document,
 };

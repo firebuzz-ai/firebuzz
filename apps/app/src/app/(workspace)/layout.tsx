@@ -2,12 +2,12 @@ import { NewDocumentModal } from "@/app/(workspace)/(dashboard)/storage/document
 import { WorkspaceProviders } from "@/components/providers/workspace";
 
 const WorkspaceLayout = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <WorkspaceProviders>
-      {children}
-      <NewDocumentModal />
-    </WorkspaceProviders>
-  );
+	return (
+		<WorkspaceProviders>
+			{children}
+			<NewDocumentModal />
+		</WorkspaceProviders>
+	);
 };
 
 export default WorkspaceLayout;

@@ -15,8 +15,8 @@ export type UPDATE_ALL = typeof UPDATE_ALL;
 
 // Type for actions handled by the history dispatcher
 export type HistoryAction<Value> =
-  | { type: UNDO }
-  | { type: REDO }
-  | { type: RESET }
-  | { type: PUSH; value: Value }
-  | { type: UPDATE_ALL; updater: (history: Value[]) => Value[] };
+	| { type: UNDO }
+	| { type: REDO }
+	| { type: RESET }
+	| { type: PUSH; value: Value }
+	| { type: UPDATE_ALL; updater: (history: Value[]) => Value[] };
