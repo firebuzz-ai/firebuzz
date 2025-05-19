@@ -120,7 +120,7 @@ importers:
         specifier: ^26.1.0
         version: 26.1.0(canvas@3.1.0)
       motion:
-        specifier: ^11.16.0
+        specifier: ^11.18.2
         version: 11.18.2(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       nanoid:
         specifier: ^5.1.2

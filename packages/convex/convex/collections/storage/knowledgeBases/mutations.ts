@@ -3,25 +3,82 @@ import { mutationWithTrigger } from "../../../triggers";
 import { getCurrentUser } from "../../users/utils";
 
 export const create = mutationWithTrigger({
-	args: {
-		name: v.string(),
-		description: v.string(),
-	},
-	handler: async (ctx, args) => {
-		const user = await getCurrentUser(ctx);
+  args: {
+    name: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
 
-		if (!user || !user.currentWorkspaceId || !user.currentProject) {
-			throw new Error("Unauthorized");
-		}
+    if (!user || !user.currentWorkspaceId || !user.currentProject) {
+      throw new Error("Unauthorized");
+    }
 
-		const knowledgeBase = await ctx.db.insert("knowledgeBases", {
-			name: args.name,
-			description: args.description,
-			createdBy: user._id,
-			workspaceId: user.currentWorkspaceId,
-			projectId: user.currentProject,
-		});
+    // Get Last Index
+    const lastIndex = await ctx.db
+      .query("knowledgeBases")
+      .filter((q) => q.eq(q.field("projectId"), user.currentProject))
+      .order("desc")
+      .first();
 
-		return knowledgeBase;
-	},
+    const index = lastIndex ? (lastIndex.index ?? 0) + 1 : 0;
+
+    const knowledgeBase = await ctx.db.insert("knowledgeBases", {
+      name: args.name,
+      description: args.description,
+      createdBy: user._id,
+      workspaceId: user.currentWorkspaceId,
+      projectId: user.currentProject,
+      index,
+      isSystem: false,
+    });
+
+    return knowledgeBase;
+  },
+});
+
+export const update = mutationWithTrigger({
+  args: {
+    id: v.id("knowledgeBases"),
+    name: v.string(),
+    description: v.string(),
+    index: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user || !user.currentProject) {
+      throw new Error("Unauthorized");
+    }
+
+    const updateObject: Record<string, string | number | undefined> = {
+      name: args.name,
+      description: args.description,
+    };
+
+    if (args.index !== undefined) {
+      updateObject.index = args.index;
+    }
+
+    console.log("updateObject", updateObject);
+
+    const knowledgeBase = await ctx.db.patch(args.id, updateObject);
+
+    return knowledgeBase;
+  },
+});
+
+export const deletePermanent = mutationWithTrigger({
+  args: {
+    id: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user || !user.currentProject) {
+      throw new Error("Unauthorized");
+    }
+
+    await ctx.db.delete(args.id);
+  },
 });

@@ -4,6 +4,7 @@ import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
 
+import { KnowledgeBaseSettingsSheet } from "@/components/sheets/settings/knowledge-bases/sheet";
 import { MemoryList } from "./memory-list";
 import { NewKnowledgeBaseModal } from "./modals/new-knowledge-base/modal";
 
@@ -41,6 +42,7 @@ export const KnowledgeBases = () => {
       <MemoryList knowledgeBaseId={id} />
       {/* Modal */}
       <NewKnowledgeBaseModal />
+      {id && <KnowledgeBaseSettingsSheet />}
     </div>
   );
 };

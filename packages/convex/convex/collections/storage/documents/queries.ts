@@ -207,6 +207,7 @@ export const getPaginatedByKnowledgeBase = query({
         return {
           ...document,
           createdBy: await ctx.db.get(document.createdBy),
+          memoizedDocumentId: memoizedDocument._id,
         };
       })
     ).then((docs) =>
