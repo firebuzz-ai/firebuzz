@@ -42,6 +42,7 @@ export const getPaginated = query({
             isArchived ? q.eq(q.field("isArchived"), isArchived ?? false) : true
           )
           .filter((q) => q.eq(q.field("deletedAt"), undefined))
+          .filter((q) => q.eq(q.field("isMemoryItem"), false))
           .paginate(paginationOpts)
       : ctx.db
           .query("documents")
@@ -51,6 +52,7 @@ export const getPaginated = query({
           )
           .filter((q) => (type ? q.eq(q.field("type"), type) : true))
           .filter((q) => q.eq(q.field("deletedAt"), undefined))
+          .filter((q) => q.eq(q.field("isMemoryItem"), false))
           .order(sortOrder)
           .paginate(paginationOpts);
 

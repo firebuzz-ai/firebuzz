@@ -38,6 +38,7 @@ export const create = mutationWithTrigger({
       knowledgeBases: hasKnowledgeBases ? knowledgeBases : [],
       vectorizationStatus: hasKnowledgeBases ? "queued" : "not-indexed",
       chunkingStatus: "queued",
+      isMemoryItem: false,
     });
 
     return documentId;
@@ -304,5 +305,51 @@ export const updateWithoutTrigger = internalMutation({
     if (Object.keys(updates).length > 0) {
       await ctx.db.patch(documentId, updates);
     }
+  },
+});
+
+export const createMemoryItem = mutationWithTrigger({
+  args: {
+    key: v.string(),
+    name: v.string(),
+    content: v.string(),
+    size: v.number(),
+    knowledgeBase: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, args) => {
+    // Check if user is allowed to create document
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId || !user.currentProject) {
+      throw new Error("You are not allowed to create a document");
+    }
+
+    const documentId = await ctx.db.insert("documents", {
+      key: args.key,
+      name: args.name,
+      size: args.size,
+      contentType: "text/markdown",
+      type: "md",
+      workspaceId: user.currentWorkspaceId,
+      createdBy: user._id,
+      projectId: user.currentProject,
+      knowledgeBases: [args.knowledgeBase],
+      vectorizationStatus: "queued",
+      chunkingStatus: "queued",
+      isMemoryItem: true,
+    });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.collections.storage.documents.chunks.actions.chunkMemoryItem,
+      {
+        documentId,
+        name: args.name,
+        content: args.content,
+        workspaceId: user.currentWorkspaceId,
+        projectId: user.currentProject,
+      }
+    );
+
+    return documentId;
   },
 });

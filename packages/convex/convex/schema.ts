@@ -99,5 +99,6 @@ export default defineSchema({
   // Helper Tables
   memoizedDocuments: defineTable(memoizedDocumentsSchema)
     .index("by_knowledge_base", ["knowledgeBaseId"])
-    .index("by_document_id", ["documentId"]),
+    .index("by_document_id", ["documentId"])
+    .index("by_document_id_knowledge_base", ["documentId", "knowledgeBaseId"]),
 });

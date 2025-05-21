@@ -261,6 +261,11 @@ triggers.register("media", async (ctx, change) => {
 
 // Documents Aggregate
 triggers.register("documents", async (ctx, change) => {
+  // If the document is a memory item, don't aggregate it
+  if (change.newDoc?.isMemoryItem || change.oldDoc?.isMemoryItem) {
+    return;
+  }
+
   if (change.operation === "insert") {
     const doc = change.newDoc;
     await aggregateDocuments.insert(ctx, doc);
@@ -304,12 +309,13 @@ triggers.register("memoizedDocuments", async (ctx, change) => {
 
 // Chunk Document
 triggers.register("documents", async (ctx, change) => {
-  if (change.operation === "insert") {
+  if (change.operation === "insert" && !change.newDoc.isMemoryItem) {
     await ctx.scheduler.runAfter(
       0,
       internal.collections.storage.documents.chunks.actions.chunkDocument,
       {
         documentId: change.newDoc._id,
+        name: change.newDoc.name,
         key: change.newDoc.key,
         type: change.newDoc.type,
         workspaceId: change.newDoc.workspaceId,

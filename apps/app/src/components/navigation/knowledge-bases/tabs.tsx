@@ -1,20 +1,27 @@
 "use client";
 
+import { useNewDocumentModal } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/new-document/use-new-document-modal";
 import { useNewKnowledgeBaseModal } from "@/hooks/ui/use-new-knowledgebase-modal";
+import { useNewMemoryItem } from "@/hooks/ui/use-new-memory-item";
 import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex";
 import {
   AnimatedTabs,
   type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
-import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
-import { Separator } from "@firebuzz/ui/components/ui/separator";
+import { Button } from "@firebuzz/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@firebuzz/ui/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Pencil, Plus, Settings } from "@firebuzz/ui/icons/lucide";
+import { ChevronDown, Pencil, Plus, Upload } from "@firebuzz/ui/icons/lucide";
 import { usePathname } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 
@@ -34,12 +41,15 @@ export const KnowledgeBaseTabs = ({
     "knowledge-base-settings"
   );
   const [, setIsNewModalOpen] = useNewKnowledgeBaseModal();
+  const { setState: setNewDocumentModalState } = useNewDocumentModal();
+  const [, setNewMemoryItemState] = useNewMemoryItem();
 
-  // Handle save
-  const handleSave = async () => {};
-
-  // Handle publish
-  const handlePublish = async () => {};
+  const openNewMemoryItemModal = () => {
+    setNewMemoryItemState({
+      createMemoryItem: true,
+      knowledgeBase: id,
+    });
+  };
 
   return (
     <div className="relative flex items-center justify-between px-2 border-b">
@@ -94,22 +104,44 @@ export const KnowledgeBaseTabs = ({
       {/* Buttons */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={handleSave}>
-            <Plus className="!size-3.5" />
-            New Document
-            <ButtonShortcut>⌘S</ButtonShortcut>
-          </Button>
-          <Separator orientation="vertical" className="h-4" />
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="iconSm" onClick={handlePublish}>
-                <Settings className="!size-3.5" />
+          <DropdownMenu>
+            <DropdownMenuTrigger className="group" asChild>
+              <Button variant="outline" className="h-8 !p-0">
+                <div className="flex items-center gap-2 pl-3">
+                  <Plus className="!size-3.5" /> New Memory Item
+                </div>
+                <div className="flex items-center justify-center h-full pl-2 pr-2 border-l">
+                  <ChevronDown className="transition-transform duration-100 ease-in-out !size-3.5 group-aria-expanded:rotate-180" />
+                </div>
               </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" align="end" sideOffset={5}>
-              Settings
-            </TooltipContent>
-          </Tooltip>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="bottom"
+              align="end"
+              sideOffset={10}
+              className="w-[--radix-dropdown-menu-trigger-width]"
+            >
+              <DropdownMenuItem
+                onClick={() => {
+                  if (id) {
+                    setNewDocumentModalState({
+                      isOpen: true,
+                      isKnowledgeBaseEnabled: true,
+                      selectedKnowledgeBase: id,
+                      files: [],
+                    });
+                  }
+                }}
+              >
+                <Upload className="!size-3.5" />
+                Upload Document
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={openNewMemoryItemModal}>
+                <Pencil className="!size-3.5" />
+                Write a New
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>

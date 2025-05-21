@@ -6,6 +6,7 @@ export const knowledgeBaseSchema = v.object({
   description: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   isSystem: v.boolean(),
+  isVisible: v.boolean(),
   // Relations
   workspaceId: v.id("workspaces"),
   projectId: v.id("projects"),

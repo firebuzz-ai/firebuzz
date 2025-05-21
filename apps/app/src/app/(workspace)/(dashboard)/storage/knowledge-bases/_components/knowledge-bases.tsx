@@ -4,14 +4,19 @@ import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
 
+import { NewMemoryItemModal } from "@/components/modals/knowledge-base/new-memory/modal";
 import { KnowledgeBaseSettingsSheet } from "@/components/sheets/settings/knowledge-bases/sheet";
+import { NewDocumentModal } from "../../documents/_components/modals/new-document/modal";
 import { MemoryList } from "./memory-list";
 import { NewKnowledgeBaseModal } from "./modals/new-knowledge-base/modal";
 
 export const KnowledgeBases = () => {
   const [id, setId] = useState<Id<"knowledgeBases">>();
   const { data: knowledgeBases, isPending: isLoading } = useCachedRichQuery(
-    api.collections.storage.knowledgeBases.queries.getAll
+    api.collections.storage.knowledgeBases.queries.getAll,
+    {
+      showHidden: false,
+    }
   );
 
   const tabs = useMemo(() => {
@@ -37,12 +42,14 @@ export const KnowledgeBases = () => {
   }
 
   return (
-    <div className="flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
+    <div className="relative flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
       <KnowledgeBaseTabs tabs={tabs ?? []} id={id} setId={setId} />
       <MemoryList knowledgeBaseId={id} />
       {/* Modal */}
       <NewKnowledgeBaseModal />
       {id && <KnowledgeBaseSettingsSheet />}
+      <NewDocumentModal />
+      <NewMemoryItemModal />
     </div>
   );
 };

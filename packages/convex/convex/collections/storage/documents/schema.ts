@@ -15,6 +15,7 @@ export const documentsSchema = v.object({
   summary: v.optional(v.string()),
   title: v.optional(v.string()),
   isLongDocument: v.optional(v.boolean()),
+  isMemoryItem: v.boolean(),
   size: v.number(),
   contentType: v.string(),
   type: documentType,

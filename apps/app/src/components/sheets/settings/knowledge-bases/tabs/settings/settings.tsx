@@ -43,7 +43,9 @@ export const SettingsTab = ({
   const [, setIsNewModalOpen] = useNewKnowledgeBaseModal();
 
   const { data: knowledgeBases, isPending: isLoadingKnowledgeBases } =
-    useCachedRichQuery(api.collections.storage.knowledgeBases.queries.getAll);
+    useCachedRichQuery(api.collections.storage.knowledgeBases.queries.getAll, {
+      showHidden: true,
+    });
 
   const updateKnowledgeBaseMutation = useMutation(
     api.collections.storage.knowledgeBases.mutations.update
@@ -85,6 +87,14 @@ export const SettingsTab = ({
     );
   };
 
+  const handleToggleVisibility = (id: Id<"knowledgeBases">) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item._id === id ? { ...item, isVisible: !item.isVisible } : item
+      )
+    );
+  };
+
   const handleSave = useCallback(async (): Promise<void> => {
     setOpenAccordionId("");
 
@@ -105,6 +115,7 @@ export const SettingsTab = ({
             name?: string;
             description?: string;
             index?: number;
+            isVisible?: boolean;
           } = { id: item._id };
 
           let changed = false;
@@ -114,6 +125,10 @@ export const SettingsTab = ({
           }
           if ((item.description ?? "") !== (originalItem?.description ?? "")) {
             payload.description = item.description ?? "";
+            changed = true;
+          }
+          if (item.isVisible !== originalItem?.isVisible) {
+            payload.isVisible = item.isVisible;
             changed = true;
           }
           if (
@@ -135,6 +150,10 @@ export const SettingsTab = ({
                   ? payload.description
                   : (item.description ?? ""),
               index: payload.index !== undefined ? payload.index : index,
+              isVisible:
+                payload.isVisible !== undefined
+                  ? payload.isVisible
+                  : item.isVisible,
             };
             return updateKnowledgeBaseMutation(updatePayload);
           }
@@ -185,6 +204,7 @@ export const SettingsTab = ({
         return (
           item.name !== initialItem.name ||
           (item.description ?? "") !== (initialItem.description ?? "") ||
+          item.isVisible !== initialItem.isVisible ||
           items.findIndex((i) => i._id === item._id) !==
             initialItemsState.findIndex((i) => i._id === item._id)
         );
@@ -259,6 +279,7 @@ export const SettingsTab = ({
                     setCurrentNameValue={setCurrentNameValue}
                     handleNameChange={handleNameChange}
                     handleDescriptionChange={handleDescriptionChange}
+                    handleVisibilityChange={handleToggleVisibility}
                   />
                 );
               })}

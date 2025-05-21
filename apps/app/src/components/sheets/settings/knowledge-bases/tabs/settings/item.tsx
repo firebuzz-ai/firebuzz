@@ -12,7 +12,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Grip, Trash2 } from "@firebuzz/ui/icons/lucide";
+import { Eye, EyeOff, Grip, Trash2 } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { Reorder, useDragControls } from "motion/react";
 import type React from "react";
@@ -33,6 +33,7 @@ interface KnowledgeBaseReorderableItemProps {
     newDescription: string
   ) => void;
   handleDelete: (id: Id<"knowledgeBases">) => void;
+  handleVisibilityChange: (id: Id<"knowledgeBases">) => void;
 }
 
 export const KnowledgeBaseReorderableItem: React.FC<
@@ -47,6 +48,7 @@ export const KnowledgeBaseReorderableItem: React.FC<
   handleNameChange,
   handleDescriptionChange,
   handleDelete,
+  handleVisibilityChange,
 }) => {
   const dragControls = useDragControls();
   const [isDragging, setIsDragging] = useState(false);
@@ -57,7 +59,8 @@ export const KnowledgeBaseReorderableItem: React.FC<
       value={item}
       className={cn(
         "list-none border rounded-lg shadow-sm bg-background relative",
-        isDragging && "shadow-lg scale-105 z-10"
+        isDragging && "shadow-lg scale-105 z-10",
+        !item.isVisible && "opacity-60"
       )}
       dragListener={false}
       dragControls={dragControls}
@@ -171,6 +174,41 @@ export const KnowledgeBaseReorderableItem: React.FC<
             </TooltipTrigger>
             <TooltipContent side="left">
               {item.isSystem ? "Brand is not deletable." : "Delete"}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <div
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "iconXs",
+                  className: "size-6",
+                })}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!item.isSystem) {
+                    handleVisibilityChange(item._id);
+                  }
+                }}
+              >
+                {item.isVisible ? (
+                  <Eye
+                    className={cn(item.isSystem && "opacity-50", "!size-3.5")}
+                  />
+                ) : (
+                  <EyeOff
+                    className={cn(item.isSystem && "opacity-50", "!size-3.5")}
+                  />
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left">
+              {item.isSystem
+                ? "System knowledge bases cannot be hidden."
+                : item.isVisible
+                  ? "Hide"
+                  : "Show"}
             </TooltipContent>
           </Tooltip>
         </AccordionTrigger>

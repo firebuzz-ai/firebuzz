@@ -1,6 +1,5 @@
 import {
   ConvexError,
-  type Doc,
   type Id,
   api,
   useCachedRichQuery,
@@ -18,7 +17,9 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@firebuzz/ui/components/ui/dropdown-menu";
+import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import {
+  Copy,
   CornerDownRight,
   EllipsisVertical,
   Trash,
@@ -27,15 +28,12 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
-
+import type { MemoryItemType } from "./memory-list";
 interface MemoryItemProps {
   currentKnowledgeBaseId: Id<"knowledgeBases">;
   selected: boolean;
-  setSelected: Dispatch<SetStateAction<string[]>>;
-  data: Omit<Doc<"documents">, "createdBy"> & {
-    createdBy: Doc<"users"> | null;
-    memoizedDocumentId: Id<"memoizedDocuments">;
-  };
+  setSelected: Dispatch<SetStateAction<Id<"memoizedDocuments">[]>>;
+  data: MemoryItemType;
 }
 
 export const MemoryItem = ({
@@ -45,7 +43,10 @@ export const MemoryItem = ({
   setSelected,
 }: MemoryItemProps) => {
   const { data: knowledgeBases } = useCachedRichQuery(
-    api.collections.storage.knowledgeBases.queries.getAll
+    api.collections.storage.knowledgeBases.queries.getAll,
+    {
+      showHidden: true,
+    }
   );
 
   const deleteMutation = useMutation(
@@ -108,13 +109,49 @@ export const MemoryItem = ({
     }
   };
 
+  // Return Skeleton if summary is empty or loading
+  if (!data.summary && data.summary !== "") {
+    return (
+      <motion.div
+        layoutId={`memory-${data._id}`}
+        className="relative flex flex-col gap-3 py-3 overflow-hidden transition-colors duration-100 ease-in-out border rounded-md cursor-default bg-background border-border hover:bg-muted/50"
+      >
+        <div className="px-3">
+          {/* Title Skeleton */}
+          <Skeleton className="w-3/4 mb-2 h-7" />
+          {/* Info Skeleton */}
+          <div className="flex items-center gap-2">
+            <Skeleton className="rounded-full size-2" />
+            <Skeleton className="w-40 h-3" />
+          </div>
+        </div>
+
+        {/* Summary Skeleton */}
+        <div className="p-3 border-t border-b bg-muted">
+          <Skeleton className="w-full h-4 mb-2" />
+          <Skeleton className="w-4/5 h-4 mb-2" />
+          <Skeleton className="w-3/5 h-4" />
+        </div>
+
+        {/* Footer Skeleton */}
+        <div className="flex items-center justify-between px-3">
+          <div className="flex items-center gap-2">
+            <Skeleton className="w-5 h-5" />
+            <Skeleton className="w-24 h-5" />
+          </div>
+          <Skeleton className="w-6 h-6" />
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       onClick={() =>
         setSelected((prev) =>
-          prev.includes(data._id)
-            ? prev.filter((id) => id !== data._id)
-            : [...prev, data._id]
+          prev.includes(data.memoizedDocumentId)
+            ? prev.filter((id) => id !== data.memoizedDocumentId)
+            : [...prev, data.memoizedDocumentId]
         )
       }
       layoutId={`memory-${data._id}`}
@@ -175,22 +212,12 @@ export const MemoryItem = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="bottom" align="end" sideOffset={5}>
-                  <DropdownMenuItem
-                    onSelect={(e) => {
-                      e.stopPropagation();
-                      deleteHandler();
-                    }}
-                  >
-                    <Trash className="size-3" />
-                    Delete
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <CornerDownRight className="size-3" />
                       Move to
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent sideOffset={10}>
                       {knowledgeBases?.map((knowledgeBase) => (
                         <DropdownMenuItem
                           disabled={
@@ -210,10 +237,10 @@ export const MemoryItem = ({
 
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <CornerDownRight className="size-3" />
+                      <Copy className="size-3" />
                       Duplicate to
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent sideOffset={10}>
                       {knowledgeBases?.map((knowledgeBase) => (
                         <DropdownMenuItem
                           disabled={
@@ -230,6 +257,16 @@ export const MemoryItem = ({
                       ))}
                     </DropdownMenuSubContent>
                   </DropdownMenuSub>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={(e) => {
+                      e.stopPropagation();
+                      deleteHandler();
+                    }}
+                  >
+                    <Trash className="size-3" />
+                    Delete
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>

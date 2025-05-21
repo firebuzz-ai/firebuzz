@@ -1,6 +1,7 @@
 import { TableFooter } from "@/components/tables/paginated-footer";
 import { useProject } from "@/hooks/auth/use-project";
 import {
+  type Doc,
   type Id,
   api,
   useCachedQuery,
@@ -11,9 +12,17 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Upload } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
+import { useNewDocumentModal } from "../../documents/_components/modals/new-document/use-new-document-modal";
 import { MemoryItem } from "./memory-item";
+import { SelectedMenu } from "./selected-menu";
+import { SemanticSearchBar } from "./semantic-search-bar";
+
+export type MemoryItemType = Omit<Doc<"documents">, "createdBy"> & {
+  createdBy: Doc<"users"> | null;
+  memoizedDocumentId: Id<"memoizedDocuments">;
+};
 
 interface MemoryListProps {
   knowledgeBaseId: Id<"knowledgeBases"> | undefined;
@@ -22,10 +31,12 @@ interface MemoryListProps {
 export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
   const { currentProject } = useProject();
   const [sortOrder, _setSortOrder] = useState<"asc" | "desc">("desc");
-  const [selected, setSelected] = useState<string[]>([]);
-
+  const [selected, setSelected] = useState<Id<"memoizedDocuments">[]>([]);
+  const [searchResults, setSearchResults] = useState<MemoryItemType[]>([]);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const { setState: setNewDocumentModalState } = useNewDocumentModal();
   const {
-    results: memories,
+    results: memoriesData,
     status,
     loadMore,
   } = useStablePaginatedQuery(
@@ -38,6 +49,10 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
       : "skip",
     { initialNumItems: 5 }
   );
+
+  const memories = useMemo(() => {
+    return isSearchActive ? searchResults : memoriesData;
+  }, [searchResults, memoriesData, isSearchActive]);
 
   const totalCount = useCachedQuery(
     api.collections.storage.documents.queries.getTotalCountByKnowledgeBase,
@@ -83,12 +98,14 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
       return;
     }
 
-    // setNewDocumentModalState({
-    //   files: acceptedFiles,
-    //   isOpen: true,
-    //   isKnowledgeBaseEnabled: false,
-    //   selectedKnowledgeBase: null,
-    // });
+    if (knowledgeBaseId) {
+      setNewDocumentModalState({
+        files: acceptedFiles,
+        isOpen: true,
+        isKnowledgeBaseEnabled: true,
+        selectedKnowledgeBase: knowledgeBaseId,
+      });
+    }
   };
 
   const onDropRejected = (fileRejections: FileRejection[]) => {
@@ -213,7 +230,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
                 />
               ))}
             </div>
-          ) : memories && memories.length === 0 ? (
+          ) : memories && memories.length === 0 && !isSearchActive ? (
             <div
               className={cn(
                 "flex items-center justify-center h-full transition-opacity duration-300 ease-in-out",
@@ -224,6 +241,12 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
                 No memories found. Upload a document to get started.
               </p>
             </div>
+          ) : isSearchActive && searchResults.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-center text-muted-foreground">
+                No results found. Try a different search query.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-3 gap-4">
               {memories.map((item) => (
@@ -231,7 +254,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
                   currentKnowledgeBaseId={knowledgeBaseId}
                   key={item._id}
                   data={item}
-                  selected={selected.includes(item._id)}
+                  selected={selected.includes(item.memoizedDocumentId)}
                   setSelected={setSelected}
                 />
               ))}
@@ -258,6 +281,21 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
             ? "LoadingFirstPage"
             : status
         }
+      />
+
+      <SelectedMenu
+        selections={selected}
+        setSelections={setSelected}
+        totalCount={totalCount ?? 0}
+        currentKnowledgeBaseId={knowledgeBaseId}
+      />
+
+      <SemanticSearchBar
+        isSearchActive={isSearchActive}
+        setIsSearchActive={setIsSearchActive}
+        knowledgeBaseId={knowledgeBaseId}
+        isVisible={selected.length === 0}
+        setSearchResults={setSearchResults}
       />
     </div>
   );

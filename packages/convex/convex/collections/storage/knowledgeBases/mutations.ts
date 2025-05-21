@@ -31,6 +31,7 @@ export const create = mutationWithTrigger({
       projectId: user.currentProject,
       index,
       isSystem: false,
+      isVisible: true,
     });
 
     return knowledgeBase;
@@ -43,6 +44,7 @@ export const update = mutationWithTrigger({
     name: v.string(),
     description: v.string(),
     index: v.optional(v.number()),
+    isVisible: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -51,13 +53,18 @@ export const update = mutationWithTrigger({
       throw new Error("Unauthorized");
     }
 
-    const updateObject: Record<string, string | number | undefined> = {
-      name: args.name,
-      description: args.description,
-    };
+    const updateObject: Record<string, string | number | undefined | boolean> =
+      {
+        name: args.name,
+        description: args.description,
+      };
 
     if (args.index !== undefined) {
       updateObject.index = args.index;
+    }
+
+    if (args.isVisible !== undefined) {
+      updateObject.isVisible = args.isVisible;
     }
 
     console.log("updateObject", updateObject);

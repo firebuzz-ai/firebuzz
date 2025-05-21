@@ -3,8 +3,10 @@ import { query } from "../../../_generated/server";
 import { getCurrentUser } from "../../users/utils";
 
 export const getAll = query({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    showHidden: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
     const projectId = user?.currentProject;
 
@@ -15,6 +17,9 @@ export const getAll = query({
     const knowledgeBases = await ctx.db
       .query("knowledgeBases")
       .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+      .filter((q) =>
+        args.showHidden ? true : q.eq(q.field("isVisible"), true)
+      )
       .take(10);
 
     return knowledgeBases.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));

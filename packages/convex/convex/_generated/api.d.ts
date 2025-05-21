@@ -33,6 +33,7 @@ import type * as collections_storage_documents_chunks_actions from "../collectio
 import type * as collections_storage_documents_chunks_mutations from "../collections/storage/documents/chunks/mutations.js";
 import type * as collections_storage_documents_chunks_queries from "../collections/storage/documents/chunks/queries.js";
 import type * as collections_storage_documents_memoized_mutations from "../collections/storage/documents/memoized/mutations.js";
+import type * as collections_storage_documents_memoized_queries from "../collections/storage/documents/memoized/queries.js";
 import type * as collections_storage_documents_memoized_utils from "../collections/storage/documents/memoized/utils.js";
 import type * as collections_storage_documents_mutations from "../collections/storage/documents/mutations.js";
 import type * as collections_storage_documents_queries from "../collections/storage/documents/queries.js";
@@ -41,6 +42,7 @@ import type * as collections_storage_documents_vectors_actions from "../collecti
 import type * as collections_storage_documents_vectors_mutations from "../collections/storage/documents/vectors/mutations.js";
 import type * as collections_storage_documents_vectors_queries from "../collections/storage/documents/vectors/queries.js";
 import type * as collections_storage_documents_vectors_utils from "../collections/storage/documents/vectors/utils.js";
+import type * as collections_storage_knowledgeBases_actions from "../collections/storage/knowledgeBases/actions.js";
 import type * as collections_storage_knowledgeBases_mutations from "../collections/storage/knowledgeBases/mutations.js";
 import type * as collections_storage_knowledgeBases_queries from "../collections/storage/knowledgeBases/queries.js";
 import type * as collections_storage_media_actions from "../collections/storage/media/actions.js";
@@ -106,6 +108,7 @@ declare const fullApi: ApiFromModules<{
   "collections/storage/documents/chunks/mutations": typeof collections_storage_documents_chunks_mutations;
   "collections/storage/documents/chunks/queries": typeof collections_storage_documents_chunks_queries;
   "collections/storage/documents/memoized/mutations": typeof collections_storage_documents_memoized_mutations;
+  "collections/storage/documents/memoized/queries": typeof collections_storage_documents_memoized_queries;
   "collections/storage/documents/memoized/utils": typeof collections_storage_documents_memoized_utils;
   "collections/storage/documents/mutations": typeof collections_storage_documents_mutations;
   "collections/storage/documents/queries": typeof collections_storage_documents_queries;
@@ -114,6 +117,7 @@ declare const fullApi: ApiFromModules<{
   "collections/storage/documents/vectors/mutations": typeof collections_storage_documents_vectors_mutations;
   "collections/storage/documents/vectors/queries": typeof collections_storage_documents_vectors_queries;
   "collections/storage/documents/vectors/utils": typeof collections_storage_documents_vectors_utils;
+  "collections/storage/knowledgeBases/actions": typeof collections_storage_knowledgeBases_actions;
   "collections/storage/knowledgeBases/mutations": typeof collections_storage_knowledgeBases_mutations;
   "collections/storage/knowledgeBases/queries": typeof collections_storage_knowledgeBases_queries;
   "collections/storage/media/actions": typeof collections_storage_media_actions;
