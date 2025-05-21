@@ -116,7 +116,8 @@ export const UploadTab = ({
   );
 
   const knowledgeBases = useCachedQuery(
-    api.collections.storage.knowledgeBases.queries.getAll
+    api.collections.storage.knowledgeBases.queries.getAll,
+    { showHidden: true }
   );
 
   const generateAcceptTypes = (): Accept => {
