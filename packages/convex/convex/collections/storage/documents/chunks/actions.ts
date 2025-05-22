@@ -4,6 +4,7 @@ import type { Document } from "@llamaindex/core/schema";
 import { CSVReader } from "@llamaindex/readers/csv";
 import { DocxReader } from "@llamaindex/readers/docx";
 import { HTMLReader } from "@llamaindex/readers/html";
+import { JSONReader } from "@llamaindex/readers/json";
 import { MarkdownReader } from "@llamaindex/readers/markdown";
 import { PDFReader } from "@llamaindex/readers/pdf";
 import { TextFileReader } from "@llamaindex/readers/text";
@@ -34,6 +35,7 @@ const DOCUMENT_READERS = {
   pdf: PDFReader,
   csv: CSVReader,
   docx: DocxReader,
+  json: JSONReader,
 } as const;
 
 export const chunkDocument = internalAction({

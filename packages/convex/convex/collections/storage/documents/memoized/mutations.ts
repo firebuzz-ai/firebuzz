@@ -14,7 +14,24 @@ export const create = internalMutationWithTrigger({
     projectId: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    await asyncMap(args.knowledgeBases, async (knowledgeBase) => {
+    // Get all memoized documents for the document
+    const memoizedDocuments = await ctx.db
+      .query("memoizedDocuments")
+      .withIndex("by_document_id", (q) => q.eq("documentId", args.documentId))
+      .collect();
+
+    const existingKnowledgeBaseIds = memoizedDocuments.map(
+      (memoizedDocument) => memoizedDocument.knowledgeBaseId
+    );
+
+    // Create unique knowledge base ids
+    const uniqueKnowledgeBaseIds = args.knowledgeBases.filter(
+      (knowledgeBase, index, self) =>
+        self.indexOf(knowledgeBase) === index &&
+        !existingKnowledgeBaseIds.includes(knowledgeBase)
+    );
+
+    await asyncMap(uniqueKnowledgeBaseIds, async (knowledgeBase) => {
       await ctx.db.insert("memoizedDocuments", {
         documentId: args.documentId,
         knowledgeBaseId: knowledgeBase,

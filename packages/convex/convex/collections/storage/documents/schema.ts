@@ -6,7 +6,8 @@ export const documentType = v.union(
   v.literal("txt"),
   v.literal("pdf"),
   v.literal("csv"),
-  v.literal("docx")
+  v.literal("docx"),
+  v.literal("json")
 );
 
 export const documentsSchema = v.object({

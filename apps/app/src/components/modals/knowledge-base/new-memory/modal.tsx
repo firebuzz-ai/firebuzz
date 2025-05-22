@@ -60,6 +60,7 @@ export const NewMemoryItemModal = () => {
       return;
     }
     const content = editor.storage.markdown.getMarkdown();
+    const jsonContent = editor.getJSON();
     if (content.trim() === "") {
       toast.error("You can't create an empty memory item.", {
         description: "Please add some content to the memory item.",
@@ -70,9 +71,9 @@ export const NewMemoryItemModal = () => {
     try {
       setIsLoading(true);
       // Create MD file with content
-      const fileName = `memory-item-${Date.now()}.md`;
-      const file = new File([content], fileName, {
-        type: "text/markdown",
+      const fileName = `memory-item-${Date.now()}.json`;
+      const file = new File([JSON.stringify(jsonContent)], fileName, {
+        type: "application/json",
       });
 
       // Upload file to R2
@@ -122,13 +123,15 @@ export const NewMemoryItemModal = () => {
     >
       <DialogContent
         onOpenAutoFocus={(e) => e.preventDefault()}
-        className="sm:max-w-[50vw] w-full h-[70vh] flex flex-col !gap-0 !p-0"
+        className="sm:max-w-2xl w-full h-[70vh] flex flex-col !gap-0 !p-0"
       >
         <DialogHeader className="px-4 py-4">
-          <DialogTitle>New Memory Item</DialogTitle>
-          <DialogDescription>
-            Create a new memory item for your knowledge base.
-          </DialogDescription>
+          <div className="w-full max-w-xl mx-auto">
+            <DialogTitle>New Memory Item</DialogTitle>
+            <DialogDescription>
+              Create a new memory item for your knowledge base.
+            </DialogDescription>
+          </div>
         </DialogHeader>
 
         <div className="flex flex-col flex-1 h-full overflow-hidden">

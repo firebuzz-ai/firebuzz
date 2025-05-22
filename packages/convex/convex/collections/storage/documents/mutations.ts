@@ -327,8 +327,8 @@ export const createMemoryItem = mutationWithTrigger({
       key: args.key,
       name: args.name,
       size: args.size,
-      contentType: "text/markdown",
-      type: "md",
+      contentType: "application/json",
+      type: "json",
       workspaceId: user.currentWorkspaceId,
       createdBy: user._id,
       projectId: user.currentProject,
@@ -351,5 +351,71 @@ export const createMemoryItem = mutationWithTrigger({
     );
 
     return documentId;
+  },
+});
+
+export const updateMemoryItem = mutationWithTrigger({
+  args: {
+    originalKey: v.string(),
+    newKey: v.string(),
+    documentId: v.id("documents"),
+    name: v.string(),
+    content: v.string(),
+    size: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Check if user is allowed to create document
+    const user = await getCurrentUser(ctx);
+    if (!user || !user.currentWorkspaceId || !user.currentProject) {
+      throw new Error("You are not allowed to create a document");
+    }
+
+    // Update Document
+    await ctx.db.patch(args.documentId, {
+      key: args.newKey,
+      name: args.name,
+      size: args.size,
+      summary: "", // Reset Summary
+      title: "", // Reset Title
+      chunkingStatus: "queued",
+      vectorizationStatus: "queued",
+    });
+
+    // Get old chunks
+    const oldChunks = await ctx.db
+      .query("documentChunks")
+      .withIndex("by_document_id", (q) => q.eq("documentId", args.documentId))
+      .collect();
+
+    // Delete old chunks
+    await asyncMap(oldChunks, async (chunk) => {
+      await ctx.db.delete(chunk._id);
+    });
+
+    // Get old vectors
+    const oldVectors = await ctx.db
+      .query("documentVectors")
+      .withIndex("by_document_id", (q) => q.eq("documentId", args.documentId))
+      .collect();
+
+    // Delete old vectors
+    await asyncMap(oldVectors, async (vector) => {
+      await ctx.db.delete(vector._id);
+    });
+
+    // Create new chunks
+    await ctx.scheduler.runAfter(
+      0,
+      internal.collections.storage.documents.chunks.actions.chunkMemoryItem,
+      {
+        documentId: args.documentId,
+        name: args.name,
+        content: args.content,
+        workspaceId: user.currentWorkspaceId,
+        projectId: user.currentProject,
+      }
+    );
+
+    return args.documentId;
   },
 });

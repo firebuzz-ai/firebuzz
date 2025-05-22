@@ -55,13 +55,8 @@ body {
 }
 
 .simple-editor-content {
-  max-width: 640px;
   width: 100%;
   margin: 0 auto;
-}
-
-.simple-editor-content .tiptap.ProseMirror {
-  padding: 3rem 3rem;
 }
 
 @media screen and (max-width: 480px) {

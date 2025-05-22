@@ -1,3 +1,4 @@
+import { useEditMemoryItem } from "@/hooks/ui/use-edit-memory-item";
 import {
   ConvexError,
   type Id,
@@ -22,12 +23,13 @@ import {
   Copy,
   CornerDownRight,
   EllipsisVertical,
+  Pencil,
   Trash,
 } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { motion } from "motion/react";
-import type { Dispatch, SetStateAction } from "react";
+import { type Dispatch, type SetStateAction, useMemo } from "react";
 import type { MemoryItemType } from "./memory-list";
 interface MemoryItemProps {
   currentKnowledgeBaseId: Id<"knowledgeBases">;
@@ -42,6 +44,8 @@ export const MemoryItem = ({
   selected,
   setSelected,
 }: MemoryItemProps) => {
+  const [, setEditModalState] = useEditMemoryItem();
+
   const { data: knowledgeBases } = useCachedRichQuery(
     api.collections.storage.knowledgeBases.queries.getAll,
     {
@@ -61,6 +65,20 @@ export const MemoryItem = ({
     api.collections.storage.documents.memoized.mutations
       .duplicateToKnowledgeBase
   );
+
+  const isNativeMemoryItem = useMemo(() => {
+    return data.isMemoryItem;
+  }, [data.isMemoryItem]);
+
+  const openEditMemoryItemModal = () => {
+    if (isNativeMemoryItem) {
+      setEditModalState({
+        documentKey: data.key,
+        documentId: data._id,
+        editMemoryItem: true,
+      });
+    }
+  };
 
   const deleteHandler = async () => {
     try {
@@ -110,7 +128,7 @@ export const MemoryItem = ({
   };
 
   // Return Skeleton if summary is empty or loading
-  if (!data.summary && data.summary !== "") {
+  if (!data.summary || data.summary === "") {
     return (
       <motion.div
         layoutId={`memory-${data._id}`}
@@ -212,6 +230,17 @@ export const MemoryItem = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent side="bottom" align="end" sideOffset={5}>
+                  <DropdownMenuItem
+                    disabled={!isNativeMemoryItem}
+                    onSelect={(e) => {
+                      e.stopPropagation();
+                      openEditMemoryItemModal();
+                    }}
+                  >
+                    <Pencil className="size-3" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <CornerDownRight className="size-3" />

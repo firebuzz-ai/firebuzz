@@ -266,11 +266,11 @@ export function SimpleEditor({
         )}
       </Toolbar>
 
-      <div className="content-wrapper">
+      <div className="px-4 content-wrapper">
         <EditorContent
           editor={editor}
           role="presentation"
-          className="simple-editor-content"
+          className="!max-w-xl  simple-editor-content  pt-4"
         />
       </div>
     </EditorContext.Provider>

@@ -4,6 +4,7 @@ import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
 
+import { EditMemoryItemModal } from "@/components/modals/knowledge-base/edit-memory-item/modal";
 import { NewMemoryItemModal } from "@/components/modals/knowledge-base/new-memory/modal";
 import { KnowledgeBaseSettingsSheet } from "@/components/sheets/settings/knowledge-bases/sheet";
 import { NewDocumentModal } from "../../documents/_components/modals/new-document/modal";
@@ -50,6 +51,7 @@ export const KnowledgeBases = () => {
       {id && <KnowledgeBaseSettingsSheet />}
       <NewDocumentModal />
       <NewMemoryItemModal />
+      <EditMemoryItemModal />
     </div>
   );
 };
