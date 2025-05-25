@@ -23,7 +23,6 @@ export const KnowledgeBases = () => {
   const tabs = useMemo(() => {
     return knowledgeBases?.map((knowledgeBase) => ({
       value: knowledgeBase._id,
-      href: `/storage/knowledge-bases/${knowledgeBase._id}`,
       label: knowledgeBase.name,
     }));
   }, [knowledgeBases]);

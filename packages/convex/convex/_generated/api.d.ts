@@ -9,6 +9,10 @@
  */
 
 import type * as aggregates from "../aggregates.js";
+import type * as collections_brands_mutations from "../collections/brands/mutations.js";
+import type * as collections_brands_queries from "../collections/brands/queries.js";
+import type * as collections_brands_themes_mutations from "../collections/brands/themes/mutations.js";
+import type * as collections_brands_themes_queries from "../collections/brands/themes/queries.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
 import type * as collections_campaigns_utils from "../collections/campaigns/utils.js";
@@ -84,6 +88,10 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   aggregates: typeof aggregates;
+  "collections/brands/mutations": typeof collections_brands_mutations;
+  "collections/brands/queries": typeof collections_brands_queries;
+  "collections/brands/themes/mutations": typeof collections_brands_themes_mutations;
+  "collections/brands/themes/queries": typeof collections_brands_themes_queries;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
   "collections/campaigns/utils": typeof collections_campaigns_utils;

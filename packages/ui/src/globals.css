@@ -3,141 +3,143 @@
 @tailwind utilities;
 
 @layer base {
-	:root {
-		/* Main colors */
-		--background: 0 0% 100%; /* White */
-		--background-subtle: 60 9% 98%; /* Stone50 */
-		--foreground: 240 5.9% 10%; /* Zinc900 */
+  :root {
+    /* Main colors */
+    --background: 0 0% 100%; /* White */
+    --background-subtle: 60 9% 98%; /* Stone50 */
+    --foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Muted colors */
-		--muted: 60 9% 98%; /* Stone50 */
-		--muted-foreground: 240 3.83% 46.08%;
+    /* Muted colors */
+    --muted: 60 9% 98%; /* Stone50 */
+    --muted-foreground: 240 3.83% 46.08%;
 
-		/* Popover colors */
-		--popover: 0 0% 100%; /* White */
-		--popover-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Popover colors */
+    --popover: 0 0% 100%; /* White */
+    --popover-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Border and input colors */
-		--border: 240 4.8% 95.9%; /* Zinc100 */
-		--input: 240 4.8% 95.9%; /* Zinc100 */
+    /* Border and input colors */
+    --border: 240 4.8% 95.9%; /* Zinc100 */
+    --input: 240 4.8% 95.9%; /* Zinc100 */
 
-		/* Card colors */
-		--card: 0 0% 100%; /* White */
-		--card-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Card colors */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Primary colors */
-		--primary: 240 5.9% 10%; /* Zinc900 */
-		--primary-foreground: 0 0% 100%; /* White */
+    /* Primary colors */
+    --primary: 240 5.9% 10%; /* Zinc900 */
+    --primary-foreground: 0 0% 100%; /* White */
 
-		/* Brand colors */
-		--brand: 25 94.6% 56.5%; /* Brand */
-		--brand-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Brand colors */
+    --brand: 25 94.6% 56.5%; /* Brand */
+    --brand-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Secondary colors */
-		--secondary: 240 4.8% 95.9%; /* Zinc100 */
-		--secondary-foreground: 240 5.3% 26.1%; /* Zinc700 */
+    /* Secondary colors */
+    --secondary: 240 4.8% 95.9%; /* Zinc100 */
+    --secondary-foreground: 240 5.3% 26.1%; /* Zinc700 */
 
-		/* Accent colors */
-		--accent: 0 0% 98%; /* Zinc50 */
-		--accent-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Accent colors */
+    --accent: 0 0% 98%; /* Zinc50 */
+    --accent-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Destructive colors */
-		--destructive: 346.84 77.17% 49.8%; /* Rose600 */
-		--destructive-foreground: 355.71 100% 97.25%; /* Rose50 */
+    /* Destructive colors */
+    --destructive: 346.84 77.17% 49.8%; /* Rose600 */
+    --destructive-foreground: 355.71 100% 97.25%; /* Rose50 */
 
-		/* Ring color */
-		--ring: 240 4.8% 95.9%; /* Zinc100 */
+    /* Ring color */
+    --ring: 240 4.8% 95.9%; /* Zinc100 */
 
-		/* Radius */
-		--radius: 0.5rem;
-		/* Sidebar */
-		--sidebar-background: 60 9% 98%; /* Stone50 */
-		--sidebar-foreground: 240 5.3% 26.1%; /* Zinc700 */
-		--sidebar-primary: 230 84% 66%; /* Brand */
-		--sidebar-primary-foreground: 0 0% 100%; /* White */
-		--sidebar-accent: 240 4.8% 95.9%; /* Zinc100 */
-		--sidebar-accent-foreground: 240 5.9% 10%; /* Zinc900 */
-		--sidebar-border: 240 4.8% 95.9%; /* Zinc100 */
-		--sidebar-ring: 217.2 91.2% 59.8%;
-	}
+    /* Radius */
+    --radius: 0.5rem;
+    /* Sidebar */
+    --sidebar-background: 60 9% 98%; /* Stone50 */
+    --sidebar-foreground: 240 5.3% 26.1%; /* Zinc700 */
+    --sidebar-primary: 230 84% 66%; /* Brand */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 240 4.8% 95.9%; /* Zinc100 */
+    --sidebar-accent-foreground: 240 5.9% 10%; /* Zinc900 */
+    --sidebar-border: 240 4.8% 95.9%; /* Zinc100 */
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 
-	.dark {
-		/* Main colors */
-		--background: 240 5.9% 10%; /* Zinc900 */
-		--background-subtle: 240 3% 8%; /* #141415 */
-		--foreground: 0 0% 100%; /* White */
+  .dark {
+    /* Main colors */
+    --background: 240 5.9% 10%; /* Zinc900 */
+    --background-subtle: 240 3% 8%; /* #141415 */
+    --foreground: 0 0% 100%; /* White */
 
-		/* Muted colors */
-		--muted: 240 3.45% 11.37%; /* 1C1C1E */
-		--muted-foreground: 240 5.03% 64.9%;
+    /* Muted colors */
+    --muted: 240 3.45% 11.37%; /* 1C1C1E */
+    --muted-foreground: 240 5.03% 64.9%;
 
-		/* Popover colors */
-		--popover: 240 5.9% 10%; /* Zinc900 */
-		--popover-foreground: 0 0% 100%; /* White */
+    /* Popover colors */
+    --popover: 240 5.9% 10%; /* Zinc900 */
+    --popover-foreground: 0 0% 100%; /* White */
 
-		/* Border and input colors */
-		--border: 240 3.7% 15.88%; /* Zinc800 */
-		--input: 240 3.7% 15.88%; /* Zinc800 */
+    /* Border and input colors */
+    --border: 240 3.7% 15.88%; /* Zinc800 */
+    --input: 240 3.7% 15.88%; /* Zinc800 */
 
-		/* Card colors */
-		--card: 240 5.9% 10%; /* Zinc900 */
-		--card-foreground: 0 0% 100%; /* White */
+    /* Card colors */
+    --card: 240 5.9% 10%; /* Zinc900 */
+    --card-foreground: 0 0% 100%; /* White */
 
-		/* Primary colors */
-		--primary: 0 0% 100%; /* White */
-		--primary-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Primary colors */
+    --primary: 0 0% 100%; /* White */
+    --primary-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Brand colors */
-		--brand: 25 94.6% 56.5%; /* Brand */
-		--brand-foreground: 240 5.9% 10%; /* Zinc900 */
+    /* Brand colors */
+    --brand: 25 94.6% 56.5%; /* Brand */
+    --brand-foreground: 240 5.9% 10%; /* Zinc900 */
 
-		/* Secondary colors */
-		--secondary: 240 5.3% 26.1%; /* Zinc700 */
-		--secondary-foreground: 232 0% 78.08%; /* Zinc200 */
+    /* Secondary colors */
+    --secondary: 240 5.3% 26.1%; /* Zinc700 */
+    --secondary-foreground: 232 0% 78.08%; /* Zinc200 */
 
-		/* Accent colors */
-		--accent: 240 3.7% 15.88%; /* Zinc800 */
-		--accent-foreground: 0 0% 100%; /* White */
+    /* Accent colors */
+    --accent: 240 3.7% 15.88%; /* Zinc800 */
+    --accent-foreground: 0 0% 100%; /* White */
 
-		/* Destructive colors */
-		--destructive: 346.84 77.17% 49.8%; /* Rose600 */
-		--destructive-foreground: 355.71 100% 97.25%; /* Rose50 */
+    /* Destructive colors */
+    --destructive: 346.84 77.17% 49.8%; /* Rose600 */
+    --destructive-foreground: 355.71 100% 97.25%; /* Rose50 */
 
-		/* Ring color */
-		--ring: 240 3.7% 15.88%; /* Zinc800 */
+    /* Ring color */
+    --ring: 240 3.7% 15.88%; /* Zinc800 */
 
-		/* Radius */
-		--radius: 0.5rem;
+    /* Radius */
+    --radius: 0.5rem;
 
-		/* Sidebar */
-		--sidebar-background: 240 3.45% 11.37%; /* 1C1C1E */
-		--sidebar-foreground: 232 0% 78.08%; /* Zinc200 */
-		--sidebar-primary: 230 84% 66%; /* Brand */
-		--sidebar-primary-foreground: 240 5.9% 10%; /* Zinc900 */
-		--sidebar-accent: 240 3.7% 15.9%; /* Zinc800 */
-		--sidebar-accent-foreground: 232 0% 78.08%; /* Zinc200 */
-		--sidebar-border: 240 3.7% 15.9%; /* Zinc800 */
-		--sidebar-ring: 217.2 91.2% 59.8%;
-	}
+    /* Sidebar */
+    --sidebar-background: 240 3.45% 11.37%; /* 1C1C1E */
+    --sidebar-foreground: 232 0% 78.08%; /* Zinc200 */
+    --sidebar-primary: 230 84% 66%; /* Brand */
+    --sidebar-primary-foreground: 240 5.9% 10%; /* Zinc900 */
+    --sidebar-accent: 240 3.7% 15.9%; /* Zinc800 */
+    --sidebar-accent-foreground: 232 0% 78.08%; /* Zinc200 */
+    --sidebar-border: 240 3.7% 15.9%; /* Zinc800 */
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
 }
 
 @layer base {
-	* {
-		@apply border-border;
-	}
-	body {
-		@apply bg-background text-foreground font-sans;
-		font-feature-settings: "rlig" 1, "calt" 1;
-	}
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply font-sans bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
 
-	/* Hide React Flow attribution with more specific selector */
-	.react-flow__panel.react-flow__attribution,
-	body [class*="react-flow__attribution"] {
-		@apply !hidden;
-	}
+  /* Hide React Flow attribution with more specific selector */
+  .react-flow__panel.react-flow__attribution,
+  body [class*="react-flow__attribution"] {
+    @apply !hidden;
+  }
 
-	/* Hide React Flow node selection rectangle */
-	body [class*="react-flow__nodesselection-rect"] {
-		@apply !hidden;
-	}
+  /* Hide React Flow node selection rectangle */
+  body [class*="react-flow__nodesselection-rect"] {
+    @apply !hidden;
+  }
 }

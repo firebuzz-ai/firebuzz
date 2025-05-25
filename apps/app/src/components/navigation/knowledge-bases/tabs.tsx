@@ -22,7 +22,6 @@ import {
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { ChevronDown, Pencil, Plus, Upload } from "@firebuzz/ui/icons/lucide";
-import { usePathname } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 
 interface KnowledgeBaseTabsProps {
@@ -36,7 +35,6 @@ export const KnowledgeBaseTabs = ({
   setId,
   tabs,
 }: KnowledgeBaseTabsProps) => {
-  const pathname = usePathname();
   const { setIsOpen: setIsSettingsSheetOpen } = useSheet(
     "knowledge-base-settings"
   );
@@ -59,7 +57,6 @@ export const KnowledgeBaseTabs = ({
           tabs={tabs}
           value={id}
           onValueChange={(value) => setId(value as Id<"knowledgeBases">)}
-          currentPath={pathname}
           indicatorPadding={0}
           tabsContainerClassName="flex items-center gap-2"
           withBorder={false}

@@ -8,6 +8,8 @@ import { projectSchema } from "./collections/projects/schema";
 import { documentChunksSchema } from "./collections/storage/documents/chunks/schema";
 import { documentsSchema } from "./collections/storage/documents/schema";
 
+import { brandSchema } from "./collections/brands/schema";
+import { themeSchema } from "./collections/brands/themes/schema";
 import { memoizedDocumentsSchema } from "./collections/storage/documents/memoized/schema";
 import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
 import { knowledgeBaseSchema } from "./collections/storage/knowledgeBases/schema";
@@ -94,8 +96,14 @@ export default defineSchema({
   knowledgeBases: defineTable(knowledgeBaseSchema)
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
-    .index("by_created_by", ["createdBy"])
-    .index("by_updated_at", ["updatedAt"]),
+    .index("by_created_by", ["createdBy"]),
+  brands: defineTable(brandSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"]),
+  themes: defineTable(themeSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"]),
+
   // Helper Tables
   memoizedDocuments: defineTable(memoizedDocumentsSchema)
     .index("by_knowledge_base", ["knowledgeBaseId"])

@@ -151,31 +151,74 @@ export const AnimatedTabs = React.forwardRef<HTMLDivElement, AnimatedTabsProps>(
     });
 
     // Update indicator position when active tab changes
-    React.useEffect(() => {
-      const activeTabIndex = tabs.findIndex((tab) =>
-        asLinks ? tab.href === currentPath : tab.value === activeValue
-      );
+    React.useLayoutEffect(() => {
+      const updateIndicatorPosition = () => {
+        const activeTabIndex = tabs.findIndex((tab) =>
+          asLinks ? tab.href === currentPath : tab.value === activeValue
+        );
 
-      if (
-        activeTabIndex >= 0 &&
-        tabsRef.current[activeTabIndex] &&
-        tabsContainerRef.current
-      ) {
-        const activeTabElement = tabsRef.current[activeTabIndex];
-        const containerRect = tabsContainerRef.current.getBoundingClientRect();
-        // If indicatorRelativeToParent is true, use the parent's position
-        const referenceRect =
-          indicatorRelativeToParent && parentRef.current
-            ? parentRef.current.getBoundingClientRect()
-            : containerRect;
-        const tabRect = activeTabElement.getBoundingClientRect();
+        if (
+          activeTabIndex >= 0 &&
+          tabsRef.current[activeTabIndex] &&
+          tabsContainerRef.current &&
+          parentRef.current
+        ) {
+          const activeTabElement = tabsRef.current[activeTabIndex];
+          const containerElement = tabsContainerRef.current;
+          const parentElement = parentRef.current;
 
-        setIndicatorStyle({
-          width: tabRect.width,
-          left: tabRect.left + indicatorPadding - referenceRect.left,
-          opacity: 1,
-          transform: "translateX(0)",
+          const containerRect = containerElement.getBoundingClientRect();
+          const parentRect = parentElement.getBoundingClientRect();
+          const tabRect = activeTabElement.getBoundingClientRect();
+
+          // Check if measurements are valid (not zero)
+          if (
+            tabRect.width > 0 &&
+            containerRect.width > 0 &&
+            parentRect.width > 0
+          ) {
+            // Calculate position relative to parent container
+            // The indicator should align with the tab, accounting for parent's padding
+            const leftOffset = tabRect.left - parentRect.left;
+
+            setIndicatorStyle({
+              width: tabRect.width,
+              left: leftOffset,
+              opacity: 1,
+              transform: "translateX(0)",
+            });
+            return true; // Success
+          }
+        }
+        return false; // Failed
+      };
+
+      // Initial positioning with multiple attempts
+      const attemptPositioning = (attempts = 0) => {
+        const maxAttempts = 10;
+        const success = updateIndicatorPosition();
+
+        if (!success && attempts < maxAttempts) {
+          // Use exponential backoff: 0, 16, 32, 64, etc.
+          const delay = attempts === 0 ? 0 : 16 * 2 ** (attempts - 1);
+          setTimeout(() => attemptPositioning(attempts + 1), delay);
+        }
+      };
+
+      attemptPositioning();
+
+      // Set up ResizeObserver to handle container size changes
+      if (parentRef.current) {
+        const resizeObserver = new ResizeObserver(() => {
+          // Small delay to ensure layout is complete
+          setTimeout(updateIndicatorPosition, 16);
         });
+
+        resizeObserver.observe(parentRef.current);
+
+        return () => {
+          resizeObserver.disconnect();
+        };
       }
     }, [
       activeValue,
