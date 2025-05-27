@@ -4,6 +4,7 @@ import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-mod
 import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
 import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
 import { type Doc, api, useMutation } from "@firebuzz/convex";
+import { Badge } from "@firebuzz/ui/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -16,7 +17,9 @@ import {
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
+import { Moon, Sun } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
+import { useTheme } from "next-themes";
 import type React from "react";
 import { useCallback, useEffect } from "react";
 import { z } from "zod";
@@ -28,7 +31,9 @@ const brandSchema = z.object({
   description: z.string().optional(),
   persona: z.string().optional(),
   logo: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  favicon: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  logoDark: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  icon: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  iconDark: z.string().url("Must be a valid URL").optional().or(z.literal("")),
 });
 
 export type BrandConfigType = z.infer<typeof brandSchema>;
@@ -55,6 +60,7 @@ export const BrandIdentityForm = ({
   isSaving,
 }: BrandIdentityProps) => {
   const updateBrand = useMutation(api.collections.brands.mutations.update);
+  const theme = useTheme();
 
   const form = useForm<BrandConfigType>({
     resolver: zodResolver(brandSchema),
@@ -64,7 +70,9 @@ export const BrandIdentityForm = ({
       description: "",
       persona: "",
       logo: "",
-      favicon: "",
+      logoDark: "",
+      icon: "",
+      iconDark: "",
     },
     mode: "onChange",
     shouldUseNativeValidation: false,
@@ -105,7 +113,9 @@ export const BrandIdentityForm = ({
         description: data.description || undefined,
         persona: data.persona || undefined,
         logo: data.logo || undefined,
-        favicon: data.favicon || undefined,
+        logoDark: data.logoDark || undefined,
+        icon: data.icon || undefined,
+        iconDark: data.iconDark || undefined,
       });
 
       // Reset form dirty state
@@ -130,7 +140,9 @@ export const BrandIdentityForm = ({
         description: brand.description || "",
         persona: brand.persona || "",
         logo: brand.logo || "",
-        favicon: brand.favicon || "",
+        logoDark: brand.logoDark || "",
+        icon: brand.icon || "",
+        iconDark: brand.iconDark || "",
       });
     }
   }, [brand, form.reset]);
@@ -177,7 +189,7 @@ export const BrandIdentityForm = ({
                   <FormItem>
                     <FormLabel>Brand Name</FormLabel>
                     <FormControl>
-                      <Input {...field} disabled={isLoading} />
+                      <Input className="!h-8" {...field} disabled={isLoading} />
                     </FormControl>
                     <FormDescription>
                       The primary name of your brand
@@ -197,6 +209,7 @@ export const BrandIdentityForm = ({
                       <Input
                         {...field}
                         disabled={isLoading}
+                        className="!h-8"
                         placeholder="https://example.com"
                         type="url"
                       />
@@ -261,7 +274,21 @@ export const BrandIdentityForm = ({
                 name="logo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Brand Logo</FormLabel>
+                    <FormLabel>
+                      <div className="flex items-center justify-between">
+                        Logo
+                        <Badge
+                          variant={
+                            theme.resolvedTheme === "dark"
+                              ? "default"
+                              : "outline"
+                          }
+                        >
+                          <Sun className="mr-1 size-3" />
+                          Light
+                        </Badge>
+                      </div>
+                    </FormLabel>
                     <div>
                       <FormControl>
                         <Input
@@ -292,10 +319,24 @@ export const BrandIdentityForm = ({
 
               <FormField
                 control={form.control}
-                name="favicon"
+                name="logoDark"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Favicon</FormLabel>
+                    <FormLabel>
+                      <div className="flex items-center justify-between">
+                        Logo
+                        <Badge
+                          variant={
+                            theme.resolvedTheme === "dark"
+                              ? "outline"
+                              : "default"
+                          }
+                        >
+                          <Moon className="mr-1 size-3" />
+                          Dark
+                        </Badge>
+                      </div>
+                    </FormLabel>
                     <div>
                       <FormControl>
                         <Input
@@ -316,8 +357,104 @@ export const BrandIdentityForm = ({
                       )}
                     </div>
                     <FormDescription>
-                      Small icon that appears in browser tabs (recommended:
-                      32x32 or 16x16 pixels)
+                      Logo variant for dark backgrounds (optional, falls back to
+                      primary logo)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="icon"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className="flex items-center justify-between">
+                        Icon
+                        <Badge
+                          variant={
+                            theme.resolvedTheme === "dark"
+                              ? "default"
+                              : "outline"
+                          }
+                        >
+                          <Sun className="mr-1 size-3" />
+                          Light
+                        </Badge>
+                      </div>
+                    </FormLabel>
+                    <div>
+                      <FormControl>
+                        <Input
+                          className="sr-only"
+                          {...field}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      {!field.value ? (
+                        <ImageSelect onChange={field.onChange} />
+                      ) : (
+                        <ImagePreview
+                          src={field.value}
+                          handleDeselect={() => {
+                            field.onChange("");
+                          }}
+                        />
+                      )}
+                    </div>
+                    <FormDescription>
+                      A simplified icon version of your brand (recommended:
+                      square format)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="iconDark"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      <div className="flex items-center justify-between">
+                        Icon
+                        <Badge
+                          variant={
+                            theme.resolvedTheme === "dark"
+                              ? "outline"
+                              : "default"
+                          }
+                        >
+                          <Moon className="mr-1 size-3" />
+                          Dark
+                        </Badge>
+                      </div>
+                    </FormLabel>
+                    <div>
+                      <FormControl>
+                        <Input
+                          className="sr-only"
+                          {...field}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                      {!field.value ? (
+                        <ImageSelect onChange={field.onChange} />
+                      ) : (
+                        <ImagePreview
+                          src={field.value}
+                          handleDeselect={() => {
+                            field.onChange("");
+                          }}
+                        />
+                      )}
+                    </div>
+                    <FormDescription>
+                      Icon variant for dark backgrounds (optional, falls back to
+                      primary icon)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

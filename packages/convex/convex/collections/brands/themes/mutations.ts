@@ -2,14 +2,14 @@ import { ConvexError, v } from "convex/values";
 import type { Doc } from "../../../_generated/dataModel";
 import { mutationWithTrigger } from "../../../triggers";
 import { getCurrentUser } from "../../users/utils";
-import { fontSchema, themeVariables } from "./schema";
+import { fontSchema, themeSchema } from "./schema";
 
 export const create = mutationWithTrigger({
   args: {
     name: v.string(),
     description: v.string(),
-    lightTheme: themeVariables,
-    darkTheme: themeVariables,
+    lightTheme: themeSchema.fields.lightTheme,
+    darkTheme: themeSchema.fields.darkTheme,
     fonts: v.array(fontSchema),
   },
   handler: async (ctx, args) => {
@@ -66,9 +66,10 @@ export const update = mutationWithTrigger({
     description: v.optional(v.string()),
     index: v.optional(v.number()),
     isVisible: v.optional(v.boolean()),
-    lightTheme: v.optional(themeVariables),
-    darkTheme: v.optional(themeVariables),
+    lightTheme: v.optional(themeSchema.fields.lightTheme),
+    darkTheme: v.optional(themeSchema.fields.darkTheme),
     fonts: v.optional(v.array(fontSchema)),
+    template: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -107,9 +108,67 @@ export const update = mutationWithTrigger({
       updateObject.fonts = args.fonts;
     }
 
+    if (args.template !== undefined) {
+      updateObject.template = args.template;
+    }
+
     const theme = await ctx.db.patch(args.id, updateObject);
 
     return theme;
+  },
+});
+
+export const promote = mutationWithTrigger({
+  args: {
+    id: v.id("themes"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+    const currentProject = user?.currentProject;
+
+    if (!user || !currentProject) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    // Get Current Theme
+    const currentTheme = await ctx.db.get(args.id);
+    if (!currentTheme) {
+      throw new ConvexError("Theme not found");
+    }
+
+    // Get Current Brand
+    const currentBrand = await ctx.db
+      .query("brands")
+      .withIndex("by_project_id", (q) => q.eq("projectId", currentProject))
+      .first();
+
+    if (!currentBrand) {
+      throw new ConvexError("Brand not found");
+    }
+
+    // Get Current System Theme
+    const currentSystemTheme = await ctx.db
+      .query("themes")
+      .withIndex("by_brand_id", (q) => q.eq("brandId", currentBrand._id))
+      .filter((q) => q.eq(q.field("isSystem"), true))
+      .first();
+
+    // Update Theme (Current System Theme)
+    if (currentSystemTheme) {
+      await ctx.db.patch(currentSystemTheme._id, {
+        isSystem: false,
+      });
+    }
+
+    // Update Theme (Promoted Theme)
+    await ctx.db.patch(args.id, {
+      isSystem: true,
+    });
+
+    // Update Brand (Default Theme)
+    await ctx.db.patch(currentBrand._id, {
+      defaultThemeId: args.id,
+    });
   },
 });
 

@@ -102,7 +102,8 @@ export default defineSchema({
     .index("by_project_id", ["projectId"]),
   themes: defineTable(themeSchema)
     .index("by_workspace_id", ["workspaceId"])
-    .index("by_project_id", ["projectId"]),
+    .index("by_project_id", ["projectId"])
+    .index("by_brand_id", ["brandId"]),
 
   // Helper Tables
   memoizedDocuments: defineTable(memoizedDocumentsSchema)

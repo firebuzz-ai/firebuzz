@@ -2,6 +2,7 @@ import { ConvexError, v } from "convex/values";
 import type { Doc } from "../../_generated/dataModel";
 import { mutation } from "../../_generated/server";
 import { getCurrentUser } from "../users/utils";
+import { seoSchema } from "./schema";
 
 export const create = mutation({
   args: {
@@ -33,7 +34,11 @@ export const update = mutation({
     description: v.optional(v.string()),
     persona: v.optional(v.string()),
     logo: v.optional(v.string()),
-    favicon: v.optional(v.string()),
+    logoDark: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    iconDark: v.optional(v.string()),
+    defaultThemeId: v.optional(v.id("themes")),
+    seo: v.optional(seoSchema),
   },
   handler: async (ctx, args) => {
     const user = await getCurrentUser(ctx);
@@ -75,8 +80,22 @@ export const update = mutation({
     if (args.logo) {
       updatedFields.logo = args.logo;
     }
-    if (args.favicon) {
-      updatedFields.favicon = args.favicon;
+    if (args.logoDark) {
+      updatedFields.logoDark = args.logoDark;
+    }
+    if (args.icon) {
+      updatedFields.icon = args.icon;
+    }
+    if (args.iconDark) {
+      updatedFields.iconDark = args.iconDark;
+    }
+
+    if (args.defaultThemeId) {
+      updatedFields.defaultThemeId = args.defaultThemeId;
+    }
+
+    if (args.seo) {
+      updatedFields.seo = args.seo;
     }
 
     const updatedBrand = await ctx.db.patch(args.id, updatedFields);

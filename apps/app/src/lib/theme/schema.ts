@@ -21,5 +21,9 @@ export const themeSchema = z.object({
   destructive: z.string(),
   destructiveForeground: z.string(),
   ring: z.string(),
-  radius: z.string(),
+  chart1: z.string(),
+  chart2: z.string(),
+  chart3: z.string(),
+  chart4: z.string(),
+  chart5: z.string(),
 });

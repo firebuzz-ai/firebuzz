@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@firebuzz/ui/components/ui/accordion";
+import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { buttonVariants } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
@@ -12,7 +13,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Eye, EyeOff, Grip, Trash2 } from "@firebuzz/ui/icons/lucide";
+import {
+  ArrowUpFromDot,
+  Eye,
+  EyeOff,
+  Grip,
+  Trash2,
+} from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { Reorder, useDragControls } from "motion/react";
 import type React from "react";
@@ -31,6 +38,7 @@ interface ThemeReorderableItemProps {
   handleDescriptionChange: (id: Id<"themes">, newDescription: string) => void;
   handleDelete: (id: Id<"themes">) => void;
   handleVisibilityChange: (id: Id<"themes">) => void;
+  handlePromote: (id: Id<"themes">) => void;
 }
 
 export const ThemeReorderableItem: React.FC<ThemeReorderableItemProps> = ({
@@ -44,6 +52,7 @@ export const ThemeReorderableItem: React.FC<ThemeReorderableItemProps> = ({
   handleDescriptionChange,
   handleDelete,
   handleVisibilityChange,
+  handlePromote,
 }) => {
   const dragControls = useDragControls();
   const [isDragging, setIsDragging] = useState(false);
@@ -132,6 +141,31 @@ export const ThemeReorderableItem: React.FC<ThemeReorderableItemProps> = ({
               className="!px-0 !py-0 h-6 text-sm bg-transparent border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0 max-w-fit"
             />
           </div>
+
+          {!item.isSystem ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <div
+                  className={buttonVariants({
+                    variant: "ghost",
+                    size: "iconXs",
+                    className: "size-6",
+                  })}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePromote(item._id);
+                  }}
+                >
+                  <ArrowUpFromDot
+                    className={cn(item.isSystem && "opacity-50", "!size-3.5")}
+                  />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="left">Promote</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Badge>Default</Badge>
+          )}
 
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>

@@ -20,6 +20,11 @@ export const defaultLightTheme: Doc<"themes">["lightTheme"] = {
   destructive: "346.84 77.17% 49.8%",
   destructiveForeground: "355.71 100% 97.25%",
   ring: "240 4.8% 95.9%",
+  chart1: "12 76% 61%",
+  chart2: "173 58% 39%",
+  chart3: "197 37% 24%",
+  chart4: "43 74% 66%",
+  chart5: "27 87% 67%",
   radius: "0.5rem",
 };
 
@@ -42,6 +47,10 @@ export const defaultDarkTheme: Doc<"themes">["darkTheme"] = {
   accentForeground: "0 0% 100%",
   destructive: "346.84 77.17% 49.8%",
   destructiveForeground: "355.71 100% 97.25%",
+  chart1: "220 70% 50%",
+  chart2: "160 60% 45%",
+  chart3: "30 80% 55%",
+  chart4: "280 65% 60%",
+  chart5: "340 75% 55%",
   ring: "240 3.7% 15.88%",
-  radius: "0.5rem",
 };

@@ -2,42 +2,33 @@
 import { FormLayout } from "@/components/layouts/two-panels/panels/brand/identity/form";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/brand/identity/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
-import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { useTheme } from "next-themes";
 import { useState } from "react";
-import { ThemeForm, type ThemeFormType } from "./form";
-import { ThemePanel } from "./panel";
+import { BrandSeoForm, type BrandSeoType } from "./form";
+import { Panel } from "./panel";
 
-export const Theme = ({
+export const BrandSeo = ({
   rightPanelSize,
   id,
-  themeId,
 }: {
   rightPanelSize: number;
   id: string;
-  themeId: Id<"themes">;
 }) => {
   const [saveHandler, setSaveHandler] = useState<(() => Promise<void>) | null>(
     null
   );
-  const { theme: currentTheme } = useTheme();
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [formValues, setFormValues] = useState<ThemeFormType | null>(null);
-  const [previewThemeMode, setPreviewThemeMode] = useState<"light" | "dark">(
-    currentTheme === "dark" ? "dark" : "light"
-  );
+  const [formValues, setFormValues] = useState<BrandSeoType | null>(null);
+  const [pageTitle, setPageTitle] = useState("");
 
   // Fetch current brand data
-  const { data: theme, isPending: isLoading } = useCachedRichQuery(
-    api.collections.brands.themes.queries.getById,
-    { id: themeId }
+  const { data: brand, isPending: isLoading } = useCachedRichQuery(
+    api.collections.brands.queries.getCurrent
   );
 
-  if (isLoading || !currentTheme) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center flex-1">
         <Spinner size="sm" />
@@ -46,38 +37,39 @@ export const Theme = ({
   }
 
   return (
-    <>
+    <div className="relative flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
       <TwoPanelsProvider
         rightPanelSizeFromCookie={rightPanelSize}
         id={id}
         isRightPanelClosable={false}
       >
         <FormLayout>
-          <ThemeForm
-            key={themeId}
+          <BrandSeoForm
+            pageTitle={pageTitle}
+            setPageTitle={setPageTitle}
             isLoading={isLoading}
-            setFormValues={setFormValues}
-            theme={theme}
+            brand={brand ?? null}
+            isSaving={isSaving}
+            setIsSaving={setIsSaving}
             setSaveHandler={setSaveHandler}
             setUnsavedChanges={setUnsavedChanges}
-            setIsSaving={setIsSaving}
-            setPreviewThemeMode={setPreviewThemeMode}
-            previewThemeMode={previewThemeMode}
+            setFormValues={setFormValues}
           />
         </FormLayout>
         <PanelLayout>
-          <ThemePanel
-            previewThemeMode={previewThemeMode}
-            setPreviewThemeMode={setPreviewThemeMode}
+          <Panel
             hasChanges={unsavedChanges}
             onSave={saveHandler}
             isSaving={isSaving}
             formValues={formValues}
+            brandName={brand?.name}
+            brandWebsite={brand?.website}
+            brandIconDark={brand?.iconDark}
+            brandIconLight={brand?.icon}
+            pageTitle={pageTitle}
           />
         </PanelLayout>
       </TwoPanelsProvider>
-      <MediaGalleryModal />
-      <ColorSelectorModal />
-    </>
+    </div>
   );
 };

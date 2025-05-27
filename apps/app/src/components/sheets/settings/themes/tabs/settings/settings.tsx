@@ -54,6 +54,10 @@ export const SettingsTab = ({
     api.collections.brands.themes.mutations.deletePermanent
   );
 
+  const promoteThemeMutation = useMutation(
+    api.collections.brands.themes.mutations.promote
+  );
+
   useEffect(() => {
     if (themes) {
       const sortedThemes = [...themes].sort(
@@ -94,6 +98,11 @@ export const SettingsTab = ({
         item._id === id ? { ...item, isVisible: !item.isVisible } : item
       )
     );
+  };
+
+  const handlePromote = async (id: Id<"themes">) => {
+    await promoteThemeMutation({ id });
+    toast.success("Theme promoted successfully.");
   };
 
   const handleSave = useCallback(async (): Promise<void> => {
@@ -275,6 +284,7 @@ export const SettingsTab = ({
                   handleNameChange={handleNameChange}
                   handleDescriptionChange={handleDescriptionChange}
                   handleVisibilityChange={handleToggleVisibility}
+                  handlePromote={handlePromote}
                 />
               );
             })}

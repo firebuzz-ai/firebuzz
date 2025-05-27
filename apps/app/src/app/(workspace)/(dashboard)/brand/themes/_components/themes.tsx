@@ -3,7 +3,7 @@
 import { ThemeSettingsSheet } from "@/components/sheets/settings/themes/sheet";
 import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { NewThemeModal } from "./modals/new-theme/modal";
 import { ThemeTabs } from "./tabs";
 import { Theme } from "./theme/theme";
@@ -24,17 +24,29 @@ export const Themes = ({
     }
   );
 
-  const tabs =
-    themes?.map((theme) => ({
-      value: theme._id,
-      label: theme.name,
-    })) ?? [];
+  const memoizedThemes = useMemo(
+    () =>
+      themes?.map((theme) => ({
+        id: theme._id,
+        name: theme.name,
+      })) ?? [],
+    [themes]
+  );
+
+  const tabs = useMemo(() => {
+    return (
+      memoizedThemes?.map((theme) => ({
+        value: theme.id,
+        label: theme.name,
+      })) ?? []
+    );
+  }, [memoizedThemes]);
 
   useEffect(() => {
-    if (themes && themes.length > 0) {
+    if (themes && themes.length > 0 && !id) {
       setId(themes[0]._id);
     }
-  }, [themes]);
+  }, [themes, id]);
 
   if (isLoading) {
     return (

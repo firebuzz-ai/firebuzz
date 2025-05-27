@@ -37,7 +37,7 @@ export const BrandIdentity = ({
   }
 
   return (
-    <>
+    <div className="relative flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
       <TwoPanelsProvider
         rightPanelSizeFromCookie={rightPanelSize}
         id={id}
@@ -64,6 +64,6 @@ export const BrandIdentity = ({
         </PanelLayout>
       </TwoPanelsProvider>
       <MediaGalleryModal />
-    </>
+    </div>
   );
 };

@@ -1,9 +1,17 @@
 "use client";
 
 import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
-import { COLOR_CATEGORY_ORDER } from "@/lib/theme/constants";
+import {
+  COLOR_CATEGORY_ORDER,
+  LAST_THEMES,
+  SANS_FONTS,
+} from "@/lib/theme/constants";
 import { themeSchema } from "@/lib/theme/schema";
-import { getCategoryForColor, getDescriptionForColor } from "@/lib/theme/utils";
+import {
+  generateColorsFromPrimary,
+  getCategoryForColor,
+  getDescriptionForColor,
+} from "@/lib/theme/utils";
 import { type Doc, api, useMutation } from "@firebuzz/convex";
 import { Form } from "@firebuzz/ui/components/ui/form";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
@@ -14,6 +22,7 @@ import { z } from "zod";
 import { defaultDarkTheme, defaultLightTheme } from "../../theme-variables";
 import { ColorsSection } from "./colors-section";
 import { RadiusSection } from "./radius-section";
+import { TemplateSection } from "./template-section";
 import { TypographySection } from "./typography-section";
 
 interface ThemeColorItem {
@@ -34,8 +43,11 @@ const themeFormSchema = z.object({
     serif: z.string().min(1, "Serif font is required"),
     mono: z.string().min(1, "Mono font is required"),
   }),
-  lightTheme: themeSchema,
+  lightTheme: themeSchema.extend({
+    radius: z.string(),
+  }),
   darkTheme: themeSchema,
+  template: z.string().optional(),
 });
 
 export type ThemeFormType = z.infer<typeof themeFormSchema>;
@@ -48,6 +60,8 @@ interface ThemeFormProps {
   setIsSaving: (isSaving: boolean) => void;
   setFormValues: (values: ThemeFormType) => void;
   isLoading: boolean;
+  previewThemeMode: "light" | "dark";
+  setPreviewThemeMode: React.Dispatch<React.SetStateAction<"light" | "dark">>;
   theme?: Doc<"themes">;
 }
 
@@ -58,6 +72,8 @@ export const ThemeForm = ({
   setFormValues,
   isLoading,
   theme,
+  previewThemeMode,
+  setPreviewThemeMode,
 }: ThemeFormProps) => {
   const [hasInitialized, setHasInitialized] = useState(false);
   const { setState: setColorSelectorModalState } = useColorSelectorModal();
@@ -71,11 +87,12 @@ export const ThemeForm = ({
     defaultValues: {
       fonts: {
         sans: "Inter",
-        serif: "Inter",
-        mono: "Inter",
+        serif: "Georgia",
+        mono: "JetBrains Mono",
       },
-      lightTheme: defaultLightTheme,
-      darkTheme: defaultDarkTheme,
+      lightTheme: { ...defaultLightTheme },
+      darkTheme: { ...defaultDarkTheme },
+      template: theme?.template,
     },
     mode: "onChange",
     shouldUseNativeValidation: false,
@@ -95,7 +112,7 @@ export const ThemeForm = ({
     const lightThemeEntries = Object.entries(
       currentFormValues.lightTheme
     ).filter(
-      ([key]) => key !== "radius" // exclude radius as it's not a color
+      ([key]) => key !== "radius" // exclude radius and template as they're not colors
     );
 
     for (const [key, hslValue] of lightThemeEntries) {
@@ -164,11 +181,14 @@ export const ThemeForm = ({
         fonts: {
           sans: theme.fonts?.find((f) => f.family === "sans")?.name || "Inter",
           serif:
-            theme.fonts?.find((f) => f.family === "serif")?.name || "Inter",
-          mono: theme.fonts?.find((f) => f.family === "mono")?.name || "Inter",
+            theme.fonts?.find((f) => f.family === "serif")?.name || "Georgia",
+          mono:
+            theme.fonts?.find((f) => f.family === "mono")?.name ||
+            "JetBrains Mono",
         },
         lightTheme: theme.lightTheme,
         darkTheme: theme.darkTheme,
+        template: theme.template,
       };
 
       form.reset(initialFormValues);
@@ -237,8 +257,214 @@ export const ThemeForm = ({
               }
             );
           }
+
+          // Auto-generate colors if this is a primary color selection
+          if (color.name === "primary") {
+            try {
+              if (color.theme === "light") {
+                const generatedColors = generateColorsFromPrimary(sColor, true);
+                form.setValue(
+                  "lightTheme",
+                  {
+                    ...generatedColors,
+                    radius: form.getValues("lightTheme").radius,
+                  },
+                  {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                    shouldValidate: true,
+                  }
+                );
+              } else {
+                const generatedColors = generateColorsFromPrimary(
+                  sColor,
+                  false
+                );
+                form.setValue("darkTheme", generatedColors, {
+                  shouldDirty: true,
+                  shouldTouch: true,
+                  shouldValidate: true,
+                });
+              }
+
+              toast.success(
+                `Auto-generated ${color.theme} theme colors from primary color`
+              );
+            } catch (error) {
+              console.error("Failed to auto-generate colors:", error);
+              toast.error(
+                "Failed to auto-generate colors. Using manual selection."
+              );
+            }
+          }
         },
       };
+    });
+  };
+
+  // Template selection handler
+  const handleTemplateSelect = (templateId: string) => {
+    const builtInThemes = LAST_THEMES;
+    const template = builtInThemes.find((theme) => theme.id === templateId);
+    if (!template) return;
+
+    const checkSansFontIsAvailable = (font: string) => {
+      return (
+        SANS_FONTS.google.some((f) => f.value === font) ||
+        SANS_FONTS.system.some((f) => f.value === font)
+      );
+    };
+
+    const checkSerifFontIsAvailable = (font: string) => {
+      return (
+        SANS_FONTS.google.some((f) => f.value === font) ||
+        SANS_FONTS.system.some((f) => f.value === font)
+      );
+    };
+
+    const checkMonoFontIsAvailable = (font: string) => {
+      return (
+        SANS_FONTS.google.some((f) => f.value === font) ||
+        SANS_FONTS.system.some((f) => f.value === font)
+      );
+    };
+
+    const removeSidebarColors = (theme: Record<string, string>) => {
+      return Object.fromEntries(
+        Object.entries(theme).filter(([key]) => !key.startsWith("sidebar"))
+      );
+    };
+
+    // Extract fonts from template - try both light and dark themes
+    const extractFontsFromTemplate = (template: {
+      lightTheme?: Record<string, string>;
+      darkTheme?: Record<string, string>;
+    }) => {
+      const fonts = {
+        sans: "Inter", // default sans-serif fallback
+        serif: "Georgia", // default serif fallback
+        mono: "JetBrains Mono", // default monospace fallback
+      };
+
+      // Helper function to extract font name from CSS font-family value
+      const extractFontName = (fontFamily: string | undefined) => {
+        if (!fontFamily) return null;
+
+        // Split by comma and try each font until we find a valid one
+        const fonts = fontFamily
+          .split(",")
+          .map((f) => f.replace(/['"]/g, "").trim());
+
+        // Skip system fonts like ui-serif, ui-sans-serif, ui-monospace
+        const systemFonts = [
+          "ui-serif",
+          "ui-sans-serif",
+          "ui-monospace",
+          "sans-serif",
+          "serif",
+          "monospace",
+          "system-ui",
+        ];
+
+        for (const font of fonts) {
+          if (!systemFonts.includes(font.toLowerCase()) && font !== "") {
+            return font;
+          }
+        }
+
+        return null;
+      };
+
+      // Try light theme first, then dark theme as fallback
+      const lightTheme = removeSidebarColors(template.lightTheme || {});
+      const darkTheme = removeSidebarColors(template.darkTheme || {});
+
+      // Extract font names, preferring light theme but falling back to dark theme
+      const sansFont =
+        extractFontName(lightTheme["font-sans"]) ||
+        extractFontName(darkTheme["font-sans"]);
+      const serifFont =
+        extractFontName(lightTheme["font-serif"]) ||
+        extractFontName(darkTheme["font-serif"]);
+      const monoFont =
+        extractFontName(lightTheme["font-mono"]) ||
+        extractFontName(darkTheme["font-mono"]);
+
+      if (sansFont && checkSansFontIsAvailable(sansFont)) fonts.sans = sansFont;
+      if (serifFont && checkSerifFontIsAvailable(serifFont))
+        fonts.serif = serifFont;
+      if (monoFont && checkMonoFontIsAvailable(monoFont)) fonts.mono = monoFont;
+
+      return fonts;
+    };
+
+    // Convert template format to form schema format
+    const convertThemeFormat = (
+      themeData: Record<string, string>
+    ): z.infer<typeof themeSchema> => {
+      const convertedTheme: Record<string, string> = {};
+
+      // Convert kebab-case to camelCase and hex to HSL
+      for (const [key, value] of Object.entries(themeData)) {
+        // Exclude sidebar colors as we don't support them yet
+        if (key.startsWith("sidebar")) continue;
+
+        if (typeof value === "string" && value.startsWith("#")) {
+          // Convert hex to HSL
+          const hslValue = hexToHsl(value);
+
+          // Convert kebab-case to camelCase
+          const camelKey = key
+            .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+            .replace("-", "");
+          convertedTheme[camelKey] = hslValue;
+        } else if (key === "radius") {
+          // Keep radius as is
+          convertedTheme[key] = value;
+        }
+        // Skip font-* keys as they're handled separately
+      }
+
+      // Template field is optional, only set if it doesn't exist
+      // (it will be set later in the template selection logic)
+
+      return convertedTheme as z.infer<typeof themeSchema>;
+    };
+
+    // Extract and apply fonts from template (check both light and dark themes)
+    const templateFonts = extractFontsFromTemplate(template);
+    form.setValue("fonts", templateFonts, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+
+    form.setValue("template", templateId, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+
+    // Apply the template to the form
+    const lightThemeWithTemplate = {
+      ...convertThemeFormat(template.lightTheme),
+      radius: template.lightTheme.radius ?? "0.5rem",
+    };
+
+    const darkThemeWithTemplate = {
+      ...convertThemeFormat(template.darkTheme),
+    };
+
+    form.setValue("lightTheme", lightThemeWithTemplate, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
+    });
+
+    form.setValue("darkTheme", darkThemeWithTemplate, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: true,
     });
   };
 
@@ -254,17 +480,106 @@ export const ThemeForm = ({
       // Validate the form
       const valid = await form.trigger();
       if (!valid) {
+        console.error("Form validation errors:", form.formState.errors);
         throw new Error("Form validation failed");
       }
 
       // Get form values - they're already in HSL format
       const data = form.getValues();
 
+      // Filter theme data to only include schema-defined properties
+      const filterDarkThemeData = (
+        themeData: Record<string, string>
+      ): z.infer<typeof themeSchema> => {
+        const schemaKeys = [
+          "background",
+          "foreground",
+          "muted",
+          "mutedForeground",
+          "popover",
+          "popoverForeground",
+          "border",
+          "input",
+          "card",
+          "cardForeground",
+          "primary",
+          "primaryForeground",
+          "secondary",
+          "secondaryForeground",
+          "accent",
+          "accentForeground",
+          "destructive",
+          "destructiveForeground",
+          "ring",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+        ];
+
+        const filteredTheme: Record<string, string> = {};
+        for (const key of schemaKeys) {
+          if (themeData[key] !== undefined) {
+            filteredTheme[key] = themeData[key];
+          }
+        }
+        return filteredTheme as z.infer<typeof themeSchema>;
+      };
+
+      const filterLightThemeData = (
+        themeData: Record<string, string>
+      ): z.infer<typeof themeSchema> & { radius: string } => {
+        const schemaKeys = [
+          "background",
+          "foreground",
+          "muted",
+          "mutedForeground",
+          "popover",
+          "popoverForeground",
+          "border",
+          "input",
+          "card",
+          "cardForeground",
+          "primary",
+          "primaryForeground",
+          "secondary",
+          "secondaryForeground",
+          "accent",
+          "accentForeground",
+          "destructive",
+          "destructiveForeground",
+          "ring",
+          "chart1",
+          "chart2",
+          "chart3",
+          "chart4",
+          "chart5",
+        ];
+
+        const filteredTheme: Record<string, string> = {};
+        for (const key of schemaKeys) {
+          if (themeData[key] !== undefined) {
+            filteredTheme[key] = themeData[key];
+          }
+        }
+        return {
+          ...filteredTheme,
+          radius: themeData.radius,
+        } as z.infer<typeof themeSchema> & { radius: string };
+      };
+
+      console.log({
+        lightTheme: filterLightThemeData(data.lightTheme),
+        darkTheme: filterDarkThemeData(data.darkTheme),
+      });
+
       // Update the theme
       await updateTheme({
         id: theme._id,
-        lightTheme: data.lightTheme,
-        darkTheme: data.darkTheme,
+        lightTheme: filterLightThemeData(data.lightTheme),
+        darkTheme: filterDarkThemeData(data.darkTheme),
+        template: data.template,
         fonts: [
           {
             family: "sans" as const,
@@ -315,15 +630,23 @@ export const ThemeForm = ({
     <div className="flex-1 w-full max-h-full py-4 overflow-y-auto">
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()}>
+          <TemplateSection
+            onTemplateSelect={handleTemplateSelect}
+            selectedTemplate={form.watch("template")}
+            isLoading={isLoading}
+          />
+          <ColorsSection
+            themes={themes}
+            onColorClick={handleColorClick}
+            previewThemeMode={previewThemeMode}
+            setPreviewThemeMode={setPreviewThemeMode}
+          />
           <TypographySection control={form.control} isLoading={isLoading} />
-
           <RadiusSection
             control={form.control}
             setValue={form.setValue}
             isLoading={isLoading}
           />
-
-          <ColorsSection themes={themes} onColorClick={handleColorClick} />
         </form>
       </Form>
     </div>

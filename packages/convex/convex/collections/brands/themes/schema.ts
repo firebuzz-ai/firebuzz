@@ -20,8 +20,12 @@ export const themeVariables = v.object({
   accentForeground: v.string(),
   destructive: v.string(),
   destructiveForeground: v.string(),
+  chart1: v.string(),
+  chart2: v.string(),
+  chart3: v.string(),
+  chart4: v.string(),
+  chart5: v.string(),
   ring: v.string(),
-  radius: v.string(),
 });
 
 // Font Schema
@@ -39,8 +43,12 @@ export const themeSchema = v.object({
   isSystem: v.boolean(),
   // Themes
   darkTheme: themeVariables,
-  lightTheme: themeVariables,
+  lightTheme: v.object({
+    ...themeVariables.fields,
+    radius: v.string(),
+  }),
   fonts: v.optional(v.array(fontSchema)),
+  template: v.optional(v.string()),
   // Relations
   workspaceId: v.id("workspaces"),
   brandId: v.id("brands"),

@@ -160,30 +160,23 @@ export const AnimatedTabs = React.forwardRef<HTMLDivElement, AnimatedTabsProps>(
         if (
           activeTabIndex >= 0 &&
           tabsRef.current[activeTabIndex] &&
-          tabsContainerRef.current &&
-          parentRef.current
+          tabsContainerRef.current
         ) {
           const activeTabElement = tabsRef.current[activeTabIndex];
-          const containerElement = tabsContainerRef.current;
-          const parentElement = parentRef.current;
-
-          const containerRect = containerElement.getBoundingClientRect();
-          const parentRect = parentElement.getBoundingClientRect();
+          const containerRect =
+            tabsContainerRef.current.getBoundingClientRect();
+          // If indicatorRelativeToParent is true, use the parent's position
+          const referenceRect =
+            indicatorRelativeToParent && parentRef.current
+              ? parentRef.current.getBoundingClientRect()
+              : containerRect;
           const tabRect = activeTabElement.getBoundingClientRect();
 
           // Check if measurements are valid (not zero)
-          if (
-            tabRect.width > 0 &&
-            containerRect.width > 0 &&
-            parentRect.width > 0
-          ) {
-            // Calculate position relative to parent container
-            // The indicator should align with the tab, accounting for parent's padding
-            const leftOffset = tabRect.left - parentRect.left;
-
+          if (tabRect.width > 0 && containerRect.width > 0) {
             setIndicatorStyle({
               width: tabRect.width,
-              left: leftOffset,
+              left: tabRect.left + indicatorPadding - referenceRect.left,
               opacity: 1,
               transform: "translateX(0)",
             });
@@ -193,33 +186,26 @@ export const AnimatedTabs = React.forwardRef<HTMLDivElement, AnimatedTabsProps>(
         return false; // Failed
       };
 
-      // Initial positioning with multiple attempts
-      const attemptPositioning = (attempts = 0) => {
-        const maxAttempts = 10;
-        const success = updateIndicatorPosition();
+      // For modal timing issues, try positioning multiple times
+      const timeouts: ReturnType<typeof setTimeout>[] = [];
 
-        if (!success && attempts < maxAttempts) {
-          // Use exponential backoff: 0, 16, 32, 64, etc.
-          const delay = attempts === 0 ? 0 : 16 * 2 ** (attempts - 1);
-          setTimeout(() => attemptPositioning(attempts + 1), delay);
+      // Immediate attempt
+      updateIndicatorPosition();
+
+      // Retry at specific intervals for modal scenarios
+      for (const delay of [0, 50, 100, 200]) {
+        const timeout = setTimeout(() => {
+          updateIndicatorPosition();
+        }, delay);
+        timeouts.push(timeout);
+      }
+
+      // Cleanup timeouts
+      return () => {
+        for (const timeout of timeouts) {
+          clearTimeout(timeout);
         }
       };
-
-      attemptPositioning();
-
-      // Set up ResizeObserver to handle container size changes
-      if (parentRef.current) {
-        const resizeObserver = new ResizeObserver(() => {
-          // Small delay to ensure layout is complete
-          setTimeout(updateIndicatorPosition, 16);
-        });
-
-        resizeObserver.observe(parentRef.current);
-
-        return () => {
-          resizeObserver.disconnect();
-        };
-      }
     }, [
       activeValue,
       currentPath,
