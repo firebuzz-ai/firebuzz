@@ -3,22 +3,22 @@ import { SidebarMenuSubButton } from "@firebuzz/ui/components/ui/sidebar";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 export const SidebarLink = ({
-  href,
-  label,
-  icon,
+	href,
+	label,
+	icon,
 }: {
-  href: string;
-  label: string;
-  icon?: React.ReactNode;
+	href: string;
+	label: string;
+	icon?: React.ReactNode;
 }) => {
-  const pathname = usePathname();
-  const isActive = pathname === href.split("?")[0];
-  return (
-    <SidebarMenuSubButton asChild isActive={isActive}>
-      <Link href={href}>
-        {icon && icon}
-        {label}
-      </Link>
-    </SidebarMenuSubButton>
-  );
+	const pathname = usePathname();
+	const isActive = pathname === href.split("?")[0];
+	return (
+		<SidebarMenuSubButton asChild isActive={isActive}>
+			<Link href={href}>
+				{icon && icon}
+				{label}
+			</Link>
+		</SidebarMenuSubButton>
+	);
 };
