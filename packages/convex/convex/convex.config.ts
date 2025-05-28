@@ -16,6 +16,7 @@ app.use(aggregate, { name: "aggregateLandingPageTemplates" });
 app.use(aggregate, { name: "aggregateMedia" });
 app.use(aggregate, { name: "aggregateDocuments" });
 app.use(aggregate, { name: "aggregateMemoizedDocuments" });
+app.use(aggregate, { name: "aggregateTestimonials" });
 
 // Migrations
 app.use(migrations);

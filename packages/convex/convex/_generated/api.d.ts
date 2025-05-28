@@ -11,16 +11,21 @@
 import type * as aggregates from "../aggregates.js";
 import type * as collections_brands_audiences_mutations from "../collections/brands/audiences/mutations.js";
 import type * as collections_brands_audiences_queries from "../collections/brands/audiences/queries.js";
+import type * as collections_brands_audiences_utils from "../collections/brands/audiences/utils.js";
 import type * as collections_brands_features_mutations from "../collections/brands/features/mutations.js";
 import type * as collections_brands_features_queries from "../collections/brands/features/queries.js";
+import type * as collections_brands_features_utils from "../collections/brands/features/utils.js";
 import type * as collections_brands_mutations from "../collections/brands/mutations.js";
 import type * as collections_brands_queries from "../collections/brands/queries.js";
 import type * as collections_brands_socials_mutations from "../collections/brands/socials/mutations.js";
 import type * as collections_brands_socials_queries from "../collections/brands/socials/queries.js";
+import type * as collections_brands_socials_utils from "../collections/brands/socials/utils.js";
 import type * as collections_brands_testimonials_mutations from "../collections/brands/testimonials/mutations.js";
 import type * as collections_brands_testimonials_queries from "../collections/brands/testimonials/queries.js";
+import type * as collections_brands_testimonials_utils from "../collections/brands/testimonials/utils.js";
 import type * as collections_brands_themes_mutations from "../collections/brands/themes/mutations.js";
 import type * as collections_brands_themes_queries from "../collections/brands/themes/queries.js";
+import type * as collections_brands_themes_utils from "../collections/brands/themes/utils.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
 import type * as collections_campaigns_utils from "../collections/campaigns/utils.js";
@@ -57,6 +62,7 @@ import type * as collections_storage_documents_vectors_utils from "../collection
 import type * as collections_storage_knowledgeBases_actions from "../collections/storage/knowledgeBases/actions.js";
 import type * as collections_storage_knowledgeBases_mutations from "../collections/storage/knowledgeBases/mutations.js";
 import type * as collections_storage_knowledgeBases_queries from "../collections/storage/knowledgeBases/queries.js";
+import type * as collections_storage_knowledgeBases_utils from "../collections/storage/knowledgeBases/utils.js";
 import type * as collections_storage_media_actions from "../collections/storage/media/actions.js";
 import type * as collections_storage_media_mutations from "../collections/storage/media/mutations.js";
 import type * as collections_storage_media_queries from "../collections/storage/media/queries.js";
@@ -98,16 +104,21 @@ declare const fullApi: ApiFromModules<{
   aggregates: typeof aggregates;
   "collections/brands/audiences/mutations": typeof collections_brands_audiences_mutations;
   "collections/brands/audiences/queries": typeof collections_brands_audiences_queries;
+  "collections/brands/audiences/utils": typeof collections_brands_audiences_utils;
   "collections/brands/features/mutations": typeof collections_brands_features_mutations;
   "collections/brands/features/queries": typeof collections_brands_features_queries;
+  "collections/brands/features/utils": typeof collections_brands_features_utils;
   "collections/brands/mutations": typeof collections_brands_mutations;
   "collections/brands/queries": typeof collections_brands_queries;
   "collections/brands/socials/mutations": typeof collections_brands_socials_mutations;
   "collections/brands/socials/queries": typeof collections_brands_socials_queries;
+  "collections/brands/socials/utils": typeof collections_brands_socials_utils;
   "collections/brands/testimonials/mutations": typeof collections_brands_testimonials_mutations;
   "collections/brands/testimonials/queries": typeof collections_brands_testimonials_queries;
+  "collections/brands/testimonials/utils": typeof collections_brands_testimonials_utils;
   "collections/brands/themes/mutations": typeof collections_brands_themes_mutations;
   "collections/brands/themes/queries": typeof collections_brands_themes_queries;
+  "collections/brands/themes/utils": typeof collections_brands_themes_utils;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
   "collections/campaigns/utils": typeof collections_campaigns_utils;
@@ -144,6 +155,7 @@ declare const fullApi: ApiFromModules<{
   "collections/storage/knowledgeBases/actions": typeof collections_storage_knowledgeBases_actions;
   "collections/storage/knowledgeBases/mutations": typeof collections_storage_knowledgeBases_mutations;
   "collections/storage/knowledgeBases/queries": typeof collections_storage_knowledgeBases_queries;
+  "collections/storage/knowledgeBases/utils": typeof collections_storage_knowledgeBases_utils;
   "collections/storage/media/actions": typeof collections_storage_media_actions;
   "collections/storage/media/mutations": typeof collections_storage_media_mutations;
   "collections/storage/media/queries": typeof collections_storage_media_queries;
@@ -1038,6 +1050,149 @@ export declare const components: {
     };
   };
   aggregateMemoizedDocuments: {
+    btree: {
+      aggregateBetween: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any },
+        { count: number; sum: number }
+      >;
+      atNegativeOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      atOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { key: any; namespace?: any },
+        null | { k: any; s: number; v: any }
+      >;
+      offset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; key: any; namespace?: any },
+        number
+      >;
+      offsetUntil: FunctionReference<
+        "query",
+        "internal",
+        { k2?: any; key: any; namespace?: any },
+        number
+      >;
+      paginate: FunctionReference<
+        "query",
+        "internal",
+        {
+          cursor?: string;
+          k1?: any;
+          k2?: any;
+          limit: number;
+          namespace?: any;
+          order: "asc" | "desc";
+        },
+        {
+          cursor: string;
+          isDone: boolean;
+          page: Array<{ k: any; s: number; v: any }>;
+        }
+      >;
+      paginateNamespaces: FunctionReference<
+        "query",
+        "internal",
+        { cursor?: string; limit: number },
+        { cursor: string; isDone: boolean; page: Array<any> }
+      >;
+      validate: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any },
+        any
+      >;
+    };
+    inspect: {
+      display: FunctionReference<"query", "internal", { namespace?: any }, any>;
+      dump: FunctionReference<"query", "internal", { namespace?: any }, string>;
+      inspectNode: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any; node?: string },
+        null
+      >;
+    };
+    public: {
+      clear: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      deleteIfExists: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        any
+      >;
+      delete_: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        null
+      >;
+      init: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      insert: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any; summand?: number; value: any },
+        null
+      >;
+      makeRootLazy: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: any },
+        null
+      >;
+      replace: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        null
+      >;
+      replaceOrInsert: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        any
+      >;
+    };
+  };
+  aggregateTestimonials: {
     btree: {
       aggregateBetween: FunctionReference<
         "query",
