@@ -56,18 +56,16 @@ export const PageTab = ({
 		});
 
 	// Get campaign data
-	const campaign = landingPage?.campaignId
-		? useQuery(api.collections.campaigns.queries.getById, {
-				id: landingPage.campaignId,
-			})
-		: null;
+	const campaign = useQuery(
+		api.collections.campaigns.queries.getById,
+		landingPage?.campaignId ? { id: landingPage.campaignId } : "skip",
+	);
 
 	// Get template data
-	const template = landingPage?.templateId
-		? useQuery(api.collections.landingPages.templates.queries.getById, {
-				id: landingPage.templateId,
-			})
-		: null;
+	const template = useQuery(
+		api.collections.landingPages.templates.queries.getById,
+		landingPage?.templateId ? { id: landingPage.templateId } : "skip",
+	);
 
 	// Mutations
 	const updateLandingPage = useMutation(

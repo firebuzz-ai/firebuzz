@@ -87,7 +87,7 @@ export const Chat = ({ id }: ChatProps) => {
 				parts: message.parts,
 				role: message.role,
 				experimental_attachments: message.attachments,
-				// @ts-expect-error
+				// @ts-expect-error - Message type doesn't include metadata property but we need it for our custom data
 				metadata: {
 					initial: !(
 						index === array.length - 1 && !message.landingPageVersionId
@@ -209,8 +209,14 @@ export const Chat = ({ id }: ChatProps) => {
 					Waiting for server to load...
 				</div>
 			)}
-			{/* biome-ignore lint/suspicious/noExplicitAny: <explanation> */}
-			<ChatInput append={memoizedAppend as unknown as any} />
+			<ChatInput
+				append={
+					memoizedAppend as (
+						message: Message | CreateMessage,
+						options?: ChatRequestOptions,
+					) => Promise<string | null | undefined>
+				}
+			/>
 		</div>
 	);
 };

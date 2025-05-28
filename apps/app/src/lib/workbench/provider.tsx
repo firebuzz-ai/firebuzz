@@ -46,7 +46,7 @@ export const WebcontainerProvider = ({
 						...prev,
 						{
 							type: "client",
-							// @ts-ignore
+							// @ts-expect-error - message property may not exist on preview message type but is accessed at runtime
 							message: message?.message ?? "",
 							rawError: JSON.stringify(message),
 						},

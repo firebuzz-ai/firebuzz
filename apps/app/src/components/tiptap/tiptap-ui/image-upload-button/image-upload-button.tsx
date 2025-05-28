@@ -14,113 +14,113 @@ import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
 
 export interface ImageUploadButtonProps extends ButtonProps {
-  editor?: Editor | null;
-  text?: string;
-  extensionName?: string;
+	editor?: Editor | null;
+	text?: string;
+	extensionName?: string;
 }
 
 export function isImageActive(
-  editor: Editor | null,
-  extensionName: string
+	editor: Editor | null,
+	extensionName: string,
 ): boolean {
-  if (!editor) return false;
-  return editor.isActive(extensionName);
+	if (!editor) return false;
+	return editor.isActive(extensionName);
 }
 
 export function insertImage(
-  editor: Editor | null,
-  extensionName: string
+	editor: Editor | null,
+	extensionName: string,
 ): boolean {
-  if (!editor) return false;
+	if (!editor) return false;
 
-  return editor
-    .chain()
-    .focus()
-    .insertContent({
-      type: extensionName,
-    })
-    .run();
+	return editor
+		.chain()
+		.focus()
+		.insertContent({
+			type: extensionName,
+		})
+		.run();
 }
 
 export function useImageUploadButton(
-  editor: Editor | null,
-  extensionName = "imageUpload",
-  disabled = false
+	editor: Editor | null,
+	extensionName = "imageUpload",
+	disabled = false,
 ) {
-  const isActive = isImageActive(editor, extensionName);
-  const handleInsertImage = React.useCallback(() => {
-    if (disabled) return false;
-    return insertImage(editor, extensionName);
-  }, [editor, extensionName, disabled]);
+	const isActive = isImageActive(editor, extensionName);
+	const handleInsertImage = React.useCallback(() => {
+		if (disabled) return false;
+		return insertImage(editor, extensionName);
+	}, [editor, extensionName, disabled]);
 
-  return {
-    isActive,
-    handleInsertImage,
-  };
+	return {
+		isActive,
+		handleInsertImage,
+	};
 }
 
 export const ImageUploadButton = React.forwardRef<
-  HTMLButtonElement,
-  ImageUploadButtonProps
+	HTMLButtonElement,
+	ImageUploadButtonProps
 >(
-  (
-    {
-      editor: providedEditor,
-      extensionName = "imageUpload",
-      text,
-      className = "",
-      disabled,
-      onClick,
-      children,
-      ...buttonProps
-    },
-    ref
-  ) => {
-    const editor = useTiptapEditor(providedEditor);
-    const { isActive, handleInsertImage } = useImageUploadButton(
-      editor,
-      extensionName,
-      disabled
-    );
+	(
+		{
+			editor: providedEditor,
+			extensionName = "imageUpload",
+			text,
+			className = "",
+			disabled,
+			onClick,
+			children,
+			...buttonProps
+		},
+		ref,
+	) => {
+		const editor = useTiptapEditor(providedEditor);
+		const { isActive, handleInsertImage } = useImageUploadButton(
+			editor,
+			extensionName,
+			disabled,
+		);
 
-    const handleClick = React.useCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(e);
+		const handleClick = React.useCallback(
+			(e: React.MouseEvent<HTMLButtonElement>) => {
+				onClick?.(e);
 
-        if (!e.defaultPrevented && !disabled) {
-          handleInsertImage();
-        }
-      },
-      [onClick, disabled, handleInsertImage]
-    );
+				if (!e.defaultPrevented && !disabled) {
+					handleInsertImage();
+				}
+			},
+			[onClick, disabled, handleInsertImage],
+		);
 
-    if (!editor || !editor.isEditable) {
-      return null;
-    }
+		if (!editor || !editor.isEditable) {
+			return null;
+		}
 
-    return (
-      <Button
-        ref={ref}
-        type="button"
-        className={className.trim()}
-        data-style="ghost"
-        data-active-state={isActive ? "on" : "off"}
-        tabIndex={-1}
-        aria-label="Add image"
-        aria-pressed={isActive}
-        tooltip="Add image"
-        onClick={handleClick}
-        {...buttonProps}
-      >
-        {children || (
-          <>
-            <ImagePlusIcon className="tiptap-button-icon" />
-            {text && <span className="tiptap-button-text">{text}</span>}
-          </>
-        )}
-      </Button>
-    );
-  }
+		return (
+			<Button
+				ref={ref}
+				type="button"
+				className={className.trim()}
+				data-style="ghost"
+				data-active-state={isActive ? "on" : "off"}
+				tabIndex={-1}
+				aria-label="Add image"
+				aria-pressed={isActive}
+				tooltip="Add image"
+				onClick={handleClick}
+				{...buttonProps}
+			>
+				{children || (
+					<>
+						<ImagePlusIcon className="tiptap-button-icon" />
+						{text && <span className="tiptap-button-text">{text}</span>}
+					</>
+				)}
+			</Button>
+		);
+	},
 );
 
 ImageUploadButton.displayName = "ImageUploadButton";

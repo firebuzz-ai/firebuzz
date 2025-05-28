@@ -16,38 +16,38 @@ import { Socials } from "./socials/socials";
 import { Testimonials } from "./testimonials/testimonials";
 
 export const Marketing = () => {
-  const [{ tab: currentTab }, setCurrentTab] = useQueryStates({
-    tab: parseAsStringLiteral([
-      "audiences",
-      "features",
-      "testimonials",
-      "socials",
-    ] as const),
-  });
-  return (
-    <div className="relative flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
-      <MarketingTabs
-        currentTab={currentTab ?? "audiences"}
-        setCurrentTab={(
-          tab: "audiences" | "features" | "testimonials" | "socials"
-        ) => {
-          setCurrentTab({ tab });
-        }}
-      />
+	const [{ tab: currentTab }, setCurrentTab] = useQueryStates({
+		tab: parseAsStringLiteral([
+			"audiences",
+			"features",
+			"testimonials",
+			"socials",
+		] as const),
+	});
+	return (
+		<div className="relative flex flex-col flex-1 max-w-full max-h-full overflow-hidden">
+			<MarketingTabs
+				currentTab={currentTab ?? "audiences"}
+				setCurrentTab={(
+					tab: "audiences" | "features" | "testimonials" | "socials",
+				) => {
+					setCurrentTab({ tab });
+				}}
+			/>
 
-      {currentTab === "audiences" && <Audiences />}
-      {currentTab === "features" && <Features />}
-      {currentTab === "testimonials" && <Testimonials />}
-      {currentTab === "socials" && <Socials />}
+			{currentTab === "audiences" && <Audiences />}
+			{currentTab === "features" && <Features />}
+			{currentTab === "testimonials" && <Testimonials />}
+			{currentTab === "socials" && <Socials />}
 
-      <NewAudienceModal />
-      <EditAudienceModal />
-      <NewFeatureModal />
-      <NewTestimonialModal />
-      <EditTestimonialModal />
-      <NewSocialModal />
-      <EditSocialModal />
-      <MediaGalleryModal />
-    </div>
-  );
+			<NewAudienceModal />
+			<EditAudienceModal />
+			<NewFeatureModal />
+			<NewTestimonialModal />
+			<EditTestimonialModal />
+			<NewSocialModal />
+			<EditSocialModal />
+			<MediaGalleryModal />
+		</div>
+	);
 };

@@ -72,14 +72,16 @@ const EmailSignUp = ({ setIsVerificationOpen, setEmail }: Props) => {
 				description: "We have sent you a code to sign up.",
 				id: "signup-code-flow",
 			});
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		} catch (error: any) {
+		} catch (error: unknown) {
 			setIsHandling(false);
-			console.log(error?.errors);
-			toast.error(
-				error?.errors?.[0].message ?? "Something went wrong. Please try again.",
-				{ id: "signup-code-flow" },
-			);
+			const errorMessage =
+				error instanceof Error
+					? error.message
+					: ((error as { errors?: Array<{ message: string }> })?.errors?.[0]
+							?.message ?? "Something went wrong. Please try again.");
+
+			console.log((error as { errors?: unknown })?.errors);
+			toast.error(errorMessage, { id: "signup-code-flow" });
 		}
 	};
 	return (

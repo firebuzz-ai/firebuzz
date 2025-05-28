@@ -31,11 +31,11 @@ export function useMessageParser() {
 							message.id,
 							`${message.id}-${index}`,
 							part.text ?? "",
-							// @ts-ignore (metadata is not always present)
+							// @ts-expect-error - metadata.initial property doesn't exist on Message type but is used at runtime
 							message.metadata?.initial ?? false,
-							// @ts-ignore
+							// @ts-expect-error - metadata.versionId property doesn't exist on Message type but is used at runtime
 							message.metadata?.versionId,
-							// @ts-ignore
+							// @ts-expect-error - metadata.versionNumber property doesn't exist on Message type but is used at runtime
 							message.metadata?.versionNumber,
 						);
 

@@ -8,18 +8,18 @@ import * as React from "react";
  * Interface defining required parameters for the cursor visibility hook
  */
 export interface CursorVisibilityOptions {
-  /**
-   * The TipTap editor instance
-   */
-  editor: Editor | null;
-  /**
-   * Reference to the toolbar element that may obscure the cursor
-   */
-  overlayHeight?: number;
-  /**
-   * Reference to the element to track for cursor visibility
-   */
-  elementRef?: React.RefObject<HTMLElement> | null;
+	/**
+	 * The TipTap editor instance
+	 */
+	editor: Editor | null;
+	/**
+	 * Reference to the toolbar element that may obscure the cursor
+	 */
+	overlayHeight?: number;
+	/**
+	 * Reference to the element to track for cursor visibility
+	 */
+	elementRef?: React.RefObject<HTMLElement> | null;
 }
 
 /**
@@ -38,79 +38,79 @@ export type RectState = Pick<DOMRect, "x" | "y" | "width" | "height">;
  * @returns void
  */
 export function useCursorVisibility({
-  editor,
-  overlayHeight = 0,
-  elementRef = null,
+	editor,
+	overlayHeight = 0,
+	elementRef = null,
 }: CursorVisibilityOptions) {
-  const { height: windowHeight } = useWindowSize();
-  const [rect, setRect] = React.useState<RectState>({
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-  });
+	const { height: windowHeight } = useWindowSize();
+	const [rect, setRect] = React.useState<RectState>({
+		x: 0,
+		y: 0,
+		width: 0,
+		height: 0,
+	});
 
-  const updateRect = React.useCallback(() => {
-    const element = elementRef?.current ?? document.body;
+	const updateRect = React.useCallback(() => {
+		const element = elementRef?.current ?? document.body;
 
-    const { x, y, width, height } = element.getBoundingClientRect();
-    setRect({ x, y, width, height });
-  }, [elementRef]);
+		const { x, y, width, height } = element.getBoundingClientRect();
+		setRect({ x, y, width, height });
+	}, [elementRef]);
 
-  React.useEffect(() => {
-    const element = elementRef?.current ?? document.body;
+	React.useEffect(() => {
+		const element = elementRef?.current ?? document.body;
 
-    updateRect();
+		updateRect();
 
-    const resizeObserver = new ResizeObserver(() => {
-      window.requestAnimationFrame(updateRect);
-    });
+		const resizeObserver = new ResizeObserver(() => {
+			window.requestAnimationFrame(updateRect);
+		});
 
-    resizeObserver.observe(element);
-    window.addEventListener("scroll", updateRect, { passive: true });
+		resizeObserver.observe(element);
+		window.addEventListener("scroll", updateRect, { passive: true });
 
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener("scroll", updateRect);
-    };
-  }, [elementRef, updateRect]);
+		return () => {
+			resizeObserver.disconnect();
+			window.removeEventListener("scroll", updateRect);
+		};
+	}, [elementRef, updateRect]);
 
-  React.useEffect(() => {
-    const ensureCursorVisibility = () => {
-      if (!editor) return;
+	React.useEffect(() => {
+		const ensureCursorVisibility = () => {
+			if (!editor) return;
 
-      const { state, view } = editor;
+			const { state, view } = editor;
 
-      if (!view.hasFocus()) return;
+			if (!view.hasFocus()) return;
 
-      // Get current cursor position coordinates
-      const { from } = state.selection;
-      const cursorCoords = view.coordsAtPos(from);
+			// Get current cursor position coordinates
+			const { from } = state.selection;
+			const cursorCoords = view.coordsAtPos(from);
 
-      if (windowHeight < rect.height) {
-        if (cursorCoords) {
-          // Check if there's enough space between cursor and bottom of window
-          const availableSpace =
-            windowHeight - cursorCoords.top - overlayHeight > 0;
+			if (windowHeight < rect.height) {
+				if (cursorCoords) {
+					// Check if there's enough space between cursor and bottom of window
+					const availableSpace =
+						windowHeight - cursorCoords.top - overlayHeight > 0;
 
-          // If not enough space, scroll to position cursor in the middle of viewport
-          if (!availableSpace) {
-            const targetScrollY =
-              // TODO: Needed?
-              //   window.scrollY + (cursorCoords.top - windowHeight / 2)
-              cursorCoords.top - windowHeight / 2;
+					// If not enough space, scroll to position cursor in the middle of viewport
+					if (!availableSpace) {
+						const targetScrollY =
+							// TODO: Needed?
+							//   window.scrollY + (cursorCoords.top - windowHeight / 2)
+							cursorCoords.top - windowHeight / 2;
 
-            window.scrollTo({
-              top: targetScrollY,
-              behavior: "smooth",
-            });
-          }
-        }
-      }
-    };
+						window.scrollTo({
+							top: targetScrollY,
+							behavior: "smooth",
+						});
+					}
+				}
+			}
+		};
 
-    ensureCursorVisibility();
-  }, [editor, overlayHeight, windowHeight, rect.height]);
+		ensureCursorVisibility();
+	}, [editor, overlayHeight, windowHeight, rect.height]);
 
-  return rect;
+	return rect;
 }

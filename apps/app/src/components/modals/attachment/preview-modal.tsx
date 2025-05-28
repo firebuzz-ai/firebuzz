@@ -23,6 +23,7 @@ const MediaRenderer = ({
 		| "html"
 		| "txt"
 		| "docx"
+		| "json"
 		| "unknown";
 }) => {
 	if (mediaType === "image") {

@@ -40,14 +40,16 @@ const OTPVerification = ({ email }: { email: string }) => {
 					router.refresh();
 					router.push("/");
 				}, 1000);
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			} catch (error: any) {
-				console.log(error?.errors);
-				toast.error(
-					error?.errors?.[0].longMessage ??
-						"Something went wrong. Please try again.",
-					{ id: "verification" },
-				);
+			} catch (error: unknown) {
+				const errorMessage =
+					error instanceof Error && "errors" in error
+						? (error as { errors: Array<{ longMessage?: string }> })
+								?.errors?.[0]?.longMessage
+						: "Something went wrong. Please try again.";
+				console.log(error);
+				toast.error(errorMessage ?? "Something went wrong. Please try again.", {
+					id: "verification",
+				});
 			}
 		},
 		[signUp, signUpLoaded, setActive, email, router],
@@ -79,14 +81,17 @@ const OTPVerification = ({ email }: { email: string }) => {
 				description: "We have sent you a code to sign up.",
 				id: "resend-code-flow",
 			});
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		} catch (error: any) {
+		} catch (error: unknown) {
 			setIsResending(false);
-			console.log(error?.errors);
-			toast.error(
-				error?.errors?.[0].message ?? "Something went wrong. Please try again.",
-				{ id: "resend-code-flow" },
-			);
+			const errorMessage =
+				error instanceof Error && "errors" in error
+					? (error as { errors: Array<{ message?: string }> })?.errors?.[0]
+							?.message
+					: "Something went wrong. Please try again.";
+			console.log(error);
+			toast.error(errorMessage ?? "Something went wrong. Please try again.", {
+				id: "resend-code-flow",
+			});
 		}
 	};
 
@@ -96,7 +101,7 @@ const OTPVerification = ({ email }: { email: string }) => {
 			<div>
 				<h1 className="text-3xl font-bold mb-4">Verify your email</h1>
 				<p className="mb-4">
-					We've sent a 6-digit code to your email. Please enter it below.
+					We&apos;ve sent a 6-digit code to your email. Please enter it below.
 				</p>
 				<OTPInput
 					maxLength={6}
@@ -132,7 +137,7 @@ const OTPVerification = ({ email }: { email: string }) => {
 					)}
 				/>
 				<div className="mt-6 text-sm text-muted-foreground flex items-center gap-2">
-					<p>Didn't you recieve the code?</p>{" "}
+					<p>Didn&apos;t you recieve the code?</p>{" "}
 					<button
 						type="button"
 						onClick={handleResendCode}

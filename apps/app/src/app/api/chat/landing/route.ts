@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
 	const messagesToProcess =
 		totalMessages > 10
 			? messages
-					//@ts-ignore
+					// @ts-expect-error - Message type doesn't include metadata property but it exists at runtime
 					.filter((message: Message) => message?.metadata?.isSystem !== true)
 					.slice(-20)
 			: messages.filter(
-					//@ts-ignore
+					// @ts-expect-error - Message type doesn't include metadata property but it exists at runtime
 					(message: Message) => message?.metadata?.isSystem !== true,
 				);
 
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 								: message.createdAt instanceof Date
 									? message.createdAt.toISOString()
 									: new Date().toISOString(),
-						// @ts-expect-error
+						// @ts-expect-error - revisionId property doesn't exist on Message type but is used at runtime
 						isRevision: Boolean(message.revisionId),
 					};
 

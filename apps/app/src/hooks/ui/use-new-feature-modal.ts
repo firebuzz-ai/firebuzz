@@ -1,11 +1,11 @@
 import { atom, useAtom } from "jotai";
 
 interface NewFeatureModalState {
-  create: boolean;
+	create: boolean;
 }
 
 const newFeatureModalAtom = atom<NewFeatureModalState>({
-  create: false,
+	create: false,
 });
 
 export const useNewFeatureModal = () => useAtom(newFeatureModalAtom);

@@ -30,15 +30,15 @@ export const getAttachments = (message: MessageType): Attachment[] => {
 	}
 
 	// Check for stored attachments from database
-	// @ts-ignore - attachments might be in metadata or directly on the message
+	// @ts-expect-error - attachments property doesn't exist on Message type but may be added at runtime from database
 	if (message.attachments?.length > 0) {
-		// @ts-ignore
+		// @ts-expect-error - attachments property doesn't exist on Message type but may be added at runtime from database
 		return message.attachments;
 	}
 
-	// @ts-ignore - attachments might be in metadata
+	// @ts-expect-error - metadata.attachments property doesn't exist on Message type but may be added at runtime
 	if (message.metadata?.attachments?.length > 0) {
-		// @ts-ignore
+		// @ts-expect-error - metadata.attachments property doesn't exist on Message type but may be added at runtime
 		return message.metadata.attachments;
 	}
 

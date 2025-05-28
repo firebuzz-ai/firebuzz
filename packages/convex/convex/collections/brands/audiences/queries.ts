@@ -3,55 +3,55 @@ import { query } from "../../../_generated/server";
 import { getCurrentUser } from "../../users/utils";
 
 export const getAll = query({
-  args: {
-    searchQuery: v.optional(v.string()),
-  },
-  handler: async (ctx, { searchQuery }) => {
-    const user = await getCurrentUser(ctx);
-    const projectId = user?.currentProject;
+	args: {
+		searchQuery: v.optional(v.string()),
+	},
+	handler: async (ctx, { searchQuery }) => {
+		const user = await getCurrentUser(ctx);
+		const projectId = user?.currentProject;
 
-    if (!user || !projectId) {
-      throw new Error("Unauthorized");
-    }
+		if (!user || !projectId) {
+			throw new Error("Unauthorized");
+		}
 
-    const query = searchQuery
-      ? ctx.db
-          .query("audiences")
-          .withSearchIndex("by_name", (q) => q.search("name", searchQuery))
-          .take(15)
-      : ctx.db
-          .query("audiences")
-          .withIndex("by_project_id", (q) => q.eq("projectId", projectId))
-          .take(15);
+		const query = searchQuery
+			? ctx.db
+					.query("audiences")
+					.withSearchIndex("by_name", (q) => q.search("name", searchQuery))
+					.take(15)
+			: ctx.db
+					.query("audiences")
+					.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+					.take(15);
 
-    const audiences = await query;
+		const audiences = await query;
 
-    return audiences;
-  },
+		return audiences;
+	},
 });
 
 export const getById = query({
-  args: {
-    id: v.id("audiences"),
-  },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUser(ctx);
-    const projectId = user?.currentProject;
+	args: {
+		id: v.id("audiences"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUser(ctx);
+		const projectId = user?.currentProject;
 
-    if (!user || !projectId) {
-      throw new Error("Unauthorized");
-    }
+		if (!user || !projectId) {
+			throw new Error("Unauthorized");
+		}
 
-    const audience = await ctx.db.get(args.id);
+		const audience = await ctx.db.get(args.id);
 
-    if (!audience) {
-      throw new Error("Audience not found");
-    }
+		if (!audience) {
+			throw new Error("Audience not found");
+		}
 
-    if (audience.projectId !== projectId) {
-      throw new Error("Unauthorized");
-    }
+		if (audience.projectId !== projectId) {
+			throw new Error("Unauthorized");
+		}
 
-    return audience;
-  },
+		return audience;
+	},
 });

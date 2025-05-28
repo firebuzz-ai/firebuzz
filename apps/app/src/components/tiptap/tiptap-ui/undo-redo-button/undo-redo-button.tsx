@@ -20,33 +20,33 @@ export type HistoryAction = "undo" | "redo";
  * Props for the UndoRedoButton component.
  */
 export interface UndoRedoButtonProps extends ButtonProps {
-  /**
-   * The TipTap editor instance.
-   */
-  editor?: Editor | null;
-  /**
-   * Optional text to display alongside the icon.
-   */
-  text?: string;
-  /**
-   * The history action to perform (undo or redo).
-   */
-  action: HistoryAction;
+	/**
+	 * The TipTap editor instance.
+	 */
+	editor?: Editor | null;
+	/**
+	 * Optional text to display alongside the icon.
+	 */
+	text?: string;
+	/**
+	 * The history action to perform (undo or redo).
+	 */
+	action: HistoryAction;
 }
 
 export const historyIcons = {
-  undo: Undo2Icon,
-  redo: Redo2Icon,
+	undo: Undo2Icon,
+	redo: Redo2Icon,
 };
 
 export const historyShortcutKeys: Partial<Record<HistoryAction, string>> = {
-  undo: "Ctrl-z",
-  redo: "Ctrl-Shift-z",
+	undo: "Ctrl-z",
+	redo: "Ctrl-Shift-z",
 };
 
 export const historyActionLabels: Record<HistoryAction, string> = {
-  undo: "Undo",
-  redo: "Redo",
+	undo: "Undo",
+	redo: "Redo",
 };
 
 /**
@@ -57,11 +57,11 @@ export const historyActionLabels: Record<HistoryAction, string> = {
  * @returns Whether the action can be executed
  */
 export function canExecuteHistoryAction(
-  editor: Editor | null,
-  action: HistoryAction
+	editor: Editor | null,
+	action: HistoryAction,
 ): boolean {
-  if (!editor) return false;
-  return action === "undo" ? editor.can().undo() : editor.can().redo();
+	if (!editor) return false;
+	return action === "undo" ? editor.can().undo() : editor.can().redo();
 }
 
 /**
@@ -72,12 +72,12 @@ export function canExecuteHistoryAction(
  * @returns Whether the action was executed successfully
  */
 export function executeHistoryAction(
-  editor: Editor | null,
-  action: HistoryAction
+	editor: Editor | null,
+	action: HistoryAction,
 ): boolean {
-  if (!editor) return false;
-  const chain = editor.chain().focus();
-  return action === "undo" ? chain.undo().run() : chain.redo().run();
+	if (!editor) return false;
+	const chain = editor.chain().focus();
+	return action === "undo" ? chain.undo().run() : chain.redo().run();
 }
 
 /**
@@ -89,12 +89,12 @@ export function executeHistoryAction(
  * @returns Whether the action should be disabled
  */
 export function isHistoryActionDisabled(
-  editor: Editor | null,
-  action: HistoryAction,
-  userDisabled = false
+	editor: Editor | null,
+	action: HistoryAction,
+	userDisabled = false,
 ): boolean {
-  if (userDisabled) return true;
-  return !canExecuteHistoryAction(editor, action);
+	if (userDisabled) return true;
+	return !canExecuteHistoryAction(editor, action);
 }
 
 /**
@@ -106,100 +106,100 @@ export function isHistoryActionDisabled(
  * @returns Object containing state and handlers for the history action
  */
 export function useHistoryAction(
-  editor: Editor | null,
-  action: HistoryAction,
-  disabled = false
+	editor: Editor | null,
+	action: HistoryAction,
+	disabled = false,
 ) {
-  const canExecute = React.useMemo(
-    () => canExecuteHistoryAction(editor, action),
-    [editor, action]
-  );
+	const canExecute = React.useMemo(
+		() => canExecuteHistoryAction(editor, action),
+		[editor, action],
+	);
 
-  const isDisabled = isHistoryActionDisabled(editor, action, disabled);
+	const isDisabled = isHistoryActionDisabled(editor, action, disabled);
 
-  const handleAction = React.useCallback(() => {
-    if (!editor || isDisabled) return;
-    executeHistoryAction(editor, action);
-  }, [editor, action, isDisabled]);
+	const handleAction = React.useCallback(() => {
+		if (!editor || isDisabled) return;
+		executeHistoryAction(editor, action);
+	}, [editor, action, isDisabled]);
 
-  const Icon = historyIcons[action];
-  const actionLabel = historyActionLabels[action];
-  const shortcutKey = historyShortcutKeys[action];
+	const Icon = historyIcons[action];
+	const actionLabel = historyActionLabels[action];
+	const shortcutKey = historyShortcutKeys[action];
 
-  return {
-    canExecute,
-    isDisabled,
-    handleAction,
-    Icon,
-    actionLabel,
-    shortcutKey,
-  };
+	return {
+		canExecute,
+		isDisabled,
+		handleAction,
+		Icon,
+		actionLabel,
+		shortcutKey,
+	};
 }
 
 /**
  * Button component for triggering undo/redo actions in a TipTap editor.
  */
 export const UndoRedoButton = React.forwardRef<
-  HTMLButtonElement,
-  UndoRedoButtonProps
+	HTMLButtonElement,
+	UndoRedoButtonProps
 >(
-  (
-    {
-      editor: providedEditor,
-      action,
-      text,
-      className = "",
-      disabled,
-      onClick,
-      children,
-      ...buttonProps
-    },
-    ref
-  ) => {
-    const editor = useTiptapEditor(providedEditor);
+	(
+		{
+			editor: providedEditor,
+			action,
+			text,
+			className = "",
+			disabled,
+			onClick,
+			children,
+			...buttonProps
+		},
+		ref,
+	) => {
+		const editor = useTiptapEditor(providedEditor);
 
-    const { isDisabled, handleAction, Icon, actionLabel, shortcutKey } =
-      useHistoryAction(editor, action, disabled);
+		const { isDisabled, handleAction, Icon, actionLabel, shortcutKey } =
+			useHistoryAction(editor, action, disabled);
 
-    const handleClick = React.useCallback(
-      (e: React.MouseEvent<HTMLButtonElement>) => {
-        onClick?.(e);
+		const handleClick = React.useCallback(
+			(e: React.MouseEvent<HTMLButtonElement>) => {
+				onClick?.(e);
 
-        if (!e.defaultPrevented && !disabled) {
-          handleAction();
-        }
-      },
-      [onClick, disabled, handleAction]
-    );
+				if (!e.defaultPrevented && !disabled) {
+					handleAction();
+				}
+			},
+			[onClick, disabled, handleAction],
+		);
 
-    if (!editor || !editor.isEditable) {
-      return null;
-    }
+		if (!editor || !editor.isEditable) {
+			return null;
+		}
 
-    return (
-      <Button
-        ref={ref}
-        type="button"
-        className={className.trim()}
-        disabled={isDisabled}
-        data-style="ghost"
-        data-disabled={isDisabled}
-        tabIndex={-1}
-        aria-label={actionLabel}
-        tooltip={actionLabel}
-        shortcutKeys={shortcutKey}
-        onClick={handleClick}
-        {...buttonProps}
-      >
-        {children || (
-          <>
-            <Icon className="tiptap-button-icon" />
-            {text && <span className="tiptap-button-text">{text}</span>}
-          </>
-        )}
-      </Button>
-    );
-  }
+		return (
+			<Button
+				ref={ref}
+				type="button"
+				className={className.trim()}
+				disabled={isDisabled}
+				data-style="ghost"
+				data-disabled={isDisabled}
+				tabIndex={-1}
+				aria-label={actionLabel}
+				tooltip={actionLabel}
+				shortcutKeys={shortcutKey}
+				onClick={handleClick}
+				{...buttonProps}
+			>
+				{children || (
+					<>
+						<Icon className="tiptap-button-icon" />
+						{text && <span className="tiptap-button-text">{text}</span>}
+					</>
+				)}
+			</Button>
+		);
+	},
 );
 
 UndoRedoButton.displayName = "UndoRedoButton";

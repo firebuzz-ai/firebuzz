@@ -16,6 +16,7 @@ export const useAttachmentPreviewModal = () => {
 				"html",
 				"txt",
 				"docx",
+				"json",
 				"unknown",
 			] as const),
 			placement: parseAsStringEnum(["chat-attachment", "chat-input"] as const),

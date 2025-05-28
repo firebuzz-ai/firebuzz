@@ -173,6 +173,7 @@ export const DocumentsTab = ({
 		};
 	}, [status, loadMore]);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <We need to re-run this effect when the document items change>
 	useLayoutEffect(() => {
 		if (
 			status === "CanLoadMore" &&

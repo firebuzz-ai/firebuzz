@@ -44,14 +44,16 @@ const OTPVerification = ({ email }: { email: string }) => {
 					router.refresh();
 					router.push("/");
 				}, 1000);
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-			} catch (error: any) {
-				console.log(error?.errors);
-				toast.error(
-					error?.errors?.[0].longMessage ??
-						"Something went wrong. Please try again.",
-					{ id: "verification" },
-				);
+			} catch (error: unknown) {
+				const errorMessage =
+					error instanceof Error && "errors" in error
+						? (error as { errors: Array<{ longMessage?: string }> })
+								?.errors?.[0]?.longMessage
+						: "Something went wrong. Please try again.";
+				console.log(error);
+				toast.error(errorMessage ?? "Something went wrong. Please try again.", {
+					id: "verification",
+				});
 			}
 		},
 		[signIn, signInLoaded, setActive, email, router],
@@ -101,19 +103,22 @@ const OTPVerification = ({ email }: { email: string }) => {
 				description: "We have sent you a code to sign in.",
 				id: "resend-code-flow",
 			});
-			// biome-ignore lint/suspicious/noExplicitAny: <explanation>
-		} catch (error: any) {
+		} catch (error: unknown) {
 			setIsResending(false);
-			console.log(error?.errors);
-			toast.error(
-				error?.errors?.[0].message ?? "Something went wrong. Please try again.",
-				{ id: "resend-code-flow" },
-			);
+			const errorMessage =
+				error instanceof Error && "errors" in error
+					? (error as { errors: Array<{ message?: string }> })?.errors?.[0]
+							?.message
+					: "Something went wrong. Please try again.";
+			console.log(error);
+			toast.error(errorMessage ?? "Something went wrong. Please try again.", {
+				id: "resend-code-flow",
+			});
 		}
 	};
 
 	return (
-		<div className="flex flex-1 flex-col gap-8">
+		<div className="flex flex-col flex-1 gap-8">
 			{/* OTP Input */}
 			<OTPInput
 				maxLength={6}
@@ -148,12 +153,12 @@ const OTPVerification = ({ email }: { email: string }) => {
 					</div>
 				)}
 			/>
-			<div className="text-sm text-muted-foreground flex items-center gap-1">
-				<p>Didn't you recieve the code?</p>{" "}
+			<div className="flex items-center gap-1 text-sm text-muted-foreground">
+				<p>Didn&apos;t you recieve the code?</p>{" "}
 				<button
 					type="button"
 					onClick={handleResendCode}
-					className="text-foreground underline underline-offset-4 decoration-primary hover:text-foreground/70 hover:decoration-primary/70 duration-200 transition-colors ease-in-out bg-transparent"
+					className="underline transition-colors duration-200 ease-in-out bg-transparent text-foreground underline-offset-4 decoration-primary hover:text-foreground/70 hover:decoration-primary/70"
 				>
 					Resend
 				</button>

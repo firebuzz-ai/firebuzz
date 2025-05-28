@@ -166,6 +166,7 @@ export const GalleryTab = ({
 
 	// On first load or when there's a type/search change and we're in CanLoadMore state,
 	// check if we need to load more content (if container isn't filled)
+	// biome-ignore lint/correctness/useExhaustiveDependencies: <We need to re-run this effect when the media items change>
 	useLayoutEffect(() => {
 		if (
 			status === "CanLoadMore" &&
@@ -204,7 +205,7 @@ export const GalleryTab = ({
 	return (
 		<div className="flex flex-col h-full">
 			{/* Filters */}
-			<div className="flex items-center px-4 pt-4 pb-2 gap-2">
+			<div className="flex items-center gap-2 px-4 pt-4 pb-2">
 				<div className="relative flex-1">
 					<Search className="absolute left-2.5 top-2.5 !size-3 text-muted-foreground" />
 					<Input
