@@ -1,7 +1,5 @@
 import { v } from "convex/values";
 
-/* https://cdn-dev.getfirebuzz.com/jd7amhzf0r48ecyhd3zxw6tv1h7aa57p/j57en4zh46v4xkhb8fn2hs97617abvsx/7f742129-5d15-4cc4-399d-22956e918e74 */
-
 export const seoSchema = v.object({
   metaTitleTemplate: v.optional(v.string()),
   metaTitleDivider: v.optional(

@@ -93,14 +93,14 @@ export const ColorsSection = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div>
       {organizedThemes.map((themeData) => {
         const { theme, primaryColor, colorsByCategory } = themeData;
 
         return (
-          <div key={theme} className="border-b">
+          <div key={theme} className="px-4 py-8 space-y-6 border-b">
             {/* Theme Header */}
-            <div className="p-4">
+            <div className="">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="flex items-center gap-2 text-lg font-medium capitalize">
@@ -131,7 +131,7 @@ export const ColorsSection = ({
             </div>
 
             {/* Primary Color Section */}
-            <div className="p-4">
+            <div className="">
               <div className="mb-3">
                 <h3 className="mb-1 text-sm font-medium text-foreground">
                   Primary Color
@@ -196,7 +196,7 @@ export const ColorsSection = ({
 
             {/* Other Colors in Accordion */}
             {Object.keys(colorsByCategory).length > 0 && (
-              <Accordion type="single" collapsible className="px-4 pb-4">
+              <Accordion type="single" collapsible>
                 <AccordionItem value="other-colors" className="border-0">
                   <AccordionTrigger
                     className={buttonVariants({

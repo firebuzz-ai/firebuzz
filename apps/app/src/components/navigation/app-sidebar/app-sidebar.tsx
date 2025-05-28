@@ -93,16 +93,11 @@ const navLinks = [
       },
       {
         title: "Marketing",
-        url: "/brand/marketing",
+        url: "/brand/marketing?tab=audiences",
       },
       {
         title: "SEO",
         url: "/brand/seo",
-      },
-
-      {
-        title: "Socials",
-        url: "/brand/socials",
       },
     ],
   },

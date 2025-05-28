@@ -78,7 +78,7 @@ export const RadiusSection = ({
   };
 
   return (
-    <div className="px-4 py-4 space-y-6">
+    <div className="px-4 py-8 space-y-6">
       <div>
         <h2 className="text-lg font-medium">Border Radius</h2>
         <p className="text-sm text-muted-foreground">

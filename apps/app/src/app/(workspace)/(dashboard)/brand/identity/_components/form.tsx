@@ -174,14 +174,14 @@ export const BrandIdentityForm = ({
     <div className="flex-1 w-full max-h-full py-4 overflow-y-auto">
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()}>
-          <div className="px-4 pb-4 space-y-6 border-b">
+          <div className="px-4 pt-4 pb-8 space-y-6 border-b">
             <div>
               <h2 className="text-lg font-medium">Brand Identity</h2>
               <p className="text-sm text-muted-foreground">
                 Define your brand's core identity and visual elements
               </p>
             </div>
-            <div className="space-y-4 ">
+            <div className="space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -260,7 +260,7 @@ export const BrandIdentityForm = ({
             </div>
           </div>
 
-          <div className="px-4 pt-4 pb-2 space-y-6">
+          <div className="px-4 pt-8 pb-4 space-y-8">
             <div>
               <h2 className="text-lg font-medium">Visual Identity</h2>
               <p className="text-sm text-muted-foreground">

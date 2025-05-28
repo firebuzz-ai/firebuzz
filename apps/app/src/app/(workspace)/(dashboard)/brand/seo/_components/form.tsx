@@ -246,7 +246,7 @@ export const BrandSeoForm = ({
       <Form {...form}>
         <form onSubmit={(e) => e.preventDefault()}>
           {/* Meta Title Template */}
-          <div className="px-4 pb-4 space-y-6 border-b">
+          <div className="px-4 pt-4 pb-8 space-y-6 border-b">
             <div>
               <h2 className="text-lg font-medium">Meta Title Template</h2>
               <p className="text-sm text-muted-foreground">
@@ -325,7 +325,7 @@ export const BrandSeoForm = ({
           </div>
 
           {/* Basic SEO Settings */}
-          <div className="px-4 py-4 space-y-6 border-b">
+          <div className="px-4 py-8 space-y-6 border-b">
             <div>
               <Badge>Fallback</Badge>
               <h2 className="mt-1 text-lg font-medium">SEO Settings</h2>
@@ -466,7 +466,7 @@ export const BrandSeoForm = ({
           </div>
 
           {/* OpenGraph Settings */}
-          <div className="px-4 py-4 space-y-6 border-b">
+          <div className="px-4 py-8 space-y-6 border-b">
             <div>
               <Badge>Fallback</Badge>
               <h2 className="mt-1 text-lg font-medium">OpenGraph Settings</h2>
@@ -589,7 +589,7 @@ export const BrandSeoForm = ({
           </div>
 
           {/* Twitter Card Settings */}
-          <div className="px-4 py-4 space-y-6">
+          <div className="px-4 pt-8 pb-4 space-y-6">
             <div>
               <Badge>Fallback</Badge>
               <h2 className="mt-1 text-lg font-medium">

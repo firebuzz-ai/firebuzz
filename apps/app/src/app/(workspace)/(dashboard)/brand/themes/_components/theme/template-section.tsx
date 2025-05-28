@@ -50,7 +50,7 @@ export const TemplateSection = ({
   };
 
   return (
-    <div className="p-4 space-y-4 border-b">
+    <div className="px-4 pt-4 pb-8 space-y-4 border-b">
       <div>
         <h2 className="text-lg font-medium">Theme Template</h2>
         <p className="text-sm text-muted-foreground">

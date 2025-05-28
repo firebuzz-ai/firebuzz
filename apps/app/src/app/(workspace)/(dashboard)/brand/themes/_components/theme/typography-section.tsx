@@ -120,7 +120,7 @@ export const TypographySection = ({
   }, [monoOpen]);
 
   return (
-    <div className="px-4 py-4 space-y-6 border-b">
+    <div className="px-4 py-8 space-y-6 border-b">
       <div>
         <h2 className="text-lg font-medium">Typography</h2>
         <p className="text-sm text-muted-foreground">

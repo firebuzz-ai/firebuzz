@@ -36,8 +36,8 @@ const isValidHex = (hex: string): boolean => {
 export const CustomColorPicker = () => {
   const { color, setColor } = useColorSelectorModal();
 
-  const [rgba, setRgba] = useState(hexToRgba("#494BCE"));
-  const [hexInput, setHexInput] = useState("#494BCE");
+  const [rgba, setRgba] = useState(hexToRgba(color ?? "#000000"));
+  const [hexInput, setHexInput] = useState(color ?? "#000000");
 
   const handleColorChange = useCallback(
     (newColor: string) => {

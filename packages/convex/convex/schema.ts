@@ -8,7 +8,11 @@ import { projectSchema } from "./collections/projects/schema";
 import { documentChunksSchema } from "./collections/storage/documents/chunks/schema";
 import { documentsSchema } from "./collections/storage/documents/schema";
 
+import { audienceSchema } from "./collections/brands/audiences/schema";
+import { featureSchema } from "./collections/brands/features/schema";
 import { brandSchema } from "./collections/brands/schema";
+import { socialSchema } from "./collections/brands/socials/schema";
+import { testimonialSchema } from "./collections/brands/testimonials/schema";
 import { themeSchema } from "./collections/brands/themes/schema";
 import { memoizedDocumentsSchema } from "./collections/storage/documents/memoized/schema";
 import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
@@ -104,6 +108,25 @@ export default defineSchema({
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
     .index("by_brand_id", ["brandId"]),
+  audiences: defineTable(audienceSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_brand_id", ["brandId"])
+    .searchIndex("by_name", { searchField: "name" }),
+  features: defineTable(featureSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_brand_id", ["brandId"]),
+  testimonials: defineTable(testimonialSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_brand_id", ["brandId"])
+    .searchIndex("by_search_content", { searchField: "searchContent" }),
+  socials: defineTable(socialSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_brand_id", ["brandId"])
+    .searchIndex("by_platform", { searchField: "platform" }),
 
   // Helper Tables
   memoizedDocuments: defineTable(memoizedDocumentsSchema)

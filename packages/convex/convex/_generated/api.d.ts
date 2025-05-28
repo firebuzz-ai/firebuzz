@@ -9,8 +9,16 @@
  */
 
 import type * as aggregates from "../aggregates.js";
+import type * as collections_brands_audiences_mutations from "../collections/brands/audiences/mutations.js";
+import type * as collections_brands_audiences_queries from "../collections/brands/audiences/queries.js";
+import type * as collections_brands_features_mutations from "../collections/brands/features/mutations.js";
+import type * as collections_brands_features_queries from "../collections/brands/features/queries.js";
 import type * as collections_brands_mutations from "../collections/brands/mutations.js";
 import type * as collections_brands_queries from "../collections/brands/queries.js";
+import type * as collections_brands_socials_mutations from "../collections/brands/socials/mutations.js";
+import type * as collections_brands_socials_queries from "../collections/brands/socials/queries.js";
+import type * as collections_brands_testimonials_mutations from "../collections/brands/testimonials/mutations.js";
+import type * as collections_brands_testimonials_queries from "../collections/brands/testimonials/queries.js";
 import type * as collections_brands_themes_mutations from "../collections/brands/themes/mutations.js";
 import type * as collections_brands_themes_queries from "../collections/brands/themes/queries.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
@@ -88,8 +96,16 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   aggregates: typeof aggregates;
+  "collections/brands/audiences/mutations": typeof collections_brands_audiences_mutations;
+  "collections/brands/audiences/queries": typeof collections_brands_audiences_queries;
+  "collections/brands/features/mutations": typeof collections_brands_features_mutations;
+  "collections/brands/features/queries": typeof collections_brands_features_queries;
   "collections/brands/mutations": typeof collections_brands_mutations;
   "collections/brands/queries": typeof collections_brands_queries;
+  "collections/brands/socials/mutations": typeof collections_brands_socials_mutations;
+  "collections/brands/socials/queries": typeof collections_brands_socials_queries;
+  "collections/brands/testimonials/mutations": typeof collections_brands_testimonials_mutations;
+  "collections/brands/testimonials/queries": typeof collections_brands_testimonials_queries;
   "collections/brands/themes/mutations": typeof collections_brands_themes_mutations;
   "collections/brands/themes/queries": typeof collections_brands_themes_queries;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;

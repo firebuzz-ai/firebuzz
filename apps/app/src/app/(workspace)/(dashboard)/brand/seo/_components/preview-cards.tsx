@@ -96,7 +96,7 @@ export const PreviewCards = ({
           <h3 className="text-sm font-medium">Google Search</h3>
         </div>
 
-        <Card className="border-0 shadow-sm">
+        <Card className="border rounded-lg shadow-sm">
           <CardContent className="p-6">
             <div className="space-y-3">
               {/* URL breadcrumb with favicon */}
@@ -160,7 +160,7 @@ export const PreviewCards = ({
           <h3 className="text-sm font-medium">Twitter / X</h3>
         </div>
 
-        <Card className="border-0 shadow-sm bg-card">
+        <Card className="border rounded-lg shadow-sm bg-card">
           <CardContent className="p-0">
             {/* Tweet Header */}
             <div className="flex items-start gap-3 p-3 pb-0">
@@ -306,7 +306,7 @@ export const PreviewCards = ({
           <h3 className="text-sm font-medium">Facebook</h3>
         </div>
 
-        <Card className="border-0 shadow-sm">
+        <Card className="border rounded-lg shadow-sm">
           <CardContent className="p-4">
             {/* Facebook Post Header */}
             <div className="flex items-start gap-3 mb-3">

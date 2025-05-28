@@ -6,7 +6,7 @@ import {
   formatDistance,
   isToday,
 } from "date-fns";
-import { countriesAndLanguages } from "./contants";
+export { AVATARS, countriesAndLanguages } from "./constants";
 
 export const camelCase = (str: string) => {
   return str
