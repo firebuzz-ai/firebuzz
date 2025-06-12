@@ -1,103 +1,98 @@
 import { v } from "convex/values";
 import {
-	internalMutationWithTrigger,
-	mutationWithTrigger,
+  internalMutationWithTrigger,
+  mutationWithTrigger,
 } from "../../../triggers";
-import { getCurrentUser } from "../../users/utils";
+import { getCurrentUserWithWorkspace } from "../../users/utils";
 
 export const create = mutationWithTrigger({
-	args: {
-		name: v.string(),
-		description: v.string(),
-	},
-	handler: async (ctx, args) => {
-		const user = await getCurrentUser(ctx);
+  args: {
+    name: v.string(),
+    description: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+    if (!user || !user.currentWorkspaceId || !user.currentProjectId) {
+      throw new Error("Unauthorized");
+    }
 
-		if (!user || !user.currentWorkspaceId || !user.currentProject) {
-			throw new Error("Unauthorized");
-		}
+    // Get Last Index
+    const lastIndex = await ctx.db
+      .query("knowledgeBases")
+      .filter((q) => q.eq(q.field("projectId"), user.currentProjectId))
+      .order("desc")
+      .first();
 
-		// Get Last Index
-		const lastIndex = await ctx.db
-			.query("knowledgeBases")
-			.filter((q) => q.eq(q.field("projectId"), user.currentProject))
-			.order("desc")
-			.first();
+    const index = lastIndex ? (lastIndex.index ?? 0) + 1 : 0;
 
-		const index = lastIndex ? (lastIndex.index ?? 0) + 1 : 0;
+    const knowledgeBase = await ctx.db.insert("knowledgeBases", {
+      name: args.name,
+      description: args.description,
+      createdBy: user._id,
+      workspaceId: user.currentWorkspaceId,
+      projectId: user.currentProjectId,
+      index,
+      isSystem: false,
+      isVisible: true,
+    });
 
-		const knowledgeBase = await ctx.db.insert("knowledgeBases", {
-			name: args.name,
-			description: args.description,
-			createdBy: user._id,
-			workspaceId: user.currentWorkspaceId,
-			projectId: user.currentProject,
-			index,
-			isSystem: false,
-			isVisible: true,
-		});
-
-		return knowledgeBase;
-	},
+    return knowledgeBase;
+  },
 });
 
 export const update = mutationWithTrigger({
-	args: {
-		id: v.id("knowledgeBases"),
-		name: v.string(),
-		description: v.string(),
-		index: v.optional(v.number()),
-		isVisible: v.optional(v.boolean()),
-	},
-	handler: async (ctx, args) => {
-		const user = await getCurrentUser(ctx);
+  args: {
+    id: v.id("knowledgeBases"),
+    name: v.string(),
+    description: v.string(),
+    index: v.optional(v.number()),
+    isVisible: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+    if (!user || !user.currentProjectId) {
+      throw new Error("Unauthorized");
+    }
 
-		if (!user || !user.currentProject) {
-			throw new Error("Unauthorized");
-		}
+    const updateObject: Record<string, string | number | undefined | boolean> =
+      {
+        name: args.name,
+        description: args.description,
+      };
 
-		const updateObject: Record<string, string | number | undefined | boolean> =
-			{
-				name: args.name,
-				description: args.description,
-			};
+    if (args.index !== undefined) {
+      updateObject.index = args.index;
+    }
 
-		if (args.index !== undefined) {
-			updateObject.index = args.index;
-		}
+    if (args.isVisible !== undefined) {
+      updateObject.isVisible = args.isVisible;
+    }
 
-		if (args.isVisible !== undefined) {
-			updateObject.isVisible = args.isVisible;
-		}
+    const knowledgeBase = await ctx.db.patch(args.id, updateObject);
 
-		console.log("updateObject", updateObject);
-
-		const knowledgeBase = await ctx.db.patch(args.id, updateObject);
-
-		return knowledgeBase;
-	},
+    return knowledgeBase;
+  },
 });
 
 export const deletePermanent = mutationWithTrigger({
-	args: {
-		id: v.id("knowledgeBases"),
-	},
-	handler: async (ctx, args) => {
-		const user = await getCurrentUser(ctx);
+  args: {
+    id: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+    if (!user || !user.currentProjectId) {
+      throw new Error("Unauthorized");
+    }
 
-		if (!user || !user.currentProject) {
-			throw new Error("Unauthorized");
-		}
-
-		await ctx.db.delete(args.id);
-	},
+    await ctx.db.delete(args.id);
+  },
 });
 
 export const deletePermananentInternal = internalMutationWithTrigger({
-	args: {
-		id: v.id("knowledgeBases"),
-	},
-	handler: async (ctx, args) => {
-		await ctx.db.delete(args.id);
-	},
+  args: {
+    id: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
 });

@@ -1,0 +1,937 @@
+import { ConvexError, v } from "convex/values";
+import Stripe from "stripe";
+import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
+import { internalAction } from "../_generated/server";
+import { ERRORS } from "../utils/errors";
+
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+if (!stripeSecretKey) throw new Error(ERRORS.ENVS_NOT_INITIALIZED);
+
+export const stripe = new Stripe(stripeSecretKey, {
+  typescript: true,
+});
+
+// Actions
+export const createStripeCustomer = internalAction({
+  args: {
+    workspaceId: v.id("workspaces"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, { workspaceId, userId }): Promise<string> => {
+    const user = await ctx.runQuery(
+      internal.collections.users.queries.getByIdInternal,
+      {
+        id: userId,
+      }
+    );
+
+    const workspace = await ctx.runQuery(
+      internal.collections.workspaces.queries.getByIdInternal,
+      {
+        id: workspaceId,
+      }
+    );
+
+    if (!user || !workspace)
+      throw new ConvexError(ERRORS.STRIPE_CUSTOMER_NOT_CREATED);
+
+    if (workspace.customerId)
+      throw new ConvexError(ERRORS.STRIPE_CUSTOMER_ALREADY_EXISTS);
+
+    const customer = await stripe.customers
+      .create({
+        email: user.email,
+        name: user.fullName || user.firstName,
+        metadata: {
+          userId,
+          workspaceId,
+        },
+      })
+      .catch((err) => console.error(err));
+
+    if (!customer) throw new ConvexError(ERRORS.STRIPE_CUSTOMER_NOT_CREATED);
+
+    return customer.id;
+  },
+});
+
+export const createCheckoutSession = internalAction({
+  args: {
+    stripeCustomerId: v.string(), // This should be Stripe customer ID, not our internal ID
+    stripeLineItems: v.array(
+      v.object({
+        price: v.string(),
+        quantity: v.number(),
+      })
+    ), // This should be Stripe price ID, not our internal ID
+    successUrl: v.string(),
+    cancelUrl: v.string(),
+  },
+  handler: async (
+    _ctx,
+    { stripeCustomerId, stripeLineItems, successUrl, cancelUrl }
+  ) => {
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      payment_method_types: ["card"],
+      line_items: stripeLineItems,
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      subscription_data: {
+        trial_period_days: 7, // 7-day free trial
+      },
+    });
+
+    return session.url;
+  },
+});
+
+// Event Handler
+export const handleStripeEvent = internalAction({
+  args: {
+    payload: v.string(),
+    signature: v.string(),
+  },
+  handler: async (ctx, { payload, signature }) => {
+    let event: Stripe.Event | null = null;
+
+    try {
+      // Validate the event
+      event = await stripe.webhooks.constructEventAsync(
+        payload,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+
+      switch (event.type) {
+        // ✅ CUSTOMER EVENTS
+        case "customer.created": {
+          const customerData = event.data.object as Stripe.Customer;
+
+          // Get Workspace ID from metadata
+          const workspaceId = customerData.metadata?.workspaceId;
+
+          if (!workspaceId) {
+            console.warn(
+              "Skipping customer creation - no workspaceId provided"
+            );
+            break;
+          }
+
+          // Update Workspace with Stripe Customer ID
+          await ctx.runMutation(
+            internal.collections.workspaces.mutations.updateCustomerId,
+            {
+              id: workspaceId as Id<"workspaces">,
+              customerId: customerData.id,
+            }
+          );
+
+          // Create Customer
+          await ctx.runMutation(
+            internal.collections.stripe.customers.mutations.createInternal,
+            {
+              stripeCustomerId: customerData.id,
+              workspaceId: workspaceId as Id<"workspaces">,
+              email: customerData.email || "",
+              name: customerData.name || "",
+              metadata: customerData.metadata || {},
+              updatedAt: new Date().toISOString(),
+            }
+          );
+
+          break;
+        }
+
+        case "customer.updated": {
+          const customerData = event.data.object as Stripe.Customer;
+
+          // Find existing customer by Stripe ID
+          const existingCustomer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: customerData.id }
+          );
+
+          if (existingCustomer) {
+            await ctx.runMutation(
+              internal.collections.stripe.customers.mutations.updateInternal,
+              {
+                customerId: existingCustomer._id,
+                email: customerData.email || undefined,
+                name: customerData.name || undefined,
+                metadata: customerData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            // Get Workspace ID from metadata
+            const workspaceId = customerData.metadata?.workspaceId;
+
+            if (!workspaceId) {
+              console.warn(
+                "Skipping customer creation - no workspaceId provided"
+              );
+              return;
+            }
+
+            // Create new customer
+            await ctx.runMutation(
+              internal.collections.stripe.customers.mutations.createInternal,
+              {
+                stripeCustomerId: customerData.id,
+                workspaceId: workspaceId as Id<"workspaces">,
+                email: customerData.email || "",
+                name: customerData.name || "",
+                metadata: customerData.metadata || {},
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          }
+          break;
+        }
+
+        case "customer.deleted": {
+          const customerData = event.data.object as Stripe.Customer;
+
+          // Find existing customer by Stripe ID
+          const existingCustomer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: customerData.id }
+          );
+
+          if (existingCustomer) {
+            await ctx.runMutation(
+              internal.collections.stripe.customers.mutations
+                .deletePermanentInternal,
+              {
+                customerId: existingCustomer._id,
+              }
+            );
+          } else {
+            console.warn("Customer not found for deletion:", customerData.id);
+          }
+          break;
+        }
+
+        // ✅ SUBSCRIPTION EVENTS
+        case "customer.subscription.created": {
+          const subscriptionData = event.data.object as Stripe.Subscription;
+
+          // Find the customer in our database
+          const customer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: subscriptionData.customer as string }
+          );
+
+          if (!customer) {
+            console.warn(
+              "Customer not found for subscription:",
+              subscriptionData.customer
+            );
+            break;
+          }
+
+          // Get period dates from the first subscription item (Stripe's new structure)
+          const firstItem = subscriptionData.items?.data?.[0];
+          const currentPeriodStart = firstItem?.current_period_start
+            ? new Date(firstItem.current_period_start * 1000).toISOString()
+            : new Date().toISOString();
+          const currentPeriodEnd = firstItem?.current_period_end
+            ? new Date(firstItem.current_period_end * 1000).toISOString()
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // Default to 30 days from now
+
+          // Create subscription
+          const subscriptionId = await ctx.runMutation(
+            internal.collections.stripe.subscriptions.mutations.createInternal,
+            {
+              stripeSubscriptionId: subscriptionData.id,
+              customerId: customer._id,
+              workspaceId: customer.workspaceId,
+              status: subscriptionData.status,
+              currentPeriodStart,
+              currentPeriodEnd,
+              cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
+              canceledAt: subscriptionData.canceled_at
+                ? new Date(subscriptionData.canceled_at * 1000).toISOString()
+                : undefined,
+              trialStart: subscriptionData.trial_start
+                ? new Date(subscriptionData.trial_start * 1000).toISOString()
+                : undefined,
+              trialEnd: subscriptionData.trial_end
+                ? new Date(subscriptionData.trial_end * 1000).toISOString()
+                : undefined,
+              metadata: subscriptionData.metadata || undefined,
+              updatedAt: new Date().toISOString(),
+            }
+          );
+
+          // Create subscription items
+          if (subscriptionData.items?.data) {
+            for (const item of subscriptionData.items.data) {
+              // Find the price in our database
+              const price = await ctx.runQuery(
+                internal.collections.stripe.prices.queries.getByStripeId,
+                { stripePriceId: item.price.id }
+              );
+
+              if (price) {
+                await ctx.runMutation(
+                  internal.collections.stripe.subscriptionItems.mutations
+                    .createInternal,
+                  {
+                    stripeSubscriptionItemId: item.id,
+                    subscriptionId,
+                    priceId: price._id,
+                    quantity: item.quantity || 1,
+                    metadata: item.metadata || undefined,
+                    updatedAt: new Date().toISOString(),
+                  }
+                );
+              } else {
+                console.warn(
+                  "Price not found for subscription item:",
+                  item.price.id
+                );
+              }
+            }
+          }
+
+          // Check if the subscription is in trial
+          if (subscriptionData.status === "trialing") {
+            // TODO:Handle trial credits
+          }
+
+          // Complete onboarding if it's not already completed
+          await ctx.runMutation(
+            internal.collections.onboarding.mutations.completeOnboarding,
+            { workspaceId: customer.workspaceId }
+          );
+
+          break;
+        }
+
+        case "customer.subscription.updated":
+        case "customer.subscription.paused":
+        case "customer.subscription.resumed": {
+          const subscriptionData = event.data.object as Stripe.Subscription;
+
+          // Find existing subscription
+          const existingSubscription = await ctx.runQuery(
+            internal.collections.stripe.subscriptions.queries.getByStripeId,
+            { stripeSubscriptionId: subscriptionData.id }
+          );
+
+          if (existingSubscription) {
+            // Get period dates from the first subscription item (Stripe's new structure)
+            const firstItem = subscriptionData.items?.data?.[0];
+            const currentPeriodStart = firstItem?.current_period_start
+              ? new Date(firstItem.current_period_start * 1000).toISOString()
+              : undefined;
+            const currentPeriodEnd = firstItem?.current_period_end
+              ? new Date(firstItem.current_period_end * 1000).toISOString()
+              : undefined;
+
+            await ctx.runMutation(
+              internal.collections.stripe.subscriptions.mutations
+                .updateInternal,
+              {
+                subscriptionId: existingSubscription._id,
+                status: subscriptionData.status,
+                currentPeriodStart,
+                currentPeriodEnd,
+                cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
+                canceledAt: subscriptionData.canceled_at
+                  ? new Date(subscriptionData.canceled_at * 1000).toISOString()
+                  : undefined,
+                trialStart: subscriptionData.trial_start
+                  ? new Date(subscriptionData.trial_start * 1000).toISOString()
+                  : undefined,
+                trialEnd: subscriptionData.trial_end
+                  ? new Date(subscriptionData.trial_end * 1000).toISOString()
+                  : undefined,
+                metadata: subscriptionData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+
+            // Update subscription items
+            if (subscriptionData.items?.data) {
+              for (const item of subscriptionData.items.data) {
+                // Check if subscription item already exists
+                const existingItem = await ctx.runQuery(
+                  internal.collections.stripe.subscriptionItems.queries
+                    .getByStripeId,
+                  { stripeSubscriptionItemId: item.id }
+                );
+
+                // Find the price in our database
+                const price = await ctx.runQuery(
+                  internal.collections.stripe.prices.queries.getByStripeId,
+                  { stripePriceId: item.price.id }
+                );
+
+                if (!price) {
+                  console.warn(
+                    "Price not found for subscription item:",
+                    item.price.id
+                  );
+                  continue;
+                }
+
+                if (existingItem) {
+                  // Update existing subscription item
+                  await ctx.runMutation(
+                    internal.collections.stripe.subscriptionItems.mutations
+                      .updateInternal,
+                    {
+                      subscriptionItemId: existingItem._id,
+                      priceId: price._id,
+                      quantity: item.quantity || 1,
+                      metadata: item.metadata || undefined,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  );
+                } else {
+                  // Create new subscription item
+                  await ctx.runMutation(
+                    internal.collections.stripe.subscriptionItems.mutations
+                      .createInternal,
+                    {
+                      stripeSubscriptionItemId: item.id,
+                      subscriptionId: existingSubscription._id,
+                      priceId: price._id,
+                      quantity: item.quantity || 1,
+                      metadata: item.metadata || undefined,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  );
+                }
+              }
+            }
+          } else {
+            console.warn(
+              "Subscription not found in database:",
+              subscriptionData.id
+            );
+          }
+          break;
+        }
+
+        case "customer.subscription.deleted": {
+          const subscriptionData = event.data.object as Stripe.Subscription;
+
+          // Find existing subscription
+          const existingSubscription = await ctx.runQuery(
+            internal.collections.stripe.subscriptions.queries.getByStripeId,
+            { stripeSubscriptionId: subscriptionData.id }
+          );
+
+          if (existingSubscription) {
+            // Update status to canceled instead of deleting the record
+            // This preserves historical data for reporting/analytics
+            await ctx.runMutation(
+              internal.collections.stripe.subscriptions.mutations
+                .updateInternal,
+              {
+                subscriptionId: existingSubscription._id,
+                status: "canceled",
+                canceledAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              }
+            );
+
+            // Clean up subscription items
+            await ctx.runMutation(
+              internal.collections.stripe.subscriptionItems.mutations
+                .deleteBySubscriptionIdInternal,
+              {
+                subscriptionId: existingSubscription._id,
+              }
+            );
+          } else {
+            console.warn(
+              "Subscription not found for deletion:",
+              subscriptionData.id
+            );
+          }
+          break;
+        }
+
+        // ✅ PRODUCT EVENTS
+        case "product.created":
+        case "product.updated": {
+          const productData = event.data.object as Stripe.Product;
+
+          // Find existing product
+          const existingProduct = await ctx.runQuery(
+            internal.collections.stripe.products.queries.getByStripeId,
+            { stripeProductId: productData.id }
+          );
+
+          if (existingProduct) {
+            // Update existing product
+            await ctx.runMutation(
+              internal.collections.stripe.products.mutations.updateInternal,
+              {
+                productId: existingProduct._id,
+                name: productData.name,
+                description: productData.description || undefined,
+                active: productData.active,
+                metadata: productData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            // Create new product
+            await ctx.runMutation(
+              internal.collections.stripe.products.mutations.createInternal,
+              {
+                stripeProductId: productData.id,
+                name: productData.name,
+                description: productData.description || undefined,
+                active: productData.active,
+                metadata: productData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          }
+          break;
+        }
+
+        case "product.deleted": {
+          const productData = event.data.object as Stripe.Product;
+
+          // Find existing product
+          const existingProduct = await ctx.runQuery(
+            internal.collections.stripe.products.queries.getByStripeId,
+            { stripeProductId: productData.id }
+          );
+
+          if (existingProduct) {
+            // Soft delete: mark as inactive instead of hard deletion
+            await ctx.runMutation(
+              internal.collections.stripe.products.mutations.updateInternal,
+              {
+                productId: existingProduct._id,
+                active: false,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            console.warn("Product not found for deletion:", productData.id);
+          }
+          break;
+        }
+
+        // ✅ PRICE EVENTS
+        case "price.created":
+        case "price.updated": {
+          const priceData = event.data.object as Stripe.Price;
+
+          // Find existing price
+          const existingPrice = await ctx.runQuery(
+            internal.collections.stripe.prices.queries.getByStripeId,
+            { stripePriceId: priceData.id }
+          );
+
+          // Find the product in our database
+          const product = await ctx.runQuery(
+            internal.collections.stripe.products.queries.getByStripeId,
+            { stripeProductId: priceData.product as string }
+          );
+
+          if (!product) {
+            console.warn("Product not found for price:", priceData.product);
+            break;
+          }
+
+          if (existingPrice) {
+            // Update existing price
+            await ctx.runMutation(
+              internal.collections.stripe.prices.mutations.updateInternal,
+              {
+                priceId: existingPrice._id,
+                unitAmount: priceData.unit_amount || undefined,
+                currency: priceData.currency,
+                interval: priceData.recurring?.interval || undefined,
+                intervalCount: priceData.recurring?.interval_count || undefined,
+                type: priceData.type,
+                active: priceData.active,
+                metadata: priceData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            // Create new price
+            await ctx.runMutation(
+              internal.collections.stripe.prices.mutations.createInternal,
+              {
+                stripePriceId: priceData.id,
+                productId: product._id,
+                unitAmount: priceData.unit_amount || undefined,
+                currency: priceData.currency,
+                interval: priceData.recurring?.interval || undefined,
+                intervalCount: priceData.recurring?.interval_count || undefined,
+                type: priceData.type,
+                active: priceData.active,
+                metadata: priceData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          }
+          break;
+        }
+
+        case "price.deleted": {
+          const priceData = event.data.object as Stripe.Price;
+
+          // Find existing price
+          const existingPrice = await ctx.runQuery(
+            internal.collections.stripe.prices.queries.getByStripeId,
+            { stripePriceId: priceData.id }
+          );
+
+          if (existingPrice) {
+            // Soft delete: mark as inactive instead of hard deletion
+            await ctx.runMutation(
+              internal.collections.stripe.prices.mutations.updateInternal,
+              {
+                priceId: existingPrice._id,
+                active: false,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            console.warn("Price not found for deletion:", priceData.id);
+          }
+          break;
+        }
+
+        // ✅ INVOICE EVENTS
+        case "invoice.created":
+        case "invoice.updated":
+        case "invoice.paid":
+        case "invoice.payment_failed":
+        case "invoice.payment_succeeded": {
+          const invoiceData = event.data.object as Stripe.Invoice;
+
+          // Find the customer in our database
+          const customer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: invoiceData.customer as string }
+          );
+
+          if (!customer) {
+            console.warn(
+              "Customer not found for invoice:",
+              invoiceData.customer
+            );
+            break;
+          }
+
+          // Find subscription if it exists
+          const subscriptionId = invoiceData.lines?.data?.[0]?.subscription;
+          let subscription = null;
+          if (subscriptionId) {
+            subscription = await ctx.runQuery(
+              internal.collections.stripe.subscriptions.queries.getByStripeId,
+              { stripeSubscriptionId: subscriptionId as string }
+            );
+          }
+
+          if (event.type === "invoice.created") {
+            // Create new invoice
+            await ctx.runMutation(
+              internal.collections.stripe.invoices.mutations.createInternal,
+              {
+                stripeInvoiceId: invoiceData.id as string,
+                customerId: customer._id,
+                subscriptionId: subscription?._id,
+                workspaceId: customer.workspaceId,
+                status: invoiceData.status || "draft",
+                amountPaid: invoiceData.amount_paid || 0,
+                amountDue: invoiceData.amount_due || 0,
+                currency: invoiceData.currency,
+                hostedInvoiceUrl: invoiceData.hosted_invoice_url || undefined,
+                invoicePdf: invoiceData.invoice_pdf || undefined,
+                dueDate: invoiceData.due_date
+                  ? new Date(invoiceData.due_date * 1000).toISOString()
+                  : undefined,
+                paidAt: invoiceData.status_transitions?.paid_at
+                  ? new Date(
+                      invoiceData.status_transitions.paid_at * 1000
+                    ).toISOString()
+                  : undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            // Update existing invoice
+            const existingInvoice = await ctx.runQuery(
+              internal.collections.stripe.invoices.queries.getByStripeId,
+              { stripeInvoiceId: invoiceData.id as string }
+            );
+
+            if (existingInvoice) {
+              await ctx.runMutation(
+                internal.collections.stripe.invoices.mutations.updateInternal,
+                {
+                  invoiceId: existingInvoice._id,
+                  status: invoiceData.status || "draft",
+                  amountPaid: invoiceData.amount_paid || 0,
+                  amountDue: invoiceData.amount_due || 0,
+                  currency: invoiceData.currency,
+                  hostedInvoiceUrl: invoiceData.hosted_invoice_url || undefined,
+                  invoicePdf: invoiceData.invoice_pdf || undefined,
+                  dueDate: invoiceData.due_date
+                    ? new Date(invoiceData.due_date * 1000).toISOString()
+                    : undefined,
+                  paidAt: invoiceData.status_transitions?.paid_at
+                    ? new Date(
+                        invoiceData.status_transitions.paid_at * 1000
+                      ).toISOString()
+                    : undefined,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+            } else {
+              console.warn("Invoice not found in database:", invoiceData.id);
+            }
+          }
+          break;
+        }
+
+        // ✅ PAYMENT INTENT EVENTS
+        case "payment_intent.created":
+        case "payment_intent.succeeded":
+        case "payment_intent.payment_failed":
+        case "payment_intent.canceled": {
+          const paymentIntentData = event.data.object;
+
+          // Find the customer in our database
+          const customer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: paymentIntentData.customer as string }
+          );
+
+          if (!customer) {
+            console.warn(
+              "Customer not found for payment intent:",
+              paymentIntentData.customer
+            );
+            break;
+          }
+
+          if (event.type === "payment_intent.created") {
+            // Create new payment record
+            await ctx.runMutation(
+              internal.collections.stripe.payments.mutations.createInternal,
+              {
+                stripePaymentIntentId: paymentIntentData.id,
+                customerId: customer._id,
+                workspaceId: customer.workspaceId,
+                amount: paymentIntentData.amount,
+                currency: paymentIntentData.currency,
+                status: paymentIntentData.status,
+                paymentMethod:
+                  paymentIntentData.payment_method_types?.[0] || undefined,
+                metadata: paymentIntentData.metadata || undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            // Update existing payment
+            const existingPayment = await ctx.runQuery(
+              internal.collections.stripe.payments.queries.getByStripeId,
+              { stripePaymentIntentId: paymentIntentData.id }
+            );
+
+            if (existingPayment) {
+              await ctx.runMutation(
+                internal.collections.stripe.payments.mutations.updateInternal,
+                {
+                  paymentId: existingPayment._id,
+                  status: paymentIntentData.status,
+                  amount: paymentIntentData.amount,
+                  currency: paymentIntentData.currency,
+                  paymentMethod:
+                    paymentIntentData.payment_method_types?.[0] || undefined,
+                  metadata: paymentIntentData.metadata || undefined,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+            } else {
+              console.warn(
+                "Payment intent not found in database:",
+                paymentIntentData.id
+              );
+            }
+          }
+          break;
+        }
+
+        // ✅ PAYMENT METHOD EVENTS
+        case "payment_method.attached": {
+          const paymentMethodData = event.data.object as Stripe.PaymentMethod;
+
+          // Find the customer in our database
+          const customer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: paymentMethodData.customer as string }
+          );
+
+          if (!customer) {
+            console.warn(
+              "Customer not found for payment method:",
+              paymentMethodData.customer
+            );
+            break;
+          }
+
+          // Extract card details if it's a card payment method
+          let cardDetails = undefined;
+          if (paymentMethodData.type === "card" && paymentMethodData.card) {
+            cardDetails = {
+              brand: paymentMethodData.card.brand,
+              last4: paymentMethodData.card.last4,
+              expMonth: paymentMethodData.card.exp_month,
+              expYear: paymentMethodData.card.exp_year,
+            };
+          }
+
+          // Create payment method record
+          await ctx.runMutation(
+            internal.collections.stripe.paymentMethods.mutations.createInternal,
+            {
+              stripePaymentMethodId: paymentMethodData.id,
+              customerId: customer._id,
+              workspaceId: customer.workspaceId,
+              type: paymentMethodData.type as
+                | "card"
+                | "bank_account"
+                | "sepa_debit"
+                | "ideal"
+                | "fpx"
+                | "us_bank_account",
+              card: cardDetails,
+              isDefault: false, // New payment methods are not default by default
+              updatedAt: new Date().toISOString(),
+            }
+          );
+          break;
+        }
+
+        case "payment_method.updated": {
+          const paymentMethodData = event.data.object as Stripe.PaymentMethod;
+
+          // Find existing payment method
+          const existingPaymentMethod = await ctx.runQuery(
+            internal.collections.stripe.paymentMethods.queries.getByStripeId,
+            { stripePaymentMethodId: paymentMethodData.id }
+          );
+
+          if (existingPaymentMethod) {
+            // Extract card details if it's a card payment method
+            let cardDetails = undefined;
+            if (paymentMethodData.type === "card" && paymentMethodData.card) {
+              cardDetails = {
+                brand: paymentMethodData.card.brand,
+                last4: paymentMethodData.card.last4,
+                expMonth: paymentMethodData.card.exp_month,
+                expYear: paymentMethodData.card.exp_year,
+              };
+            }
+
+            await ctx.runMutation(
+              internal.collections.stripe.paymentMethods.mutations
+                .updateInternal,
+              {
+                paymentMethodId: existingPaymentMethod._id,
+                type: paymentMethodData.type as
+                  | "card"
+                  | "bank_account"
+                  | "sepa_debit"
+                  | "ideal"
+                  | "fpx"
+                  | "us_bank_account",
+                card: cardDetails,
+                updatedAt: new Date().toISOString(),
+              }
+            );
+          } else {
+            console.warn(
+              "Payment method not found in database:",
+              paymentMethodData.id
+            );
+          }
+          break;
+        }
+
+        case "payment_method.detached": {
+          const paymentMethodData = event.data.object as Stripe.PaymentMethod;
+
+          // Find existing payment method
+          const existingPaymentMethod = await ctx.runQuery(
+            internal.collections.stripe.paymentMethods.queries.getByStripeId,
+            { stripePaymentMethodId: paymentMethodData.id }
+          );
+
+          if (existingPaymentMethod) {
+            // For detached payment methods, we could either delete the record
+            // or mark it as inactive. Let's delete it since it's no longer usable
+            await ctx.runMutation(
+              internal.collections.stripe.paymentMethods.mutations
+                .deleteInternal,
+              {
+                paymentMethodId: existingPaymentMethod._id,
+              }
+            );
+          } else {
+            console.warn(
+              "Payment method not found for detachment:",
+              paymentMethodData.id
+            );
+          }
+          break;
+        }
+
+        default:
+          console.log(`⚠️ Unhandled event type: ${event.type}`);
+          break;
+      }
+
+      // Log successful processing
+      await ctx.runMutation(
+        internal.collections.stripe.webhookEvents.mutations.createInternal,
+        {
+          stripeEventId: event.id,
+          eventType: event.type,
+          processed: true,
+          data: event.data,
+          attempts: 1,
+        }
+      );
+    } catch (error) {
+      // Log failed processing
+      if (event) {
+        await ctx.runMutation(
+          internal.collections.stripe.webhookEvents.mutations.createInternal,
+          {
+            stripeEventId: event.id,
+            eventType: event.type,
+            processed: false,
+            data: event.data,
+            attempts: 1,
+            lastError: error instanceof Error ? error.message : "Unknown error",
+          }
+        );
+      }
+
+      // Re-throw to ensure webhook returns error status
+      throw error;
+    }
+  },
+});

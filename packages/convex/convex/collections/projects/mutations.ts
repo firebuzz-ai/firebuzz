@@ -1,45 +1,118 @@
-import { slugify } from "@firebuzz/utils";
-import { ConvexError } from "convex/values";
-import { mutation } from "../../_generated/server";
-import { getCurrentUser } from "../users/utils";
+import { ConvexError, v } from "convex/values";
+import type { Doc } from "../../_generated/dataModel";
+import { internalMutation, mutation } from "../../_generated/server";
+import { internalMutationWithTrigger } from "../../triggers";
+import { ERRORS } from "../../utils/errors";
+import { getCurrentUserWithWorkspace } from "../users/utils";
 import { projectSchema } from "./schema";
-import { checkSlug } from "./utils";
 
 export const create = mutation({
-	args: {
-		title: projectSchema.fields.title,
-		color: projectSchema.fields.color,
-		icon: projectSchema.fields.icon,
-		slug: projectSchema.fields.slug,
-	},
-	handler: async (ctx, { title, color, icon, slug }) => {
-		const user = await getCurrentUser(ctx);
+  args: {
+    title: projectSchema.fields.title,
+    color: projectSchema.fields.color,
+    icon: projectSchema.fields.icon,
+  },
+  handler: async (ctx, { title, color, icon }) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+    if (!user || !user.currentWorkspaceId) {
+      throw new ConvexError("User or current workspace not found.");
+    }
 
-		if (!user || !user.currentWorkspaceId) {
-			throw new ConvexError("User or current workspace not found.");
-		}
+    // Create the project
+    const newProjectId = await ctx.db.insert("projects", {
+      title,
+      color,
+      icon,
+      workspaceId: user.currentWorkspaceId,
+      createdBy: user._id,
+    });
 
-		const isSlugAvailable = await checkSlug(ctx, slug);
+    // Change user's current project
+    await ctx.db.patch(user._id, {
+      currentProjectId: newProjectId,
+    });
+  },
+});
 
-		if (!isSlugAvailable) {
-			throw new ConvexError(
-				"Slug already taken. Please try again with a different slug.",
-			);
-		}
+export const update = mutation({
+  args: {
+    projectId: v.id("projects"),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+    icon: v.optional(v.string()),
+  },
+  handler: async (ctx, { projectId, name, color, icon }) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
 
-		// Create the project
-		const newProjectId = await ctx.db.insert("projects", {
-			title,
-			color,
-			icon,
-			slug: slugify(slug),
-			workspaceId: user.currentWorkspaceId,
-			createdBy: user._id,
-		});
+    if (!user || !user.currentWorkspaceId) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
 
-		// Change user's current project
-		await ctx.db.patch(user._id, {
-			currentProject: newProjectId,
-		});
-	},
+    // Get Project
+    const project = await ctx.db.get(projectId);
+
+    if (!project) {
+      throw new ConvexError(ERRORS.NOT_FOUND);
+    }
+
+    if (project.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
+
+    const updateObject: Partial<Doc<"projects">> = {};
+
+    if (name) {
+      updateObject.title = name;
+    }
+
+    if (color) {
+      updateObject.color = color;
+    }
+
+    if (icon) {
+      updateObject.icon = icon;
+    }
+
+    await ctx.db.patch(projectId, updateObject);
+  },
+});
+
+export const updateInternal = internalMutation({
+  args: {
+    projectId: v.id("projects"),
+    name: v.optional(v.string()),
+    color: v.optional(v.string()),
+    icon: v.optional(v.string()),
+    isOnboarded: v.optional(v.boolean()),
+  },
+  handler: async (ctx, args) => {
+    const updateObject: Partial<Doc<"projects">> = {};
+
+    if (args.name) {
+      updateObject.title = args.name;
+    }
+
+    if (args.color) {
+      updateObject.color = args.color;
+    }
+
+    if (args.icon) {
+      updateObject.icon = args.icon;
+    }
+
+    if (args.isOnboarded) {
+      updateObject.isOnboarded = args.isOnboarded;
+    }
+
+    await ctx.db.patch(args.projectId, updateObject);
+  },
+});
+
+export const deletePermanentInternal = internalMutationWithTrigger({
+  args: {
+    id: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.id);
+  },
 });

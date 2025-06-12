@@ -3,104 +3,188 @@
 import { useUser } from "@/hooks/auth/use-user";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
-	type Doc,
-	type Id,
-	api,
-	useCachedRichQuery,
-	useMutation,
+  type Doc,
+  type Id,
+  api,
+  useCachedRichQuery,
+  useMutation,
 } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { usePathname, useRouter } from "next/navigation";
-import { createContext, useEffect, useMemo } from "react";
+import {
+  createContext,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 interface ProjectContextType {
-	currentProject: Doc<"projects"> | null;
-	projects: Array<Doc<"projects">>;
-	changeProject: (projectId: Id<"projects">) => Promise<void>;
+  currentProject: Doc<"projects"> | null;
+  projects: Array<Doc<"projects">>;
+  changeProject: (projectId: Id<"projects">) => Promise<void>;
 }
 
 const projectContext = createContext<ProjectContextType>({
-	currentProject: null,
-	projects: [],
-	changeProject: async () => {},
+  currentProject: null,
+  projects: [],
+  changeProject: async () => {},
 });
 
 const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
-	const { isLoading: isUserLoading, isAuthenticated, user } = useUser();
-	const { currentWorkspace, isLoading: isWorkspaceLoading } = useWorkspace();
-	const router = useRouter();
-	const pathname = usePathname();
+  const { isLoading: isUserLoading, isAuthenticated, user } = useUser();
+  const {
+    currentWorkspace,
+    workspaces,
+    isLoading: isWorkspaceLoading,
+  } = useWorkspace();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [isCheckDone, setIsCheckDone] = useState(false);
 
-	// Get all projects for current workspace
-	const { data: projects, isPending: isProjectsPending } = useCachedRichQuery(
-		api.collections.projects.queries.getAllByWorkspace,
-		!user || !currentWorkspace ? "skip" : undefined,
-	);
+  // Get all projects for current workspace
+  const { data: projects, isPending: isProjectsPending } = useCachedRichQuery(
+    api.collections.projects.queries.getAllByWorkspace,
+    !user || !currentWorkspace ? "skip" : undefined
+  );
 
-	const currentProject = useMemo(() => {
-		return (
-			projects?.find((project) => project._id === user?.currentProject) ?? null
-		);
-	}, [projects, user?.currentProject]);
+  const isProjectsLoading = Boolean(
+    user && currentWorkspace && isProjectsPending
+  );
 
-	const updateUserCurrentProject = useMutation(
-		api.collections.users.mutations.updateCurrentProject,
-	);
+  const currentProject = useMemo(() => {
+    return (
+      projects?.find((project) => project._id === user?.currentProjectId) ??
+      null
+    );
+  }, [projects, user?.currentProjectId]);
 
-	const changeProject = async (projectId: Id<"projects"> | undefined) => {
-		if (!user?._id) return;
+  const updateUserCurrentProject = useMutation(
+    api.collections.users.mutations.updateCurrentProject
+  );
 
-		await updateUserCurrentProject({
-			id: user._id,
-			currentProject: projectId,
-		});
+  const changeProject = async (projectId: Id<"projects"> | undefined) => {
+    if (!user?._id) return;
 
-		router.push("/");
-	};
+    await updateUserCurrentProject({
+      currentProjectId: projectId,
+    });
 
-	// Redirect to onboarding if current workspace is Not Onboarded (onboardingCompleted is false in the workspace)
-	useEffect(() => {
-		if (
-			currentWorkspace &&
-			!currentWorkspace?.onboardingCompleted &&
-			pathname !== "/onboarding" &&
-			isAuthenticated
-		) {
-			router.push("/onboarding");
-		}
-	}, [pathname, currentWorkspace, isAuthenticated, router]);
+    router.push("/");
+  };
 
-	// If there is no current project, redirect to project selection
-	useEffect(() => {
-		if (
-			!isProjectsPending &&
-			!currentProject &&
-			currentWorkspace?.onboardingCompleted
-		) {
-			router.push("/select/project");
-		}
-	}, [currentProject, isProjectsPending, router, currentWorkspace]);
+  // Routing Checks (ONBOARDING, WORKSPACE SELECTION, PROJECT SELECTION, NEW USER FLOW)
+  const handleRoutingChecks = useCallback(async () => {
+    // Check if user is authenticated
+    if (!isAuthenticated && !isUserLoading) {
+      router.push("/sign-in");
+      return;
+    }
 
-	// Show loading state while checking authentication and loading initial data
-	if (isUserLoading || isProjectsPending || isWorkspaceLoading) {
-		return (
-			<div className="flex items-center justify-center flex-1">
-				<Spinner size="sm" />
-			</div>
-		);
-	}
+    // Wait for all loading states to complete
+    if (isUserLoading || isWorkspaceLoading || isProjectsLoading) {
+      return;
+    }
 
-	const exposed: ProjectContextType = {
-		currentProject,
-		projects: projects ?? [],
-		changeProject,
-	};
+    // No Workspace, redirect to '/NEW' (NEW USER SIGNUP)
+    if (workspaces.length === 0 && pathname !== "/new") {
+      router.push("/new");
+      return;
+    }
 
-	return (
-		<projectContext.Provider value={exposed}>
-			{children}
-		</projectContext.Provider>
-	);
+    // No Current Workspace, redirect to '/select/workspace' (WORKSPACE SELECTION)
+    if (
+      workspaces.length > 0 &&
+      !currentWorkspace &&
+      pathname !== "/select/workspace"
+    ) {
+      router.push("/select/workspace");
+      return;
+    }
+
+    // Current Workspace is not onboarded, redirect to '/onboarding' (ONBOARDING)
+    if (
+      currentWorkspace &&
+      !currentWorkspace.isOnboarded &&
+      pathname !== "/onboarding"
+    ) {
+      router.push("/onboarding");
+      return;
+    }
+
+    // No Project, redirect to '/new/project' (NEW PROJECT)
+    if (
+      projects?.length === 0 &&
+      currentWorkspace &&
+      pathname !== "/new/project"
+    ) {
+      router.push("/new/project");
+      return;
+    }
+
+    // No Current Project, redirect to '/select/project' (PROJECT SELECTION)
+    if (
+      !currentProject &&
+      currentWorkspace &&
+      projects?.length &&
+      projects.length > 0 &&
+      pathname !== "/select/project"
+    ) {
+      router.push("/select/project");
+      return;
+    }
+
+    // Current Project is not onboarded, redirect to '/new/project' (NEW PROJECT)
+    if (
+      currentWorkspace &&
+      currentProject &&
+      !currentProject.isOnboarded &&
+      currentWorkspace.isOnboarded &&
+      pathname !== "/new/project"
+    ) {
+      router.push("/new/project");
+      return;
+    }
+
+    // All checks passed, mark as done
+    setIsCheckDone(true);
+  }, [
+    isAuthenticated,
+    isUserLoading,
+    isWorkspaceLoading,
+    isProjectsLoading,
+    workspaces,
+    currentWorkspace,
+    projects,
+    currentProject,
+    pathname,
+    router,
+  ]);
+
+  useEffect(() => {
+    handleRoutingChecks();
+  }, [handleRoutingChecks]);
+
+  // Show loading state while checking authentication and loading initial data or performing routing checks
+  if (!isCheckDone) {
+    return (
+      <div className="flex items-center justify-center flex-1">
+        <Spinner size="sm" />
+      </div>
+    );
+  }
+
+  const exposed: ProjectContextType = {
+    currentProject,
+    projects: projects ?? [],
+    changeProject,
+  };
+
+  return (
+    <projectContext.Provider value={exposed}>
+      {children}
+    </projectContext.Provider>
+  );
 };
 
 export { ProjectProvider, projectContext };

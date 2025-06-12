@@ -4,111 +4,107 @@ import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-gr
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useTheme } from "next-themes";
-import { useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import type { BrandSeoType } from "./form";
 import { PreviewCards } from "./preview-cards";
 
 interface PanelProps {
-	hasChanges: boolean;
-	onSave: (() => Promise<void>) | null;
-	isSaving: boolean;
-	formValues: BrandSeoType | null;
-	brandName?: string;
-	brandWebsite?: string;
-	brandIconDark?: string;
-	brandIconLight?: string;
-	pageTitle: string;
+  hasChanges: boolean;
+  onSave: (() => Promise<void>) | null;
+  isSaving: boolean;
+  formValues: BrandSeoType | null;
+  brandName?: string;
+  brandWebsite?: string;
+  brandIconDark?: string;
+  brandIconLight?: string;
+  pageTitle: string;
 }
 
 export const Panel = ({
-	hasChanges,
-	onSave,
-	isSaving,
-	formValues,
-	brandName,
-	brandWebsite,
-	brandIconDark,
-	brandIconLight,
-	pageTitle,
+  hasChanges,
+  onSave,
+  isSaving,
+  formValues,
+  brandName,
+  brandWebsite,
+  brandIconDark,
+  brandIconLight,
+  pageTitle,
 }: PanelProps) => {
-	const { theme: currentTheme } = useTheme();
-	const [previewMode] = useState<"light" | "dark">(
-		currentTheme === "dark" ? "dark" : "light",
-	);
+  const { resolvedTheme } = useTheme();
 
-	useHotkeys(
-		"meta+s",
-		() => {
-			if (onSave && !isSaving && hasChanges) {
-				onSave();
-			}
-		},
-		{
-			preventDefault: true,
-		},
-	);
+  useHotkeys(
+    "meta+s",
+    () => {
+      if (onSave && !isSaving && hasChanges) {
+        onSave();
+      }
+    },
+    {
+      preventDefault: true,
+    }
+  );
 
-	const handleSave = async () => {
-		if (onSave && !isSaving) {
-			try {
-				await onSave();
-			} catch (error) {
-				// Error is handled by the form component
-				console.error("Save failed:", error);
-			}
-		}
-	};
+  const handleSave = async () => {
+    if (onSave && !isSaving) {
+      try {
+        await onSave();
+      } catch (error) {
+        // Error is handled by the form component
+        console.error("Save failed:", error);
+      }
+    }
+  };
 
-	return (
-		<div className="relative flex flex-col h-full max-h-full overflow-hidden bg-muted">
-			{/* Header */}
-			<div className="relative z-10 px-6 py-4 border-b bg-background/95 backdrop-blur">
-				<div className="flex items-center justify-between">
-					<div>
-						<h2 className="font-semibold">SEO Preview</h2>
-						<p className="text-sm text-muted-foreground">
-							Real-time preview of your SEO settings and social media
-							optimization
-						</p>
-					</div>
-					<Button
-						variant="outline"
-						onClick={handleSave}
-						disabled={!hasChanges || !onSave || isSaving}
-						size="sm"
-						className="font-medium"
-					>
-						{isSaving ? (
-							<>
-								<Spinner size="sm" />
-								Saving...
-							</>
-						) : (
-							<>
-								Save Changes
-								<ButtonShortcut>⌘S</ButtonShortcut>
-							</>
-						)}
-					</Button>
-				</div>
-			</div>
+  return (
+    <div className="relative flex flex-col h-full max-h-full overflow-hidden bg-muted">
+      {/* Header */}
+      <div className="relative z-10 px-6 py-4 border-b bg-background/95 backdrop-blur">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold">SEO Preview</h2>
+            <p className="text-sm text-muted-foreground">
+              Real-time preview of your SEO settings and social media
+              optimization
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleSave}
+            disabled={!hasChanges || !onSave || isSaving}
+            size="sm"
+            className="font-medium"
+          >
+            {isSaving ? (
+              <>
+                <Spinner size="sm" />
+                Saving...
+              </>
+            ) : (
+              <>
+                Save Changes
+                <ButtonShortcut>⌘S</ButtonShortcut>
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
 
-			{/* Content */}
-			<div className="relative flex flex-col flex-1 gap-4 overflow-hidden bg-muted">
-				<DottedGridBackground isDark={previewMode === "dark"} />
+      {/* Content */}
+      <div className="relative flex flex-col flex-1 gap-4 overflow-hidden bg-muted">
+        <DottedGridBackground isDark={resolvedTheme === "dark"} />
 
-				<div className="relative z-10 h-full p-6 overflow-y-auto">
-					<PreviewCards
-						formValues={formValues}
-						brandName={brandName}
-						brandWebsite={brandWebsite}
-						brandIconDark={brandIconDark}
-						brandIconLight={brandIconLight}
-						pageTitle={pageTitle}
-					/>
-				</div>
-			</div>
-		</div>
-	);
+        <div className="relative z-10 h-full p-6 overflow-y-auto">
+          <PreviewCards
+            formValues={formValues}
+            brandName={brandName}
+            brandWebsite={brandWebsite}
+            brandIconDark={brandIconDark}
+            brandIconLight={brandIconLight}
+            pageTitle={pageTitle}
+          />
+        </div>
+      </div>
+    </div>
+  );
 };

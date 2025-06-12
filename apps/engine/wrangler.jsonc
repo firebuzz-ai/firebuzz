@@ -16,6 +16,10 @@
 		{
 			"binding": "ASSETS",
 			"id": "8cd080e0bf8e4cacbf602f8047263069"
+		},
+		{
+			"binding": "CACHE",
+			"id": "949acd8a64084e2699f85c2fd4e89f27"
 		}
 	],
 	"vars": {
@@ -33,6 +37,10 @@
 				{
 					"binding": "ASSETS",
 					"id": "3433d45b8cbe48f194714640ce693715"
+				},
+				{
+					"binding": "CACHE",
+					"id": "45e58414198b4581aabaaf37c5e8eccf"
 				}
 			]
 		},
@@ -44,7 +52,11 @@
 			"kv_namespaces": [
 				{
 					"binding": "ASSETS",
-					"id": "8f8ec9eed624445b899022815765b5a6" // Replace with actual production KV namespace ID
+					"id": "8f8ec9eed624445b899022815765b5a6"
+				},
+				{
+					"binding": "CACHE",
+					"id": "e3d780109b4346139ae315bc6b4cc137"
 				}
 			]
 		}

@@ -12,72 +12,72 @@ import { ThemeForm, type ThemeFormType } from "./form";
 import { ThemePanel } from "./panel";
 
 export const Theme = ({
-	rightPanelSize,
-	id,
-	themeId,
+  rightPanelSize,
+  id,
+  themeId,
 }: {
-	rightPanelSize: number;
-	id: string;
-	themeId: Id<"themes">;
+  rightPanelSize: number;
+  id: string;
+  themeId: Id<"themes">;
 }) => {
-	const [saveHandler, setSaveHandler] = useState<(() => Promise<void>) | null>(
-		null,
-	);
-	const { theme: currentTheme } = useTheme();
-	const [unsavedChanges, setUnsavedChanges] = useState(false);
-	const [isSaving, setIsSaving] = useState(false);
-	const [formValues, setFormValues] = useState<ThemeFormType | null>(null);
-	const [previewThemeMode, setPreviewThemeMode] = useState<"light" | "dark">(
-		currentTheme === "dark" ? "dark" : "light",
-	);
+  const [saveHandler, setSaveHandler] = useState<(() => Promise<void>) | null>(
+    null
+  );
+  const { theme: resolvedTheme } = useTheme();
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [formValues, setFormValues] = useState<ThemeFormType | null>(null);
+  const [previewThemeMode, setPreviewThemeMode] = useState<"light" | "dark">(
+    resolvedTheme === "dark" ? "dark" : "light"
+  );
 
-	// Fetch current brand data
-	const { data: theme, isPending: isLoading } = useCachedRichQuery(
-		api.collections.brands.themes.queries.getById,
-		{ id: themeId },
-	);
+  // Fetch current brand data
+  const { data: theme, isPending: isLoading } = useCachedRichQuery(
+    api.collections.brands.themes.queries.getById,
+    { id: themeId }
+  );
 
-	if (isLoading || !currentTheme) {
-		return (
-			<div className="flex items-center justify-center flex-1">
-				<Spinner size="sm" />
-			</div>
-		);
-	}
+  if (isLoading || !resolvedTheme) {
+    return (
+      <div className="flex items-center justify-center flex-1">
+        <Spinner size="sm" />
+      </div>
+    );
+  }
 
-	return (
-		<>
-			<TwoPanelsProvider
-				rightPanelSizeFromCookie={rightPanelSize}
-				id={id}
-				isRightPanelClosable={false}
-			>
-				<FormLayout>
-					<ThemeForm
-						key={themeId}
-						isLoading={isLoading}
-						setFormValues={setFormValues}
-						theme={theme}
-						setSaveHandler={setSaveHandler}
-						setUnsavedChanges={setUnsavedChanges}
-						setIsSaving={setIsSaving}
-						setPreviewThemeMode={setPreviewThemeMode}
-						previewThemeMode={previewThemeMode}
-					/>
-				</FormLayout>
-				<PanelLayout>
-					<ThemePanel
-						previewThemeMode={previewThemeMode}
-						setPreviewThemeMode={setPreviewThemeMode}
-						hasChanges={unsavedChanges}
-						onSave={saveHandler}
-						isSaving={isSaving}
-						formValues={formValues}
-					/>
-				</PanelLayout>
-			</TwoPanelsProvider>
-			<MediaGalleryModal />
-			<ColorSelectorModal />
-		</>
-	);
+  return (
+    <>
+      <TwoPanelsProvider
+        rightPanelSizeFromCookie={rightPanelSize}
+        id={id}
+        isRightPanelClosable={false}
+      >
+        <FormLayout>
+          <ThemeForm
+            key={themeId}
+            isLoading={isLoading}
+            setFormValues={setFormValues}
+            theme={theme}
+            setSaveHandler={setSaveHandler}
+            setUnsavedChanges={setUnsavedChanges}
+            setIsSaving={setIsSaving}
+            setPreviewThemeMode={setPreviewThemeMode}
+            previewThemeMode={previewThemeMode}
+          />
+        </FormLayout>
+        <PanelLayout>
+          <ThemePanel
+            previewThemeMode={previewThemeMode}
+            setPreviewThemeMode={setPreviewThemeMode}
+            hasChanges={unsavedChanges}
+            onSave={saveHandler}
+            isSaving={isSaving}
+            formValues={formValues}
+          />
+        </PanelLayout>
+      </TwoPanelsProvider>
+      <MediaGalleryModal />
+      <ColorSelectorModal />
+    </>
+  );
 };

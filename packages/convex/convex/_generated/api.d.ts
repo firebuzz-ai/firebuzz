@@ -8,7 +8,6 @@
  * @module
  */
 
-import type * as aggregates from "../aggregates.js";
 import type * as collections_brands_audiences_mutations from "../collections/brands/audiences/mutations.js";
 import type * as collections_brands_audiences_queries from "../collections/brands/audiences/queries.js";
 import type * as collections_brands_audiences_utils from "../collections/brands/audiences/utils.js";
@@ -42,13 +41,17 @@ import type * as collections_landingPages_versions_actions from "../collections/
 import type * as collections_landingPages_versions_mutations from "../collections/landingPages/versions/mutations.js";
 import type * as collections_landingPages_versions_queries from "../collections/landingPages/versions/queries.js";
 import type * as collections_landingPages_versions_utils from "../collections/landingPages/versions/utils.js";
+import type * as collections_onboarding_actions from "../collections/onboarding/actions.js";
+import type * as collections_onboarding_mutations from "../collections/onboarding/mutations.js";
+import type * as collections_onboarding_queries from "../collections/onboarding/queries.js";
+import type * as collections_onboarding_utils from "../collections/onboarding/utils.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
 import type * as collections_projects_queries from "../collections/projects/queries.js";
-import type * as collections_projects_utils from "../collections/projects/utils.js";
 import type * as collections_storage_documents_actions from "../collections/storage/documents/actions.js";
 import type * as collections_storage_documents_chunks_actions from "../collections/storage/documents/chunks/actions.js";
 import type * as collections_storage_documents_chunks_mutations from "../collections/storage/documents/chunks/mutations.js";
 import type * as collections_storage_documents_chunks_queries from "../collections/storage/documents/chunks/queries.js";
+import type * as collections_storage_documents_chunks_utils from "../collections/storage/documents/chunks/utils.js";
 import type * as collections_storage_documents_memoized_mutations from "../collections/storage/documents/memoized/mutations.js";
 import type * as collections_storage_documents_memoized_queries from "../collections/storage/documents/memoized/queries.js";
 import type * as collections_storage_documents_memoized_utils from "../collections/storage/documents/memoized/utils.js";
@@ -70,21 +73,51 @@ import type * as collections_storage_media_utils from "../collections/storage/me
 import type * as collections_storage_media_vectors_actions from "../collections/storage/media/vectors/actions.js";
 import type * as collections_storage_media_vectors_mutations from "../collections/storage/media/vectors/mutations.js";
 import type * as collections_storage_media_vectors_queries from "../collections/storage/media/vectors/queries.js";
+import type * as collections_storage_media_vectors_utils from "../collections/storage/media/vectors/utils.js";
+import type * as collections_stripe_customers_mutations from "../collections/stripe/customers/mutations.js";
+import type * as collections_stripe_customers_queries from "../collections/stripe/customers/queries.js";
+import type * as collections_stripe_invoices_mutations from "../collections/stripe/invoices/mutations.js";
+import type * as collections_stripe_invoices_queries from "../collections/stripe/invoices/queries.js";
+import type * as collections_stripe_paymentMethods_mutations from "../collections/stripe/paymentMethods/mutations.js";
+import type * as collections_stripe_paymentMethods_queries from "../collections/stripe/paymentMethods/queries.js";
+import type * as collections_stripe_payments_mutations from "../collections/stripe/payments/mutations.js";
+import type * as collections_stripe_payments_queries from "../collections/stripe/payments/queries.js";
+import type * as collections_stripe_prices_mutations from "../collections/stripe/prices/mutations.js";
+import type * as collections_stripe_prices_queries from "../collections/stripe/prices/queries.js";
+import type * as collections_stripe_products_mutations from "../collections/stripe/products/mutations.js";
+import type * as collections_stripe_products_queries from "../collections/stripe/products/queries.js";
+import type * as collections_stripe_subscriptionItems_mutations from "../collections/stripe/subscriptionItems/mutations.js";
+import type * as collections_stripe_subscriptionItems_queries from "../collections/stripe/subscriptionItems/queries.js";
+import type * as collections_stripe_subscriptions_mutations from "../collections/stripe/subscriptions/mutations.js";
+import type * as collections_stripe_subscriptions_queries from "../collections/stripe/subscriptions/queries.js";
+import type * as collections_stripe_transactions_mutations from "../collections/stripe/transactions/mutations.js";
+import type * as collections_stripe_transactions_queries from "../collections/stripe/transactions/queries.js";
+import type * as collections_stripe_transactions_utils from "../collections/stripe/transactions/utils.js";
+import type * as collections_stripe_webhookEvents_mutations from "../collections/stripe/webhookEvents/mutations.js";
+import type * as collections_stripe_webhookEvents_queries from "../collections/stripe/webhookEvents/queries.js";
 import type * as collections_users_mutations from "../collections/users/mutations.js";
 import type * as collections_users_queries from "../collections/users/queries.js";
 import type * as collections_users_utils from "../collections/users/utils.js";
 import type * as collections_workspaces_mutations from "../collections/workspaces/mutations.js";
 import type * as collections_workspaces_queries from "../collections/workspaces/queries.js";
 import type * as collections_workspaces_utils from "../collections/workspaces/utils.js";
+import type * as components_actionRetrier from "../components/actionRetrier.js";
+import type * as components_aggregates from "../components/aggregates.js";
+import type * as components_r2 from "../components/r2.js";
+import type * as components_ratelimits from "../components/ratelimits.js";
+import type * as components_workflows from "../components/workflows.js";
+import type * as components_workpools from "../components/workpools.js";
 import type * as crons from "../crons.js";
-import type * as helpers_r2 from "../helpers/r2.js";
-import type * as helpers_retrier from "../helpers/retrier.js";
-import type * as helpers_system from "../helpers/system.js";
 import type * as http from "../http.js";
 import type * as lib_documentReaders from "../lib/documentReaders.js";
+import type * as lib_engine from "../lib/engine.js";
+import type * as lib_firecrawl from "../lib/firecrawl.js";
+import type * as lib_googleai from "../lib/googleai.js";
 import type * as lib_openai from "../lib/openai.js";
+import type * as lib_stripe from "../lib/stripe.js";
 import type * as triggers from "../triggers.js";
-import type * as workpools from "../workpools.js";
+import type * as utils_errors from "../utils/errors.js";
+import type * as utils_system from "../utils/system.js";
 
 import type {
   ApiFromModules,
@@ -101,7 +134,6 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
-  aggregates: typeof aggregates;
   "collections/brands/audiences/mutations": typeof collections_brands_audiences_mutations;
   "collections/brands/audiences/queries": typeof collections_brands_audiences_queries;
   "collections/brands/audiences/utils": typeof collections_brands_audiences_utils;
@@ -135,13 +167,17 @@ declare const fullApi: ApiFromModules<{
   "collections/landingPages/versions/mutations": typeof collections_landingPages_versions_mutations;
   "collections/landingPages/versions/queries": typeof collections_landingPages_versions_queries;
   "collections/landingPages/versions/utils": typeof collections_landingPages_versions_utils;
+  "collections/onboarding/actions": typeof collections_onboarding_actions;
+  "collections/onboarding/mutations": typeof collections_onboarding_mutations;
+  "collections/onboarding/queries": typeof collections_onboarding_queries;
+  "collections/onboarding/utils": typeof collections_onboarding_utils;
   "collections/projects/mutations": typeof collections_projects_mutations;
   "collections/projects/queries": typeof collections_projects_queries;
-  "collections/projects/utils": typeof collections_projects_utils;
   "collections/storage/documents/actions": typeof collections_storage_documents_actions;
   "collections/storage/documents/chunks/actions": typeof collections_storage_documents_chunks_actions;
   "collections/storage/documents/chunks/mutations": typeof collections_storage_documents_chunks_mutations;
   "collections/storage/documents/chunks/queries": typeof collections_storage_documents_chunks_queries;
+  "collections/storage/documents/chunks/utils": typeof collections_storage_documents_chunks_utils;
   "collections/storage/documents/memoized/mutations": typeof collections_storage_documents_memoized_mutations;
   "collections/storage/documents/memoized/queries": typeof collections_storage_documents_memoized_queries;
   "collections/storage/documents/memoized/utils": typeof collections_storage_documents_memoized_utils;
@@ -163,21 +199,51 @@ declare const fullApi: ApiFromModules<{
   "collections/storage/media/vectors/actions": typeof collections_storage_media_vectors_actions;
   "collections/storage/media/vectors/mutations": typeof collections_storage_media_vectors_mutations;
   "collections/storage/media/vectors/queries": typeof collections_storage_media_vectors_queries;
+  "collections/storage/media/vectors/utils": typeof collections_storage_media_vectors_utils;
+  "collections/stripe/customers/mutations": typeof collections_stripe_customers_mutations;
+  "collections/stripe/customers/queries": typeof collections_stripe_customers_queries;
+  "collections/stripe/invoices/mutations": typeof collections_stripe_invoices_mutations;
+  "collections/stripe/invoices/queries": typeof collections_stripe_invoices_queries;
+  "collections/stripe/paymentMethods/mutations": typeof collections_stripe_paymentMethods_mutations;
+  "collections/stripe/paymentMethods/queries": typeof collections_stripe_paymentMethods_queries;
+  "collections/stripe/payments/mutations": typeof collections_stripe_payments_mutations;
+  "collections/stripe/payments/queries": typeof collections_stripe_payments_queries;
+  "collections/stripe/prices/mutations": typeof collections_stripe_prices_mutations;
+  "collections/stripe/prices/queries": typeof collections_stripe_prices_queries;
+  "collections/stripe/products/mutations": typeof collections_stripe_products_mutations;
+  "collections/stripe/products/queries": typeof collections_stripe_products_queries;
+  "collections/stripe/subscriptionItems/mutations": typeof collections_stripe_subscriptionItems_mutations;
+  "collections/stripe/subscriptionItems/queries": typeof collections_stripe_subscriptionItems_queries;
+  "collections/stripe/subscriptions/mutations": typeof collections_stripe_subscriptions_mutations;
+  "collections/stripe/subscriptions/queries": typeof collections_stripe_subscriptions_queries;
+  "collections/stripe/transactions/mutations": typeof collections_stripe_transactions_mutations;
+  "collections/stripe/transactions/queries": typeof collections_stripe_transactions_queries;
+  "collections/stripe/transactions/utils": typeof collections_stripe_transactions_utils;
+  "collections/stripe/webhookEvents/mutations": typeof collections_stripe_webhookEvents_mutations;
+  "collections/stripe/webhookEvents/queries": typeof collections_stripe_webhookEvents_queries;
   "collections/users/mutations": typeof collections_users_mutations;
   "collections/users/queries": typeof collections_users_queries;
   "collections/users/utils": typeof collections_users_utils;
   "collections/workspaces/mutations": typeof collections_workspaces_mutations;
   "collections/workspaces/queries": typeof collections_workspaces_queries;
   "collections/workspaces/utils": typeof collections_workspaces_utils;
+  "components/actionRetrier": typeof components_actionRetrier;
+  "components/aggregates": typeof components_aggregates;
+  "components/r2": typeof components_r2;
+  "components/ratelimits": typeof components_ratelimits;
+  "components/workflows": typeof components_workflows;
+  "components/workpools": typeof components_workpools;
   crons: typeof crons;
-  "helpers/r2": typeof helpers_r2;
-  "helpers/retrier": typeof helpers_retrier;
-  "helpers/system": typeof helpers_system;
   http: typeof http;
   "lib/documentReaders": typeof lib_documentReaders;
+  "lib/engine": typeof lib_engine;
+  "lib/firecrawl": typeof lib_firecrawl;
+  "lib/googleai": typeof lib_googleai;
   "lib/openai": typeof lib_openai;
+  "lib/stripe": typeof lib_stripe;
   triggers: typeof triggers;
-  workpools: typeof workpools;
+  "utils/errors": typeof utils_errors;
+  "utils/system": typeof utils_system;
 }>;
 declare const fullApiWithMounts: typeof fullApi;
 
@@ -191,6 +257,149 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  aggregateCredits: {
+    btree: {
+      aggregateBetween: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any },
+        { count: number; sum: number }
+      >;
+      atNegativeOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      atOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { key: any; namespace?: any },
+        null | { k: any; s: number; v: any }
+      >;
+      offset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; key: any; namespace?: any },
+        number
+      >;
+      offsetUntil: FunctionReference<
+        "query",
+        "internal",
+        { k2?: any; key: any; namespace?: any },
+        number
+      >;
+      paginate: FunctionReference<
+        "query",
+        "internal",
+        {
+          cursor?: string;
+          k1?: any;
+          k2?: any;
+          limit: number;
+          namespace?: any;
+          order: "asc" | "desc";
+        },
+        {
+          cursor: string;
+          isDone: boolean;
+          page: Array<{ k: any; s: number; v: any }>;
+        }
+      >;
+      paginateNamespaces: FunctionReference<
+        "query",
+        "internal",
+        { cursor?: string; limit: number },
+        { cursor: string; isDone: boolean; page: Array<any> }
+      >;
+      validate: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any },
+        any
+      >;
+    };
+    inspect: {
+      display: FunctionReference<"query", "internal", { namespace?: any }, any>;
+      dump: FunctionReference<"query", "internal", { namespace?: any }, string>;
+      inspectNode: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any; node?: string },
+        null
+      >;
+    };
+    public: {
+      clear: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      deleteIfExists: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        any
+      >;
+      delete_: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        null
+      >;
+      init: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      insert: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any; summand?: number; value: any },
+        null
+      >;
+      makeRootLazy: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: any },
+        null
+      >;
+      replace: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        null
+      >;
+      replaceOrInsert: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        any
+      >;
+    };
+  };
   aggregateCampaigns: {
     btree: {
       aggregateBetween: FunctionReference<
@@ -1667,6 +1876,68 @@ export declare const components: {
       >;
     };
   };
+  actionCache: {
+    crons: {
+      purge: FunctionReference<
+        "mutation",
+        "internal",
+        { expiresAt?: number },
+        null
+      >;
+    };
+    lib: {
+      get: FunctionReference<
+        "query",
+        "internal",
+        { args: any; name: string; ttl: number | null },
+        { kind: "hit"; value: any } | { expiredEntry?: string; kind: "miss" }
+      >;
+      put: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          args: any;
+          expiredEntry?: string;
+          name: string;
+          ttl: number | null;
+          value: any;
+        },
+        null
+      >;
+      remove: FunctionReference<
+        "mutation",
+        "internal",
+        { args: any; name: string },
+        null
+      >;
+      removeAll: FunctionReference<
+        "mutation",
+        "internal",
+        { batchSize?: number; before?: number; name?: string },
+        null
+      >;
+    };
+    public: {
+      fetch: FunctionReference<
+        "action",
+        "internal",
+        { args: any; expiration: number | null; fn: string; name: string },
+        any
+      >;
+      remove: FunctionReference<
+        "mutation",
+        "internal",
+        { args: any; name: string },
+        null
+      >;
+      removeAll: FunctionReference<
+        "mutation",
+        "internal",
+        { before?: number; name?: string },
+        null
+      >;
+    };
+  };
   cascadeOperations: {
     lib: {
       cancel: FunctionReference<
@@ -1872,6 +2143,366 @@ export declare const components: {
         | { previousAttempts: number; state: "pending" }
         | { previousAttempts: number; state: "running" }
         | { state: "finished" }
+      >;
+    };
+  };
+  rateLimiter: {
+    lib: {
+      checkRateLimit: FunctionReference<
+        "query",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      clearAll: FunctionReference<
+        "mutation",
+        "internal",
+        { before?: number },
+        null
+      >;
+      rateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      resetRateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        { key?: string; name: string },
+        null
+      >;
+    };
+    public: {
+      checkRateLimit: FunctionReference<
+        "query",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      rateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          count?: number;
+          key?: string;
+          name: string;
+          reserve?: boolean;
+          throws?: boolean;
+        },
+        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
+      >;
+      resetRateLimit: FunctionReference<
+        "mutation",
+        "internal",
+        { key?: string; name: string },
+        null
+      >;
+    };
+  };
+  workflow: {
+    journal: {
+      load: FunctionReference<
+        "query",
+        "internal",
+        { workflowId: string },
+        {
+          inProgress: Array<{
+            _creationTime: number;
+            _id: string;
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+            stepNumber: number;
+            workflowId: string;
+          }>;
+          journalEntries: Array<{
+            _creationTime: number;
+            _id: string;
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+            stepNumber: number;
+            workflowId: string;
+          }>;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          ok: boolean;
+          workflow: {
+            _creationTime: number;
+            _id: string;
+            args: any;
+            generationNumber: number;
+            logLevel?: any;
+            name?: string;
+            onComplete?: { context?: any; fnHandle: string };
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt?: any;
+            state?: any;
+            workflowHandle: string;
+          };
+        }
+      >;
+      startStep: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          generationNumber: number;
+          name: string;
+          retry?:
+            | boolean
+            | { base: number; initialBackoffMs: number; maxAttempts: number };
+          schedulerOptions?: { runAt?: number } | { runAfter?: number };
+          step: {
+            args: any;
+            argsSize: number;
+            completedAt?: number;
+            functionType: "query" | "mutation" | "action";
+            handle: string;
+            inProgress: boolean;
+            name: string;
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt: number;
+            workId?: string;
+          };
+          workflowId: string;
+          workpoolOptions?: {
+            defaultRetryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            logLevel?: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism?: number;
+            retryActionsByDefault?: boolean;
+          };
+        },
+        {
+          _creationTime: number;
+          _id: string;
+          step: {
+            args: any;
+            argsSize: number;
+            completedAt?: number;
+            functionType: "query" | "mutation" | "action";
+            handle: string;
+            inProgress: boolean;
+            name: string;
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt: number;
+            workId?: string;
+          };
+          stepNumber: number;
+          workflowId: string;
+        }
+      >;
+    };
+    workflow: {
+      cancel: FunctionReference<
+        "mutation",
+        "internal",
+        { workflowId: string },
+        null
+      >;
+      cleanup: FunctionReference<
+        "mutation",
+        "internal",
+        { workflowId: string },
+        boolean
+      >;
+      complete: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          generationNumber: number;
+          now: number;
+          runResult:
+            | { kind: "success"; returnValue: any }
+            | { error: string; kind: "failed" }
+            | { kind: "canceled" };
+          workflowId: string;
+        },
+        null
+      >;
+      create: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          maxParallelism?: number;
+          onComplete?: { context?: any; fnHandle: string };
+          validateAsync?: boolean;
+          workflowArgs: any;
+          workflowHandle: string;
+          workflowName: string;
+        },
+        string
+      >;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { workflowId: string },
+        {
+          inProgress: Array<{
+            _creationTime: number;
+            _id: string;
+            step: {
+              args: any;
+              argsSize: number;
+              completedAt?: number;
+              functionType: "query" | "mutation" | "action";
+              handle: string;
+              inProgress: boolean;
+              name: string;
+              runResult?:
+                | { kind: "success"; returnValue: any }
+                | { error: string; kind: "failed" }
+                | { kind: "canceled" };
+              startedAt: number;
+              workId?: string;
+            };
+            stepNumber: number;
+            workflowId: string;
+          }>;
+          logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+          workflow: {
+            _creationTime: number;
+            _id: string;
+            args: any;
+            generationNumber: number;
+            logLevel?: any;
+            name?: string;
+            onComplete?: { context?: any; fnHandle: string };
+            runResult?:
+              | { kind: "success"; returnValue: any }
+              | { error: string; kind: "failed" }
+              | { kind: "canceled" };
+            startedAt?: any;
+            state?: any;
+            workflowHandle: string;
+          };
+        }
       >;
     };
   };
