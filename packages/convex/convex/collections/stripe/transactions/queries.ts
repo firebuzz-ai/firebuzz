@@ -1,119 +1,162 @@
 import { v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
+import {
+  aggregateCreditsBalance,
+  aggregateCurrentPeriodAdditions,
+  aggregateCurrentPeriodUsage,
+} from "../../../components/aggregates";
 
-export const getByWorkspaceId = query({
+export const getCurrentBalance = query({
   args: {
     workspaceId: v.id("workspaces"),
-    periodStart: v.optional(v.string()),
-    type: v.optional(v.string()),
-    includeExpired: v.optional(v.boolean()),
   },
-  handler: async (
-    ctx,
-    { workspaceId, periodStart, type, includeExpired = false }
-  ) => {
-    let query = ctx.db
-      .query("transactions")
-      .withIndex("by_workspace_id", (q) => q.eq("workspaceId", workspaceId));
+  handler: async (ctx, { workspaceId }) => {
+    const now = new Date().toISOString();
 
-    if (periodStart) {
-      query = query.filter((q) => q.eq(q.field("periodStart"), periodStart));
-    }
+    // Use bounds to efficiently scan only non-expired credits
+    // Since sortKey is [expiresAt || "9999-12-31", _creationTime]
+    const credits = await aggregateCreditsBalance.sum(ctx, {
+      namespace: workspaceId,
+      bounds: {
+        lower: { key: [now, 0], inclusive: false }, // Exclude expired credits
+        upper: { key: ["9999-12-31", Date.now()], inclusive: true }, // Include all future credits
+      },
+    });
 
-    if (type) {
-      query = query.filter((q) => q.eq(q.field("type"), type));
-    }
-
-    if (!includeExpired) {
-      const now = new Date().toISOString();
-      query = query.filter((q) =>
-        q.or(
-          q.eq(q.field("expiresAt"), undefined),
-          q.gt(q.field("expiresAt"), now)
-        )
-      );
-    }
-
-    return await query.collect();
+    return Math.round(credits || 0);
   },
 });
 
-export const getByWorkspaceIdInternal = internalQuery({
+export const getCurrentBalanceInternal = internalQuery({
   args: {
     workspaceId: v.id("workspaces"),
-    periodStart: v.optional(v.string()),
-    type: v.optional(v.string()),
-    includeExpired: v.optional(v.boolean()),
   },
-  handler: async (
-    ctx,
-    { workspaceId, periodStart, type, includeExpired = false }
-  ) => {
-    let query = ctx.db
-      .query("transactions")
-      .withIndex("by_workspace_id", (q) => q.eq("workspaceId", workspaceId));
+  handler: async (ctx, { workspaceId }) => {
+    const now = new Date().toISOString();
 
-    if (periodStart) {
-      query = query.filter((q) => q.eq(q.field("periodStart"), periodStart));
-    }
+    // Use bounds to efficiently scan only non-expired credits
+    const credits = await aggregateCreditsBalance.sum(ctx, {
+      namespace: workspaceId,
+      bounds: {
+        lower: { key: [now, 0], inclusive: false }, // Exclude expired credits
+        upper: { key: ["9999-12-31", Date.now()], inclusive: true }, // Include all future credits
+      },
+    });
 
-    if (type) {
-      query = query.filter((q) => q.eq(q.field("type"), type));
-    }
-
-    if (!includeExpired) {
-      const now = new Date().toISOString();
-      query = query.filter((q) =>
-        q.or(
-          q.eq(q.field("expiresAt"), undefined),
-          q.gt(q.field("expiresAt"), now)
-        )
-      );
-    }
-
-    return await query.collect();
+    return Math.round(credits || 0);
   },
 });
 
-export const getBySubscriptionId = internalQuery({
-  args: { subscriptionId: v.id("stripeSubscriptions") },
-  handler: async (ctx, { subscriptionId }) => {
-    return await ctx.db
-      .query("transactions")
-      .withIndex("by_subscription_id", (q) =>
-        q.eq("subscriptionId", subscriptionId)
-      )
-      .collect();
+export const validateSufficientCredits = internalQuery({
+  args: {
+    workspaceId: v.id("workspaces"),
+    requiredCredits: v.number(),
+  },
+  handler: async (ctx, { workspaceId, requiredCredits }) => {
+    const now = new Date().toISOString();
+
+    // Use bounds to efficiently scan only non-expired credits
+    const balance = await aggregateCreditsBalance.sum(ctx, {
+      namespace: workspaceId,
+      bounds: {
+        lower: { key: [now, 0], inclusive: false }, // Exclude expired credits
+        upper: { key: ["9999-12-31", Date.now()], inclusive: true }, // Include all future credits
+      },
+    });
+
+    const currentBalance = Math.round(balance || 0);
+
+    return {
+      hasEnough: currentBalance >= requiredCredits,
+      currentBalance,
+      requiredCredits,
+      shortfall: Math.max(0, requiredCredits - currentBalance),
+    };
   },
 });
 
-export const getByIdempotencyKey = internalQuery({
-  args: { idempotencyKey: v.string() },
-  handler: async (ctx, { idempotencyKey }) => {
-    return await ctx.db
-      .query("transactions")
-      .withIndex("by_idempotency_key", (q) =>
-        q.eq("idempotencyKey", idempotencyKey)
-      )
-      .unique();
+export const getCurrentPeriodUsage = query({
+  args: {
+    workspaceId: v.id("workspaces"),
+    periodStart: v.string(), // "YYYY-MM" format
+    periodEnd: v.string(), // ISO string (expiresAt)
+  },
+  handler: async (ctx, { workspaceId, periodStart, periodEnd }) => {
+    // Get usage for the specific period range
+    const usage = await aggregateCurrentPeriodUsage.sum(ctx, {
+      namespace: workspaceId,
+      bounds: {
+        lower: { key: [periodStart, periodEnd, 0], inclusive: true },
+        upper: {
+          key: [periodStart, periodEnd, Number.MAX_SAFE_INTEGER],
+          inclusive: true,
+        },
+      },
+    });
+
+    return Math.abs(Math.round(usage || 0)); // Return as positive number
   },
 });
 
-export const getExpiredTrialCredits = internalQuery({
-  args: { beforeDate: v.string() },
-  handler: async (ctx, { beforeDate }) => {
-    return await ctx.db
-      .query("transactions")
-      .withIndex("by_type_expires", (q) =>
-        q.eq("type", "trial").lt("expiresAt", beforeDate)
-      )
-      .collect();
+export const getCurrentPeriodAdditions = query({
+  args: {
+    workspaceId: v.id("workspaces"),
+    periodStart: v.string(), // "YYYY-MM" format
+    periodEnd: v.string(), // ISO string (expiresAt)
+  },
+  handler: async (ctx, { workspaceId, periodStart, periodEnd }) => {
+    // Get additions for the specific period range
+    const additions = await aggregateCurrentPeriodAdditions.sum(ctx, {
+      namespace: workspaceId,
+      bounds: {
+        lower: { key: [periodStart, periodEnd, 0], inclusive: true },
+        upper: {
+          key: [periodStart, periodEnd, Number.MAX_SAFE_INTEGER],
+          inclusive: true,
+        },
+      },
+    });
+
+    return Math.round(additions || 0);
   },
 });
 
-export const getByIdInternal = internalQuery({
-  args: { id: v.id("transactions") },
-  handler: async (ctx, { id }) => {
-    return await ctx.db.get(id);
+export const getCurrentPeriodSummary = query({
+  args: {
+    workspaceId: v.id("workspaces"),
+    periodStart: v.string(), // ISO string
+    periodEnd: v.string(), // ISO string (expiresAt)
+  },
+  handler: async (ctx, { workspaceId, periodStart, periodEnd }) => {
+    // Get both usage and additions for the period in parallel
+    const [usage, additions] = await Promise.all([
+      aggregateCurrentPeriodUsage.sum(ctx, {
+        namespace: workspaceId,
+        bounds: {
+          lower: { key: [periodStart, periodEnd, 0], inclusive: true },
+          upper: {
+            key: [periodStart, periodEnd, Number.MAX_SAFE_INTEGER],
+            inclusive: true,
+          },
+        },
+      }),
+      aggregateCurrentPeriodAdditions.sum(ctx, {
+        namespace: workspaceId,
+        bounds: {
+          lower: { key: [periodStart, periodEnd, 0], inclusive: true },
+          upper: {
+            key: [periodStart, periodEnd, Number.MAX_SAFE_INTEGER],
+            inclusive: true,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      periodStart,
+      periodEnd,
+      usage: Math.abs(Math.round(usage || 0)), // Return as positive number
+      additions: Math.round(additions || 0),
+    };
   },
 });

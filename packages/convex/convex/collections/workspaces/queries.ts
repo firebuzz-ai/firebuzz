@@ -18,7 +18,16 @@ export const getCurrent = query({
 
     const workspace = await ctx.db.get(user.currentWorkspaceId);
 
-    return workspace;
+    if (!workspace) {
+      return null;
+    }
+
+    const owner = await ctx.db.get(workspace.ownerId);
+
+    return {
+      ...workspace,
+      owner,
+    };
   },
 });
 

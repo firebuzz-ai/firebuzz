@@ -11,7 +11,9 @@ import { internal } from "./_generated/api";
 import type { DataModel } from "./_generated/dataModel";
 import {
   aggregateCampaigns,
-  aggregateCredits,
+  aggregateCreditsBalance as aggregateCredits,
+  aggregateCurrentPeriodAdditions,
+  aggregateCurrentPeriodUsage,
   aggregateDocuments,
   aggregateLandingPageTemplates,
   aggregateLandingPageVersions,
@@ -542,13 +544,19 @@ triggers.register("transactions", async (ctx, change) => {
   if (change.operation === "insert") {
     const doc = change.newDoc;
     await aggregateCredits.insert(ctx, doc);
+    await aggregateCurrentPeriodUsage.insert(ctx, doc);
+    await aggregateCurrentPeriodAdditions.insert(ctx, doc);
   } else if (change.operation === "update") {
     const newDoc = change.newDoc;
     const oldDoc = change.oldDoc;
     await aggregateCredits.replace(ctx, oldDoc, newDoc);
+    await aggregateCurrentPeriodUsage.replace(ctx, oldDoc, newDoc);
+    await aggregateCurrentPeriodAdditions.replace(ctx, oldDoc, newDoc);
   } else if (change.operation === "delete") {
     const doc = change.oldDoc;
     await aggregateCredits.delete(ctx, doc);
+    await aggregateCurrentPeriodUsage.delete(ctx, doc);
+    await aggregateCurrentPeriodAdditions.delete(ctx, doc);
   }
 });
 

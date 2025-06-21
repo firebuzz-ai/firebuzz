@@ -1160,6 +1160,7 @@ export const generateMarketingData = internalAction({
         formats: ["markdown"],
         onlyMainContent: true,
         waitFor: 1000,
+        returnType: "full",
       }
     );
 
@@ -1374,6 +1375,135 @@ Brand Persona: ${brandPersona}
   },
 });
 
+export const fillDefaultKnowledgeBase = internalAction({
+  args: {
+    domain: v.string(),
+    urls: v.array(v.string()),
+    knowledgeBaseId: v.id("knowledgeBases"),
+    workspaceId: v.id("workspaces"),
+    projectId: v.id("projects"),
+    createdBy: v.id("users"),
+  },
+  handler: async (
+    ctx,
+    { domain, urls, knowledgeBaseId, workspaceId, projectId, createdBy }
+  ): Promise<void> => {
+    // 1) Get Homepage Scrape Data
+    const homepage: ScrapeResponse | string = await ctx.runAction(
+      internal.lib.firecrawl.scrapeUrl,
+      {
+        url: domain,
+        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+        onlyMainContent: false,
+        waitFor: 3000,
+        returnType: "full",
+      }
+    );
+
+    // 2) Get Pages Scrape Data
+    const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
+      internal.lib.firecrawl.batchScrapeUrls,
+      {
+        urls,
+        formats: ["markdown"],
+        onlyMainContent: true,
+        waitFor: 1000,
+        returnType: "full",
+      }
+    );
+
+    if (typeof pages === "string" || typeof homepage === "string") {
+      throw new ConvexError("Failed to scrape data");
+    }
+
+    // 3) Prepare all pages with markdown content
+    const allPagesWithMarkdown: {
+      url: string;
+      markdown: string;
+      title: string;
+    }[] = [
+      {
+        url: domain,
+        markdown: homepage.markdown ?? "",
+        title: homepage.metadata?.title || "Homepage",
+      },
+      ...pages.data
+        .filter((item) => Boolean(item.url) && Boolean(item.markdown))
+        .map((item) => ({
+          url: item.url ?? "",
+          markdown: item.markdown ?? "",
+          title: item.title || item.url?.split("/").pop() || "Untitled Page",
+        })),
+    ];
+
+    // 4) Create knowledge base items for each page
+    for (const page of allPagesWithMarkdown) {
+      if (!page.markdown.trim()) {
+        console.log(`Skipping empty page: ${page.url}`);
+        continue;
+      }
+
+      try {
+        // Generate a clean filename from the page title/URL
+        const cleanTitle = page.title
+          .replace(/[^a-zA-Z0-9\s-]/g, "")
+          .replace(/\s+/g, "-")
+          .toLowerCase()
+          .substring(0, 50);
+
+        const fileName = `${cleanTitle}.md`;
+        const key = `${workspaceId}/${projectId}/knowledge/${fileName}`;
+
+        // Create markdown file content with metadata
+        const fileContent = `# ${page.title}
+
+**Source URL:** ${page.url}
+**Generated:** ${new Date().toISOString()}
+
+---
+
+${page.markdown}`;
+
+        // Store file in R2
+        const blob = new Blob([fileContent], { type: "text/markdown" });
+        await r2.store(ctx, blob, { key, type: "text/markdown" });
+
+        // Create memory item in database
+        await ctx.runMutation(
+          internal.collections.storage.documents.mutations
+            .createMemoryItemInternal,
+          {
+            key,
+            name: fileName,
+            content: fileContent,
+            contentType: "text/markdown",
+            type: "md",
+            size: new TextEncoder().encode(fileContent).length,
+            knowledgeBase: knowledgeBaseId,
+            workspaceId,
+            projectId,
+            createdBy,
+          }
+        );
+
+        console.log(
+          `Created knowledge base item for: ${page.title} (${page.url})`
+        );
+      } catch (error) {
+        console.error(
+          `Failed to create knowledge base item for ${page.url}:`,
+          error
+        );
+        // Continue with other pages even if one fails
+      }
+    }
+
+    console.log(
+      `Successfully processed ${allPagesWithMarkdown.length} pages for knowledge base`
+    );
+  },
+});
+
 export const createCheckoutSession = action({
   args: {
     onboardingId: v.id("onboarding"),
@@ -1381,6 +1511,13 @@ export const createCheckoutSession = action({
       v.object({
         price: v.string(),
         quantity: v.number(),
+        adjustable_quantity: v.optional(
+          v.object({
+            enabled: v.boolean(),
+            minimum: v.number(),
+            maximum: v.number(),
+          })
+        ),
       })
     ),
     baseUrl: v.string(),
@@ -1426,8 +1563,8 @@ export const createCheckoutSession = action({
       {
         stripeCustomerId: workspace.customerId,
         stripeLineItems: args.stripeLineItems,
-        successUrl: `${args.baseUrl}/onboarding`,
-        cancelUrl: `${args.baseUrl}/onboarding`,
+        successUrl: `${args.baseUrl}/new/workspace`,
+        cancelUrl: `${args.baseUrl}/new/workspace`,
       }
     );
 

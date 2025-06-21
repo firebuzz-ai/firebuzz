@@ -28,6 +28,9 @@ import type * as collections_brands_themes_utils from "../collections/brands/the
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
 import type * as collections_campaigns_utils from "../collections/campaigns/utils.js";
+import type * as collections_domains_actions from "../collections/domains/actions.js";
+import type * as collections_domains_mutations from "../collections/domains/mutations.js";
+import type * as collections_domains_queries from "../collections/domains/queries.js";
 import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
 import type * as collections_landingPages_messages_mutations from "../collections/landingPages/messages/mutations.js";
 import type * as collections_landingPages_messages_queries from "../collections/landingPages/messages/queries.js";
@@ -90,6 +93,7 @@ import type * as collections_stripe_subscriptionItems_mutations from "../collect
 import type * as collections_stripe_subscriptionItems_queries from "../collections/stripe/subscriptionItems/queries.js";
 import type * as collections_stripe_subscriptions_mutations from "../collections/stripe/subscriptions/mutations.js";
 import type * as collections_stripe_subscriptions_queries from "../collections/stripe/subscriptions/queries.js";
+import type * as collections_stripe_subscriptions_utils from "../collections/stripe/subscriptions/utils.js";
 import type * as collections_stripe_transactions_mutations from "../collections/stripe/transactions/mutations.js";
 import type * as collections_stripe_transactions_queries from "../collections/stripe/transactions/queries.js";
 import type * as collections_stripe_transactions_utils from "../collections/stripe/transactions/utils.js";
@@ -109,6 +113,7 @@ import type * as components_workflows from "../components/workflows.js";
 import type * as components_workpools from "../components/workpools.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_cloudflare from "../lib/cloudflare.js";
 import type * as lib_documentReaders from "../lib/documentReaders.js";
 import type * as lib_engine from "../lib/engine.js";
 import type * as lib_firecrawl from "../lib/firecrawl.js";
@@ -154,6 +159,9 @@ declare const fullApi: ApiFromModules<{
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
   "collections/campaigns/utils": typeof collections_campaigns_utils;
+  "collections/domains/actions": typeof collections_domains_actions;
+  "collections/domains/mutations": typeof collections_domains_mutations;
+  "collections/domains/queries": typeof collections_domains_queries;
   "collections/landingPages/actions": typeof collections_landingPages_actions;
   "collections/landingPages/messages/mutations": typeof collections_landingPages_messages_mutations;
   "collections/landingPages/messages/queries": typeof collections_landingPages_messages_queries;
@@ -216,6 +224,7 @@ declare const fullApi: ApiFromModules<{
   "collections/stripe/subscriptionItems/queries": typeof collections_stripe_subscriptionItems_queries;
   "collections/stripe/subscriptions/mutations": typeof collections_stripe_subscriptions_mutations;
   "collections/stripe/subscriptions/queries": typeof collections_stripe_subscriptions_queries;
+  "collections/stripe/subscriptions/utils": typeof collections_stripe_subscriptions_utils;
   "collections/stripe/transactions/mutations": typeof collections_stripe_transactions_mutations;
   "collections/stripe/transactions/queries": typeof collections_stripe_transactions_queries;
   "collections/stripe/transactions/utils": typeof collections_stripe_transactions_utils;
@@ -235,6 +244,7 @@ declare const fullApi: ApiFromModules<{
   "components/workpools": typeof components_workpools;
   crons: typeof crons;
   http: typeof http;
+  "lib/cloudflare": typeof lib_cloudflare;
   "lib/documentReaders": typeof lib_documentReaders;
   "lib/engine": typeof lib_engine;
   "lib/firecrawl": typeof lib_firecrawl;
@@ -258,6 +268,292 @@ export declare const internal: FilterApi<
 
 export declare const components: {
   aggregateCredits: {
+    btree: {
+      aggregateBetween: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any },
+        { count: number; sum: number }
+      >;
+      atNegativeOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      atOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { key: any; namespace?: any },
+        null | { k: any; s: number; v: any }
+      >;
+      offset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; key: any; namespace?: any },
+        number
+      >;
+      offsetUntil: FunctionReference<
+        "query",
+        "internal",
+        { k2?: any; key: any; namespace?: any },
+        number
+      >;
+      paginate: FunctionReference<
+        "query",
+        "internal",
+        {
+          cursor?: string;
+          k1?: any;
+          k2?: any;
+          limit: number;
+          namespace?: any;
+          order: "asc" | "desc";
+        },
+        {
+          cursor: string;
+          isDone: boolean;
+          page: Array<{ k: any; s: number; v: any }>;
+        }
+      >;
+      paginateNamespaces: FunctionReference<
+        "query",
+        "internal",
+        { cursor?: string; limit: number },
+        { cursor: string; isDone: boolean; page: Array<any> }
+      >;
+      validate: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any },
+        any
+      >;
+    };
+    inspect: {
+      display: FunctionReference<"query", "internal", { namespace?: any }, any>;
+      dump: FunctionReference<"query", "internal", { namespace?: any }, string>;
+      inspectNode: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any; node?: string },
+        null
+      >;
+    };
+    public: {
+      clear: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      deleteIfExists: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        any
+      >;
+      delete_: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        null
+      >;
+      init: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      insert: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any; summand?: number; value: any },
+        null
+      >;
+      makeRootLazy: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: any },
+        null
+      >;
+      replace: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        null
+      >;
+      replaceOrInsert: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        any
+      >;
+    };
+  };
+  aggregateCurrentPeriodUsage: {
+    btree: {
+      aggregateBetween: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any },
+        { count: number; sum: number }
+      >;
+      atNegativeOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      atOffset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; k2?: any; namespace?: any; offset: number },
+        { k: any; s: number; v: any }
+      >;
+      get: FunctionReference<
+        "query",
+        "internal",
+        { key: any; namespace?: any },
+        null | { k: any; s: number; v: any }
+      >;
+      offset: FunctionReference<
+        "query",
+        "internal",
+        { k1?: any; key: any; namespace?: any },
+        number
+      >;
+      offsetUntil: FunctionReference<
+        "query",
+        "internal",
+        { k2?: any; key: any; namespace?: any },
+        number
+      >;
+      paginate: FunctionReference<
+        "query",
+        "internal",
+        {
+          cursor?: string;
+          k1?: any;
+          k2?: any;
+          limit: number;
+          namespace?: any;
+          order: "asc" | "desc";
+        },
+        {
+          cursor: string;
+          isDone: boolean;
+          page: Array<{ k: any; s: number; v: any }>;
+        }
+      >;
+      paginateNamespaces: FunctionReference<
+        "query",
+        "internal",
+        { cursor?: string; limit: number },
+        { cursor: string; isDone: boolean; page: Array<any> }
+      >;
+      validate: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any },
+        any
+      >;
+    };
+    inspect: {
+      display: FunctionReference<"query", "internal", { namespace?: any }, any>;
+      dump: FunctionReference<"query", "internal", { namespace?: any }, string>;
+      inspectNode: FunctionReference<
+        "query",
+        "internal",
+        { namespace?: any; node?: string },
+        null
+      >;
+    };
+    public: {
+      clear: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      deleteIfExists: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        any
+      >;
+      delete_: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any },
+        null
+      >;
+      init: FunctionReference<
+        "mutation",
+        "internal",
+        { maxNodeSize?: number; namespace?: any; rootLazy?: boolean },
+        null
+      >;
+      insert: FunctionReference<
+        "mutation",
+        "internal",
+        { key: any; namespace?: any; summand?: number; value: any },
+        null
+      >;
+      makeRootLazy: FunctionReference<
+        "mutation",
+        "internal",
+        { namespace?: any },
+        null
+      >;
+      replace: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        null
+      >;
+      replaceOrInsert: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          currentKey: any;
+          namespace?: any;
+          newKey: any;
+          newNamespace?: any;
+          summand?: number;
+          value: any;
+        },
+        any
+      >;
+    };
+  };
+  aggregateCurrentPeriodAdditions: {
     btree: {
       aggregateBetween: FunctionReference<
         "query",

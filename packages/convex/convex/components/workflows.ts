@@ -342,6 +342,21 @@ export const onboardingWorkspaceStepFour = workflow.define({
       }
     );
 
+    // STEP-5 - Create Knowledge Base
+    const knowledgeBaseId = await step.runMutation(
+      internal.collections.storage.knowledgeBases.mutations.createInternal,
+      {
+        name: "Brand",
+        description: "Default knowledge base for the brand.",
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        index: 0,
+        isVisible: true,
+        isSystem: true,
+        createdBy: onboarding.createdBy,
+      }
+    );
+
     // STEP-5 - Update Onboarding
     await step.runMutation(internal.collections.onboarding.mutations.update, {
       onboardingId,
@@ -371,6 +386,7 @@ export const onboardingWorkspaceStepFour = workflow.define({
         {
           onboardingId,
           brandId,
+          knowledgeBaseId,
         }
       );
     } else {
@@ -479,8 +495,9 @@ export const startOnboardingWorkspaceInternalStepTwo = internalMutation({
   args: {
     onboardingId: v.id("onboarding"),
     brandId: v.id("brands"),
+    knowledgeBaseId: v.id("knowledgeBases"),
   },
-  handler: async (ctx, { onboardingId, brandId }) => {
+  handler: async (ctx, { onboardingId, brandId, knowledgeBaseId }) => {
     // STEP-1 - Start Workflow
     await workflow.start(
       ctx,
@@ -488,6 +505,7 @@ export const startOnboardingWorkspaceInternalStepTwo = internalMutation({
       {
         onboardingId,
         brandId,
+        knowledgeBaseId,
       }
     );
   },
@@ -497,9 +515,10 @@ export const onboardingWorkspaceInternalStepTwo = workflow.define({
   args: {
     onboardingId: v.id("onboarding"),
     brandId: v.id("brands"),
+    knowledgeBaseId: v.id("knowledgeBases"),
   },
   handler: async (step, args) => {
-    const { onboardingId, brandId } = args;
+    const { onboardingId, brandId, knowledgeBaseId } = args;
 
     // STEP-1 - Get Onboarding
     const onboarding = await step.runQuery(
@@ -570,6 +589,19 @@ export const onboardingWorkspaceInternalStepTwo = workflow.define({
       }
     );
 
+    // STEP-4 - Fill Default Knowledge Base
+    const fillDefaultKnowledgeBasePromise = step.runAction(
+      internal.collections.onboarding.actions.fillDefaultKnowledgeBase,
+      {
+        domain,
+        urls,
+        knowledgeBaseId,
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        createdBy: onboarding.createdBy,
+      }
+    );
+
     // STEP-4 - Create Audiences
     const audiencesPromise = step.runMutation(
       internal.collections.brands.audiences.mutations.createManyInternal,
@@ -633,6 +665,7 @@ export const onboardingWorkspaceInternalStepTwo = workflow.define({
       featuresPromise,
       socialsPromise,
       testimonialsPromise,
+      fillDefaultKnowledgeBasePromise,
     ]);
   },
 });

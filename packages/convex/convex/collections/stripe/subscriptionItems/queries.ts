@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalQuery, query } from "../../../_generated/server";
+import { internalQuery } from "../../../_generated/server";
 
 export const getByStripeId = internalQuery({
   args: { stripeSubscriptionItemId: v.string() },
@@ -13,7 +13,7 @@ export const getByStripeId = internalQuery({
   },
 });
 
-export const getBySubscriptionId = query({
+export const getBySubscriptionIdInternal = internalQuery({
   args: { subscriptionId: v.id("subscriptions") },
   handler: async (ctx, { subscriptionId }) => {
     return await ctx.db

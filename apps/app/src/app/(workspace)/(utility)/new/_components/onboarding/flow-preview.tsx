@@ -8,77 +8,8 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Check, ChevronRight, ChevronsRight } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 
-// Define all the steps/nodes
-const allSteps = [
-  {
-    id: 1,
-    title: "🚀 Firebuzz Engine Start",
-    subtitle: "Igniting the magic...",
-  },
-  {
-    id: 2,
-    title: "⏳ Waiting for input...",
-    subtitle: "Drop your website URL here.",
-  },
-  {
-    id: 3,
-    title: "👀 Reading your Homepage",
-    subtitle: "Scanning every pixel...",
-  },
-  {
-    id: 4,
-    title: "🎯 Choosing Best URLs",
-    subtitle: "Hunting for brand gold...",
-  },
-  {
-    id: 5,
-    title: "⏳ Waiting for input...",
-    subtitle: "Pick your favorites.",
-  },
-  {
-    id: 6,
-    title: "🕸️ Scraping URLs",
-    subtitle: "Extracting brand DNA...",
-  },
-  {
-    id: 7,
-    title: "🧠 Generating Brand Data",
-    subtitle: "AI is cooking something special...",
-  },
-  {
-    id: 8,
-    title: "⏳ Waiting for input...",
-    subtitle: "Make it yours.",
-  },
-  {
-    id: 9,
-    title: "✨ Looking for brand visuals",
-    subtitle: "Adding the final sparkle...",
-  },
-  {
-    id: 10,
-    title: "⏳ Waiting for input...",
-    subtitle: "Pick your favorite visuals.",
-  },
-  {
-    id: 11,
-    title: "Fine tuning last details...",
-    subtitle: "Almost there...",
-  },
-  {
-    id: 12,
-    title: "💳 Choose your plan",
-    subtitle: "Pick your plan and get started.",
-  },
-  {
-    id: 13,
-    title: "🎉 Woohaa!",
-    subtitle: "Your brand is ready to buzz!",
-  },
-];
-
 interface FlowNodeProps {
-  node: (typeof allSteps)[0];
+  node: { id: number; title: string; subtitle: string };
   isLast?: boolean;
   isActive?: boolean;
   isNext?: boolean;
@@ -250,7 +181,13 @@ const FlowNode = ({
   );
 };
 
-export const OnboardingFlowPreview = ({ step = 1 }: { step: number }) => {
+export const OnboardingFlowPreview = ({
+  step = 1,
+  steps,
+}: {
+  step: number;
+  steps: { id: number; title: string; subtitle: string }[];
+}) => {
   const { resolvedTheme } = useTheme();
 
   // Calculate slide offset for smooth sliding effect
@@ -268,7 +205,8 @@ export const OnboardingFlowPreview = ({ step = 1 }: { step: number }) => {
   const middlePosition = totalNodeHeight;
 
   // The target node (step) position in the full container
-  const targetNodePosition = (step - 6) * totalNodeHeight;
+  const targetNodePosition =
+    (step - Math.floor(steps.length / 2)) * totalNodeHeight;
 
   // Calculate offset to center the target node in the middle position
   const slideOffset = middlePosition - targetNodePosition;
@@ -303,11 +241,11 @@ export const OnboardingFlowPreview = ({ step = 1 }: { step: number }) => {
             className="flex flex-col items-center w-full"
           >
             {/* Render ALL nodes */}
-            {allSteps.map((node, index) => (
+            {steps.map((node, index) => (
               <FlowNode
                 key={node.id}
                 node={node}
-                isLast={index === allSteps.length - 1}
+                isLast={index === steps.length - 1}
                 isActive={index + 1 === step}
                 isNext={index + 1 === step + 1}
                 isPrevious={index + 1 === step - 1}

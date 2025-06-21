@@ -1,7 +1,7 @@
 import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import {
-	isElementSelectionEnabledAtom,
-	selectedElementAtom,
+  isElementSelectionEnabledAtom,
+  selectedElementAtom,
 } from "@/lib/workbench/atoms";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -15,42 +15,42 @@ import { PublishButton } from "./publish-button";
 import { SettingsButton } from "./settings-button";
 
 export function Header() {
-	const { id: landingPageId } = useParams<{ id: Id<"landingPages"> }>();
+  const { id: landingPageId } = useParams<{ id: Id<"landingPages"> }>();
 
-	const { closeRightPanel } = useTwoPanelsLayout();
-	const setSelectedElement = useSetAtom(selectedElementAtom);
-	const setIsElementSelectionEnabled = useSetAtom(
-		isElementSelectionEnabledAtom,
-	);
+  const { closeRightPanel } = useTwoPanelsLayout();
+  const setSelectedElement = useSetAtom(selectedElementAtom);
+  const setIsElementSelectionEnabled = useSetAtom(
+    isElementSelectionEnabledAtom
+  );
 
-	return (
-		<div className="flex items-center justify-between px-2 py-3 border-b">
-			{/* Left Part */}
-			<div className="flex items-center gap-2">
-				<Button
-					onClick={() => {
-						setSelectedElement(null);
-						setIsElementSelectionEnabled(false);
-						closeRightPanel();
-					}}
-					variant="ghost"
-					className="w-8 h-8"
-				>
-					<ChevronsRight className="size-3" />
-				</Button>
-				<div className="flex items-center gap-2">
-					<Badge variant="outline">Preview</Badge>
-				</div>
-			</div>
-			{/* Right Part */}
-			<div className="flex items-center">
-				<div className="flex items-center gap-0.5">
-					<CreateVariantButton landingPageId={landingPageId} />
-					<SettingsButton landingPageId={landingPageId} />
-				</div>
-				<Separator orientation="vertical" className="h-4 ml-2 mr-4" />
-				<PublishButton landingPageId={landingPageId} />
-			</div>
-		</div>
-	);
+  return (
+    <div className="flex justify-between items-center px-2 py-3 border-b">
+      {/* Left Part */}
+      <div className="flex gap-2 items-center">
+        <Button
+          onClick={() => {
+            setSelectedElement(null);
+            setIsElementSelectionEnabled(false);
+            closeRightPanel();
+          }}
+          variant="ghost"
+          className="w-8 h-8"
+        >
+          <ChevronsRight className="size-3" />
+        </Button>
+        <div className="flex gap-2 items-center">
+          <Badge variant="outline">Preview</Badge>
+        </div>
+      </div>
+      {/* Right Part */}
+      <div className="flex items-center">
+        <div className="flex items-center gap-0.5">
+          <CreateVariantButton landingPageId={landingPageId} />
+          <SettingsButton landingPageId={landingPageId} />
+        </div>
+        <Separator orientation="vertical" className="mr-4 ml-2 h-4" />
+        <PublishButton landingPageId={landingPageId} />
+      </div>
+    </div>
+  );
 }

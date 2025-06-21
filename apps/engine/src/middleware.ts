@@ -1,7 +1,8 @@
-import { bearerAuth } from "hono/bearer-auth";
-import { createMiddleware } from "hono/factory";
-import type { Env } from "./env";
-import { previewApp } from "./preview";
+import { bearerAuth } from 'hono/bearer-auth';
+import { createMiddleware } from 'hono/factory';
+import type { Env } from './env';
+import { previewApp } from './preview';
+import { productionApp } from './production';
 
 export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 	const auth = bearerAuth({
@@ -11,32 +12,28 @@ export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 });
 
 export const cors = createMiddleware<{ Bindings: Env }>((c, next) => {
-	c.res.headers.set("Access-Control-Allow-Origin", "*");
-	c.res.headers.set(
-		"Access-Control-Allow-Methods",
-		"GET, POST, PUT, DELETE, OPTIONS",
-	);
-	c.res.headers.set(
-		"Access-Control-Allow-Headers",
-		"Content-Type, Authorization",
-	);
+	c.res.headers.set('Access-Control-Allow-Origin', '*');
+	c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+	c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 	return next();
 });
 
-export const domainRouting = createMiddleware<{ Bindings: Env }>(
-	async (c, next) => {
-		const hostname = c.req.header("host") || "";
+export const domainRouting = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+	const hostname = c.req.header('host') || '';
+	const landingPage = c.req.header('X-Landing-Page') || '';
 
-		// If request is coming from preview.getfirebuzz.com,
-		// route it accordingly without the /preview prefix
-		if (hostname === "preview.getfirebuzz.com") {
-			console.log("Preview request");
-			// Create a new request with the modified URL path
+	if (landingPage) {
+		return productionApp.fetch(c.req.raw, c.env);
+	}
 
-			return previewApp.fetch(c.req.raw, c.env);
-		}
+	// If request is coming from preview.getfirebuzz.com,
+	// route it accordingly without the /preview prefix
+	if (hostname === 'preview.getfirebuzz.com') {
+		// Create a new request with the modified URL path
 
-		// Continue with normal routing for other domains
-		await next();
-	},
-);
+		return previewApp.fetch(c.req.raw, c.env);
+	}
+
+	// Continue with normal routing for other domains
+	await next();
+});

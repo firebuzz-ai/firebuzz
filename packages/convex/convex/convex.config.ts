@@ -13,6 +13,8 @@ const app = defineApp();
 
 // Aggregate
 app.use(aggregate, { name: "aggregateCredits" });
+app.use(aggregate, { name: "aggregateCurrentPeriodUsage" });
+app.use(aggregate, { name: "aggregateCurrentPeriodAdditions" });
 app.use(aggregate, { name: "aggregateCampaigns" });
 app.use(aggregate, { name: "aggregateLandingPages" });
 app.use(aggregate, { name: "aggregateLandingPageVersions" });

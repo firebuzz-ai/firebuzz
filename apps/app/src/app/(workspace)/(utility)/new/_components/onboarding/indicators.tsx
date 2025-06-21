@@ -3,11 +3,17 @@
 import { cn } from "@firebuzz/ui/lib/utils";
 import { motion } from "motion/react";
 
-export const Indicators = ({ step }: { step: number }) => {
+export const Indicators = ({
+  step,
+  totalSteps,
+}: {
+  step: number;
+  totalSteps: number;
+}) => {
   return (
     <div className="relative flex items-center gap-2 px-10">
       <div className="relative flex items-center gap-6">
-        {[1, 2, 3, 4, 5].map((dot) => (
+        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((dot) => (
           <div
             key={dot}
             className={cn(

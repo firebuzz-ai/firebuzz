@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import type { Doc } from "../../../_generated/dataModel";
 import { internalMutation } from "../../../_generated/server";
-import { internalMutationWithTrigger } from "../../../triggers";
+import {
+  internalMutationWithTrigger,
+  mutationWithTrigger,
+} from "../../../triggers";
+import { ERRORS } from "../../../utils/errors";
+import { getCurrentUserWithWorkspace } from "../../users/utils";
+import { getCurrentSubscription } from "../subscriptions/utils";
 import { transactionSchema } from "./schema";
-
-// Helper function to get current period
-function getCurrentPeriod(): string {
-  return new Date().toISOString().slice(0, 7); // "YYYY-MM"
-}
 
 export const createInternal = internalMutationWithTrigger({
   args: transactionSchema,
@@ -38,28 +39,75 @@ export const createIdempotent = internalMutationWithTrigger({
   },
 });
 
+export const addUsageIdempotent = mutationWithTrigger({
+  args: {
+    amount: v.number(),
+    idempotencyKey: v.string(),
+    reason: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+
+    if (!user) {
+      throw new Error(ERRORS.UNAUTHORIZED);
+    }
+
+    const workspace = await ctx.db.get(user.currentWorkspaceId);
+
+    if (!workspace) {
+      throw new Error(ERRORS.NOT_FOUND);
+    }
+
+    const subscription = await getCurrentSubscription(ctx, workspace._id);
+
+    if (!subscription) {
+      throw new Error(ERRORS.NOT_FOUND);
+    }
+
+    if (!workspace.customerId) {
+      throw new Error(ERRORS.NOT_FOUND);
+    }
+
+    const usage = {
+      workspaceId: workspace._id,
+      customerId: subscription.customerId,
+      amount: args.amount,
+      type: "usage" as const,
+      periodStart: subscription.currentPeriodStart,
+      expiresAt: subscription.currentPeriodEnd,
+      subscriptionId: subscription._id,
+      reason: args.reason || "Usage credits",
+      idempotencyKey: args.idempotencyKey,
+      updatedAt: new Date().toISOString(),
+      createdBy: user._id,
+    };
+
+    return await ctx.db.insert("transactions", usage);
+  },
+});
+
 export const addTrialCredits = internalMutationWithTrigger({
   args: {
     workspaceId: v.id("workspaces"),
     customerId: v.id("customers"),
     amount: v.number(),
-    subscriptionId: v.optional(v.id("stripeSubscriptions")),
+    subscriptionId: v.id("subscriptions"),
+    periodStart: v.string(),
     expiresAt: v.string(),
     reason: v.optional(v.string()),
     idempotencyKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const currentPeriod = getCurrentPeriod();
 
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: args.amount,
       type: "trial",
-      periodStart: currentPeriod,
-      subscriptionId: args.subscriptionId,
+      periodStart: args.periodStart,
       expiresAt: args.expiresAt,
+      subscriptionId: args.subscriptionId,
       reason: args.reason || "Trial credits",
       idempotencyKey: args.idempotencyKey,
       updatedAt: now,
@@ -72,21 +120,22 @@ export const addSubscriptionCredits = internalMutationWithTrigger({
     workspaceId: v.id("workspaces"),
     customerId: v.id("customers"),
     amount: v.number(),
-    subscriptionId: v.id("stripeSubscriptions"),
-    periodStart: v.optional(v.string()),
+    subscriptionId: v.id("subscriptions"),
+    periodStart: v.string(),
+    expiresAt: v.string(),
     reason: v.optional(v.string()),
     idempotencyKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const period = args.periodStart || getCurrentPeriod();
 
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: args.amount,
       type: "subscription",
-      periodStart: period,
+      periodStart: args.periodStart,
+      expiresAt: args.expiresAt,
       subscriptionId: args.subscriptionId,
       reason: args.reason || "Monthly subscription credits",
       idempotencyKey: args.idempotencyKey,
@@ -100,20 +149,21 @@ export const addTopupCredits = internalMutationWithTrigger({
     workspaceId: v.id("workspaces"),
     customerId: v.id("customers"),
     amount: v.number(),
+    periodStart: v.string(),
+    expiresAt: v.string(),
     reason: v.optional(v.string()),
     metadata: v.optional(v.record(v.string(), v.any())),
     idempotencyKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const currentPeriod = getCurrentPeriod();
-
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: args.amount,
       type: "topup",
-      periodStart: currentPeriod,
+      periodStart: args.periodStart,
+      expiresAt: args.expiresAt,
       reason: args.reason || "Credit top-up",
       metadata: args.metadata,
       idempotencyKey: args.idempotencyKey,
@@ -128,19 +178,21 @@ export const deductCredits = internalMutationWithTrigger({
     customerId: v.id("customers"),
     amount: v.number(),
     reason: v.string(),
+    periodStart: v.string(),
+    expiresAt: v.string(),
     metadata: v.optional(v.record(v.string(), v.any())),
     idempotencyKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const currentPeriod = getCurrentPeriod();
 
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: -Math.abs(args.amount), // Ensure negative
       type: "usage",
-      periodStart: currentPeriod,
+      periodStart: args.periodStart,
+      expiresAt: args.expiresAt,
       reason: args.reason,
       metadata: args.metadata,
       idempotencyKey: args.idempotencyKey,
@@ -155,20 +207,21 @@ export const adjustCredits = internalMutationWithTrigger({
     customerId: v.id("customers"),
     amount: v.number(),
     reason: v.string(),
-    periodStart: v.optional(v.string()),
+    periodStart: v.string(),
+    expiresAt: v.string(),
     metadata: v.optional(v.record(v.string(), v.any())),
     idempotencyKey: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const period = args.periodStart || getCurrentPeriod();
 
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: args.amount,
       type: "adjustment",
-      periodStart: period,
+      periodStart: args.periodStart,
+      expiresAt: args.expiresAt,
       reason: args.reason,
       metadata: args.metadata,
       idempotencyKey: args.idempotencyKey,
@@ -221,19 +274,20 @@ export const revokeCredits = internalMutationWithTrigger({
     customerId: v.id("customers"),
     amount: v.number(),
     reason: v.string(),
-    subscriptionId: v.optional(v.id("stripeSubscriptions")),
-    periodStart: v.optional(v.string()),
+    subscriptionId: v.id("subscriptions"),
+    periodStart: v.string(),
+    expiresAt: v.string(),
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
-    const period = args.periodStart || getCurrentPeriod();
 
     return await ctx.db.insert("transactions", {
       workspaceId: args.workspaceId,
       customerId: args.customerId,
       amount: -Math.abs(args.amount), // Ensure negative
       type: "refund",
-      periodStart: period,
+      periodStart: args.periodStart,
+      expiresAt: args.expiresAt,
       subscriptionId: args.subscriptionId,
       reason: args.reason,
       updatedAt: now,

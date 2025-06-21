@@ -2,7 +2,7 @@ import { Workpool } from "@convex-dev/workpool";
 import { components } from "../_generated/api";
 
 export const cascadePool = new Workpool(components.cascadeOperations, {
-  maxParallelism: 50,
+  maxParallelism: 25,
 });
 
 export const batchDeleteStoragePool = new Workpool(

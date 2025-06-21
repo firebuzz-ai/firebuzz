@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "engine",
+	"name": "engine-dev",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-02-04",
 	"observability": {
@@ -20,18 +20,25 @@
 		{
 			"binding": "CACHE",
 			"id": "949acd8a64084e2699f85c2fd4e89f27"
+		},
+		{
+			"binding": "CONFIG",
+			"id": "87d1c295bfd54f1c91a09155b558aaed"
 		}
 	],
 	"vars": {
-		"ENVIRONMENT": "development"
+		"ENVIRONMENT": "development",
+		"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
 	},
 
 	// Environment-specific configurations
 	"env": {
 		"preview": {
 			"name": "engine-preview",
+
 			"vars": {
-				"ENVIRONMENT": "preview"
+				"ENVIRONMENT": "preview",
+				"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
 			},
 			"kv_namespaces": [
 				{
@@ -41,13 +48,19 @@
 				{
 					"binding": "CACHE",
 					"id": "45e58414198b4581aabaaf37c5e8eccf"
+				},
+				{
+					"binding": "CONFIG",
+					"id": "87d1c295bfd54f1c91a09155b558aaed"
 				}
 			]
 		},
 		"production": {
 			"name": "engine-production",
+
 			"vars": {
-				"ENVIRONMENT": "production"
+				"ENVIRONMENT": "production",
+				"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
 			},
 			"kv_namespaces": [
 				{
@@ -57,6 +70,10 @@
 				{
 					"binding": "CACHE",
 					"id": "e3d780109b4346139ae315bc6b4cc137"
+				},
+				{
+					"binding": "CONFIG",
+					"id": "87d1c295bfd54f1c91a09155b558aaed"
 				}
 			]
 		}

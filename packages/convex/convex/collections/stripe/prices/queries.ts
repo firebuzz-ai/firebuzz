@@ -1,4 +1,6 @@
+import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
+import type { Doc } from "../../../_generated/dataModel";
 import { internalQuery, query } from "../../../_generated/server";
 
 export const getByStripeId = internalQuery({
@@ -10,6 +12,28 @@ export const getByStripeId = internalQuery({
         q.eq("stripePriceId", stripePriceId)
       )
       .unique();
+  },
+});
+
+export const getAllByStripeIds = internalQuery({
+  args: { stripePriceIds: v.array(v.string()) },
+  handler: async (ctx, { stripePriceIds }) => {
+    const prices = await asyncMap(stripePriceIds, async (stripePriceId) => {
+      const price = await ctx.db
+        .query("prices")
+        .withIndex("by_stripe_price_id", (q) =>
+          q.eq("stripePriceId", stripePriceId)
+        )
+        .unique();
+
+      if (!price) {
+        return null;
+      }
+
+      return price;
+    });
+
+    return prices.filter((price) => price !== null) as Doc<"prices">[];
   },
 });
 

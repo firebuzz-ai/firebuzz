@@ -5,16 +5,13 @@ import { retrier } from "../../components/actionRetrier";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUser } from "../users/utils";
-import { workspaceSchema } from "./schema";
 
 export const createPersonalWorkspace = mutation({
   args: {
-    title: workspaceSchema.fields.title,
-    color: workspaceSchema.fields.color,
-    icon: workspaceSchema.fields.icon,
+    title: v.string(),
   },
   handler: async (ctx, args) => {
-    const { title, color, icon } = args;
+    const { title } = args;
 
     const user = await getCurrentUser(ctx);
 
@@ -35,8 +32,6 @@ export const createPersonalWorkspace = mutation({
       ownerId: user._id,
       workspaceType: "personal",
       title,
-      color,
-      icon,
       isOnboarded: false,
       isSubscribed: false,
     });
@@ -81,6 +76,45 @@ export const deletePermanentInternal = internalMutationWithTrigger({
   },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);
+  },
+});
+
+export const update = mutation({
+  args: {
+    id: v.id("workspaces"),
+    title: v.optional(v.string()),
+    logo: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
+
+    if (!user) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
+
+    // Get workspace
+    const workspace = await ctx.db.get(args.id);
+
+    if (!workspace) {
+      throw new ConvexError(ERRORS.NOT_FOUND);
+    }
+
+    // Check if user is the owner or has permission to update
+    if (workspace.ownerId !== user._id) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
+
+    const updateObject: Partial<typeof workspace> = {};
+
+    if (args.title !== undefined) {
+      updateObject.title = args.title;
+    }
+
+    if (args.logo !== undefined) {
+      updateObject.logo = args.logo;
+    }
+
+    await ctx.db.patch(args.id, updateObject);
   },
 });
 

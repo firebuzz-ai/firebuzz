@@ -2,21 +2,48 @@ import { TableAggregate } from "@convex-dev/aggregate";
 import { components } from "../_generated/api";
 import type { DataModel, Id } from "../_generated/dataModel";
 
-// Credits
-export const aggregateCredits = new TableAggregate<{
+// Credits - redesigned to handle expiration and remaining balance correctly
+export const aggregateCreditsBalance = new TableAggregate<{
   Namespace: Id<"workspaces">;
-  Key: [string, number]; // [periodStart, _creationTime]
+  Key: [string, number]; // [expiresAt or far future, _creationTime]
   DataModel: DataModel;
   TableName: "transactions";
 }>(components.aggregateCredits, {
   namespace: (doc) => doc.workspaceId,
-  sortKey: (doc) => [doc.periodStart, doc._creationTime],
-  sumValue: (doc) => {
-    // Only sum credits that haven't expired
-    const now = new Date().toISOString();
-    const isExpired = doc.expiresAt && doc.expiresAt <= now;
-    return isExpired ? 0 : doc.amount;
-  },
+  // Sort by expiration date (with never-expiring credits at the end)
+  sortKey: (doc) => [doc.expiresAt || "9999-12-31", doc._creationTime],
+  sumValue: (doc) => doc.amount,
+});
+
+// Current Period Usage - aggregates usage (negative amounts) by period
+export const aggregateCurrentPeriodUsage = new TableAggregate<{
+  Namespace: Id<"workspaces">;
+  Key: [string, string, number]; // [periodStart, expiresAt (periodEnd), _creationTime]
+  DataModel: DataModel;
+  TableName: "transactions";
+}>(components.aggregateCurrentPeriodUsage, {
+  namespace: (doc) => doc.workspaceId,
+  // Sort by period start, period end (expiresAt), then creation time
+  sortKey: (doc) => [doc.periodStart, doc.expiresAt, doc._creationTime],
+  // Only sum negative amounts (usage)
+  sumValue: (doc) => (doc.type === "usage" ? doc.amount : 0),
+});
+
+// Current Period Additions - aggregates credit additions (positive amounts) by period
+export const aggregateCurrentPeriodAdditions = new TableAggregate<{
+  Namespace: Id<"workspaces">;
+  Key: [string, string, number]; // [periodStart, expiresAt (periodEnd), _creationTime]
+  DataModel: DataModel;
+  TableName: "transactions";
+}>(components.aggregateCurrentPeriodAdditions, {
+  namespace: (doc) => doc.workspaceId,
+  // Sort by period start, period end (expiresAt), then creation time
+  sortKey: (doc) => [doc.periodStart, doc.expiresAt, doc._creationTime],
+  // Only sum positive amounts (additions)
+  sumValue: (doc) =>
+    ["subscription", "topup", "gift", "trial"].includes(doc.type)
+      ? doc.amount
+      : 0,
 });
 
 // Campaigns

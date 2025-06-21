@@ -218,7 +218,7 @@ export const cacheRoute = app
 	.openapi(insertKvRoute, async (c) => {
 		const { key, value, options } = c.req.valid('json');
 		try {
-			const result = await c.env.ASSETS.put(key, value, options);
+			const result = await c.env.CACHE.put(key, value, options);
 			return c.json({
 				success: true,
 				message: 'Key-value pair inserted successfully',
@@ -236,7 +236,7 @@ export const cacheRoute = app
 			// Without Metadata
 			if (!withMetadata) {
 				if (type === 'json') {
-					const result = await c.env.ASSETS.get(key, {
+					const result = await c.env.CACHE.get(key, {
 						type: 'json',
 						cacheTtl: cacheTtl,
 					});
@@ -257,7 +257,7 @@ export const cacheRoute = app
 					);
 				}
 
-				const result = await c.env.ASSETS.get(key, {
+				const result = await c.env.CACHE.get(key, {
 					type: 'text',
 					cacheTtl: cacheTtl,
 				});
@@ -274,7 +274,7 @@ export const cacheRoute = app
 
 			// With Metadata
 			if (type === 'json') {
-				const result = await c.env.ASSETS.getWithMetadata(key, {
+				const result = await c.env.CACHE.getWithMetadata(key, {
 					type: 'json',
 					cacheTtl: cacheTtl,
 				});
@@ -294,7 +294,7 @@ export const cacheRoute = app
 				);
 			}
 
-			const result = await c.env.ASSETS.getWithMetadata(key, {
+			const result = await c.env.CACHE.getWithMetadata(key, {
 				type: 'text',
 				cacheTtl: cacheTtl,
 			});
@@ -319,7 +319,7 @@ export const cacheRoute = app
 	.openapi(deleteKvRoute, async (c) => {
 		const { key } = c.req.valid('json');
 		try {
-			await c.env.ASSETS.delete(key);
+			await c.env.CACHE.delete(key);
 			return c.json({ success: true, message: 'Key-value pair deleted successfully' }, 200);
 		} catch (error) {
 			console.error(error);
@@ -329,7 +329,7 @@ export const cacheRoute = app
 	.openapi(listKvRoute, async (c) => {
 		const { prefix, limit, cursor } = c.req.valid('query');
 		try {
-			const result = await c.env.ASSETS.list({ prefix, limit, cursor });
+			const result = await c.env.CACHE.list({ prefix, limit, cursor });
 
 			return c.json(
 				{

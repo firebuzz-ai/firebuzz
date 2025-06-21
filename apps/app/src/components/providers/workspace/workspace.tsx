@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
 import { createContext, useMemo } from "react";
 
 const workspaceContext = createContext<{
-  currentWorkspace: Doc<"workspaces"> | null;
+  currentWorkspace: (Doc<"workspaces"> & { owner: Doc<"users"> | null }) | null;
   workspaces: Doc<"workspaces">[];
   changeWorkspace: (workspaceId: Id<"workspaces">) => Promise<void>;
   isLoading: boolean;
@@ -52,6 +52,9 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
         : "skip"
     );
 
+  const { data: currentWorkspace, isPending: isCurrentWorkspacePending } =
+    useCachedRichQuery(api.collections.workspaces.queries.getCurrent);
+
   const personalWorkspaces = useMemo(() => {
     return (workspaces ?? [])
       .filter(
@@ -59,13 +62,6 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
       )
       .map((workspace) => workspace._id);
   }, [workspaces, user?._id]);
-
-  const currentWorkspace = useMemo(() => {
-    if (!user?.currentWorkspaceId) return null;
-    return workspaces?.find(
-      (workspace) => workspace._id === user?.currentWorkspaceId
-    );
-  }, [workspaces, user?.currentWorkspaceId]);
 
   const changeWorkspace = async (workspaceId: Id<"workspaces">) => {
     if (setActive) {
@@ -91,7 +87,8 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
       isUserLoading ||
       !isAuthenticated ||
       !teamWorkspacesLoaded ||
-      isWorkspacesPending,
+      isWorkspacesPending ||
+      isCurrentWorkspacePending,
   };
 
   return (

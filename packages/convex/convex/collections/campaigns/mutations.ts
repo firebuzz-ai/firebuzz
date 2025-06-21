@@ -11,6 +11,7 @@ export const create = mutationWithTrigger({
     title: v.string(),
     type: v.union(v.literal("lead-generation"), v.literal("click-through")),
     projectId: v.id("projects"),
+    slug: v.string(),
   },
   handler: async (ctx, args) => {
     // Check if user is authenticated
@@ -27,10 +28,23 @@ export const create = mutationWithTrigger({
       },
     };
 
+    // Check if slug is unique
+    const existingSlug = await ctx.db
+      .query("campaigns")
+      .withIndex("by_slug_project_id", (q) =>
+        q.eq("slug", args.slug).eq("projectId", args.projectId)
+      )
+      .unique();
+
+    if (existingSlug) {
+      throw new ConvexError("Campaign slug must be unique");
+    }
+
     // Create campaign
     await ctx.db.insert("campaigns", {
       title: args.title,
       status: "draft",
+      slug: args.slug,
       type: args.type,
       projectId: args.projectId,
       createdBy: user._id,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useSubscription } from "@/hooks/auth/use-subscription";
 import { useUser } from "@/hooks/auth/use-user";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
@@ -38,6 +39,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
     workspaces,
     isLoading: isWorkspaceLoading,
   } = useWorkspace();
+  const { isLoading: isSubscriptionLoading } = useSubscription();
   const router = useRouter();
   const pathname = usePathname();
   const [isCheckDone, setIsCheckDone] = useState(false);
@@ -82,7 +84,12 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     // Wait for all loading states to complete
-    if (isUserLoading || isWorkspaceLoading || isProjectsLoading) {
+    if (
+      isUserLoading ||
+      isWorkspaceLoading ||
+      isProjectsLoading ||
+      isSubscriptionLoading
+    ) {
       return;
     }
 
@@ -102,17 +109,18 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Current Workspace is not onboarded, redirect to '/onboarding' (ONBOARDING)
+    // Current Workspace is not onboarded, redirect to '/new/workspace' (ONBOARDING)
     if (
       currentWorkspace &&
       !currentWorkspace.isOnboarded &&
-      pathname !== "/onboarding"
+      pathname !== "/new/workspace"
     ) {
-      router.push("/onboarding");
+      router.push("/new/workspace");
       return;
     }
 
-    // No Project, redirect to '/new/project' (NEW PROJECT)
+    // No Project, redirect to '/new/project' (ONBOARDING PROJECT)
+    // TODO: This should never happen, prepare for this case.
     if (
       projects?.length === 0 &&
       currentWorkspace &&
@@ -134,7 +142,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
 
-    // Current Project is not onboarded, redirect to '/new/project' (NEW PROJECT)
+    // Current Project is not onboarded, redirect to '/new/project' (ONBOARDING PROJECT)
     if (
       currentWorkspace &&
       currentProject &&
@@ -153,6 +161,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
     isUserLoading,
     isWorkspaceLoading,
     isProjectsLoading,
+    isSubscriptionLoading,
     workspaces,
     currentWorkspace,
     projects,

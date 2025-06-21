@@ -342,6 +342,59 @@ export const createMemoryItem = mutationWithTrigger({
   },
 });
 
+export const createMemoryItemInternal = internalMutationWithTrigger({
+  args: {
+    key: v.string(),
+    name: v.string(),
+    content: v.string(),
+    contentType: v.string(),
+    type: v.union(
+      v.literal("md"),
+      v.literal("html"),
+      v.literal("txt"),
+      v.literal("pdf"),
+      v.literal("csv"),
+      v.literal("docx"),
+      v.literal("json")
+    ),
+    size: v.number(),
+    knowledgeBase: v.id("knowledgeBases"),
+    workspaceId: v.id("workspaces"),
+    projectId: v.id("projects"),
+    createdBy: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const documentId = await ctx.db.insert("documents", {
+      key: args.key,
+      name: args.name,
+      size: args.size,
+      contentType: args.contentType,
+      type: args.type,
+      workspaceId: args.workspaceId,
+      createdBy: args.createdBy,
+      projectId: args.projectId,
+      knowledgeBases: [args.knowledgeBase],
+      vectorizationStatus: "queued",
+      chunkingStatus: "queued",
+      isMemoryItem: true,
+    });
+
+    await ctx.scheduler.runAfter(
+      0,
+      internal.collections.storage.documents.chunks.actions.chunkMemoryItem,
+      {
+        documentId,
+        name: args.name,
+        content: args.content,
+        workspaceId: args.workspaceId,
+        projectId: args.projectId,
+      }
+    );
+
+    return documentId;
+  },
+});
+
 export const updateMemoryItem = mutationWithTrigger({
   args: {
     originalKey: v.string(),

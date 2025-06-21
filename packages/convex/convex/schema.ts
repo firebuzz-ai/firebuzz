@@ -14,6 +14,7 @@ import { brandSchema } from "./collections/brands/schema";
 import { socialSchema } from "./collections/brands/socials/schema";
 import { testimonialSchema } from "./collections/brands/testimonials/schema";
 import { themeSchema } from "./collections/brands/themes/schema";
+import { domainSchema } from "./collections/domains/schema";
 import { onboardingSchema } from "./collections/onboarding/schema";
 import { memoizedDocumentsSchema } from "./collections/storage/documents/memoized/schema";
 import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
@@ -49,6 +50,7 @@ export default defineSchema({
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])
     .index("by_deleted_at", ["deletedAt"])
+    .index("by_slug_project_id", ["slug", "projectId"])
     .searchIndex("by_title", { searchField: "title" }),
   landingPageTemplates: defineTable(landingPageTemplatesSchema).index(
     "by_title",
@@ -88,6 +90,14 @@ export default defineSchema({
       dimensions: 1536,
       filterFields: ["projectId"],
     }),
+  domains: defineTable(domainSchema)
+    .index("by_workspace_id", ["workspaceId"])
+    .index("by_project_id", ["projectId"])
+    .index("by_workspace_hostname", ["workspaceId", "hostname"])
+    .index("by_status", ["status"])
+    .index("by_cloudflare_hostname_id", ["cloudflareHostnameId"])
+    .index("by_deleted_at", ["deletedAt"])
+    .searchIndex("by_hostname", { searchField: "hostname" }),
   documents: defineTable(documentsSchema)
     .index("by_workspace_id", ["workspaceId"])
     .index("by_project_id", ["projectId"])

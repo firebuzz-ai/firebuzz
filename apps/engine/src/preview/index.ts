@@ -7,8 +7,6 @@ const app = new Hono<{ Bindings: Env }>();
 app.get('/:slug', async (c) => {
 	const slug = c.req.param('slug');
 
-	console.log('Preview request', slug);
-
 	const html = await c.env.ASSETS.get(`preview-${slug}`);
 
 	if (!html) {

@@ -38,8 +38,6 @@ export const Selection: React.FC<SelectionProps> = ({ handleFadeout }) => {
       // Create workspace
       await createWorkspace({
         title: `${user?.firstName ?? "My"} Workspace`,
-        color: "sky",
-        icon: "cup",
       });
 
       startFadeout();

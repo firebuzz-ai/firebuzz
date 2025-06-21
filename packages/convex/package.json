@@ -39,6 +39,7 @@
 		"@mastra/rag": "^0.1.22",
 		"@mendable/firecrawl-js": "^1.25.2",
 		"ai": "^4.3.16",
+		"cloudflare": "^4.4.1",
 		"convex": "^1.21.0",
 		"convex-helpers": "^0.1.72",
 		"openai": "^4.96.0",

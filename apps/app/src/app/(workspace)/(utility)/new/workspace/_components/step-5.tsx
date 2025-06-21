@@ -40,7 +40,15 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
   const handlePlanSelect = useCallback(
     async (
       planName: string,
-      stripeLineItems: { price: string; quantity: number }[]
+      stripeLineItems: {
+        price: string;
+        quantity: number;
+        adjustable_quantity?: {
+          enabled: boolean;
+          minimum: number;
+          maximum: number;
+        };
+      }[]
     ) => {
       try {
         setIsHandlingCheckout(true);
@@ -191,6 +199,11 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
                   {
                     price: currentPrice?.stripePriceId ?? "",
                     quantity: 1,
+                    adjustable_quantity: {
+                      enabled: true,
+                      minimum: 1,
+                      maximum: 15,
+                    },
                   },
                 ]
               : [

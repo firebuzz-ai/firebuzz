@@ -1,7 +1,7 @@
 import { ConvexError, v } from "convex/values";
 import Stripe from "stripe";
 import { internal } from "../_generated/api";
-import type { Id } from "../_generated/dataModel";
+import type { Doc, Id } from "../_generated/dataModel";
 import { internalAction } from "../_generated/server";
 import { ERRORS } from "../utils/errors";
 
@@ -12,6 +12,59 @@ if (!stripeSecretKey) throw new Error(ERRORS.ENVS_NOT_INITIALIZED);
 export const stripe = new Stripe(stripeSecretKey, {
   typescript: true,
 });
+
+// Helper functions for credit allocation
+const getCreditAmountForProduct = async (
+  product: Doc<"products">,
+  quantity = 1
+): Promise<number> => {
+  // Get credit allocation type and amount from product metadata
+  const creditAllocation = product.metadata?.creditAllocation || "single";
+  const creditAmount = Number(product.metadata?.creditAmount || 100);
+
+  // Apply per-seat logic if needed
+  if (creditAllocation === "per-seat") {
+    return creditAmount * quantity;
+  }
+
+  return creditAmount;
+};
+
+const createShadowSubscriptionForYearly = async (
+  customer: string,
+  price: string,
+  parentSubscriptionId: string
+): Promise<Stripe.Subscription | null> => {
+  try {
+    // Create a shadow subscription that triggers monthly for yearly plans
+    // This handles monthly credit allocation for yearly subscriptions
+    // Quantity is always 1 since we get actual seat count from parent subscription
+    const shadowSubscription = await stripe.subscriptions.create({
+      customer: customer,
+      items: [
+        {
+          price,
+          quantity: 1, // Always 1 - actual quantity comes from parent subscription
+        },
+      ],
+      metadata: {
+        isShadowSubscription: "true",
+        parentSubscription: parentSubscriptionId,
+        createdAt: new Date().toISOString(),
+      },
+      proration_behavior: "none", // Don't prorate
+    });
+
+    console.log(
+      `Created shadow subscription ${shadowSubscription.id} for customer ${customer}`
+    );
+
+    return shadowSubscription;
+  } catch (error) {
+    console.error("Failed to create shadow subscription:", error);
+    return null;
+  }
+};
 
 // Actions
 export const createStripeCustomer = internalAction({
@@ -64,6 +117,13 @@ export const createCheckoutSession = internalAction({
       v.object({
         price: v.string(),
         quantity: v.number(),
+        adjustable_quantity: v.optional(
+          v.object({
+            enabled: v.boolean(),
+            minimum: v.number(),
+            maximum: v.number(),
+          })
+        ),
       })
     ), // This should be Stripe price ID, not our internal ID
     successUrl: v.string(),
@@ -82,6 +142,9 @@ export const createCheckoutSession = internalAction({
       cancel_url: cancelUrl,
       subscription_data: {
         trial_period_days: 7, // 7-day free trial
+        metadata: {
+          isShadowSubscription: "false",
+        },
       },
     });
 
@@ -286,7 +349,7 @@ export const handleStripeEvent = internalAction({
                     subscriptionId,
                     priceId: price._id,
                     quantity: item.quantity || 1,
-                    metadata: item.metadata || undefined,
+                    metadata: price?.metadata || undefined,
                     updatedAt: new Date().toISOString(),
                   }
                 );
@@ -297,11 +360,6 @@ export const handleStripeEvent = internalAction({
                 );
               }
             }
-          }
-
-          // Check if the subscription is in trial
-          if (subscriptionData.status === "trialing") {
-            // TODO:Handle trial credits
           }
 
           // Complete onboarding if it's not already completed
@@ -334,6 +392,10 @@ export const handleStripeEvent = internalAction({
               ? new Date(firstItem.current_period_end * 1000).toISOString()
               : undefined;
 
+            const isEndOfTrial =
+              existingSubscription.status === "trialing" &&
+              subscriptionData.status === "active";
+
             await ctx.runMutation(
               internal.collections.stripe.subscriptions.mutations
                 .updateInternal,
@@ -356,6 +418,30 @@ export const handleStripeEvent = internalAction({
                 updatedAt: new Date().toISOString(),
               }
             );
+
+            // Expire trial credits when first invoice is paid (end of trial)
+            if (isEndOfTrial) {
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .expireTrialCredits,
+                { workspaceId: existingSubscription.workspaceId }
+              );
+            }
+
+            // Handle trial cancellation - do NOT expire credits immediately
+            // Let trial credits expire naturally at trial end for better UX
+            const isTrialCancellation =
+              existingSubscription.status === "trialing" &&
+              subscriptionData.status === "trialing" &&
+              subscriptionData.cancel_at_period_end &&
+              !existingSubscription.cancelAtPeriodEnd;
+
+            if (isTrialCancellation) {
+              console.log(
+                `Trial cancelled for workspace ${existingSubscription.workspaceId} - credits will expire at trial end`
+              );
+              // No action needed - trial credits will expire naturally at currentPeriodEnd
+            }
 
             // Update subscription items
             if (subscriptionData.items?.data) {
@@ -390,7 +476,7 @@ export const handleStripeEvent = internalAction({
                       subscriptionItemId: existingItem._id,
                       priceId: price._id,
                       quantity: item.quantity || 1,
-                      metadata: item.metadata || undefined,
+                      metadata: price?.metadata || undefined,
                       updatedAt: new Date().toISOString(),
                     }
                   );
@@ -404,7 +490,7 @@ export const handleStripeEvent = internalAction({
                       subscriptionId: existingSubscription._id,
                       priceId: price._id,
                       quantity: item.quantity || 1,
-                      metadata: item.metadata || undefined,
+                      metadata: price?.metadata || undefined,
                       updatedAt: new Date().toISOString(),
                     }
                   );
@@ -430,6 +516,33 @@ export const handleStripeEvent = internalAction({
           );
 
           if (existingSubscription) {
+            // If this is a main subscription with a shadow subscription, cancel the shadow
+            if (
+              subscriptionData.metadata?.yearly_plan !== "true" &&
+              subscriptionData.metadata?.shadow_subscription !== "true"
+            ) {
+              // This is a main subscription, find and cancel any related shadow subscriptions
+              try {
+                const shadowSubscriptions = await stripe.subscriptions.list({
+                  customer: subscriptionData.customer as string,
+                  status: "active",
+                });
+
+                for (const shadow of shadowSubscriptions.data) {
+                  if (
+                    shadow.metadata?.parent_subscription === subscriptionData.id
+                  ) {
+                    console.log(
+                      `Canceling shadow subscription ${shadow.id} for canceled main subscription ${subscriptionData.id}`
+                    );
+                    await stripe.subscriptions.cancel(shadow.id);
+                  }
+                }
+              } catch (error) {
+                console.error("Failed to cancel shadow subscriptions:", error);
+              }
+            }
+
             // Update status to canceled instead of deleting the record
             // This preserves historical data for reporting/analytics
             await ctx.runMutation(
@@ -613,7 +726,6 @@ export const handleStripeEvent = internalAction({
         // ✅ INVOICE EVENTS
         case "invoice.created":
         case "invoice.updated":
-        case "invoice.paid":
         case "invoice.payment_failed":
         case "invoice.payment_succeeded": {
           const invoiceData = event.data.object as Stripe.Invoice;
@@ -701,6 +813,574 @@ export const handleStripeEvent = internalAction({
               console.warn("Invoice not found in database:", invoiceData.id);
             }
           }
+
+          break;
+        }
+
+        case "invoice.paid": {
+          const invoiceData = event.data.object as Stripe.Invoice;
+          const lines = invoiceData.lines?.data;
+
+          // Find the customer in our database
+          const customer = await ctx.runQuery(
+            internal.collections.stripe.customers.queries.getByStripeId,
+            { stripeCustomerId: invoiceData.customer as string }
+          );
+
+          if (!customer) {
+            console.warn(
+              "Customer not found for invoice:",
+              invoiceData.customer
+            );
+            break;
+          }
+
+          // Check if this is an upgrade/downgrade scenario (multiple proration lines)
+          const prorationLines = lines.filter(
+            (line) =>
+              line.parent?.subscription_item_details?.proration &&
+              invoiceData.amount_paid > 0
+          );
+          const hasUpgradeDowngrade = prorationLines.length >= 2;
+
+          for (const line of lines) {
+            // Find subscription if it exists
+            const subscriptionId =
+              line.parent?.subscription_item_details?.subscription;
+            const subscriptionItemId =
+              line.parent?.subscription_item_details?.subscription_item;
+            const priceId = line.pricing?.price_details?.price;
+            const productId = line.pricing?.price_details?.product;
+            const proration = line.parent?.subscription_item_details?.proration;
+
+            if (
+              !subscriptionId ||
+              !subscriptionItemId ||
+              !priceId ||
+              !productId
+            ) {
+              console.warn("Missing required fields for line:", line);
+              continue;
+            }
+
+            const subscription = await ctx.runQuery(
+              internal.collections.stripe.subscriptions.queries.getByStripeId,
+              { stripeSubscriptionId: subscriptionId as string }
+            );
+
+            const subscriptionItem = await ctx.runQuery(
+              internal.collections.stripe.subscriptionItems.queries
+                .getByStripeId,
+              { stripeSubscriptionItemId: subscriptionItemId as string }
+            );
+
+            const price = await ctx.runQuery(
+              internal.collections.stripe.prices.queries.getByStripeId,
+              { stripePriceId: priceId as string }
+            );
+
+            // Get product, price, subscription items
+            const product = await ctx.runQuery(
+              internal.collections.stripe.products.queries.getByStripeId,
+              {
+                stripeProductId: line.pricing?.price_details?.product as string,
+              }
+            );
+
+            if (!subscription || !subscriptionItem || !price || !product) {
+              console.warn(
+                "Missing required fields for line:",
+                `${line}missing: ${subscriptionId ? "subscriptionId" : ""}${subscriptionItemId ? "subscriptionItemId" : ""}${priceId ? "priceId" : ""}${productId ? "productId" : ""}`
+              );
+              continue;
+            }
+
+            /* CREDIT ALLOCATIONS */
+            // TRIAL CREDITS
+            if (
+              subscription.status === "trialing" &&
+              invoiceData.amount_paid === 0
+            ) {
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .createIdempotent,
+                {
+                  workspaceId: customer.workspaceId,
+                  subscriptionId: subscription?._id,
+                  customerId: customer._id,
+                  amount: 100,
+                  type: "trial",
+                  periodStart: subscription.currentPeriodStart,
+                  expiresAt: subscription.currentPeriodEnd,
+                  reason: "Trial period credits (expires at end of trial)",
+                  idempotencyKey: `trial-${subscription.stripeSubscriptionId}`,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+              break;
+            }
+
+            console.log({
+              isShadowPrice: price.metadata?.isShadow,
+              isShadowSubscription: subscription.metadata?.isShadowSubscription,
+              amountPaid: invoiceData.amount_paid,
+            });
+
+            // SHADOW SUBSCRIPTION
+            if (
+              subscription.metadata?.isShadowSubscription === "true" &&
+              invoiceData.amount_paid === 0
+            ) {
+              const parentSubscriptionStripeId =
+                subscription.metadata?.parentSubscription;
+              const parentSubscription = await ctx.runQuery(
+                internal.collections.stripe.subscriptions.queries.getByStripeId,
+                {
+                  stripeSubscriptionId: parentSubscriptionStripeId,
+                }
+              );
+
+              if (!parentSubscription) {
+                console.warn(
+                  "Parent subscription not found for shadow subscription:",
+                  parentSubscriptionStripeId
+                );
+                break;
+              }
+
+              const parentSubscriptionItem = await ctx.runQuery(
+                internal.collections.stripe.subscriptionItems.queries
+                  .getBySubscriptionIdInternal,
+                {
+                  subscriptionId: parentSubscription?._id,
+                }
+              );
+              const quantity =
+                parentSubscriptionItem
+                  ?.map((item) => item.quantity)
+                  .sort((a, b) => a - b)
+                  .pop() ?? 1; // Get the highest quantity
+
+              const monthlyCredits = await getCreditAmountForProduct(
+                product,
+                quantity
+              );
+
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .createIdempotent,
+                {
+                  workspaceId: customer.workspaceId,
+                  customerId: customer._id,
+                  amount: monthlyCredits,
+                  subscriptionId: parentSubscription?._id,
+                  type: "subscription",
+                  periodStart: subscription.currentPeriodStart,
+                  expiresAt: subscription.currentPeriodEnd,
+                  reason: `Shadow subscription - monthly credits allocation (${quantity} seats from parent yearly subscription)`,
+                  idempotencyKey: `credits-${customer.workspaceId}-${product.stripeProductId}-${subscription.currentPeriodStart}-${subscription.currentPeriodEnd}-q:${quantity}`,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+
+              break;
+            }
+
+            // TOP-UP CREDITS
+            if (
+              product.metadata?.type === "add-on" &&
+              product.metadata?.creditAmount > 0
+            ) {
+              const quantity = line.quantity || 1;
+
+              // Add credits to the customer
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .createIdempotent,
+                {
+                  workspaceId: customer.workspaceId,
+                  customerId: customer._id,
+                  subscriptionId: subscription?._id,
+                  amount: product.metadata?.creditAmount * quantity,
+                  type: "topup",
+                  periodStart: subscription.currentPeriodStart,
+                  expiresAt: subscription.currentPeriodEnd,
+                  reason: "Top-up credits allocation",
+                  idempotencyKey: `credits-${customer.workspaceId}-${product.stripeProductId}-${subscription.currentPeriodStart}-${subscription.currentPeriodEnd}-q:${quantity}`,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+
+              break;
+            }
+
+            // PAID CREDITS (Regular Monthly Subscriptions - excluding prorations)
+            if (
+              invoiceData.amount_paid > 0 &&
+              price.interval === "month" &&
+              !proration
+            ) {
+              const quantity = line.quantity || 1;
+              const monthlyCredits = await getCreditAmountForProduct(
+                product,
+                quantity
+              );
+
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .createIdempotent,
+                {
+                  workspaceId: customer.workspaceId,
+                  customerId: customer._id,
+                  subscriptionId: subscription?._id,
+                  amount: monthlyCredits,
+                  type: "subscription",
+                  periodStart: subscription.currentPeriodStart,
+                  expiresAt: subscription.currentPeriodEnd,
+                  reason: "Paid credits allocation",
+                  idempotencyKey: `credits-${customer.workspaceId}-${product.stripeProductId}-${subscription.currentPeriodStart}-${subscription.currentPeriodEnd}-q:${quantity}`,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+
+              break;
+            }
+
+            // PAID CREDITS (Upgrade/Downgrade during period)
+            if (
+              invoiceData.amount_paid > 0 &&
+              proration &&
+              hasUpgradeDowngrade &&
+              price.interval === "month"
+            ) {
+              // Handle upgrade/downgrade scenario
+              // Only process positive line items (the new plan)
+              if (line.amount > 0) {
+                const quantity = line.quantity || 1;
+
+                // Calculate prorated credits for the new plan
+                const lineStart = line.period?.start
+                  ? new Date(line.period.start * 1000)
+                  : new Date(subscription.currentPeriodStart);
+                const lineEnd = line.period?.end
+                  ? new Date(line.period.end * 1000)
+                  : new Date(subscription.currentPeriodEnd);
+
+                // Get the full monthly credit amount for this product
+                const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+                  product,
+                  1
+                );
+
+                // Calculate prorated credits for the new plan
+                const totalDaysInPeriod =
+                  (new Date(subscription.currentPeriodEnd).getTime() -
+                    new Date(subscription.currentPeriodStart).getTime()) /
+                  (1000 * 60 * 60 * 24);
+                const remainingDays =
+                  (lineEnd.getTime() - lineStart.getTime()) /
+                  (1000 * 60 * 60 * 24);
+                const prorationRatio = remainingDays / totalDaysInPeriod;
+                const proratedCredits = Math.floor(
+                  monthlyCreditsPerSeat * prorationRatio * quantity
+                );
+
+                const isUpgrade = line.amount > 0; // Positive amount indicates upgrade
+                const changeType = isUpgrade ? "upgrade" : "downgrade";
+
+                await ctx.runMutation(
+                  internal.collections.stripe.transactions.mutations
+                    .createIdempotent,
+                  {
+                    workspaceId: customer.workspaceId,
+                    customerId: customer._id,
+                    subscriptionId: subscription?._id,
+                    amount: proratedCredits,
+                    type: "subscription",
+                    periodStart: lineStart.toISOString(),
+                    expiresAt: subscription.currentPeriodEnd,
+                    reason: `Plan ${changeType} - prorated credits for new plan (${Math.round(prorationRatio * 100)}% of period)`,
+                    idempotencyKey: `${changeType}-${customer.workspaceId}-${product.stripeProductId}-${lineStart.toISOString()}-${lineEnd.toISOString()}-q:${quantity}`,
+                    updatedAt: new Date().toISOString(),
+                  }
+                );
+              }
+
+              // For downgrades, we don't create negative credits - let excess credits expire naturally
+              // This provides better UX as users don't lose credits immediately
+              break;
+            }
+
+            // PAID CREDITS (Mid-cycle seat additions with proration - not upgrade/downgrade)
+            if (
+              invoiceData.amount_paid > 0 &&
+              proration &&
+              !hasUpgradeDowngrade &&
+              price.interval === "month"
+            ) {
+              const quantity = line.quantity || 1;
+
+              // Calculate prorated credits based on the line period
+              const lineStart = line.period?.start
+                ? new Date(line.period.start * 1000)
+                : new Date(subscription.currentPeriodStart);
+              const lineEnd = line.period?.end
+                ? new Date(line.period.end * 1000)
+                : new Date(subscription.currentPeriodEnd);
+
+              // Get the full monthly credit amount for this product
+              const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+                product,
+                1
+              );
+
+              // Calculate prorated credits: (remaining days / total days) * credits * quantity
+              const totalDaysInPeriod =
+                (new Date(subscription.currentPeriodEnd).getTime() -
+                  new Date(subscription.currentPeriodStart).getTime()) /
+                (1000 * 60 * 60 * 24);
+              const remainingDays =
+                (lineEnd.getTime() - lineStart.getTime()) /
+                (1000 * 60 * 60 * 24);
+              const prorationRatio = remainingDays / totalDaysInPeriod;
+              const proratedCredits = Math.floor(
+                monthlyCreditsPerSeat * prorationRatio * quantity
+              );
+
+              await ctx.runMutation(
+                internal.collections.stripe.transactions.mutations
+                  .createIdempotent,
+                {
+                  workspaceId: customer.workspaceId,
+                  customerId: customer._id,
+                  subscriptionId: subscription?._id,
+                  amount: proratedCredits,
+                  type: "subscription",
+                  periodStart: lineStart.toISOString(),
+                  expiresAt: subscription.currentPeriodEnd,
+                  reason: `Mid-cycle seat addition - prorated credits (${quantity} seats, ${Math.round(prorationRatio * 100)}% of period)`,
+                  idempotencyKey: `proration-${customer.workspaceId}-${product.stripeProductId}-${lineStart.toISOString()}-${lineEnd.toISOString()}-q:${quantity}`,
+                  updatedAt: new Date().toISOString(),
+                }
+              );
+
+              break;
+            }
+
+            // PAID CREDITS (Yearly Upgrade/Downgrade during period)
+            if (
+              invoiceData.amount_paid > 0 &&
+              proration &&
+              hasUpgradeDowngrade &&
+              price.interval === "year"
+            ) {
+              // Handle yearly plan upgrade/downgrade
+              // Only process positive line items (the new plan)
+              if (line.amount > 0) {
+                const quantity = line.quantity || 1;
+
+                // For yearly plans, give prorated credits for current month only
+                const lineStart = line.period?.start
+                  ? new Date(line.period.start * 1000)
+                  : new Date(subscription.currentPeriodStart);
+
+                // Get the monthly credit amount per seat (not yearly)
+                const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+                  product,
+                  1
+                );
+
+                // Calculate prorated credits for the current month only
+                const now = new Date();
+                const currentMonthStart = new Date(
+                  now.getFullYear(),
+                  now.getMonth(),
+                  1
+                );
+                const nextMonthStart = new Date(
+                  now.getFullYear(),
+                  now.getMonth() + 1,
+                  1
+                );
+
+                // Calculate how much of the current month remains
+                const totalDaysInMonth =
+                  (nextMonthStart.getTime() - currentMonthStart.getTime()) /
+                  (1000 * 60 * 60 * 24);
+                const remainingDaysInMonth = Math.max(
+                  0,
+                  (nextMonthStart.getTime() -
+                    Math.max(
+                      lineStart.getTime(),
+                      currentMonthStart.getTime()
+                    )) /
+                    (1000 * 60 * 60 * 24)
+                );
+                const monthlyProrationRatio =
+                  remainingDaysInMonth / totalDaysInMonth;
+                const proratedCredits = Math.floor(
+                  monthlyCreditsPerSeat * monthlyProrationRatio * quantity
+                );
+
+                if (proratedCredits > 0) {
+                  const changeType = "upgrade"; // Only processing positive amounts
+
+                  await ctx.runMutation(
+                    internal.collections.stripe.transactions.mutations
+                      .createIdempotent,
+                    {
+                      workspaceId: customer.workspaceId,
+                      customerId: customer._id,
+                      subscriptionId: subscription?._id,
+                      amount: proratedCredits,
+                      type: "subscription",
+                      periodStart: lineStart.toISOString(),
+                      expiresAt: nextMonthStart.toISOString(),
+                      reason: `Yearly plan ${changeType} - prorated credits for current month (${quantity} seats, ${Math.round(monthlyProrationRatio * 100)}% of month)`,
+                      idempotencyKey: `yearly-${changeType}-${customer.workspaceId}-${product.stripeProductId}-${currentMonthStart.toISOString()}-${nextMonthStart.toISOString()}-q:${quantity}`,
+                      updatedAt: new Date().toISOString(),
+                    }
+                  );
+                }
+
+                // The shadow subscription will be updated automatically to handle future months
+              }
+              break;
+            }
+
+            // PAID CREDITS (Yearly Mid-cycle seat additions with proration - not upgrade/downgrade)
+            if (
+              invoiceData.amount_paid > 0 &&
+              proration &&
+              !hasUpgradeDowngrade &&
+              price.interval === "year"
+            ) {
+              const quantity = line.quantity || 1;
+
+              // For yearly plans, we need to give prorated credits for the current month
+              // The shadow subscription will handle ongoing monthly credits
+              const lineStart = line.period?.start
+                ? new Date(line.period.start * 1000)
+                : new Date(subscription.currentPeriodStart);
+
+              // Get the monthly credit amount per seat (not yearly)
+              const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+                product,
+                1
+              );
+
+              // Calculate prorated credits for the current month only
+              // Find the current month boundary within the yearly subscription
+              const now = new Date();
+              const currentMonthStart = new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                1
+              );
+              const nextMonthStart = new Date(
+                now.getFullYear(),
+                now.getMonth() + 1,
+                1
+              );
+
+              // Calculate how much of the current month remains
+              const totalDaysInMonth =
+                (nextMonthStart.getTime() - currentMonthStart.getTime()) /
+                (1000 * 60 * 60 * 24);
+              const remainingDaysInMonth = Math.max(
+                0,
+                (nextMonthStart.getTime() -
+                  Math.max(lineStart.getTime(), currentMonthStart.getTime())) /
+                  (1000 * 60 * 60 * 24)
+              );
+              const monthlyProrationRatio =
+                remainingDaysInMonth / totalDaysInMonth;
+              const proratedCredits = Math.floor(
+                monthlyCreditsPerSeat * monthlyProrationRatio * quantity
+              );
+
+              if (proratedCredits > 0) {
+                await ctx.runMutation(
+                  internal.collections.stripe.transactions.mutations
+                    .createIdempotent,
+                  {
+                    workspaceId: customer.workspaceId,
+                    customerId: customer._id,
+                    subscriptionId: subscription?._id,
+                    amount: proratedCredits,
+                    type: "subscription",
+                    periodStart: lineStart.toISOString(),
+                    expiresAt: nextMonthStart.toISOString(),
+                    reason: `Yearly plan mid-cycle seat addition - prorated credits for current month (${quantity} seats, ${Math.round(monthlyProrationRatio * 100)}% of month)`,
+                    idempotencyKey: `yearly-proration-${customer.workspaceId}-${product.stripeProductId}-${currentMonthStart.toISOString()}-${nextMonthStart.toISOString()}-q:${quantity}`,
+                    updatedAt: new Date().toISOString(),
+                  }
+                );
+              }
+
+              // The shadow subscription will be updated automatically via subscription.updated webhook
+              // to handle ongoing monthly credits for the new seats
+              break;
+            }
+
+            // PAID CREDITS (Yearly Subscriptions - Managing Shadow Subscription)
+            if (
+              invoiceData.amount_paid > 0 &&
+              price.interval === "year" &&
+              !proration
+            ) {
+              // Check if shadow subscription already exists for this customer
+              const shadowPrice = await ctx.runQuery(
+                internal.collections.stripe.prices.queries.getByStripeId,
+                { stripePriceId: product.metadata?.shadowPriceId as string }
+              );
+
+              if (!shadowPrice) {
+                console.warn(
+                  "Shadow price not found for product:",
+                  product.stripeProductId
+                );
+                break;
+              }
+
+              // Look for existing shadow subscriptions for this customer
+              const existingShadowSubscriptions =
+                await stripe.subscriptions.list({
+                  customer: customer.stripeCustomerId,
+                  price: shadowPrice.stripePriceId,
+                  status: "active",
+                  limit: 1,
+                });
+
+              if (existingShadowSubscriptions.data.length > 0) {
+                // Shadow subscription already exists - no need to update since we get quantity from parent
+                console.log(
+                  `Shadow subscription already exists for customer ${customer.stripeCustomerId} - using parent subscription for seat count`
+                );
+              } else {
+                // No shadow subscription exists, create a new one
+                console.log(
+                  `Creating new shadow subscription for customer ${customer.stripeCustomerId}`
+                );
+
+                const shadowSubscription =
+                  await createShadowSubscriptionForYearly(
+                    customer.stripeCustomerId,
+                    shadowPrice.stripePriceId,
+                    subscription.stripeSubscriptionId
+                  );
+
+                if (!shadowSubscription) {
+                  console.warn(
+                    "Shadow subscription not created for product:",
+                    product.stripeProductId
+                  );
+                  break;
+                }
+              }
+            }
+          }
+
           break;
         }
 

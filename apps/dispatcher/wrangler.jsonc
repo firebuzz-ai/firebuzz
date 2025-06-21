@@ -1,0 +1,19 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "dispatcher",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-06-19",
+	"observability": {
+		"enabled": true,
+	},
+	"kv_namespaces": [
+		{
+			"binding": "CONFIG",
+			"id": "87d1c295bfd54f1c91a09155b558aaed",
+		},
+	],
+}

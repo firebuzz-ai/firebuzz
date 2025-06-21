@@ -282,3 +282,114 @@ export const publishPreview = mutationWithTrigger({
     );
   },
 });
+
+export const publishToCustomDomain = mutationWithTrigger({
+  args: {
+    id: v.id("landingPages"),
+    domainId: v.id("domains"),
+    html: v.string(),
+    js: v.string(),
+    css: v.string(),
+  },
+  handler: async (ctx, { id, domainId, html, js, css }) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+
+    // Get the landing page to access projectId and campaignId
+    const landingPage = await ctx.db.get(id);
+    if (!landingPage) {
+      throw new ConvexError("Landing page not found");
+    }
+
+    // Verify user has access to this landing page
+    if (landingPage.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    // Get the campaign to access the slug
+    const campaign = await ctx.db.get(landingPage.campaignId);
+    if (!campaign) {
+      throw new ConvexError("Campaign not found");
+    }
+
+    // Get and verify the domain
+    const domain = await ctx.db.get(domainId);
+    if (!domain) {
+      throw new ConvexError("Domain not found");
+    }
+
+    // Verify user has access to this domain
+    if (domain.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    // Verify domain is active
+    if (domain.status !== "active") {
+      throw new ConvexError("Domain is not active");
+    }
+
+    // Update landing page with custom domain publish info
+    await ctx.db.patch(id, {
+      status: "published",
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+      customDomainId: domainId,
+      customDomainUrl: `https://${domain.hostname}/${campaign.slug}`,
+    });
+
+    // Store in KV using production format with campaign slug: production-${projectId}-${campaignSlug}
+    await retrier.run(
+      ctx,
+      internal.collections.landingPages.actions.storeInKV,
+      {
+        key: `production-${landingPage.projectId}-${campaign.slug}`,
+        html,
+        js,
+        css,
+      }
+    );
+  },
+});
+
+export const unpublishFromCustomDomain = mutationWithTrigger({
+  args: {
+    id: v.id("landingPages"),
+  },
+  handler: async (ctx, { id }) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+
+    // Get the landing page to access projectId and verify access
+    const landingPage = await ctx.db.get(id);
+    if (!landingPage) {
+      throw new ConvexError("Landing page not found");
+    }
+
+    // Verify user has access to this landing page
+    if (landingPage.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    // Update landing page to remove custom domain info
+    await ctx.db.patch(id, {
+      customDomainId: undefined,
+      customDomainUrl: undefined,
+      // Note: We keep status as "published" and isPublished as true if there are other publications
+      // Only set to draft if this was the only publication
+      ...(!landingPage.previewPublishedAt && {
+        status: "draft" as const,
+        isPublished: false,
+        publishedAt: undefined,
+      }),
+    });
+
+    // TODO: Remove assets from KV store
+    // This would require an action to delete from the engine KV store
+    // const campaign = await ctx.db.get(landingPage.campaignId);
+    // await retrier.run(
+    //   ctx,
+    //   internal.collections.landingPages.actions.removeFromKV,
+    //   {
+    //     key: `production-${landingPage.projectId}-${campaign.slug}`,
+    //   }
+    // );
+  },
+});

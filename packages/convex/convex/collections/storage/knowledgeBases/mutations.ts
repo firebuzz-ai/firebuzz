@@ -40,6 +40,33 @@ export const create = mutationWithTrigger({
   },
 });
 
+export const createInternal = internalMutationWithTrigger({
+  args: {
+    name: v.string(),
+    description: v.string(),
+    workspaceId: v.id("workspaces"),
+    projectId: v.id("projects"),
+    index: v.number(),
+    isVisible: v.boolean(),
+    isSystem: v.boolean(),
+    createdBy: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const knowledgeBase = await ctx.db.insert("knowledgeBases", {
+      name: args.name,
+      description: args.description,
+      createdBy: args.createdBy,
+      workspaceId: args.workspaceId,
+      projectId: args.projectId,
+      index: args.index,
+      isVisible: args.isVisible,
+      isSystem: args.isSystem,
+    });
+
+    return knowledgeBase;
+  },
+});
+
 export const update = mutationWithTrigger({
   args: {
     id: v.id("knowledgeBases"),

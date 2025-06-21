@@ -14,13 +14,13 @@ export const transactionSchema = v.object({
     v.literal("adjustment"),
     v.literal("refund")
   ),
-  periodStart: v.string(), // "YYYY-MM" format - billing period when credits were allocated
-  expiresAt: v.optional(v.string()), // ISO string - when credits expire
+  periodStart: v.string(), // ISO string - when the current period starts
+  expiresAt: v.string(), // ISO string - when credits expire (current period end)
   // Relations
   workspaceId: v.id("workspaces"),
   customerId: v.id("customers"),
   createdBy: v.optional(v.id("users")),
-  subscriptionId: v.optional(v.id("stripeSubscriptions")),
+  subscriptionId: v.optional(v.id("subscriptions")),
   // System fields
   reason: v.optional(v.string()), // Human readable reason for the credit transaction
   metadata: v.optional(v.record(v.string(), v.any())), // Additional data

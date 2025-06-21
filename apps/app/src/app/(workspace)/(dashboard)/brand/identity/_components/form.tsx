@@ -312,7 +312,11 @@ export const BrandIdentityForm = ({
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect onChange={field.onChange} />
+                        <ImageSelect
+                          allowedSources={["gallery", "upload"]}
+                          activeTab="upload"
+                          onChange={field.onChange}
+                        />
                       ) : (
                         <ImagePreview
                           src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${field.value}`}
@@ -360,7 +364,11 @@ export const BrandIdentityForm = ({
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect onChange={field.onChange} />
+                        <ImageSelect
+                          allowedSources={["gallery", "upload"]}
+                          activeTab="upload"
+                          onChange={field.onChange}
+                        />
                       ) : (
                         <ImagePreview
                           src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${field.value}`}
@@ -408,7 +416,11 @@ export const BrandIdentityForm = ({
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect onChange={field.onChange} />
+                        <ImageSelect
+                          allowedSources={["gallery", "upload"]}
+                          activeTab="upload"
+                          onChange={field.onChange}
+                        />
                       ) : (
                         <ImagePreview
                           src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${field.value}`}
@@ -456,7 +468,11 @@ export const BrandIdentityForm = ({
                         />
                       </FormControl>
                       {!field.value ? (
-                        <ImageSelect onChange={field.onChange} />
+                        <ImageSelect
+                          allowedSources={["gallery", "upload"]}
+                          activeTab="upload"
+                          onChange={field.onChange}
+                        />
                       ) : (
                         <ImagePreview
                           src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${field.value}`}
