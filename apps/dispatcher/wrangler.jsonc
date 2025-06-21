@@ -8,12 +8,12 @@
 	"main": "src/index.ts",
 	"compatibility_date": "2025-06-19",
 	"observability": {
-		"enabled": true,
+		"enabled": true
 	},
 	"kv_namespaces": [
 		{
 			"binding": "CONFIG",
-			"id": "87d1c295bfd54f1c91a09155b558aaed",
-		},
-	],
+			"id": "87d1c295bfd54f1c91a09155b558aaed"
+		}
+	]
 }

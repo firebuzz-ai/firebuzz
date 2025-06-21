@@ -1,49 +1,49 @@
-import { Hono } from 'hono';
-import type { Env } from '../env';
+import { Hono } from "hono";
+import type { Env } from "../env";
 
 const app = new Hono<{ Bindings: Env }>();
 
 // Index Route
-app.get('/:slug', async (c) => {
-	const slug = c.req.param('slug');
+app.get("/:slug", async (c) => {
+	const slug = c.req.param("slug");
 
 	const html = await c.env.ASSETS.get(`preview-${slug}`);
 
 	if (!html) {
-		return c.text('Not found', 404);
+		return c.text("Not found", 404);
 	}
 
 	return c.html(html);
 });
 
 // Assets Route
-app.get('/:slug/assets/:asset', async (c) => {
-	const slug = c.req.param('slug');
-	const assetP = c.req.param('asset');
+app.get("/:slug/assets/:asset", async (c) => {
+	const slug = c.req.param("slug");
+	const assetP = c.req.param("asset");
 
 	const asset = await c.env.ASSETS.get(`${slug}/assets/${assetP}`);
 
 	if (!asset) {
-		return c.text('Not found', 404);
+		return c.text("Not found", 404);
 	}
 
-	if (assetP === 'styles') {
-		c.header('Content-Type', 'text/css');
+	if (assetP === "styles") {
+		c.header("Content-Type", "text/css");
 	}
 
-	if (assetP === 'script') {
-		c.header('Content-Type', 'text/javascript');
+	if (assetP === "script") {
+		c.header("Content-Type", "text/javascript");
 	}
 
 	return c.body(asset);
 });
 
 // Root route - handles both subdomain root and redirect
-app.get('/', async (c) => {
-	const hostname = c.req.header('host') || '';
+app.get("/", async (c) => {
+	const hostname = c.req.header("host") || "";
 
 	// If accessed from preview subdomain, show preview index
-	if (hostname === 'preview.getfirebuzz.com') {
+	if (hostname === "preview.getfirebuzz.com") {
 		return c.html(`
 			<html>
 				<head>
@@ -63,7 +63,7 @@ app.get('/', async (c) => {
 	}
 
 	// Otherwise redirect to main site
-	return c.redirect('https://getfirebuzz.com');
+	return c.redirect("https://getfirebuzz.com");
 });
 
 export { app as previewApp };

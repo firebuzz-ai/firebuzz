@@ -5,17 +5,17 @@ import { UserProvider } from "./user";
 import { WorkspaceProvider } from "./workspace";
 
 export const WorkspaceProviders = ({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) => {
-  return (
-    <UserProvider>
-      <WorkspaceProvider>
-        <SubscriptionProvider>
-          <ProjectProvider>{children}</ProjectProvider>
-        </SubscriptionProvider>
-      </WorkspaceProvider>
-    </UserProvider>
-  );
+	return (
+		<UserProvider>
+			<WorkspaceProvider>
+				<SubscriptionProvider>
+					<ProjectProvider>{children}</ProjectProvider>
+				</SubscriptionProvider>
+			</WorkspaceProvider>
+		</UserProvider>
+	);
 };

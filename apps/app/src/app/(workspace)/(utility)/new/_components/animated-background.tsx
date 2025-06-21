@@ -6,155 +6,155 @@ import React, { useCallback, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 type Uniforms = {
-  [key: string]: {
-    value: number[] | number[][] | number;
-    type: string;
-  };
+	[key: string]: {
+		value: number[] | number[][] | number;
+		type: string;
+	};
 };
 
 interface ShaderProps {
-  source: string;
-  uniforms: {
-    [key: string]: {
-      value: number[] | number[][] | number;
-      type: string;
-    };
-  };
+	source: string;
+	uniforms: {
+		[key: string]: {
+			value: number[] | number[][] | number;
+			type: string;
+		};
+	};
 }
 
 interface AnimatedBackgroundProps {
-  className?: string;
+	className?: string;
 }
 
 export const CanvasRevealEffect = ({
-  animationSpeed = 10,
-  opacities = [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1],
-  colors = [[0, 255, 255]],
-  containerClassName,
-  dotSize,
-  reverse = false,
+	animationSpeed = 10,
+	opacities = [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1],
+	colors = [[0, 255, 255]],
+	containerClassName,
+	dotSize,
+	reverse = false,
 }: {
-  animationSpeed?: number;
-  opacities?: number[];
-  colors?: number[][];
-  containerClassName?: string;
-  dotSize?: number;
-  reverse?: boolean;
+	animationSpeed?: number;
+	opacities?: number[];
+	colors?: number[][];
+	containerClassName?: string;
+	dotSize?: number;
+	reverse?: boolean;
 }) => {
-  return (
-    <div className={cn("h-full relative w-full", containerClassName)}>
-      <div className="w-full h-full">
-        <DotMatrix
-          colors={colors ?? [[0, 255, 255]]}
-          dotSize={dotSize ?? 3}
-          opacities={
-            opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]
-          }
-          shader={`
+	return (
+		<div className={cn("h-full relative w-full", containerClassName)}>
+			<div className="w-full h-full">
+				<DotMatrix
+					colors={colors ?? [[0, 255, 255]]}
+					dotSize={dotSize ?? 3}
+					opacities={
+						opacities ?? [0.3, 0.3, 0.3, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8, 1]
+					}
+					shader={`
             ${reverse ? "u_reverse_active" : "false"}_;
             animation_speed_factor_${animationSpeed.toFixed(1)}_;
           `}
-          center={["x", "y"]}
-          reverse={reverse}
-        />
-      </div>
-    </div>
-  );
+					center={["x", "y"]}
+					reverse={reverse}
+				/>
+			</div>
+		</div>
+	);
 };
 
 interface DotMatrixProps {
-  colors?: number[][];
-  opacities?: number[];
-  totalSize?: number;
-  dotSize?: number;
-  shader?: string;
-  center?: ("x" | "y")[];
-  reverse?: boolean;
+	colors?: number[][];
+	opacities?: number[];
+	totalSize?: number;
+	dotSize?: number;
+	shader?: string;
+	center?: ("x" | "y")[];
+	reverse?: boolean;
 }
 
 const DotMatrix: React.FC<DotMatrixProps> = ({
-  colors = [[0, 0, 0]],
-  opacities = [0.04, 0.04, 0.04, 0.04, 0.04, 0.08, 0.08, 0.08, 0.08, 0.14],
-  totalSize = 20,
-  dotSize = 2,
-  shader = "",
-  center = ["x", "y"],
-  reverse,
+	colors = [[0, 0, 0]],
+	opacities = [0.04, 0.04, 0.04, 0.04, 0.04, 0.08, 0.08, 0.08, 0.08, 0.14],
+	totalSize = 20,
+	dotSize = 2,
+	shader = "",
+	center = ["x", "y"],
+	reverse,
 }) => {
-  const uniforms = React.useMemo(() => {
-    let colorsArray = [
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-      colors[0],
-    ];
-    if (colors.length === 2) {
-      colorsArray = [
-        colors[0],
-        colors[0],
-        colors[0],
-        colors[1],
-        colors[1],
-        colors[1],
-      ];
-    } else if (colors.length === 3) {
-      colorsArray = [
-        colors[0],
-        colors[0],
-        colors[1],
-        colors[1],
-        colors[2],
-        colors[2],
-      ];
-    }
+	const uniforms = React.useMemo(() => {
+		let colorsArray = [
+			colors[0],
+			colors[0],
+			colors[0],
+			colors[0],
+			colors[0],
+			colors[0],
+		];
+		if (colors.length === 2) {
+			colorsArray = [
+				colors[0],
+				colors[0],
+				colors[0],
+				colors[1],
+				colors[1],
+				colors[1],
+			];
+		} else if (colors.length === 3) {
+			colorsArray = [
+				colors[0],
+				colors[0],
+				colors[1],
+				colors[1],
+				colors[2],
+				colors[2],
+			];
+		}
 
-    // Parse animation speed from shader string
-    const speedMatch = shader.match(/animation_speed_factor_([\d.]+)_/);
-    const animationSpeed = speedMatch
-      ? Number.parseFloat(speedMatch[1]) * 0.1
-      : 0.05;
+		// Parse animation speed from shader string
+		const speedMatch = shader.match(/animation_speed_factor_([\d.]+)_/);
+		const animationSpeed = speedMatch
+			? Number.parseFloat(speedMatch[1]) * 0.1
+			: 0.05;
 
-    return {
-      u_colors: {
-        value: colorsArray.map((color) => [
-          color[0] / 255,
-          color[1] / 255,
-          color[2] / 255,
-        ]),
-        type: "uniform3fv",
-      },
-      u_opacities: {
-        value: opacities,
-        type: "uniform1fv",
-      },
-      u_total_size: {
-        value: totalSize,
-        type: "uniform1f",
-      },
-      u_dot_size: {
-        value: dotSize,
-        type: "uniform1f",
-      },
-      u_reverse: {
-        value: shader.includes("u_reverse_active") ? 1 : 0,
-        type: "uniform1i",
-      },
-      u_animation_speed: {
-        value: animationSpeed,
-        type: "uniform1f",
-      },
-      u_transition_progress: {
-        value: 0,
-        type: "uniform1f",
-      },
-    };
-  }, [colors, opacities, totalSize, dotSize, shader]);
+		return {
+			u_colors: {
+				value: colorsArray.map((color) => [
+					color[0] / 255,
+					color[1] / 255,
+					color[2] / 255,
+				]),
+				type: "uniform3fv",
+			},
+			u_opacities: {
+				value: opacities,
+				type: "uniform1fv",
+			},
+			u_total_size: {
+				value: totalSize,
+				type: "uniform1f",
+			},
+			u_dot_size: {
+				value: dotSize,
+				type: "uniform1f",
+			},
+			u_reverse: {
+				value: shader.includes("u_reverse_active") ? 1 : 0,
+				type: "uniform1i",
+			},
+			u_animation_speed: {
+				value: animationSpeed,
+				type: "uniform1f",
+			},
+			u_transition_progress: {
+				value: 0,
+				type: "uniform1f",
+			},
+		};
+	}, [colors, opacities, totalSize, dotSize, shader]);
 
-  return (
-    <Shader
-      source={`
+	return (
+		<Shader
+			source={`
         precision mediump float;
         in vec2 fragCoord;
 
@@ -181,15 +181,15 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
         void main() {
             vec2 st = fragCoord.xy;
             ${
-              center.includes("x")
-                ? "st.x -= abs(floor((mod(u_resolution.x, u_total_size) - u_dot_size) * 0.5));"
-                : ""
-            }
+							center.includes("x")
+								? "st.x -= abs(floor((mod(u_resolution.x, u_total_size) - u_dot_size) * 0.5));"
+								: ""
+						}
             ${
-              center.includes("y")
-                ? "st.y -= abs(floor((mod(u_resolution.y, u_total_size) - u_dot_size) * 0.5));"
-                : ""
-            }
+							center.includes("y")
+								? "st.y -= abs(floor((mod(u_resolution.y, u_total_size) - u_dot_size) * 0.5));"
+								: ""
+						}
 
             float opacity = step(0.0, st.x);
             opacity *= step(0.0, st.y);
@@ -239,104 +239,104 @@ const DotMatrix: React.FC<DotMatrixProps> = ({
             fragColor = vec4(color, opacity);
             fragColor.rgb *= fragColor.a;
         }`}
-      uniforms={uniforms}
-      reverse={reverse}
-    />
-  );
+			uniforms={uniforms}
+			reverse={reverse}
+		/>
+	);
 };
 
 const ShaderMaterial = ({
-  source,
-  uniforms,
-  reverse,
+	source,
+	uniforms,
+	reverse,
 }: {
-  source: string;
-  uniforms: Uniforms;
-  reverse?: boolean;
+	source: string;
+	uniforms: Uniforms;
+	reverse?: boolean;
 }) => {
-  const { size } = useThree();
-  const ref = useRef<THREE.Mesh>(null);
-  const transitionStartTime = useRef<number | null>(null);
-  const transitionDuration = 0.3; // 300ms transition
+	const { size } = useThree();
+	const ref = useRef<THREE.Mesh>(null);
+	const transitionStartTime = useRef<number | null>(null);
+	const transitionDuration = 0.3; // 300ms transition
 
-  useFrame(({ clock }) => {
-    if (!ref.current) return;
-    const timestamp = clock.getElapsedTime();
+	useFrame(({ clock }) => {
+		if (!ref.current) return;
+		const timestamp = clock.getElapsedTime();
 
-    const material = ref.current.material as THREE.ShaderMaterial;
-    const timeLocation = material.uniforms.u_time;
+		const material = ref.current.material as THREE.ShaderMaterial;
+		const timeLocation = material.uniforms.u_time;
 
-    // Handle smooth transition to reverse
-    const transitionProgressLocation = material.uniforms.u_transition_progress;
-    if (reverse) {
-      if (transitionStartTime.current === null) {
-        transitionStartTime.current = timestamp;
-      }
-      const elapsed = timestamp - transitionStartTime.current;
-      const progress = Math.min(elapsed / transitionDuration, 1);
-      transitionProgressLocation.value = progress;
-    } else {
-      transitionProgressLocation.value = 0;
-      transitionStartTime.current = null;
-    }
+		// Handle smooth transition to reverse
+		const transitionProgressLocation = material.uniforms.u_transition_progress;
+		if (reverse) {
+			if (transitionStartTime.current === null) {
+				transitionStartTime.current = timestamp;
+			}
+			const elapsed = timestamp - transitionStartTime.current;
+			const progress = Math.min(elapsed / transitionDuration, 1);
+			transitionProgressLocation.value = progress;
+		} else {
+			transitionProgressLocation.value = 0;
+			transitionStartTime.current = null;
+		}
 
-    // Always use continuous time to prevent flicker
-    timeLocation.value = timestamp;
-  });
+		// Always use continuous time to prevent flicker
+		timeLocation.value = timestamp;
+	});
 
-  const getUniforms = useCallback(() => {
-    const preparedUniforms: Record<string, { value: unknown; type?: string }> =
-      {};
+	const getUniforms = useCallback(() => {
+		const preparedUniforms: Record<string, { value: unknown; type?: string }> =
+			{};
 
-    for (const uniformName in uniforms) {
-      const uniform = uniforms[uniformName];
+		for (const uniformName in uniforms) {
+			const uniform = uniforms[uniformName];
 
-      switch (uniform.type) {
-        case "uniform1f":
-          preparedUniforms[uniformName] = { value: uniform.value, type: "1f" };
-          break;
-        case "uniform1i":
-          preparedUniforms[uniformName] = { value: uniform.value, type: "1i" };
-          break;
-        case "uniform3f":
-          preparedUniforms[uniformName] = {
-            value: new THREE.Vector3().fromArray(uniform.value as number[]),
-            type: "3f",
-          };
-          break;
-        case "uniform1fv":
-          preparedUniforms[uniformName] = { value: uniform.value, type: "1fv" };
-          break;
-        case "uniform3fv":
-          preparedUniforms[uniformName] = {
-            value: (uniform.value as number[][]).map((v: number[]) =>
-              new THREE.Vector3().fromArray(v)
-            ),
-            type: "3fv",
-          };
-          break;
-        case "uniform2f":
-          preparedUniforms[uniformName] = {
-            value: new THREE.Vector2().fromArray(uniform.value as number[]),
-            type: "2f",
-          };
-          break;
-        default:
-          console.error(`Invalid uniform type for '${uniformName}'.`);
-          break;
-      }
-    }
+			switch (uniform.type) {
+				case "uniform1f":
+					preparedUniforms[uniformName] = { value: uniform.value, type: "1f" };
+					break;
+				case "uniform1i":
+					preparedUniforms[uniformName] = { value: uniform.value, type: "1i" };
+					break;
+				case "uniform3f":
+					preparedUniforms[uniformName] = {
+						value: new THREE.Vector3().fromArray(uniform.value as number[]),
+						type: "3f",
+					};
+					break;
+				case "uniform1fv":
+					preparedUniforms[uniformName] = { value: uniform.value, type: "1fv" };
+					break;
+				case "uniform3fv":
+					preparedUniforms[uniformName] = {
+						value: (uniform.value as number[][]).map((v: number[]) =>
+							new THREE.Vector3().fromArray(v),
+						),
+						type: "3fv",
+					};
+					break;
+				case "uniform2f":
+					preparedUniforms[uniformName] = {
+						value: new THREE.Vector2().fromArray(uniform.value as number[]),
+						type: "2f",
+					};
+					break;
+				default:
+					console.error(`Invalid uniform type for '${uniformName}'.`);
+					break;
+			}
+		}
 
-    preparedUniforms.u_time = { value: 0, type: "1f" };
-    preparedUniforms.u_resolution = {
-      value: new THREE.Vector2(size.width * 2, size.height * 2),
-    };
-    return preparedUniforms;
-  }, [size.width, size.height, uniforms]);
+		preparedUniforms.u_time = { value: 0, type: "1f" };
+		preparedUniforms.u_resolution = {
+			value: new THREE.Vector2(size.width * 2, size.height * 2),
+		};
+		return preparedUniforms;
+	}, [size.width, size.height, uniforms]);
 
-  const material = useMemo(() => {
-    const materialObject = new THREE.ShaderMaterial({
-      vertexShader: `
+	const material = useMemo(() => {
+		const materialObject = new THREE.ShaderMaterial({
+			vertexShader: `
       precision mediump float;
       in vec2 coordinates;
       uniform vec2 u_resolution;
@@ -349,84 +349,84 @@ const ShaderMaterial = ({
         fragCoord.y = u_resolution.y - fragCoord.y;
       }
       `,
-      fragmentShader: source,
-      uniforms: getUniforms(),
-      glslVersion: THREE.GLSL3,
-      blending: THREE.CustomBlending,
-      blendSrc: THREE.SrcAlphaFactor,
-      blendDst: THREE.OneFactor,
-    });
+			fragmentShader: source,
+			uniforms: getUniforms(),
+			glslVersion: THREE.GLSL3,
+			blending: THREE.CustomBlending,
+			blendSrc: THREE.SrcAlphaFactor,
+			blendDst: THREE.OneFactor,
+		});
 
-    return materialObject;
-  }, [source, getUniforms]);
+		return materialObject;
+	}, [source, getUniforms]);
 
-  return (
-    <mesh ref={ref}>
-      <planeGeometry args={[2, 2]} />
-      <primitive object={material} attach="material" />
-    </mesh>
-  );
+	return (
+		<mesh ref={ref}>
+			<planeGeometry args={[2, 2]} />
+			<primitive object={material} attach="material" />
+		</mesh>
+	);
 };
 
 const Shader: React.FC<ShaderProps & { reverse?: boolean }> = ({
-  source,
-  uniforms,
-  reverse,
+	source,
+	uniforms,
+	reverse,
 }) => {
-  return (
-    <Canvas className="absolute inset-0 w-full h-full">
-      <ShaderMaterial source={source} uniforms={uniforms} reverse={reverse} />
-    </Canvas>
-  );
+	return (
+		<Canvas className="absolute inset-0 w-full h-full">
+			<ShaderMaterial source={source} uniforms={uniforms} reverse={reverse} />
+		</Canvas>
+	);
 };
 
 export const AnimatedBackground = React.forwardRef<
-  {
-    startReveal: () => void;
-    startFadeout: () => void;
-  },
-  AnimatedBackgroundProps
+	{
+		startReveal: () => void;
+		startFadeout: () => void;
+	},
+	AnimatedBackgroundProps
 >(({ className }, ref) => {
-  const [animationState, setAnimationState] = React.useState<
-    "idle" | "revealing" | "revealed" | "fading" | "faded"
-  >("idle");
+	const [animationState, setAnimationState] = React.useState<
+		"idle" | "revealing" | "revealed" | "fading" | "faded"
+	>("idle");
 
-  const startReveal = React.useCallback(() => {
-    setAnimationState("revealing");
-    setTimeout(() => setAnimationState("revealed"), 2000); // Adjust based on animation duration
-  }, []);
+	const startReveal = React.useCallback(() => {
+		setAnimationState("revealing");
+		setTimeout(() => setAnimationState("revealed"), 2000); // Adjust based on animation duration
+	}, []);
 
-  const startFadeout = React.useCallback(() => {
-    setAnimationState("fading");
-  }, []);
+	const startFadeout = React.useCallback(() => {
+		setAnimationState("fading");
+	}, []);
 
-  React.useImperativeHandle(ref, () => ({
-    startReveal,
-    startFadeout,
-  }));
+	React.useImperativeHandle(ref, () => ({
+		startReveal,
+		startFadeout,
+	}));
 
-  const shouldShowCanvas =
-    animationState !== "idle" && animationState !== "faded";
-  const isReverse = animationState === "fading";
+	const shouldShowCanvas =
+		animationState !== "idle" && animationState !== "faded";
+	const isReverse = animationState === "fading";
 
-  return (
-    <div className={cn("absolute inset-0 z-0", className)}>
-      {shouldShowCanvas && (
-        <div className="absolute inset-0">
-          <CanvasRevealEffect
-            animationSpeed={isReverse ? 10 : 8}
-            colors={[
-              [249, 127, 39], // #f97f27 brand color
-              [249, 127, 39],
-            ]}
-            dotSize={6}
-            reverse={isReverse}
-          />
-        </div>
-      )}
-      <div className="absolute inset-0 dark:bg-background/70 bg-background/40" />
-    </div>
-  );
+	return (
+		<div className={cn("absolute inset-0 z-0", className)}>
+			{shouldShowCanvas && (
+				<div className="absolute inset-0">
+					<CanvasRevealEffect
+						animationSpeed={isReverse ? 10 : 8}
+						colors={[
+							[249, 127, 39], // #f97f27 brand color
+							[249, 127, 39],
+						]}
+						dotSize={6}
+						reverse={isReverse}
+					/>
+				</div>
+			)}
+			<div className="absolute inset-0 dark:bg-background/70 bg-background/40" />
+		</div>
+	);
 });
 
 AnimatedBackground.displayName = "AnimatedBackground";

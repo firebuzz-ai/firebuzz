@@ -6,30 +6,30 @@ import { AnimatedBackground } from "./animated-background";
 import { Selection } from "./selection";
 
 interface NewUserFlowProps {
-  className?: string;
+	className?: string;
 }
 
 export const NewUserFlow = ({ className }: NewUserFlowProps) => {
-  const animatedBackgroundRef = useRef<{
-    startReveal: () => void;
-    startFadeout: () => void;
-  }>(null);
+	const animatedBackgroundRef = useRef<{
+		startReveal: () => void;
+		startFadeout: () => void;
+	}>(null);
 
-  const handleFadeout = () => {
-    animatedBackgroundRef.current?.startFadeout();
-  };
+	const handleFadeout = () => {
+		animatedBackgroundRef.current?.startFadeout();
+	};
 
-  // Start reveal animation on mount
-  React.useEffect(() => {
-    animatedBackgroundRef.current?.startReveal();
-  }, []);
+	// Start reveal animation on mount
+	React.useEffect(() => {
+		animatedBackgroundRef.current?.startReveal();
+	}, []);
 
-  return (
-    <div
-      className={cn("flex w-[100%] flex-col min-h-screen relative", className)}
-    >
-      <AnimatedBackground ref={animatedBackgroundRef} />
-      <Selection handleFadeout={handleFadeout} />
-    </div>
-  );
+	return (
+		<div
+			className={cn("flex w-[100%] flex-col min-h-screen relative", className)}
+		>
+			<AnimatedBackground ref={animatedBackgroundRef} />
+			<Selection handleFadeout={handleFadeout} />
+		</div>
+	);
 };

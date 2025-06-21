@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
 
 function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+	return twMerge(clsx(inputs));
 }
 
 export { Slot, cn, cva, toast, useForm, useVirtualizer, zodResolver };

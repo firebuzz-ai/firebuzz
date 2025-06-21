@@ -2,5 +2,5 @@ import { subscriptionContext } from "@/components/providers/workspace/subscripti
 import { useContext } from "react";
 
 export const useSubscription = () => {
-  return useContext(subscriptionContext);
+	return useContext(subscriptionContext);
 };

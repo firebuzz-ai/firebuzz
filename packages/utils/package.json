@@ -9,9 +9,7 @@
 	"exports": {
 		".": "./src/index.ts"
 	},
-	"files": [
-		"dist/**"
-	],
+	"files": ["dist/**"],
 	"scripts": {
 		"clean": "rm -rf .turbo && rm -rf node_modules && rm -rf dist",
 		"test": "vitest",

@@ -1,14 +1,14 @@
 import { SubscriptionSettingsTabs } from "@/components/navigation/settings/subscription/tabs";
 
 export default function SubscriptionSettingsLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  return (
-    <div className="flex flex-col flex-1">
-      <SubscriptionSettingsTabs />
-      <div className="flex flex-1">{children}</div>
-    </div>
-  );
+	return (
+		<div className="flex flex-col flex-1">
+			<SubscriptionSettingsTabs />
+			<div className="flex flex-1">{children}</div>
+		</div>
+	);
 }

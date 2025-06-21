@@ -7,6 +7,6 @@ const apiEmail = process.env.CLOUDFLARE_EMAIL;
 if (!apiKey || !apiEmail) throw new Error(ERRORS.ENVS_NOT_INITIALIZED);
 
 export const cloudflare = new Cloudflare({
-  apiKey,
-  apiEmail,
+	apiKey,
+	apiEmail,
 });

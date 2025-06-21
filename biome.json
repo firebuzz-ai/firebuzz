@@ -14,7 +14,8 @@
 			".next",
 			"dist",
 			"_generated",
-			"templates"
+			"templates",
+			"worker-configuration.d.ts"
 		]
 	},
 	"formatter": {
@@ -33,7 +34,8 @@
 			".next",
 			"dist",
 			"_generated",
-			"templates"
+			"templates",
+			"worker-configuration.d.ts"
 		],
 		"rules": {
 			"recommended": true,

@@ -1,10 +1,13 @@
 "use client";
 
 import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { envCloudflarePublic } from "@firebuzz/env";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "@firebuzz/ui/components/ui/avatar";
 import { buttonVariants } from "@firebuzz/ui/components/ui/button";
-import type { ColorPickerColorType } from "@firebuzz/ui/components/ui/color-picker";
-import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";
-import type { IconPickerIconType } from "@firebuzz/ui/components/ui/icon-picker";
 import { ArrowRightIcon, Plus } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import Link from "next/link";
@@ -38,13 +41,20 @@ const header = {
 
 export const WorkspaceList = () => {
 	const { workspaces, changeWorkspace } = useWorkspace();
+	const getWorkspaceInitials = (title: string) => {
+		return title
+			.split(" ")
+			.map((word) => word[0])
+			.join("");
+	};
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
 	return (
 		<motion.div
 			variants={container}
 			initial="hidden"
 			animate="show"
-			className="container mx-auto max-w-2xl py-8"
+			className="container py-8 mx-auto max-w-2xl"
 		>
 			{/* Header */}
 			<motion.div variants={header} className="">
@@ -55,7 +65,7 @@ export const WorkspaceList = () => {
 			</motion.div>
 
 			{/* Workspace List */}
-			<motion.div className="grid grid-cols-1 gap-4 md:grid-cols-2 mt-4">
+			<motion.div className="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2">
 				{workspaces.map((workspace) => (
 					<motion.button
 						key={workspace._id}
@@ -63,15 +73,19 @@ export const WorkspaceList = () => {
 						onClick={() => changeWorkspace(workspace._id)}
 						className={buttonVariants({
 							variant: "outline",
-							className: "flex items-center justify-start text-left h-12",
+							className: "flex justify-start items-center h-12 text-left",
 						})}
 					>
-						<ColoredIconPreview
-							icon={workspace.icon as IconPickerIconType}
-							color={workspace.color as ColorPickerColorType}
-							className="size-9"
-						/>
-						<div className="flex-1 flex items-center justify-between">
+						<Avatar className="w-6 h-6">
+							<AvatarImage
+								src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${workspace.logo}`}
+								alt="Logo preview"
+							/>
+							<AvatarFallback className="text-xs">
+								{getWorkspaceInitials(workspace.title)}
+							</AvatarFallback>
+						</Avatar>
+						<div className="flex flex-1 justify-between items-center">
 							<div>
 								<h3 className="font-semibold">{workspace.title}</h3>
 								<p className="text-xs text-muted-foreground">
@@ -86,13 +100,13 @@ export const WorkspaceList = () => {
 
 			{/* Buttons */}
 			<motion.div
-				className="flex items-center gap-4 w-full justify-between mt-8"
+				className="flex gap-4 justify-between items-center mt-8 w-full"
 				variants={item}
 			>
 				<Link
 					className={buttonVariants({
 						variant: "outline",
-						className: "flex-1 flex items-center justify-center gap-2",
+						className: "flex flex-1 gap-2 justify-center items-center",
 					})}
 					href="/new/workspace"
 				>
@@ -101,7 +115,7 @@ export const WorkspaceList = () => {
 				<Link
 					className={buttonVariants({
 						variant: "outline",
-						className: "flex-1 flex items-center justify-center gap-2",
+						className: "flex flex-1 gap-2 justify-center items-center",
 					})}
 					href="/join/workspace"
 				>

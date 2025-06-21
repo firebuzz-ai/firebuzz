@@ -1,151 +1,151 @@
 "use node";
 
+import { randomUUID } from "node:crypto";
 import { formatUrlWithProtocol, hashString } from "@firebuzz/utils";
 import { generateObject, generateText } from "ai";
 import { ConvexError, v } from "convex/values";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { action, internalAction } from "../../_generated/server";
 import { googleai } from "../../lib/googleai";
 import { ERRORS } from "../../utils/errors";
 
 import type {
-  BatchScrapeStatusResponse,
-  ScrapeResponse,
+	BatchScrapeStatusResponse,
+	ScrapeResponse,
 } from "@mendable/firecrawl-js";
 import { internal } from "../../_generated/api";
 import { r2 } from "../../components/r2";
 import { engineAPIClient } from "../../lib/engine";
 import type { SelectedLink } from "./utils";
 import {
-  categorizeContentLinks,
-  extractBorderRadius,
-  extractColorsFromCSS,
-  extractFaviconUrl,
-  extractFontsFromCSS,
-  extractFooterLinks,
-  extractHeadquartersContact,
-  extractNavigationLinks,
-  extractRelevantCSS,
-  extractSiteLogo,
-  extractSocialLinks,
-  generateThemeFromBrandColors,
-  urlToBase64,
+	categorizeContentLinks,
+	extractBorderRadius,
+	extractColorsFromCSS,
+	extractFaviconUrl,
+	extractFontsFromCSS,
+	extractFooterLinks,
+	extractHeadquartersContact,
+	extractNavigationLinks,
+	extractRelevantCSS,
+	extractSiteLogo,
+	extractSocialLinks,
+	generateThemeFromBrandColors,
+	urlToBase64,
 } from "./utils";
 
 interface DomainValidationResponse {
-  isValid: boolean;
-  isReachable: boolean;
-  message: string;
+	isValid: boolean;
+	isReachable: boolean;
+	message: string;
 }
 
 const USER_AGENT =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
 
 const createResponse = (
-  isValid: boolean,
-  isReachable: boolean,
-  message: string
+	isValid: boolean,
+	isReachable: boolean,
+	message: string,
 ): DomainValidationResponse => ({
-  isValid,
-  isReachable,
-  message,
+	isValid,
+	isReachable,
+	message,
 });
 
 const validateUrlFormat = (
-  domain: string
+	domain: string,
 ): { isValid: boolean; url?: URL; message?: string } => {
-  // Try to format the URL with protocol if missing
-  const formattedUrl = formatUrlWithProtocol(domain);
+	// Try to format the URL with protocol if missing
+	const formattedUrl = formatUrlWithProtocol(domain);
 
-  if (!formattedUrl) {
-    return { isValid: false, message: "Invalid URL format" };
-  }
+	if (!formattedUrl) {
+		return { isValid: false, message: "Invalid URL format" };
+	}
 
-  try {
-    const parsedURL = new URL(formattedUrl);
+	try {
+		const parsedURL = new URL(formattedUrl);
 
-    // Ensure we're using HTTPS for security
-    if (parsedURL.protocol === "http:") {
-      parsedURL.protocol = "https:";
-    }
+		// Ensure we're using HTTPS for security
+		if (parsedURL.protocol === "http:") {
+			parsedURL.protocol = "https:";
+		}
 
-    return { isValid: true, url: parsedURL };
-  } catch {
-    return { isValid: false, message: "Invalid URL format" };
-  }
+		return { isValid: true, url: parsedURL };
+	} catch {
+		return { isValid: false, message: "Invalid URL format" };
+	}
 };
 
 const checkDomainReachability = async (
-  url: URL
+	url: URL,
 ): Promise<{ isReachable: boolean; message: string }> => {
-  try {
-    const response = await fetch(url.toString(), {
-      headers: { "User-Agent": USER_AGENT },
-      method: "HEAD",
-      redirect: "follow",
-      // Add timeout to prevent hanging requests
-      signal: AbortSignal.timeout(5000), // 5 second timeout
-    });
+	try {
+		const response = await fetch(url.toString(), {
+			headers: { "User-Agent": USER_AGENT },
+			method: "HEAD",
+			redirect: "follow",
+			// Add timeout to prevent hanging requests
+			signal: AbortSignal.timeout(5000), // 5 second timeout
+		});
 
-    if (!response.ok) {
-      return {
-        isReachable: false,
-        message: `Domain returned status code ${response.status}`,
-      };
-    }
+		if (!response.ok) {
+			return {
+				isReachable: false,
+				message: `Domain returned status code ${response.status}`,
+			};
+		}
 
-    return {
-      isReachable: true,
-      message: "Domain is reachable",
-    };
-  } catch (error) {
-    console.error("Domain reachability check failed:", error);
-    return {
-      isReachable: false,
-      message: "Unable to reach domain",
-    };
-  }
+		return {
+			isReachable: true,
+			message: "Domain is reachable",
+		};
+	} catch (error) {
+		console.error("Domain reachability check failed:", error);
+		return {
+			isReachable: false,
+			message: "Unable to reach domain",
+		};
+	}
 };
 
 export const checkDomain = action({
-  args: {
-    domain: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const { domain } = args;
+	args: {
+		domain: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const { domain } = args;
 
-    // Early validation for empty domain
-    if (!domain.trim()) {
-      return createResponse(false, false, "Domain cannot be empty");
-    }
+		// Early validation for empty domain
+		if (!domain.trim()) {
+			return createResponse(false, false, "Domain cannot be empty");
+		}
 
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      throw new ConvexError(ERRORS.UNAUTHORIZED);
-    }
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
 
-    // 1. Validate URL Format
-    const urlValidation = validateUrlFormat(domain);
-    if (!urlValidation.isValid || !urlValidation.url) {
-      return createResponse(
-        false,
-        false,
-        urlValidation.message || "Invalid URL format"
-      );
-    }
+		// 1. Validate URL Format
+		const urlValidation = validateUrlFormat(domain);
+		if (!urlValidation.isValid || !urlValidation.url) {
+			return createResponse(
+				false,
+				false,
+				urlValidation.message || "Invalid URL format",
+			);
+		}
 
-    const parsedURL = urlValidation.url;
+		const parsedURL = urlValidation.url;
 
-    // 2. Check if domain is reachable
-    const reachabilityCheck = await checkDomainReachability(parsedURL);
+		// 2. Check if domain is reachable
+		const reachabilityCheck = await checkDomainReachability(parsedURL);
 
-    return createResponse(
-      true,
-      reachabilityCheck.isReachable,
-      reachabilityCheck.message
-    );
-  },
+		return createResponse(
+			true,
+			reachabilityCheck.isReachable,
+			reachabilityCheck.message,
+		);
+	},
 });
 
 /**
@@ -153,119 +153,119 @@ export const checkDomain = action({
  * Note: OpenAI supports standard Zod schemas
  */
 const linkSelectionSchema = z.object({
-  selectedLinks: z
-    .array(
-      z.object({
-        text: z.string().describe("Clean, descriptive title for the link"),
-        url: z.string().describe("Full URL of the link"),
-        category: z
-          .enum(["navigation", "footer", "content"])
-          .describe("Link category based on DOM position"),
-        relevanceScore: z
-          .number()
-          .min(1)
-          .max(10)
-          .describe("Business relevance score for OnboardingData extraction"),
-        description: z
-          .string()
-          .describe(
-            "Why this page is valuable for extracting brand, features, audiences, etc."
-          ),
-        selected: z.boolean().describe("Always true for selected links"),
-      })
-    )
-    .length(4)
-    .describe(
-      "Exactly 4 most relevant links for business data extraction (excluding homepage)"
-    ),
+	selectedLinks: z
+		.array(
+			z.object({
+				text: z.string().describe("Clean, descriptive title for the link"),
+				url: z.string().describe("Full URL of the link"),
+				category: z
+					.enum(["navigation", "footer", "content"])
+					.describe("Link category based on DOM position"),
+				relevanceScore: z
+					.number()
+					.min(1)
+					.max(10)
+					.describe("Business relevance score for OnboardingData extraction"),
+				description: z
+					.string()
+					.describe(
+						"Why this page is valuable for extracting brand, features, audiences, etc.",
+					),
+				selected: z.boolean().describe("Always true for selected links"),
+			}),
+		)
+		.length(4)
+		.describe(
+			"Exactly 4 most relevant links for business data extraction (excluding homepage)",
+		),
 });
 
 export const classifyLinks = internalAction({
-  args: {
-    domain: v.string(),
-  },
-  handler: async (_ctx, args): Promise<string[]> => {
-    const { domain } = args;
-    const key = `firecrawl-${hashString(
-      JSON.stringify({
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-      })
-    )}`;
+	args: {
+		domain: v.string(),
+	},
+	handler: async (_ctx, args): Promise<string[]> => {
+		const { domain } = args;
+		const key = `firecrawl-${hashString(
+			JSON.stringify({
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+			}),
+		)}`;
 
-    // Create homepage link (always first in final selection)
-    const homepageLink: SelectedLink = {
-      text: "Homepage",
-      url: domain,
-      selected: true,
-      category: "content",
-      relevanceScore: 10,
-      description:
-        "Homepage - primary source of business information and brand overview",
-    };
+		// Create homepage link (always first in final selection)
+		const homepageLink: SelectedLink = {
+			text: "Homepage",
+			url: domain,
+			selected: true,
+			category: "content",
+			relevanceScore: 10,
+			description:
+				"Homepage - primary source of business information and brand overview",
+		};
 
-    // Phase 0: Get Scrape Data From KV
-    let scrapeData: ScrapeResponse | null;
-    try {
-      const kvResponse = await engineAPIClient.kv.assets.$get({
-        query: {
-          key,
-          type: "json",
-        },
-      });
+		// Phase 0: Get Scrape Data From KV
+		let scrapeData: ScrapeResponse | null;
+		try {
+			const kvResponse = await engineAPIClient.kv.assets.$get({
+				query: {
+					key,
+					type: "json",
+				},
+			});
 
-      const kvData = await kvResponse.json();
+			const kvData = await kvResponse.json();
 
-      if (!kvData?.success) {
-        throw new ConvexError("Scrape data is not found in KV.");
-      }
+			if (!kvData?.success) {
+				throw new ConvexError("Scrape data is not found in KV.");
+			}
 
-      scrapeData = kvData.data.value as unknown as ScrapeResponse;
-    } catch (error) {
-      console.log(error);
-      throw error; // Re-throw Error
-    }
+			scrapeData = kvData.data.value as unknown as ScrapeResponse;
+		} catch (error) {
+			console.log(error);
+			throw error; // Re-throw Error
+		}
 
-    if (!scrapeData) throw new ConvexError("Scrape data is not found.");
+		if (!scrapeData) throw new ConvexError("Scrape data is not found.");
 
-    const html = scrapeData.rawHtml ?? scrapeData.html;
-    const firecrawlLinks = scrapeData.links ?? [];
+		const html = scrapeData.rawHtml ?? scrapeData.html;
+		const firecrawlLinks = scrapeData.links ?? [];
 
-    if (!html) throw new ConvexError("HTML is not found in the scrape data.");
+		if (!html) throw new ConvexError("HTML is not found in the scrape data.");
 
-    // Phase 1: DOM-based navigation link extraction
-    const navLinks = extractNavigationLinks(html, domain);
+		// Phase 1: DOM-based navigation link extraction
+		const navLinks = extractNavigationLinks(html, domain);
 
-    // Phase 2: DOM-based footer link extraction
-    const footerLinks = extractFooterLinks(html, domain);
+		// Phase 2: DOM-based footer link extraction
+		const footerLinks = extractFooterLinks(html, domain);
 
-    // Phase 3: Content link categorization from Firecrawl
-    const contentLinks = categorizeContentLinks(
-      firecrawlLinks ?? [],
-      domain,
-      navLinks,
-      footerLinks
-    );
+		// Phase 3: Content link categorization from Firecrawl
+		const contentLinks = categorizeContentLinks(
+			firecrawlLinks ?? [],
+			domain,
+			navLinks,
+			footerLinks,
+		);
 
-    // Combine all categorized links for AI analysis
-    const allCategorizedLinks = [...navLinks, ...footerLinks, ...contentLinks];
+		// Combine all categorized links for AI analysis
+		const allCategorizedLinks = [...navLinks, ...footerLinks, ...contentLinks];
 
-    // Early return if no links found
-    if (allCategorizedLinks.length === 0) {
-      return [homepageLink].map((link) => link.url);
-    }
+		// Early return if no links found
+		if (allCategorizedLinks.length === 0) {
+			return [homepageLink].map((link) => link.url);
+		}
 
-    // Phase 4: AI-powered link selection with OpenAI GPT-4
-    // Limit links for AI analysis to prevent token overflow
-    const linksToAnalyze = allCategorizedLinks.slice(0, 100);
+		// Phase 4: AI-powered link selection with OpenAI GPT-4
+		// Limit links for AI analysis to prevent token overflow
+		const linksToAnalyze = allCategorizedLinks.slice(0, 100);
 
-    try {
-      const result = await generateObject({
-        model: googleai("gemini-2.5-flash-preview-05-20"),
-        schema: linkSelectionSchema,
-        prompt: `
+		try {
+			const result = await generateObject({
+				model: googleai("gemini-2.5-flash-preview-05-20"),
+				schema: linkSelectionSchema,
+				prompt: `
           You are an AI assistant specialized in selecting the most valuable pages for comprehensive business data extraction.
           
           Your goal is to select 4 pages that will provide the most complete information for filling this business data structure:
@@ -279,12 +279,12 @@ export const classifyLinks = internalAction({
           
           ANALYZE THESE CATEGORIZED LINKS FROM ${domain}:
           ${linksToAnalyze
-            .map(
-              (link, index) =>
-                `${index + 1}. [${link.category.toUpperCase()}] ${link.url}
-               Title: ${link.text}`
-            )
-            .join("\n")}
+						.map(
+							(link, index) =>
+								`${index + 1}. [${link.category.toUpperCase()}] ${link.url}
+               Title: ${link.text}`,
+						)
+						.join("\n")}
           
           SELECTION STRATEGY (prioritize in this order):
           1. **Contact/About Pages** (Score 9-10) - Essential for brand info, contact details, company story
@@ -314,115 +314,115 @@ export const classifyLinks = internalAction({
           - Provide clear reasoning for why each page is valuable for business data extraction
           - Mark all selected links as selected: true
         `,
-      });
+			});
 
-      const { object } = result;
+			const { object } = result;
 
-      // Sort selected links by relevance score (highest first)
-      const sortedSelectedLinks = object.selectedLinks.sort(
-        (a, b) => b.relevanceScore - a.relevanceScore
-      );
+			// Sort selected links by relevance score (highest first)
+			const sortedSelectedLinks = object.selectedLinks.sort(
+				(a, b) => b.relevanceScore - a.relevanceScore,
+			);
 
-      // Return homepage first, followed by up to 4 AI-selected links
-      const finalLinks = [homepageLink, ...sortedSelectedLinks];
+			// Return homepage first, followed by up to 4 AI-selected links
+			const finalLinks = [homepageLink, ...sortedSelectedLinks];
 
-      return finalLinks.map((link) => link.url);
-    } catch {
-      console.error("❌ AI selection failed, using fallback strategy");
+			return finalLinks.map((link) => link.url);
+		} catch {
+			console.error("❌ AI selection failed, using fallback strategy");
 
-      // Fallback: Select top categorized links by category priority
-      const fallbackSelected = allCategorizedLinks
-        .sort((a, b) => {
-          // Prioritize navigation > footer > content
-          const categoryPriority: Record<string, number> = {
-            navigation: 3,
-            footer: 2,
-            content: 1,
-            cta: 1,
-          };
-          return categoryPriority[b.category] - categoryPriority[a.category];
-        })
-        .slice(0, 4)
-        .map((link) => ({ ...link, selected: true, relevanceScore: 6 }));
+			// Fallback: Select top categorized links by category priority
+			const fallbackSelected = allCategorizedLinks
+				.sort((a, b) => {
+					// Prioritize navigation > footer > content
+					const categoryPriority: Record<string, number> = {
+						navigation: 3,
+						footer: 2,
+						content: 1,
+						cta: 1,
+					};
+					return categoryPriority[b.category] - categoryPriority[a.category];
+				})
+				.slice(0, 4)
+				.map((link) => ({ ...link, selected: true, relevanceScore: 6 }));
 
-      return [homepageLink, ...fallbackSelected].map((link) => link.url);
-    }
-  },
+			return [homepageLink, ...fallbackSelected].map((link) => link.url);
+		}
+	},
 });
 
 export const generateBrandData = internalAction({
-  args: {
-    domain: v.string(),
-    urls: v.array(v.string()),
-  },
-  handler: async (ctx, { domain, urls }) => {
-    // 1) Get Homepage Scrape Data
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+	args: {
+		domain: v.string(),
+		urls: v.array(v.string()),
+	},
+	handler: async (ctx, { domain, urls }) => {
+		// 1) Get Homepage Scrape Data
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    // 2) Get Pages Scrape Data
-    const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.batchScrapeUrls,
-      {
-        urls,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        waitFor: 1000,
-      }
-    );
+		// 2) Get Pages Scrape Data
+		const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.batchScrapeUrls,
+			{
+				urls,
+				formats: ["markdown"],
+				onlyMainContent: true,
+				waitFor: 1000,
+			},
+		);
 
-    if (typeof pages === "string" || typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof pages === "string" || typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    const allPagesWithMarkdown: {
-      url: string;
-      markdown: string;
-      metadata?: Record<string, unknown>;
-    }[] = [
-      {
-        url: domain,
-        markdown: homepage.markdown ?? "",
-        metadata: homepage.metadata ?? {},
-      },
-      ...pages.data
-        .filter((item) => Boolean(item.url) && Boolean(item.markdown))
-        .map((item) => ({
-          url: item.url ?? "",
-          markdown: item.markdown ?? "",
-        })),
-    ];
+		const allPagesWithMarkdown: {
+			url: string;
+			markdown: string;
+			metadata?: Record<string, unknown>;
+		}[] = [
+			{
+				url: domain,
+				markdown: homepage.markdown ?? "",
+				metadata: homepage.metadata ?? {},
+			},
+			...pages.data
+				.filter((item) => Boolean(item.url) && Boolean(item.markdown))
+				.map((item) => ({
+					url: item.url ?? "",
+					markdown: item.markdown ?? "",
+				})),
+		];
 
-    try {
-      const brandData = await generateObject({
-        model: googleai("gemini-2.5-flash-preview-05-20"),
-        schema: z.object({
-          brandName: z.string().describe("The name of the brand"),
-          brandDescription: z
-            .string()
-            .describe(
-              "The description of the brand. It should be a short description of the brand and its purpose."
-            ),
-          brandPersona: z
-            .string()
-            .describe(
-              "The persona of the brand to understand how it speaks, its tone, and its voice, values, mission etc."
-            ),
-        }),
-        prompt: `
+		try {
+			const brandData = await generateObject({
+				model: googleai("gemini-2.5-flash-preview-05-20"),
+				schema: z.object({
+					brandName: z.string().describe("The name of the brand"),
+					brandDescription: z
+						.string()
+						.describe(
+							"The description of the brand. It should be a short description of the brand and its purpose.",
+						),
+					brandPersona: z
+						.string()
+						.describe(
+							"The persona of the brand to understand how it speaks, its tone, and its voice, values, mission etc.",
+						),
+				}),
+				prompt: `
         You are a brand expert. You are given a list of URLs and it's content that are related to a brand.
         You need to generate a brand data based on the content of the URLs.
         <urls>
         ${allPagesWithMarkdown.map((item) => {
-          return `
+					return `
           <url>
           ${item.url}
           </url>
@@ -433,81 +433,81 @@ export const generateBrandData = internalAction({
           ${JSON.stringify(item.metadata)}
           </metadata>
           `;
-        })}
+				})}
         </urls>
         `,
-      });
+			});
 
-      return brandData.object;
-    } catch (error) {
-      console.error(error);
-      throw new ConvexError("Failed to generate brand data");
-    }
-  },
+			return brandData.object;
+		} catch (error) {
+			console.error(error);
+			throw new ConvexError("Failed to generate brand data");
+		}
+	},
 });
 
 export const generateBrandTheme = internalAction({
-  args: {
-    domain: v.string(),
-  },
-  handler: async (ctx, args) => {
-    const { domain } = args;
+	args: {
+		domain: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const { domain } = args;
 
-    // 1) Get Homepage Scrape Data
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+		// 1) Get Homepage Scrape Data
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    if (typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    const html = homepage.rawHtml ?? homepage.html;
-    const screenshotUrl = homepage.screenshot;
+		const html = homepage.rawHtml ?? homepage.html;
+		const screenshotUrl = homepage.screenshot;
 
-    if (!html) {
-      throw new ConvexError("HTML is not found in the scrape data.");
-    }
+		if (!html) {
+			throw new ConvexError("HTML is not found in the scrape data.");
+		}
 
-    try {
-      // Step 1: Extract and preprocess CSS
-      const extractedCSS = extractRelevantCSS(html);
+		try {
+			// Step 1: Extract and preprocess CSS
+			const extractedCSS = extractRelevantCSS(html);
 
-      // Step 2: Analyze screenshot with enhanced guidance (if provided)
-      let screenshotAnalysis = "";
-      if (screenshotUrl) {
-        try {
-          // Handle screenshot format (URL vs base64)
-          let processedScreenshot = screenshotUrl;
-          if (screenshotUrl.startsWith("http")) {
-            const base64Data = await urlToBase64(screenshotUrl);
-            if (!base64Data) {
-              throw new Error("Failed to convert screenshot URL to base64");
-            }
-            processedScreenshot = base64Data;
-          }
+			// Step 2: Analyze screenshot with enhanced guidance (if provided)
+			let screenshotAnalysis = "";
+			if (screenshotUrl) {
+				try {
+					// Handle screenshot format (URL vs base64)
+					let processedScreenshot = screenshotUrl;
+					if (screenshotUrl.startsWith("http")) {
+						const base64Data = await urlToBase64(screenshotUrl);
+						if (!base64Data) {
+							throw new Error("Failed to convert screenshot URL to base64");
+						}
+						processedScreenshot = base64Data;
+					}
 
-          // Remove data URL prefix if present
-          if (processedScreenshot.startsWith("data:image")) {
-            processedScreenshot = processedScreenshot.split(",")[1];
-          }
+					// Remove data URL prefix if present
+					if (processedScreenshot.startsWith("data:image")) {
+						processedScreenshot = processedScreenshot.split(",")[1];
+					}
 
-          const visualAnalysis = await generateText({
-            model: googleai("gemini-2.5-flash-preview-05-20"),
-            messages: [
-              {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: `Analyze this website homepage screenshot to extract precise design elements:
+					const visualAnalysis = await generateText({
+						model: googleai("gemini-2.5-flash-preview-05-20"),
+						messages: [
+							{
+								role: "user",
+								content: [
+									{
+										type: "text",
+										text: `Analyze this website homepage screenshot to extract precise design elements:
 
 **COLOR EXTRACTION STRATEGY:**
 1. **Primary Color**: Look for the most prominent brand color used in:
@@ -552,66 +552,66 @@ export const generateBrandTheme = internalAction({
 - Overall aesthetic: Modern/minimal, traditional, playful, professional
 
 Be specific about hex color values you can observe and exact font names.`,
-                  },
-                  {
-                    type: "image",
-                    image: `data:image/png;base64,${processedScreenshot}`,
-                  },
-                ],
-              },
-            ],
-          });
+									},
+									{
+										type: "image",
+										image: `data:image/png;base64,${processedScreenshot}`,
+									},
+								],
+							},
+						],
+					});
 
-          screenshotAnalysis = visualAnalysis.text;
-        } catch (error) {
-          console.error("❌ Screenshot analysis failed:", error);
-          screenshotAnalysis =
-            "Screenshot analysis failed - using CSS analysis only.";
-        }
-      } else {
-        screenshotAnalysis =
-          "No screenshot provided - using CSS analysis only.";
-      }
+					screenshotAnalysis = visualAnalysis.text;
+				} catch (error) {
+					console.error("❌ Screenshot analysis failed:", error);
+					screenshotAnalysis =
+						"Screenshot analysis failed - using CSS analysis only.";
+				}
+			} else {
+				screenshotAnalysis =
+					"No screenshot provided - using CSS analysis only.";
+			}
 
-      // Step 3: Generate theme using AI analysis
-      const aiThemeSchema = z.object({
-        colors: z.object({
-          primary: z.string().describe("Primary brand color in hex format"),
-          secondary: z.string().describe("Secondary color in hex format"),
-          accent: z.string().describe("Accent color in hex format"),
-        }),
-        radius: z
-          .string()
-          .describe("Border radius in rem (e.g., '0.5rem', '0.75rem', '1rem')"),
-        fonts: z
-          .array(
-            z.object({
-              family: z
-                .enum(["sans", "serif", "mono"])
-                .describe("Font family type"),
-              name: z
-                .string()
-                .describe(
-                  "Font name (e.g., 'Inter', 'Georgia', 'JetBrains Mono')"
-                ),
-              type: z
-                .enum(["google", "system", "custom"])
-                .describe("Font type"),
-            })
-          )
-          .length(3)
-          .describe(
-            "Exactly 3 fonts: one for each family type (sans, serif, mono)"
-          ),
-      });
+			// Step 3: Generate theme using AI analysis
+			const aiThemeSchema = z.object({
+				colors: z.object({
+					primary: z.string().describe("Primary brand color in hex format"),
+					secondary: z.string().describe("Secondary color in hex format"),
+					accent: z.string().describe("Accent color in hex format"),
+				}),
+				radius: z
+					.string()
+					.describe("Border radius in rem (e.g., '0.5rem', '0.75rem', '1rem')"),
+				fonts: z
+					.array(
+						z.object({
+							family: z
+								.enum(["sans", "serif", "mono"])
+								.describe("Font family type"),
+							name: z
+								.string()
+								.describe(
+									"Font name (e.g., 'Inter', 'Georgia', 'JetBrains Mono')",
+								),
+							type: z
+								.enum(["google", "system", "custom"])
+								.describe("Font type"),
+						}),
+					)
+					.length(3)
+					.describe(
+						"Exactly 3 fonts: one for each family type (sans, serif, mono)",
+					),
+			});
 
-      let aiGeneratedTheme: z.infer<typeof aiThemeSchema>;
+			let aiGeneratedTheme: z.infer<typeof aiThemeSchema>;
 
-      try {
-        const themeResult = await generateObject({
-          model: googleai("gemini-2.5-flash-preview-05-20"),
-          schema: aiThemeSchema,
-          prompt: `You are an expert UI/UX designer. Create a brand theme by analyzing the visual screenshot and extracted CSS data.
+			try {
+				const themeResult = await generateObject({
+					model: googleai("gemini-2.5-flash-preview-05-20"),
+					schema: aiThemeSchema,
+					prompt: `You are an expert UI/UX designer. Create a brand theme by analyzing the visual screenshot and extracted CSS data.
 
 **PRIORITY: Visual Screenshot Analysis**
 ${screenshotAnalysis}
@@ -651,570 +651,570 @@ Brand Domain: ${domain}
 - Popular choices: Inter/Roboto (sans), Georgia/Merriweather (serif), JetBrains Mono/Fira Code (mono)
 
 Extract accurate values prioritizing the visual analysis over CSS data when available.`,
-        });
+				});
 
-        aiGeneratedTheme = themeResult.object;
-      } catch (error) {
-        console.error(
-          "❌ AI theme generation failed, using enhanced fallback:",
-          error
-        );
+				aiGeneratedTheme = themeResult.object;
+			} catch (error) {
+				console.error(
+					"❌ AI theme generation failed, using enhanced fallback:",
+					error,
+				);
 
-        // Enhanced fallback using improved extraction
-        const extractedColors = extractColorsFromCSS(extractedCSS);
-        const extractedFonts = extractFontsFromCSS(extractedCSS);
-        const extractedRadius = extractBorderRadius(extractedCSS);
+				// Enhanced fallback using improved extraction
+				const extractedColors = extractColorsFromCSS(extractedCSS);
+				const extractedFonts = extractFontsFromCSS(extractedCSS);
+				const extractedRadius = extractBorderRadius(extractedCSS);
 
-        aiGeneratedTheme = {
-          colors: {
-            primary: extractedColors.primaryColor,
-            secondary: extractedColors.secondaryColor,
-            accent: extractedColors.accentColor,
-          },
-          radius: extractedRadius,
-          fonts: [
-            {
-              family: "sans" as const,
-              name: extractedFonts.sansFont,
-              type: "google" as const,
-            },
-            {
-              family: "serif" as const,
-              name: extractedFonts.serifFont,
-              type: "google" as const,
-            },
-            {
-              family: "mono" as const,
-              name: extractedFonts.monoFont,
-              type: "google" as const,
-            },
-          ],
-        };
-      }
+				aiGeneratedTheme = {
+					colors: {
+						primary: extractedColors.primaryColor,
+						secondary: extractedColors.secondaryColor,
+						accent: extractedColors.accentColor,
+					},
+					radius: extractedRadius,
+					fonts: [
+						{
+							family: "sans" as const,
+							name: extractedFonts.sansFont,
+							type: "google" as const,
+						},
+						{
+							family: "serif" as const,
+							name: extractedFonts.serifFont,
+							type: "google" as const,
+						},
+						{
+							family: "mono" as const,
+							name: extractedFonts.monoFont,
+							type: "google" as const,
+						},
+					],
+				};
+			}
 
-      // Step 4: Generate complete theme objects from all brand colors
-      const lightTheme = generateThemeFromBrandColors(
-        aiGeneratedTheme.colors.primary,
-        aiGeneratedTheme.colors.secondary,
-        aiGeneratedTheme.colors.accent,
-        true
-      );
-      const darkTheme = generateThemeFromBrandColors(
-        aiGeneratedTheme.colors.primary,
-        aiGeneratedTheme.colors.secondary,
-        aiGeneratedTheme.colors.accent,
-        false
-      );
+			// Step 4: Generate complete theme objects from all brand colors
+			const lightTheme = generateThemeFromBrandColors(
+				aiGeneratedTheme.colors.primary,
+				aiGeneratedTheme.colors.secondary,
+				aiGeneratedTheme.colors.accent,
+				true,
+			);
+			const darkTheme = generateThemeFromBrandColors(
+				aiGeneratedTheme.colors.primary,
+				aiGeneratedTheme.colors.secondary,
+				aiGeneratedTheme.colors.accent,
+				false,
+			);
 
-      // Create complete theme object matching the schema
-      const completeTheme = {
-        lightTheme: {
-          ...lightTheme,
-          radius: aiGeneratedTheme.radius,
-        },
-        darkTheme,
-        fonts: aiGeneratedTheme.fonts,
-      };
+			// Create complete theme object matching the schema
+			const completeTheme = {
+				lightTheme: {
+					...lightTheme,
+					radius: aiGeneratedTheme.radius,
+				},
+				darkTheme,
+				fonts: aiGeneratedTheme.fonts,
+			};
 
-      return completeTheme;
-    } catch (error) {
-      console.error("❌ Brand theme generation error:", error);
+			return completeTheme;
+		} catch (error) {
+			console.error("❌ Brand theme generation error:", error);
 
-      // Ultimate fallback theme with complete theme objects
-      const fallbackPrimary = "#3B82F6";
-      const fallbackSecondary = "#64748B";
-      const fallbackAccent = "#F59E0B";
-      const fallbackLightTheme = generateThemeFromBrandColors(
-        fallbackPrimary,
-        fallbackSecondary,
-        fallbackAccent,
-        true
-      );
-      const fallbackDarkTheme = generateThemeFromBrandColors(
-        fallbackPrimary,
-        fallbackSecondary,
-        fallbackAccent,
-        false
-      );
+			// Ultimate fallback theme with complete theme objects
+			const fallbackPrimary = "#3B82F6";
+			const fallbackSecondary = "#64748B";
+			const fallbackAccent = "#F59E0B";
+			const fallbackLightTheme = generateThemeFromBrandColors(
+				fallbackPrimary,
+				fallbackSecondary,
+				fallbackAccent,
+				true,
+			);
+			const fallbackDarkTheme = generateThemeFromBrandColors(
+				fallbackPrimary,
+				fallbackSecondary,
+				fallbackAccent,
+				false,
+			);
 
-      const fallbackTheme = {
-        lightTheme: {
-          ...fallbackLightTheme,
-          radius: "0.5rem",
-        },
-        darkTheme: fallbackDarkTheme,
-        fonts: [
-          {
-            family: "sans" as const,
-            name: "Inter",
-            type: "google" as const,
-          },
-          {
-            family: "serif" as const,
-            name: "Georgia",
-            type: "system" as const,
-          },
-          {
-            family: "mono" as const,
-            name: "JetBrains Mono",
-            type: "google" as const,
-          },
-        ],
-      };
+			const fallbackTheme = {
+				lightTheme: {
+					...fallbackLightTheme,
+					radius: "0.5rem",
+				},
+				darkTheme: fallbackDarkTheme,
+				fonts: [
+					{
+						family: "sans" as const,
+						name: "Inter",
+						type: "google" as const,
+					},
+					{
+						family: "serif" as const,
+						name: "Georgia",
+						type: "system" as const,
+					},
+					{
+						family: "mono" as const,
+						name: "JetBrains Mono",
+						type: "google" as const,
+					},
+				],
+			};
 
-      return fallbackTheme;
-    }
-  },
+			return fallbackTheme;
+		}
+	},
 });
 
 export const findAndUploadSiteLogo = internalAction({
-  args: {
-    domain: v.string(),
-    projectId: v.id("projects"),
-    workspaceId: v.id("workspaces"),
-    createdBy: v.id("users"),
-  },
-  handler: async (
-    ctx,
-    { domain, projectId, workspaceId, createdBy }
-  ): Promise<string | null> => {
-    // 1) Get Homepage Scrape Data (Returns from KV)
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+	args: {
+		domain: v.string(),
+		projectId: v.id("projects"),
+		workspaceId: v.id("workspaces"),
+		createdBy: v.id("users"),
+	},
+	handler: async (
+		ctx,
+		{ domain, projectId, workspaceId, createdBy },
+	): Promise<string | null> => {
+		// 1) Get Homepage Scrape Data (Returns from KV)
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    if (typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    const html = homepage.rawHtml ?? homepage.html;
+		const html = homepage.rawHtml ?? homepage.html;
 
-    if (!html) {
-      throw new ConvexError("HTML is not found in the scrape data.");
-    }
+		if (!html) {
+			throw new ConvexError("HTML is not found in the scrape data.");
+		}
 
-    const logoUrl = extractSiteLogo(html, domain);
+		const logoUrl = extractSiteLogo(html, domain);
 
-    if (!logoUrl) {
-      return null;
-    }
+		if (!logoUrl) {
+			return null;
+		}
 
-    const key = `${workspaceId}/${projectId}/${randomUUID()}`;
+		const key = `${workspaceId}/${projectId}/${randomUUID()}`;
 
-    try {
-      // Check if the URL is a data URL (like data:image/svg+xml;base64,...)
-      if (logoUrl.startsWith("data:")) {
-        // Handle data URLs directly
-        const [mimeInfo, base64Data] = logoUrl.split(",");
+		try {
+			// Check if the URL is a data URL (like data:image/svg+xml;base64,...)
+			if (logoUrl.startsWith("data:")) {
+				// Handle data URLs directly
+				const [mimeInfo, base64Data] = logoUrl.split(",");
 
-        if (!base64Data) {
-          throw new ConvexError("Invalid data URL format");
-        }
+				if (!base64Data) {
+					throw new ConvexError("Invalid data URL format");
+				}
 
-        // Extract MIME type from data URL
-        const mimeTypeMatch = mimeInfo.match(/data:([^;]+)/);
-        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/svg+xml";
+				// Extract MIME type from data URL
+				const mimeTypeMatch = mimeInfo.match(/data:([^;]+)/);
+				const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/svg+xml";
 
-        // Convert base64 to buffer
-        const buffer = Buffer.from(base64Data, "base64");
-        const blob = new Blob([buffer], { type: mimeType });
+				// Convert base64 to buffer
+				const buffer = Buffer.from(base64Data, "base64");
+				const blob = new Blob([buffer], { type: mimeType });
 
-        await r2.store(ctx, blob, { key, type: mimeType });
-        return key;
-      }
+				await r2.store(ctx, blob, { key, type: mimeType });
+				return key;
+			}
 
-      // Handle regular URLs
-      const response = await fetch(logoUrl);
+			// Handle regular URLs
+			const response = await fetch(logoUrl);
 
-      if (!response.ok) {
-        throw new ConvexError(`Failed to fetch logo: ${response.status}`);
-      }
+			if (!response.ok) {
+				throw new ConvexError(`Failed to fetch logo: ${response.status}`);
+			}
 
-      const imageBuffer = await response.arrayBuffer();
-      const contentType = response.headers.get("content-type") || "image/png";
-      const extension = contentType.split("/")[1];
-      const fileName = `logo.${extension}`;
-      const imageBlob = new Blob([imageBuffer], { type: contentType });
+			const imageBuffer = await response.arrayBuffer();
+			const contentType = response.headers.get("content-type") || "image/png";
+			const extension = contentType.split("/")[1];
+			const fileName = `logo.${extension}`;
+			const imageBlob = new Blob([imageBuffer], { type: contentType });
 
-      await r2.store(ctx, imageBlob, { key, type: contentType });
+			await r2.store(ctx, imageBlob, { key, type: contentType });
 
-      // Create Media
-      await ctx.runMutation(
-        internal.collections.storage.media.mutations.createInternal,
-        {
-          key,
-          name: fileName,
-          contentType,
-          size: imageBuffer.byteLength,
-          type: "image",
-          workspaceId,
-          projectId,
-          createdBy,
-          source: "uploaded",
-        }
-      );
+			// Create Media
+			await ctx.runMutation(
+				internal.collections.storage.media.mutations.createInternal,
+				{
+					key,
+					name: fileName,
+					contentType,
+					size: imageBuffer.byteLength,
+					type: "image",
+					workspaceId,
+					projectId,
+					createdBy,
+					source: "uploaded",
+				},
+			);
 
-      return key;
-    } catch (error) {
-      console.error("Failed to upload logo:", error);
-      return null;
-    }
-  },
+			return key;
+		} catch (error) {
+			console.error("Failed to upload logo:", error);
+			return null;
+		}
+	},
 });
 
 export const findAndUploadFavicon = internalAction({
-  args: {
-    domain: v.string(),
-    projectId: v.id("projects"),
-    workspaceId: v.id("workspaces"),
-    createdBy: v.id("users"),
-  },
-  handler: async (
-    ctx,
-    { domain, projectId, workspaceId, createdBy }
-  ): Promise<string | null> => {
-    // 1) Get Homepage Scrape Data (Returns from KV)
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+	args: {
+		domain: v.string(),
+		projectId: v.id("projects"),
+		workspaceId: v.id("workspaces"),
+		createdBy: v.id("users"),
+	},
+	handler: async (
+		ctx,
+		{ domain, projectId, workspaceId, createdBy },
+	): Promise<string | null> => {
+		// 1) Get Homepage Scrape Data (Returns from KV)
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    if (typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    const html = homepage.rawHtml ?? homepage.html;
+		const html = homepage.rawHtml ?? homepage.html;
 
-    if (!html) {
-      throw new ConvexError("HTML is not found in the scrape data.");
-    }
+		if (!html) {
+			throw new ConvexError("HTML is not found in the scrape data.");
+		}
 
-    const faviconUrl = extractFaviconUrl(html, domain);
+		const faviconUrl = extractFaviconUrl(html, domain);
 
-    if (!faviconUrl) {
-      return null;
-    }
+		if (!faviconUrl) {
+			return null;
+		}
 
-    const key = `${workspaceId}/${projectId}/${randomUUID()}`;
+		const key = `${workspaceId}/${projectId}/${randomUUID()}`;
 
-    try {
-      // Check if the URL is a data URL (like data:image/svg+xml;base64,...)
-      if (faviconUrl.startsWith("data:")) {
-        // Handle data URLs directly
-        const [mimeInfo, base64Data] = faviconUrl.split(",");
+		try {
+			// Check if the URL is a data URL (like data:image/svg+xml;base64,...)
+			if (faviconUrl.startsWith("data:")) {
+				// Handle data URLs directly
+				const [mimeInfo, base64Data] = faviconUrl.split(",");
 
-        if (!base64Data) {
-          throw new ConvexError("Invalid data URL format");
-        }
+				if (!base64Data) {
+					throw new ConvexError("Invalid data URL format");
+				}
 
-        // Extract MIME type from data URL
-        const mimeTypeMatch = mimeInfo.match(/data:([^;]+)/);
-        const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/svg+xml";
+				// Extract MIME type from data URL
+				const mimeTypeMatch = mimeInfo.match(/data:([^;]+)/);
+				const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : "image/svg+xml";
 
-        // Convert base64 to buffer
-        const buffer = Buffer.from(base64Data, "base64");
-        const blob = new Blob([buffer], { type: mimeType });
+				// Convert base64 to buffer
+				const buffer = Buffer.from(base64Data, "base64");
+				const blob = new Blob([buffer], { type: mimeType });
 
-        await r2.store(ctx, blob, { key, type: mimeType });
-        return key;
-      }
+				await r2.store(ctx, blob, { key, type: mimeType });
+				return key;
+			}
 
-      // Handle regular URLs
-      const response = await fetch(faviconUrl);
+			// Handle regular URLs
+			const response = await fetch(faviconUrl);
 
-      if (!response.ok) {
-        throw new ConvexError(`Failed to fetch logo: ${response.status}`);
-      }
+			if (!response.ok) {
+				throw new ConvexError(`Failed to fetch logo: ${response.status}`);
+			}
 
-      const imageBuffer = await response.arrayBuffer();
-      const contentType = response.headers.get("content-type") || "image/png";
-      const extension = contentType.split("/")[1];
-      const fileName = `favicon.${extension}`;
-      const imageBlob = new Blob([imageBuffer], { type: contentType });
+			const imageBuffer = await response.arrayBuffer();
+			const contentType = response.headers.get("content-type") || "image/png";
+			const extension = contentType.split("/")[1];
+			const fileName = `favicon.${extension}`;
+			const imageBlob = new Blob([imageBuffer], { type: contentType });
 
-      await r2.store(ctx, imageBlob, { key, type: contentType });
+			await r2.store(ctx, imageBlob, { key, type: contentType });
 
-      // Create Media
-      await ctx.runMutation(
-        internal.collections.storage.media.mutations.createInternal,
-        {
-          key,
-          name: fileName,
-          contentType,
-          size: imageBuffer.byteLength,
-          type: "image",
-          workspaceId,
-          projectId,
-          createdBy,
-          source: "uploaded",
-        }
-      );
+			// Create Media
+			await ctx.runMutation(
+				internal.collections.storage.media.mutations.createInternal,
+				{
+					key,
+					name: fileName,
+					contentType,
+					size: imageBuffer.byteLength,
+					type: "image",
+					workspaceId,
+					projectId,
+					createdBy,
+					source: "uploaded",
+				},
+			);
 
-      return key;
-    } catch (error) {
-      console.error("Failed to upload logo:", error);
-      return null;
-    }
-  },
+			return key;
+		} catch (error) {
+			console.error("Failed to upload logo:", error);
+			return null;
+		}
+	},
 });
 
 const audienceSchema = z.object({
-  name: z
-    .string()
-    .describe(
-      "Audience segment name (be specific, e.g., 'Small Business Owners', 'Tech Startups')"
-    ),
-  description: z
-    .string()
-    .describe(
-      "Detailed description of this audience including demographics, psychographics, and business context"
-    ),
-  avatar: z
-    .union([
-      z.literal("old-female-1"),
-      z.literal("old-male-1"),
-      z.literal("old-female-2"),
-      z.literal("old-male-2"),
-      z.literal("mid-female-1"),
-      z.literal("mid-male-1"),
-      z.literal("mid-female-2"),
-      z.literal("mid-male-2"),
-      z.literal("mid-female-3"),
-      z.literal("mid-male-3"),
-      z.literal("young-female-1"),
-      z.literal("young-male-1"),
-      z.literal("young-female-2"),
-      z.literal("young-male-2"),
-      z.literal("young-female-3"),
-      z.literal("young-male-3"),
-    ])
-    .describe(
-      "The key of the avatar image. Use age and gender to determine key. If currently used same key, use different key."
-    )
-    .default("old-female-1"),
-  age: z
-    .enum(["18-24", "25-34", "35-44", "45-54", "55-64", "65+"])
-    .describe("Primary age range based on typical users"),
-  gender: z
-    .enum(["male", "female"])
-    .describe("Primary gender (choose most likely based on industry/content)"),
-  goals: z
-    .string()
-    .describe(
-      "Specific business or personal goals this audience wants to achieve"
-    ),
-  motivations: z
-    .string()
-    .describe(
-      "Key motivations, desires, and drivers that influence their decisions"
-    ),
-  frustrations: z
-    .string()
-    .describe("Main pain points, challenges, and obstacles they face"),
-  terminologies: z
-    .array(z.string())
-    .describe(
-      "Industry terms, keywords, and language they commonly use (5-8 terms)"
-    ),
+	name: z
+		.string()
+		.describe(
+			"Audience segment name (be specific, e.g., 'Small Business Owners', 'Tech Startups')",
+		),
+	description: z
+		.string()
+		.describe(
+			"Detailed description of this audience including demographics, psychographics, and business context",
+		),
+	avatar: z
+		.union([
+			z.literal("old-female-1"),
+			z.literal("old-male-1"),
+			z.literal("old-female-2"),
+			z.literal("old-male-2"),
+			z.literal("mid-female-1"),
+			z.literal("mid-male-1"),
+			z.literal("mid-female-2"),
+			z.literal("mid-male-2"),
+			z.literal("mid-female-3"),
+			z.literal("mid-male-3"),
+			z.literal("young-female-1"),
+			z.literal("young-male-1"),
+			z.literal("young-female-2"),
+			z.literal("young-male-2"),
+			z.literal("young-female-3"),
+			z.literal("young-male-3"),
+		])
+		.describe(
+			"The key of the avatar image. Use age and gender to determine key. If currently used same key, use different key.",
+		)
+		.default("old-female-1"),
+	age: z
+		.enum(["18-24", "25-34", "35-44", "45-54", "55-64", "65+"])
+		.describe("Primary age range based on typical users"),
+	gender: z
+		.enum(["male", "female"])
+		.describe("Primary gender (choose most likely based on industry/content)"),
+	goals: z
+		.string()
+		.describe(
+			"Specific business or personal goals this audience wants to achieve",
+		),
+	motivations: z
+		.string()
+		.describe(
+			"Key motivations, desires, and drivers that influence their decisions",
+		),
+	frustrations: z
+		.string()
+		.describe("Main pain points, challenges, and obstacles they face"),
+	terminologies: z
+		.array(z.string())
+		.describe(
+			"Industry terms, keywords, and language they commonly use (5-8 terms)",
+		),
 });
 
 const featureSchema = z.object({
-  name: z.string().describe("Feature, product, or service name"),
-  description: z
-    .string()
-    .describe("Clear, detailed description of what this feature/service does"),
-  benefits: z
-    .string()
-    .describe(
-      "Specific value proposition and benefits for customers - focus on outcomes and results"
-    ),
-  proof: z
-    .string()
-    .describe(
-      "Evidence, social proof, testimonials, case studies, or validation that supports the benefits"
-    ),
+	name: z.string().describe("Feature, product, or service name"),
+	description: z
+		.string()
+		.describe("Clear, detailed description of what this feature/service does"),
+	benefits: z
+		.string()
+		.describe(
+			"Specific value proposition and benefits for customers - focus on outcomes and results",
+		),
+	proof: z
+		.string()
+		.describe(
+			"Evidence, social proof, testimonials, case studies, or validation that supports the benefits",
+		),
 });
 
 const socialSchema = z.object({
-  platform: z
-    .enum([
-      "facebook",
-      "instagram",
-      "twitter",
-      "linkedin",
-      "youtube",
-      "tiktok",
-      "pinterest",
-      "snapchat",
-      "reddit",
-      "discord",
-      "twitch",
-      "dribbble",
-      "github",
-      "gitlab",
-      "medium",
-      "devto",
-      "hashnode",
-      "stackoverflow",
-    ])
-    .describe("Social media platform"),
-  handle: z.string().describe("Username or handle without @ symbol"),
-  url: z.string().describe("Full URL to the profile"),
+	platform: z
+		.enum([
+			"facebook",
+			"instagram",
+			"twitter",
+			"linkedin",
+			"youtube",
+			"tiktok",
+			"pinterest",
+			"snapchat",
+			"reddit",
+			"discord",
+			"twitch",
+			"dribbble",
+			"github",
+			"gitlab",
+			"medium",
+			"devto",
+			"hashnode",
+			"stackoverflow",
+		])
+		.describe("Social media platform"),
+	handle: z.string().describe("Username or handle without @ symbol"),
+	url: z.string().describe("Full URL to the profile"),
 });
 
 const testimonialSchema = z.object({
-  name: z.string().describe("Customer name or company name"),
-  content: z.string().describe("Full testimonial content or review text"),
-  title: z.string().describe("Customer title, role, or company"),
-  rating: z.number().describe("Rating score if available (1-5)"),
+	name: z.string().describe("Customer name or company name"),
+	content: z.string().describe("Full testimonial content or review text"),
+	title: z.string().describe("Customer title, role, or company"),
+	rating: z.number().describe("Rating score if available (1-5)"),
 });
 
 const seoSchema = z.object({
-  metaTitleDivider: z
-    .union([z.literal("|"), z.literal("-"), z.literal("•"), z.literal(":")])
-    .describe("The divider between the brand name and the page title"),
-  metaTitle: z.string().describe("Fallback meta title of brand"),
-  metaDescription: z.string().describe("Fallback meta description of brand"),
-  opengraph: z.object({
-    title: z.string().describe("The title of the page"),
-    description: z.string().describe("The description of the page"),
-  }),
-  twitterCard: z.object({
-    title: z.string().describe("The title of the page"),
-    description: z.string().describe("The description of the page"),
-  }),
+	metaTitleDivider: z
+		.union([z.literal("|"), z.literal("-"), z.literal("•"), z.literal(":")])
+		.describe("The divider between the brand name and the page title"),
+	metaTitle: z.string().describe("Fallback meta title of brand"),
+	metaDescription: z.string().describe("Fallback meta description of brand"),
+	opengraph: z.object({
+		title: z.string().describe("The title of the page"),
+		description: z.string().describe("The description of the page"),
+	}),
+	twitterCard: z.object({
+		title: z.string().describe("The title of the page"),
+		description: z.string().describe("The description of the page"),
+	}),
 });
 
 const generationSchema = z.object({
-  // Brand Information
-  brandEmail: z.string().optional().describe("The email of the brand"),
-  brandPhone: z.string().optional().describe("The phone of the brand"),
-  brandAddress: z.string().optional().describe("The address of the brand"),
+	// Brand Information
+	brandEmail: z.string().optional().describe("The email of the brand"),
+	brandPhone: z.string().optional().describe("The phone of the brand"),
+	brandAddress: z.string().optional().describe("The address of the brand"),
 
-  // Target Audiences
-  audiences: z
-    .array(audienceSchema)
-    .describe("The target audiences of the brand"),
+	// Target Audiences
+	audiences: z
+		.array(audienceSchema)
+		.describe("The target audiences of the brand"),
 
-  // Value-Focused Features & Services
-  features: z
-    .array(featureSchema)
-    .describe("The features and services of the brand"),
+	// Value-Focused Features & Services
+	features: z
+		.array(featureSchema)
+		.describe("The features and services of the brand"),
 
-  // Social Media Profiles
-  socials: z
-    .array(socialSchema)
-    .describe("The social media profiles of the brand"),
+	// Social Media Profiles
+	socials: z
+		.array(socialSchema)
+		.describe("The social media profiles of the brand"),
 
-  // Customer Testimonials
-  testimonials: z
-    .array(testimonialSchema)
-    .describe("The testimonials of the brand"),
+	// Customer Testimonials
+	testimonials: z
+		.array(testimonialSchema)
+		.describe("The testimonials of the brand"),
 
-  // SEO
-  seo: seoSchema,
+	// SEO
+	seo: seoSchema,
 });
 
 export const generateMarketingData = internalAction({
-  args: {
-    brandName: v.string(),
-    brandDescription: v.string(),
-    brandPersona: v.string(),
-    domain: v.string(),
-    urls: v.array(v.string()),
-  },
-  handler: async (
-    ctx,
-    { domain, urls, brandName, brandDescription, brandPersona }
-  ): Promise<z.infer<typeof generationSchema>> => {
-    // 1) Get Homepage Scrape Data
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+	args: {
+		brandName: v.string(),
+		brandDescription: v.string(),
+		brandPersona: v.string(),
+		domain: v.string(),
+		urls: v.array(v.string()),
+	},
+	handler: async (
+		ctx,
+		{ domain, urls, brandName, brandDescription, brandPersona },
+	): Promise<z.infer<typeof generationSchema>> => {
+		// 1) Get Homepage Scrape Data
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    // 2) Get Pages Scrape Data
-    const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.batchScrapeUrls,
-      {
-        urls,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        waitFor: 1000,
-        returnType: "full",
-      }
-    );
+		// 2) Get Pages Scrape Data
+		const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.batchScrapeUrls,
+			{
+				urls,
+				formats: ["markdown"],
+				onlyMainContent: true,
+				waitFor: 1000,
+				returnType: "full",
+			},
+		);
 
-    if (typeof pages === "string" || typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof pages === "string" || typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    // Combine all content for analysis
-    const combinedContent = [
-      `=== HOMEPAGE (${domain}) ===`,
-      `TITLE: ${homepage.metadata?.title || domain}`,
-      `DESCRIPTION: ${homepage.metadata?.description || "No description"}`,
-      "CONTENT:",
-      homepage.markdown,
-      "METADATA:",
-      JSON.stringify(homepage.metadata),
-      "\n\n",
-      "=== ADDITIONAL PAGES ===",
-      ...pages.data.map(
-        (page) => `
+		// Combine all content for analysis
+		const combinedContent = [
+			`=== HOMEPAGE (${domain}) ===`,
+			`TITLE: ${homepage.metadata?.title || domain}`,
+			`DESCRIPTION: ${homepage.metadata?.description || "No description"}`,
+			"CONTENT:",
+			homepage.markdown,
+			"METADATA:",
+			JSON.stringify(homepage.metadata),
+			"\n\n",
+			"=== ADDITIONAL PAGES ===",
+			...pages.data.map(
+				(page) => `
 === PAGE: ${page.url} ===
 TITLE: ${page.title}
 CONTENT:
 ${page.markdown}
 METADATA:
 ${JSON.stringify(page.metadata)}
-`
-      ),
-    ].join("\n\n");
+`,
+			),
+		].join("\n\n");
 
-    const extractedContact = extractHeadquartersContact(combinedContent, [
-      {
-        url: domain,
-        markdown: homepage.markdown ?? "",
-        title: homepage.metadata?.title || domain,
-        success: true,
-      },
-      ...pages.data.map((page) => ({
-        url: page.url ?? "",
-        markdown: page.markdown ?? "",
-        title: page.title ?? "",
-        success: true,
-      })),
-    ]);
+		const extractedContact = extractHeadquartersContact(combinedContent, [
+			{
+				url: domain,
+				markdown: homepage.markdown ?? "",
+				title: homepage.metadata?.title || domain,
+				success: true,
+			},
+			...pages.data.map((page) => ({
+				url: page.url ?? "",
+				markdown: page.markdown ?? "",
+				title: page.title ?? "",
+				success: true,
+			})),
+		]);
 
-    // Extract social media links
+		// Extract social media links
 
-    const extractedSocials = extractSocialLinks(combinedContent);
+		const extractedSocials = extractSocialLinks(combinedContent);
 
-    // 3) Generate Marketing Data
-    const result = await generateObject({
-      model: googleai("gemini-2.5-flash-preview-05-20"),
-      schema: generationSchema,
-      prompt: `You are an expert business analyst specializing in comprehensive business intelligence extraction. Analyze the following website content and extract detailed business information for marketing automation and CRM integration.
+		// 3) Generate Marketing Data
+		const result = await generateObject({
+			model: googleai("gemini-2.5-flash-preview-05-20"),
+			schema: generationSchema,
+			prompt: `You are an expert business analyst specializing in comprehensive business intelligence extraction. Analyze the following website content and extract detailed business information for marketing automation and CRM integration.
 
 **PRIMARY LANGUAGE**: Extract all content in English
 
@@ -1291,42 +1291,42 @@ ${combinedContent.substring(0, 45000)}${combinedContent.length > 45000 ? "\n\n[C
 - If specific details aren't available, make reasonable business inferences based on industry and context
 - Ensure all extracted social links are valid and properly formatted
 - Focus on headquarters/main business contact info, not location-specific details`,
-    });
+		});
 
-    return result.object;
-  },
+		return result.object;
+	},
 });
 
 const lightGenerationSchema = z.object({
-  // Target Audiences
-  audiences: z
-    .array(audienceSchema)
-    .describe("The target audiences of the brand"),
+	// Target Audiences
+	audiences: z
+		.array(audienceSchema)
+		.describe("The target audiences of the brand"),
 
-  // Value-Focused Features & Services
-  features: z
-    .array(featureSchema)
-    .describe("The features and services of the brand"),
+	// Value-Focused Features & Services
+	features: z
+		.array(featureSchema)
+		.describe("The features and services of the brand"),
 
-  // SEO
-  seo: seoSchema,
+	// SEO
+	seo: seoSchema,
 });
 
 export const generateMarketingDataLight = internalAction({
-  args: {
-    brandName: v.string(),
-    brandDescription: v.string(),
-    brandPersona: v.string(),
-  },
-  handler: async (
-    _ctx,
-    { brandName, brandDescription, brandPersona }
-  ): Promise<z.infer<typeof lightGenerationSchema>> => {
-    // Generate Marketing Data based only on brand information
-    const result = await generateObject({
-      model: googleai("gemini-2.5-flash-preview-05-20"),
-      schema: lightGenerationSchema,
-      prompt: `You are an expert business analyst specializing in creating comprehensive business intelligence based on brand information. Generate detailed business information for marketing automation and CRM integration.
+	args: {
+		brandName: v.string(),
+		brandDescription: v.string(),
+		brandPersona: v.string(),
+	},
+	handler: async (
+		_ctx,
+		{ brandName, brandDescription, brandPersona },
+	): Promise<z.infer<typeof lightGenerationSchema>> => {
+		// Generate Marketing Data based only on brand information
+		const result = await generateObject({
+			model: googleai("gemini-2.5-flash-preview-05-20"),
+			schema: lightGenerationSchema,
+			prompt: `You are an expert business analyst specializing in creating comprehensive business intelligence based on brand information. Generate detailed business information for marketing automation and CRM integration.
 
 **PRIMARY LANGUAGE**: Generate all content in English
 
@@ -1369,93 +1369,93 @@ Brand Persona: ${brandPersona}
 - Ensure generated content is specific and actionable, not generic
 - Make all features and audiences cohesive with the overall brand story
 - Focus on creating a complete, believable business profile from the brand foundation`,
-    });
+		});
 
-    return result.object;
-  },
+		return result.object;
+	},
 });
 
 export const fillDefaultKnowledgeBase = internalAction({
-  args: {
-    domain: v.string(),
-    urls: v.array(v.string()),
-    knowledgeBaseId: v.id("knowledgeBases"),
-    workspaceId: v.id("workspaces"),
-    projectId: v.id("projects"),
-    createdBy: v.id("users"),
-  },
-  handler: async (
-    ctx,
-    { domain, urls, knowledgeBaseId, workspaceId, projectId, createdBy }
-  ): Promise<void> => {
-    // 1) Get Homepage Scrape Data
-    const homepage: ScrapeResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.scrapeUrl,
-      {
-        url: domain,
-        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-        onlyMainContent: false,
-        waitFor: 3000,
-        returnType: "full",
-      }
-    );
+	args: {
+		domain: v.string(),
+		urls: v.array(v.string()),
+		knowledgeBaseId: v.id("knowledgeBases"),
+		workspaceId: v.id("workspaces"),
+		projectId: v.id("projects"),
+		createdBy: v.id("users"),
+	},
+	handler: async (
+		ctx,
+		{ domain, urls, knowledgeBaseId, workspaceId, projectId, createdBy },
+	): Promise<void> => {
+		// 1) Get Homepage Scrape Data
+		const homepage: ScrapeResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.scrapeUrl,
+			{
+				url: domain,
+				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+				onlyMainContent: false,
+				waitFor: 3000,
+				returnType: "full",
+			},
+		);
 
-    // 2) Get Pages Scrape Data
-    const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
-      internal.lib.firecrawl.batchScrapeUrls,
-      {
-        urls,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        waitFor: 1000,
-        returnType: "full",
-      }
-    );
+		// 2) Get Pages Scrape Data
+		const pages: BatchScrapeStatusResponse | string = await ctx.runAction(
+			internal.lib.firecrawl.batchScrapeUrls,
+			{
+				urls,
+				formats: ["markdown"],
+				onlyMainContent: true,
+				waitFor: 1000,
+				returnType: "full",
+			},
+		);
 
-    if (typeof pages === "string" || typeof homepage === "string") {
-      throw new ConvexError("Failed to scrape data");
-    }
+		if (typeof pages === "string" || typeof homepage === "string") {
+			throw new ConvexError("Failed to scrape data");
+		}
 
-    // 3) Prepare all pages with markdown content
-    const allPagesWithMarkdown: {
-      url: string;
-      markdown: string;
-      title: string;
-    }[] = [
-      {
-        url: domain,
-        markdown: homepage.markdown ?? "",
-        title: homepage.metadata?.title || "Homepage",
-      },
-      ...pages.data
-        .filter((item) => Boolean(item.url) && Boolean(item.markdown))
-        .map((item) => ({
-          url: item.url ?? "",
-          markdown: item.markdown ?? "",
-          title: item.title || item.url?.split("/").pop() || "Untitled Page",
-        })),
-    ];
+		// 3) Prepare all pages with markdown content
+		const allPagesWithMarkdown: {
+			url: string;
+			markdown: string;
+			title: string;
+		}[] = [
+			{
+				url: domain,
+				markdown: homepage.markdown ?? "",
+				title: homepage.metadata?.title || "Homepage",
+			},
+			...pages.data
+				.filter((item) => Boolean(item.url) && Boolean(item.markdown))
+				.map((item) => ({
+					url: item.url ?? "",
+					markdown: item.markdown ?? "",
+					title: item.title || item.url?.split("/").pop() || "Untitled Page",
+				})),
+		];
 
-    // 4) Create knowledge base items for each page
-    for (const page of allPagesWithMarkdown) {
-      if (!page.markdown.trim()) {
-        console.log(`Skipping empty page: ${page.url}`);
-        continue;
-      }
+		// 4) Create knowledge base items for each page
+		for (const page of allPagesWithMarkdown) {
+			if (!page.markdown.trim()) {
+				console.log(`Skipping empty page: ${page.url}`);
+				continue;
+			}
 
-      try {
-        // Generate a clean filename from the page title/URL
-        const cleanTitle = page.title
-          .replace(/[^a-zA-Z0-9\s-]/g, "")
-          .replace(/\s+/g, "-")
-          .toLowerCase()
-          .substring(0, 50);
+			try {
+				// Generate a clean filename from the page title/URL
+				const cleanTitle = page.title
+					.replace(/[^a-zA-Z0-9\s-]/g, "")
+					.replace(/\s+/g, "-")
+					.toLowerCase()
+					.substring(0, 50);
 
-        const fileName = `${cleanTitle}.md`;
-        const key = `${workspaceId}/${projectId}/knowledge/${fileName}`;
+				const fileName = `${cleanTitle}.md`;
+				const key = `${workspaceId}/${projectId}/knowledge/${fileName}`;
 
-        // Create markdown file content with metadata
-        const fileContent = `# ${page.title}
+				// Create markdown file content with metadata
+				const fileContent = `# ${page.title}
 
 **Source URL:** ${page.url}
 **Generated:** ${new Date().toISOString()}
@@ -1464,111 +1464,111 @@ export const fillDefaultKnowledgeBase = internalAction({
 
 ${page.markdown}`;
 
-        // Store file in R2
-        const blob = new Blob([fileContent], { type: "text/markdown" });
-        await r2.store(ctx, blob, { key, type: "text/markdown" });
+				// Store file in R2
+				const blob = new Blob([fileContent], { type: "text/markdown" });
+				await r2.store(ctx, blob, { key, type: "text/markdown" });
 
-        // Create memory item in database
-        await ctx.runMutation(
-          internal.collections.storage.documents.mutations
-            .createMemoryItemInternal,
-          {
-            key,
-            name: fileName,
-            content: fileContent,
-            contentType: "text/markdown",
-            type: "md",
-            size: new TextEncoder().encode(fileContent).length,
-            knowledgeBase: knowledgeBaseId,
-            workspaceId,
-            projectId,
-            createdBy,
-          }
-        );
+				// Create memory item in database
+				await ctx.runMutation(
+					internal.collections.storage.documents.mutations
+						.createMemoryItemInternal,
+					{
+						key,
+						name: fileName,
+						content: fileContent,
+						contentType: "text/markdown",
+						type: "md",
+						size: new TextEncoder().encode(fileContent).length,
+						knowledgeBase: knowledgeBaseId,
+						workspaceId,
+						projectId,
+						createdBy,
+					},
+				);
 
-        console.log(
-          `Created knowledge base item for: ${page.title} (${page.url})`
-        );
-      } catch (error) {
-        console.error(
-          `Failed to create knowledge base item for ${page.url}:`,
-          error
-        );
-        // Continue with other pages even if one fails
-      }
-    }
+				console.log(
+					`Created knowledge base item for: ${page.title} (${page.url})`,
+				);
+			} catch (error) {
+				console.error(
+					`Failed to create knowledge base item for ${page.url}:`,
+					error,
+				);
+				// Continue with other pages even if one fails
+			}
+		}
 
-    console.log(
-      `Successfully processed ${allPagesWithMarkdown.length} pages for knowledge base`
-    );
-  },
+		console.log(
+			`Successfully processed ${allPagesWithMarkdown.length} pages for knowledge base`,
+		);
+	},
 });
 
 export const createCheckoutSession = action({
-  args: {
-    onboardingId: v.id("onboarding"),
-    stripeLineItems: v.array(
-      v.object({
-        price: v.string(),
-        quantity: v.number(),
-        adjustable_quantity: v.optional(
-          v.object({
-            enabled: v.boolean(),
-            minimum: v.number(),
-            maximum: v.number(),
-          })
-        ),
-      })
-    ),
-    baseUrl: v.string(),
-  },
-  handler: async (ctx, args): Promise<string | null> => {
-    const user = await ctx.auth.getUserIdentity();
+	args: {
+		onboardingId: v.id("onboarding"),
+		stripeLineItems: v.array(
+			v.object({
+				price: v.string(),
+				quantity: v.number(),
+				adjustable_quantity: v.optional(
+					v.object({
+						enabled: v.boolean(),
+						minimum: v.number(),
+						maximum: v.number(),
+					}),
+				),
+			}),
+		),
+		baseUrl: v.string(),
+	},
+	handler: async (ctx, args): Promise<string | null> => {
+		const user = await ctx.auth.getUserIdentity();
 
-    if (!user) {
-      throw new ConvexError(ERRORS.UNAUTHORIZED);
-    }
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
 
-    // Get onboarding data
-    const onboarding = await ctx.runQuery(
-      internal.collections.onboarding.queries.getByIdInternal,
-      {
-        onboardingId: args.onboardingId,
-      }
-    );
+		// Get onboarding data
+		const onboarding = await ctx.runQuery(
+			internal.collections.onboarding.queries.getByIdInternal,
+			{
+				onboardingId: args.onboardingId,
+			},
+		);
 
-    if (!onboarding) {
-      throw new ConvexError("Onboarding not found");
-    }
+		if (!onboarding) {
+			throw new ConvexError("Onboarding not found");
+		}
 
-    // Get workspace to get customer ID
-    const workspace = await ctx.runQuery(
-      internal.collections.workspaces.queries.getByIdInternal,
-      {
-        id: onboarding.workspaceId,
-      }
-    );
+		// Get workspace to get customer ID
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: onboarding.workspaceId,
+			},
+		);
 
-    if (!workspace) {
-      throw new ConvexError(ERRORS.NOT_FOUND);
-    }
+		if (!workspace) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
 
-    if (!workspace.customerId) {
-      throw new ConvexError("Stripe customer not found for workspace");
-    }
+		if (!workspace.customerId) {
+			throw new ConvexError("Stripe customer not found for workspace");
+		}
 
-    // Create checkout session
-    const sessionUrl = await ctx.runAction(
-      internal.lib.stripe.createCheckoutSession,
-      {
-        stripeCustomerId: workspace.customerId,
-        stripeLineItems: args.stripeLineItems,
-        successUrl: `${args.baseUrl}/new/workspace`,
-        cancelUrl: `${args.baseUrl}/new/workspace`,
-      }
-    );
+		// Create checkout session
+		const sessionUrl = await ctx.runAction(
+			internal.lib.stripe.createCheckoutSession,
+			{
+				stripeCustomerId: workspace.customerId,
+				stripeLineItems: args.stripeLineItems,
+				successUrl: `${args.baseUrl}/new/workspace`,
+				cancelUrl: `${args.baseUrl}/new/workspace`,
+			},
+		);
 
-    // Return the checkout URL
-    return sessionUrl;
-  },
+		// Return the checkout URL
+		return sessionUrl;
+	},
 });
