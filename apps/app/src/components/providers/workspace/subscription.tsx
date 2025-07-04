@@ -29,6 +29,9 @@ interface SubscriptionData {
 	isActive: boolean;
 	isTrial: boolean;
 	isLoading: boolean;
+	isTeamPlan: boolean;
+	seatLimit: number;
+	projectLimit: number;
 }
 
 const subscriptionContext = createContext<SubscriptionData>({
@@ -42,6 +45,9 @@ const subscriptionContext = createContext<SubscriptionData>({
 	isActive: false,
 	isTrial: false,
 	isLoading: true,
+	isTeamPlan: false,
+	seatLimit: 1,
+	projectLimit: 1,
 });
 
 const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
@@ -62,6 +68,42 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 				? "skip"
 				: { workspaceId: currentWorkspace._id },
 		);
+
+	// Current Subcription Item (Plan Item)
+	const currentSubscriptionPlanItem = useMemo(() => {
+		return activeSubscription?.items.find(
+			(item) =>
+				item.metadata?.type === "subscription" &&
+				item.metadata?.isShadow !== "true",
+		);
+	}, [activeSubscription]);
+
+	// Current Subscription Product (Plan)
+	const currentSubscriptionPlanProduct = useMemo(() => {
+		return currentSubscriptionPlanItem?.product;
+	}, [currentSubscriptionPlanItem]);
+
+	const currentSubscriptionAddOns = useMemo(() => {
+		return activeSubscription?.items.filter(
+			(item) => item.metadata?.type === "add-on",
+		);
+	}, [activeSubscription]);
+
+	// Project Limit
+	const projectLimit = useMemo(() => {
+		const baseLimit =
+			currentSubscriptionPlanProduct?.metadata?.isTeam === "true" ? 3 : 1;
+		const extraProjectSubscriptionItem = currentSubscriptionAddOns?.filter(
+			(item) => item.metadata?.addOnType === "extra-project",
+		);
+
+		return (
+			(extraProjectSubscriptionItem?.reduce(
+				(acc, item) => acc + item.quantity,
+				0,
+			) || 0) + baseLimit
+		);
+	}, [currentSubscriptionPlanProduct, currentSubscriptionAddOns]);
 
 	// Determine current period dates from subscription (shadow or regular) - Used for credit summary
 	const currentPeriod = useMemo(() => {
@@ -122,6 +164,10 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 		isActive,
 		isTrial,
 		isLoading,
+		isTeamPlan: currentSubscriptionPlanProduct?.metadata?.isTeam === "true",
+		// Limits
+		seatLimit: currentSubscriptionPlanItem?.quantity || 1,
+		projectLimit,
 	};
 
 	return (

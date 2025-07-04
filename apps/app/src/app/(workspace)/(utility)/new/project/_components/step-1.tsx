@@ -76,12 +76,18 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
+		mode: "onChange", // This ensures validation happens on every change
 		defaultValues: {
 			domain: onboardingData.step1?.formData?.domain ?? "",
 		},
 	});
 
 	const watchedDomain = form.watch("domain");
+
+	// Check if the current domain value is valid according to our schema
+	const isFormValid = watchedDomain
+		? formSchema.safeParse({ domain: watchedDomain }).success
+		: false;
 
 	const checkDomainAction = useAction(
 		api.collections.onboarding.actions.checkDomain,
@@ -171,7 +177,7 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 	useHotkeys(
 		"enter",
 		() => {
-			if (status === "valid" && !isHandlingStep && form.formState.isValid) {
+			if (status === "valid" && !isHandlingStep && isFormValid) {
 				form.handleSubmit(onSubmitHandler)();
 			}
 		},
@@ -227,12 +233,12 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 				y: 0,
 				transition: { duration: 0.3, ease: "easeInOut" },
 			}}
-			className="flex flex-col items-start justify-center flex-1 w-full gap-8"
+			className="flex flex-col flex-1 gap-8 justify-center items-start w-full"
 		>
 			{/* Middle */}
-			<div className="flex flex-col items-start justify-center flex-1 w-full">
+			<div className="flex flex-col flex-1 justify-center items-start w-full">
 				{/* Title */}
-				<div className="flex flex-col w-full gap-2 px-8 text-left">
+				<div className="flex flex-col gap-2 px-8 w-full text-left">
 					<h1 className="max-w-sm text-4xl font-bold">
 						Tell us about your <span className="font-mono italic">#brand</span>
 					</h1>
@@ -241,11 +247,11 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 					</p>
 				</div>
 				{/* Form */}
-				<div className="flex flex-col w-full gap-2 px-8 mt-8">
+				<div className="flex flex-col gap-2 px-8 mt-8 w-full">
 					<Form {...form}>
 						<form
 							onSubmit={form.handleSubmit(onSubmitHandler)}
-							className="w-full space-y-2"
+							className="space-y-2 w-full"
 						>
 							<FormField
 								control={form.control}
@@ -256,7 +262,7 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 										<div className="relative">
 											<Tooltip delayDuration={0}>
 												<TooltipTrigger asChild>
-													<div className="absolute top-0 bottom-0 left-0 z-10 flex items-center justify-center w-8 h-full border cursor-default select-none text-primary bg-muted rounded-l-md">
+													<div className="flex absolute top-0 bottom-0 left-0 z-10 justify-center items-center w-8 h-full rounded-l-md border cursor-default select-none text-primary bg-muted">
 														<AnimatePresence mode="wait">
 															{status === "idle" && (
 																<motion.div
@@ -323,7 +329,7 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 												<Input
 													{...field}
 													placeholder="yourwebsite.com"
-													className="relative w-full h-8 pl-10 text-muted-foreground"
+													className="relative pl-10 w-full h-8 text-muted-foreground"
 												/>
 											</FormControl>
 										</div>
@@ -337,7 +343,7 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 			</div>
 
 			{/* Buttons */}
-			<div className="flex flex-row justify-between w-full gap-8 px-8">
+			<div className="flex flex-row gap-8 justify-between px-8 w-full">
 				<Button
 					size="sm"
 					variant="ghost"
@@ -354,15 +360,13 @@ export const Step1 = ({ onboardingData }: Step1Props) => {
 					)}
 				</Button>
 				<Button
-					disabled={
-						status !== "valid" || isHandlingStep || !form.formState.isValid
-					}
+					disabled={status !== "valid" || isHandlingStep || !isFormValid}
 					size="sm"
 					className="w-full"
 					onClick={form.handleSubmit(onSubmitHandler)}
 				>
 					{isHandlingStep ? (
-						<div className="flex items-center gap-2">
+						<div className="flex gap-2 items-center">
 							<Spinner size="xs" className="mb-0.5" />
 							<span>Processing...</span>
 						</div>

@@ -1,7 +1,10 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "../../_generated/dataModel";
 import { internalMutation, mutation } from "../../_generated/server";
-import { internalMutationWithTrigger } from "../../triggers";
+import {
+	internalMutationWithTrigger,
+	mutationWithTrigger,
+} from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 import { projectSchema } from "./schema";
@@ -25,6 +28,19 @@ export const create = mutation({
 			icon,
 			workspaceId: user.currentWorkspaceId,
 			createdBy: user._id,
+			isOnboarded: false,
+		});
+
+		// Create onboarding
+		await ctx.db.insert("onboarding", {
+			projectId: newProjectId,
+			workspaceId: user.currentWorkspaceId,
+			createdBy: user._id,
+			type: "project",
+			isCompleted: false,
+			step: 1,
+			animationStep: 2,
+			isProcessing: false,
 		});
 
 		// Change user's current project
@@ -105,6 +121,28 @@ export const updateInternal = internalMutation({
 		}
 
 		await ctx.db.patch(args.projectId, updateObject);
+	},
+});
+
+export const deletePermanent = mutationWithTrigger({
+	args: {
+		id: v.id("projects"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		if (!user || !user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const project = await ctx.db.get(args.id);
+		if (!project) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (project.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+		await ctx.db.delete(args.id);
 	},
 });
 

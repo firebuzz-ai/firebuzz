@@ -13,15 +13,27 @@ export const getTeamWorkspaceByExternalId = async (
 	return workspace;
 };
 
+export const getPersonalWorkspacesByExternalId = async (
+	ctx: QueryCtx | MutationCtx,
+	externalId: string,
+) => {
+	const workspace = await ctx.db
+		.query("workspaces")
+		.withIndex("by_external_id", (q) => q.eq("externalId", externalId))
+		.collect();
+
+	return workspace;
+};
+
 export const getPersonalWorkspacesByOwnerId = async (
 	ctx: QueryCtx | MutationCtx,
 	ownerId: Id<"users">,
 ) => {
-	const workspace = await ctx.db
+	const workspaces = await ctx.db
 		.query("workspaces")
 		.withIndex("by_owner_id", (q) => q.eq("ownerId", ownerId))
 		.collect();
-	return workspace;
+	return workspaces;
 };
 
 export const getCurrentWorkspace = async (
@@ -40,13 +52,28 @@ export const getCurrentWorkspace = async (
 	}
 
 	// If the user has a personal workspace, return it.
-	const personalWorkspaces = await getPersonalWorkspacesByOwnerId(
+	const personalWorkspaces = await getPersonalWorkspacesByExternalId(
 		ctx,
-		user._id,
+		user.externalId,
 	);
+
 	if (personalWorkspaces.length > 0) {
 		return personalWorkspaces[0];
 	}
 
 	return null;
+};
+
+export const checkIfSlugIsAvailable = async (
+	ctx: QueryCtx | MutationCtx,
+	slug: string,
+	workspaceId?: Id<"workspaces">,
+) => {
+	const workspace = await ctx.db
+		.query("workspaces")
+		.withIndex("by_slug", (q) => q.eq("slug", slug))
+		.filter((q) => (workspaceId ? q.neq(q.field("_id"), workspaceId) : true))
+		.unique();
+
+	return !workspace;
 };

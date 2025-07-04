@@ -3,6 +3,7 @@ import { httpRouter } from "convex/server";
 import { Webhook } from "svix";
 import { internal } from "./_generated/api";
 import { httpAction } from "./_generated/server";
+import { resend } from "./components/resend";
 
 const http = httpRouter();
 
@@ -54,6 +55,86 @@ http.route({
 					);
 				}
 				break;
+			/* Invitations */
+			case "organizationInvitation.accepted":
+			case "organizationInvitation.revoked":
+				await ctx.runMutation(
+					internal.collections.invitations.mutations.updateInternal,
+					{
+						externalId: event.data.id,
+						status:
+							event.type === "organizationInvitation.accepted"
+								? "accepted"
+								: "revoked",
+					},
+				);
+				break;
+			/* Members */
+			case "organizationMembership.created":
+				await ctx.runMutation(
+					internal.collections.members.mutations.createInternal,
+					{
+						externalId: event.data.id,
+						role: event.data.role.split("org:")[1] as "admin" | "member",
+						organizationExternalId: event.data.organization.id,
+						userExternalId: event.data.public_user_data.user_id,
+					},
+				);
+				break;
+			case "organizationMembership.deleted":
+				await ctx.runMutation(
+					internal.collections.members.mutations.deleteInternal,
+					{
+						externalId: event.data.id,
+					},
+				);
+				break;
+			case "organizationMembership.updated":
+				await ctx.runMutation(
+					internal.collections.members.mutations.updateInternal,
+					{
+						externalId: event.data.id,
+						role: event.data.role.split("org:")[1] as "admin" | "member",
+					},
+				);
+				break;
+			/* Emails */
+			case "email.created":
+				// Not handled by Clerk (We should handle)
+				if (!event.data.delivered_by_clerk) {
+					// Detect email type based on slug
+					switch (event.data.slug) {
+						// OTP Email
+						case "verification_code":
+							await ctx.runAction(internal.components.resend.sendAuthOTPEmail, {
+								to: event.data.to_email_address as string,
+								requestedAt: (event.data.data?.requested_at ??
+									new Date().toISOString()) as string,
+								requestedBy: event.data.data?.requested_by,
+								requestedFrom: event.data.data?.requested_from,
+								otpCode: event.data.data?.otp_code as string,
+								ttlMinutes: 10,
+							});
+							break;
+						// Invitation Email
+						case "organization_invitation": {
+							await ctx.runAction(
+								internal.components.resend.sendAuthInvitationEmail,
+								{
+									to: event.data.to_email_address as string,
+									invitedByUsername: event.data.data?.inviter_name as string,
+									teamName: event.data.data?.org.name as string,
+									inviteLink: event.data.data?.action_url as string,
+								},
+							);
+							break;
+						}
+						default:
+							console.log("Ignored Clerk Email webhook event", event.data.slug);
+					}
+				}
+				break;
+
 			default:
 				console.log("Ignored Clerk webhook event", event.type);
 		}
@@ -81,6 +162,15 @@ http.route({
 			console.error("Error processing Stripe webhook", error);
 			return new Response("Error occurred", { status: 400 });
 		}
+	}),
+});
+
+// Resend Webhooks
+http.route({
+	path: "/webhooks/resend",
+	method: "POST",
+	handler: httpAction(async (ctx, req) => {
+		return await resend.handleResendEventWebhook(ctx, req);
 	}),
 });
 

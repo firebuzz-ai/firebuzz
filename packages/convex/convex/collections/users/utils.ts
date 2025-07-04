@@ -32,7 +32,9 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
 		...user,
 		currentWorkspaceId: currentWorkspace?._id,
 		currentWorkspaceExternalId: currentWorkspace?.externalId,
-		currentRole: (clerkUser.org_role ?? "Admin") as "Admin" | "Member",
+		currentRole: (clerkUser.org_role
+			? clerkUser.org_role.toString()
+			: "org:admin") as "org:admin" | "org:member",
 	};
 
 	return userWithCurrentWorkspace;
@@ -61,7 +63,9 @@ export const getCurrentUserWithWorkspace = async (ctx: QueryCtx) => {
 		...user,
 		currentWorkspaceId: currentWorkspace?._id,
 		currentWorkspaceExternalId: currentWorkspace?.externalId,
-		currentRole: (clerkUser.org_role ?? "Admin") as "Admin" | "Member",
+		currentRole: (clerkUser.org_role
+			? clerkUser.org_role.toString()
+			: "org:admin") as "org:admin" | "org:member",
 	};
 
 	return userWithCurrentWorkspace;

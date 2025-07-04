@@ -9,4 +9,7 @@ export interface Env {
 	CLOUDFLARE_API_KEY: string;
 	CLOUDFLARE_EMAIL: string;
 	CLOUDFLARE_ZONE_ID: string;
+	INNGEST_SIGNING_KEY: string;
+	INNGEST_EVENT_KEY: string;
+	INNGEST_BASE_URL: string;
 }

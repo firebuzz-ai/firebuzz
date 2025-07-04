@@ -44,6 +44,8 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 	const pathname = usePathname();
 	const [isCheckDone, setIsCheckDone] = useState(false);
 
+	console.log({ workspaces, currentWorkspace });
+
 	// Get all projects for current workspace
 	const { data: projects, isPending: isProjectsPending } = useCachedRichQuery(
 		api.collections.projects.queries.getAllByWorkspace,
@@ -95,6 +97,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 
 		// No Workspace, redirect to '/NEW' (NEW USER SIGNUP)
 		if (workspaces.length === 0 && pathname !== "/new") {
+			console.log("pushing to /new from no workspace");
 			router.push("/new");
 			return;
 		}
@@ -115,6 +118,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 			!currentWorkspace.isOnboarded &&
 			pathname !== "/new/workspace"
 		) {
+			console.log({ currentWorkspace });
 			router.push("/new/workspace");
 			return;
 		}
@@ -136,8 +140,10 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 			currentWorkspace &&
 			projects?.length &&
 			projects.length > 0 &&
-			pathname !== "/select/project"
+			pathname !== "/select/project" &&
+			pathname !== "/select/workspace"
 		) {
+			console.log("pushing to /select/project from no project");
 			router.push("/select/project");
 			return;
 		}
@@ -148,7 +154,8 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 			currentProject &&
 			!currentProject.isOnboarded &&
 			currentWorkspace.isOnboarded &&
-			pathname !== "/new/project"
+			pathname !== "/new/project" &&
+			pathname !== "/select/project"
 		) {
 			router.push("/new/project");
 			return;
@@ -177,7 +184,7 @@ const ProjectProvider = ({ children }: { children: React.ReactNode }) => {
 	// Show loading state while checking authentication and loading initial data or performing routing checks
 	if (!isCheckDone) {
 		return (
-			<div className="flex items-center justify-center flex-1">
+			<div className="flex flex-1 justify-center items-center">
 				<Spinner size="sm" />
 			</div>
 		);

@@ -357,13 +357,15 @@ export const onboardingWorkspaceStepFour = workflow.define({
 			},
 		);
 
-		// STEP-5 - Update Onboarding
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			isProcessing: false,
-			animationStep: 12,
-			step: 5,
-		});
+		// STEP-5 - Update Onboarding (Only for workspace onboarding)
+		if (onboarding.type === "workspace") {
+			await step.runMutation(internal.collections.onboarding.mutations.update, {
+				onboardingId,
+				isProcessing: false,
+				animationStep: 12,
+				step: 5,
+			});
+		}
 
 		// STEP-6 Update Project Onboarding Status
 		await step.runMutation(
@@ -667,6 +669,16 @@ export const onboardingWorkspaceInternalStepTwo = workflow.define({
 			testimonialsPromise,
 			fillDefaultKnowledgeBasePromise,
 		]);
+
+		// STEP-9 - Update Onboarding (Only for project onboarding)
+		if (onboarding.type === "project") {
+			await step.runMutation(internal.collections.onboarding.mutations.update, {
+				onboardingId,
+				isProcessing: false,
+				isCompleted: true,
+				animationStep: 12,
+			});
+		}
 	},
 });
 
@@ -774,6 +786,16 @@ export const onboardingWorkspaceInternalStepThree = workflow.define({
 
 		// STEP-6 - Wait for all promises to resolve
 		await Promise.all([seoPromise, audiencesPromise, featuresPromise]);
+
+		// STEP-7 - Update Onboarding (Only for project onboarding)
+		if (onboarding.type === "project") {
+			await step.runMutation(internal.collections.onboarding.mutations.update, {
+				onboardingId,
+				isProcessing: false,
+				isCompleted: true,
+				animationStep: 12,
+			});
+		}
 	},
 });
 

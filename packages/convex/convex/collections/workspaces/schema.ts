@@ -5,6 +5,7 @@ export const workspaceSchema = v.object({
 	workspaceType: v.union(v.literal("personal"), v.literal("team")),
 	ownerId: v.id("users"),
 	title: v.string(),
+	slug: v.optional(v.string()),
 	logo: v.optional(v.string()),
 	// Stripe
 	customerId: v.optional(v.string()), // Stripe Customer ID

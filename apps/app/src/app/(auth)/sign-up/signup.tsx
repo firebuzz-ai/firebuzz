@@ -54,6 +54,8 @@ const SignUp = () => {
 			</div>
 			{/* Form */}
 			<div>
+				{/* CAPTCHA Widget - Place at top for better availability */}
+				<div id="clerk-captcha" />
 				<OAuthSignUp />
 				<div className="flex items-center justify-between gap-2 my-6">
 					<div className="w-full h-px bg-border" />
@@ -66,8 +68,6 @@ const SignUp = () => {
 					setIsVerificationOpen={setIsVerificationOpen}
 					setEmail={setEmail}
 				/>
-				{/* CAPTCHA Widget */}
-				<div id="clerk-captcha" />
 			</div>
 		</div>
 	);

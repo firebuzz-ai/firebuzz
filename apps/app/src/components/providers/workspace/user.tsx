@@ -12,7 +12,7 @@ import {
 import { createContext } from "react";
 interface User extends Doc<"users"> {
 	currentWorkspaceExternalId: string | undefined;
-	currentRole: "Admin" | "Member";
+	currentRole: "org:admin" | "org:member";
 }
 
 const userContext = createContext<{

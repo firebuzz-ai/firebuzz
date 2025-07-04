@@ -58,12 +58,8 @@ export const getCurrentByWorkspaceId = query({
 			)
 			.collect();
 
-		const regularSubscriptionItems = subscriptionItems.filter(
-			(item) => item.metadata?.type === "subscription",
-		);
-
 		const itemsWithPricesAndProducts = await asyncMap(
-			regularSubscriptionItems,
+			subscriptionItems,
 			async (item) => {
 				const price = await ctx.db.get(item.priceId);
 				let product = null;

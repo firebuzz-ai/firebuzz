@@ -108,16 +108,16 @@ const navLinks = [
 		icon: Settings2,
 		items: [
 			{
+				title: "Account",
+				url: "/settings/account",
+			},
+			{
 				title: "Workspace",
 				url: "/settings/workspace",
 			},
 			{
 				title: "Subscription",
 				url: "/settings/subscription",
-			},
-			{
-				title: "Profile",
-				url: "/settings/profile",
 			},
 		],
 	},
@@ -143,8 +143,8 @@ export function AppSidebar({
 		>
 			<SidebarHeader className="group-data-[state=expanded]:border-b">
 				<SidebarMenu>
-					<SidebarMenuItem className="flex justify-between gap-2">
-						<div className="border border-border bg-muted rounded-md p-1.5 max-w-fit w-full">
+					<SidebarMenuItem className="flex gap-2 justify-between">
+						<div className="border border-border bg-muted rounded-md p-1.5 max-w-fit w-full shrink-0">
 							<Icon className="h-6" />
 						</div>
 						<ProjectSwitcher />
@@ -206,7 +206,7 @@ export function AppSidebar({
 			</SidebarContent>
 			<SidebarFooter>
 				<SidebarMenu>
-					<SidebarMenuItem className="mb-4 group-data-[collapsible=icon]:hidden">
+					<SidebarMenuItem className="mb-6 group-data-[collapsible=icon]:hidden">
 						<SubscriptionStatus />
 					</SidebarMenuItem>
 					<SidebarMenuItem>

@@ -16,6 +16,7 @@ export const updateInternal = internalMutation({
 		stripeSubscriptionItemId: v.optional(v.string()),
 		subscriptionId: v.optional(v.id("subscriptions")),
 		priceId: v.optional(v.id("prices")),
+		productId: v.optional(v.id("products")),
 		quantity: v.optional(v.number()),
 		metadata: v.optional(v.record(v.string(), v.any())),
 		updatedAt: v.optional(v.string()),
@@ -41,6 +42,10 @@ export const updateInternal = internalMutation({
 
 		if (args.metadata) {
 			updateObject.metadata = args.metadata;
+		}
+
+		if (args.productId) {
+			updateObject.productId = args.productId;
 		}
 
 		if (args.updatedAt) {

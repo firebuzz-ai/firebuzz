@@ -21,4 +21,5 @@ export const ERRORS = {
 	INVALID_ARGUMENTS: "Invalid arguments.",
 	ENVS_NOT_INITIALIZED: "Environment variables not initialized.",
 	SOMETHING_WENT_WRONG: "Something went wrong.",
+	ALREADY_EXISTS: "Already exists.",
 } as const;

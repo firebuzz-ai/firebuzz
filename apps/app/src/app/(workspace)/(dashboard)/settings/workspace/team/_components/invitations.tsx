@@ -1,0 +1,125 @@
+"use client";
+
+import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
+import { api, useCachedRichQuery } from "@firebuzz/convex";
+import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { ChevronLeft, ChevronRight } from "@firebuzz/ui/icons/lucide";
+import { useState } from "react";
+import { InvitationListItem } from "./invitation-list-item";
+
+export const Invitations = () => {
+	const [, setInviteModal] = useInviteMemberModal();
+	const [cursor, setCursor] = useState<string | null>(null);
+	const [previousCursors, setPreviousCursors] = useState<string[]>([]);
+
+	const { data: invitations, isPending: isLoading } = useCachedRichQuery(
+		api.collections.invitations.queries.getPaginated,
+		{
+			paginationOpts: { numItems: 5, cursor },
+			sortOrder: "desc",
+		},
+	);
+
+	const acceptedInvitations = invitations?.page.filter(
+		(invitation) => invitation.status === "accepted",
+	);
+
+	const handleNext = () => {
+		if (invitations?.continueCursor) {
+			setPreviousCursors((prev) => [...prev, cursor ?? ""]);
+			setCursor(invitations.continueCursor);
+		}
+	};
+
+	const handlePrevious = () => {
+		if (previousCursors.length > 0) {
+			const newCursors = [...previousCursors];
+			const previousCursor = newCursors.pop();
+			setPreviousCursors(newCursors);
+			setCursor(previousCursor === "" ? null : (previousCursor ?? null));
+		}
+	};
+
+	const canGoNext =
+		invitations && !invitations.isDone && invitations.continueCursor;
+	const canGoPrevious = previousCursors.length > 0;
+
+	if (isLoading) {
+		return (
+			<div className="flex flex-1 justify-center items-center w-full h-full">
+				<Spinner size="sm" />
+			</div>
+		);
+	}
+
+	return (
+		<div className="p-6 space-y-6 border-b">
+			{/* Header */}
+			<div>
+				<h1 className="text-lg font-semibold">Invitations</h1>
+				<p className="text-sm text-muted-foreground">
+					See all invitations and their status.
+				</p>
+			</div>
+
+			{/* All Members Section */}
+			<div className="space-y-2 max-w-2xl">
+				<div className="flex justify-between items-center">
+					<h2 className="font-medium">
+						Invitations{" "}
+						<span className="text-sm text-muted-foreground">
+							({acceptedInvitations?.length || 0} accepted)
+						</span>
+					</h2>
+				</div>
+
+				<div className="space-y-2">
+					{invitations && invitations.page.length > 0 ? (
+						invitations.page.map((invitation) => (
+							<InvitationListItem
+								key={invitation._id}
+								invitation={invitation}
+							/>
+						))
+					) : (
+						<Button
+							variant="outline"
+							size="sm"
+							className="w-full bg-muted hover:bg-muted/50"
+							onClick={() => setInviteModal({ create: true })}
+						>
+							Invite Member <ButtonShortcut>⌘N</ButtonShortcut>
+						</Button>
+					)}
+				</div>
+
+				{/* Pagination Controls */}
+				{invitations &&
+					invitations.page.length > 0 &&
+					(canGoNext || canGoPrevious) && (
+						<div className="flex gap-2 justify-between items-center pt-4">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handlePrevious}
+								disabled={!canGoPrevious}
+							>
+								<ChevronLeft className="w-4 h-4" />
+								Previous
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleNext}
+								disabled={!canGoNext}
+							>
+								Next
+								<ChevronRight className="w-4 h-4" />
+							</Button>
+						</div>
+					)}
+			</div>
+		</div>
+	);
+};

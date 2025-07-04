@@ -111,3 +111,15 @@ export const getActiveByProject = query({
 			.collect();
 	},
 });
+
+export const getByProjectIdInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+	},
+	handler: async (ctx, { projectId }) => {
+		return await ctx.db
+			.query("domains")
+			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+			.unique();
+	},
+});

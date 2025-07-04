@@ -12,7 +12,8 @@ export const SidebarLink = ({
 	icon?: React.ReactNode;
 }) => {
 	const pathname = usePathname();
-	const isActive = pathname === href.split("?")[0];
+	const isActive = pathname.startsWith(href);
+
 	return (
 		<SidebarMenuSubButton asChild isActive={isActive}>
 			<Link href={href}>

@@ -297,6 +297,23 @@ export const handleStripeEvent = internalAction({
 						break;
 					}
 
+					// Get Product Data
+					const productData = await ctx.runQuery(
+						internal.collections.stripe.products.queries.getByStripeId,
+						{
+							stripeProductId: subscriptionData.items?.data?.[0]?.price
+								?.product as string,
+						},
+					);
+
+					if (!productData) {
+						console.warn(
+							"Product not found for subscription:",
+							subscriptionData.id,
+						);
+						break;
+					}
+
 					// Get period dates from the first subscription item (Stripe's new structure)
 					const firstItem = subscriptionData.items?.data?.[0];
 					const currentPeriodStart = firstItem?.current_period_start
@@ -348,6 +365,7 @@ export const handleStripeEvent = internalAction({
 										stripeSubscriptionItemId: item.id,
 										subscriptionId,
 										priceId: price._id,
+										productId: price.productId,
 										quantity: item.quantity || 1,
 										metadata: price?.metadata || undefined,
 										updatedAt: new Date().toISOString(),
@@ -360,6 +378,18 @@ export const handleStripeEvent = internalAction({
 								);
 							}
 						}
+					}
+
+					// Create Clerk Organization if it's a team plan
+					const isTeamPlan = productData?.metadata?.isTeam === "true";
+
+					if (isTeamPlan) {
+						// Create Clerk Organization
+						await ctx.runAction(internal.lib.clerk.createOrganizationInternal, {
+							workspaceId: customer.workspaceId,
+							maxAllowedMemberships: firstItem?.quantity || 1,
+							type: "team" as const,
+						});
 					}
 
 					// Complete onboarding if it's not already completed
@@ -443,6 +473,29 @@ export const handleStripeEvent = internalAction({
 							// No action needed - trial credits will expire naturally at currentPeriodEnd
 						}
 
+						// Check for plan upgrade to Team before updating subscription items
+						let hasUpgradedToTeam = false;
+						let newTeamQuantity = 1;
+
+						// Get current subscription items to compare
+						const currentSubscriptionItems = await ctx.runQuery(
+							internal.collections.stripe.subscriptionItems.queries
+								.getBySubscriptionIdInternal,
+							{ subscriptionId: existingSubscription._id },
+						);
+
+						// Check if current subscription has any Team plans
+						const currentTeamItems = [];
+						for (const currentItem of currentSubscriptionItems) {
+							const currentProduct = await ctx.runQuery(
+								internal.collections.stripe.products.queries.getByIdInternal,
+								{ id: currentItem.productId },
+							);
+							if (currentProduct?.metadata?.isTeam === "true") {
+								currentTeamItems.push(currentItem);
+							}
+						}
+
 						// Update subscription items
 						if (subscriptionData.items?.data) {
 							for (const item of subscriptionData.items.data) {
@@ -467,6 +520,21 @@ export const handleStripeEvent = internalAction({
 									continue;
 								}
 
+								// Get the product to check if it's a Team plan
+								const product = await ctx.runQuery(
+									internal.collections.stripe.products.queries.getByIdInternal,
+									{ id: price.productId },
+								);
+
+								// Check if this is a new Team plan (upgrade scenario)
+								if (product?.metadata?.isTeam === "true") {
+									if (currentTeamItems.length === 0) {
+										// No existing Team plan, this is an upgrade to Team
+										hasUpgradedToTeam = true;
+										newTeamQuantity = item.quantity || 1;
+									}
+								}
+
 								if (existingItem) {
 									// Update existing subscription item
 									await ctx.runMutation(
@@ -475,6 +543,7 @@ export const handleStripeEvent = internalAction({
 										{
 											subscriptionItemId: existingItem._id,
 											priceId: price._id,
+											productId: price.productId,
 											quantity: item.quantity || 1,
 											metadata: price?.metadata || undefined,
 											updatedAt: new Date().toISOString(),
@@ -489,12 +558,37 @@ export const handleStripeEvent = internalAction({
 											stripeSubscriptionItemId: item.id,
 											subscriptionId: existingSubscription._id,
 											priceId: price._id,
+											productId: price.productId,
 											quantity: item.quantity || 1,
 											metadata: price?.metadata || undefined,
 											updatedAt: new Date().toISOString(),
 										},
 									);
 								}
+							}
+						}
+
+						// Create Clerk Organization if upgraded to Team plan
+						if (hasUpgradedToTeam) {
+							console.log(
+								`Creating Clerk organization for workspace ${existingSubscription.workspaceId} - upgraded to Team plan`,
+							);
+
+							try {
+								await ctx.runAction(
+									internal.lib.clerk.createOrganizationInternal,
+									{
+										workspaceId: existingSubscription.workspaceId,
+										maxAllowedMemberships: newTeamQuantity,
+										type: "team" as const,
+									},
+								);
+							} catch (error) {
+								console.error(
+									`Failed to create Clerk organization for workspace ${existingSubscription.workspaceId}:`,
+									error,
+								);
+								// Don't throw error to avoid webhook failure - organization can be created later if needed
 							}
 						}
 					} else {
@@ -919,12 +1013,6 @@ export const handleStripeEvent = internalAction({
 							);
 							break;
 						}
-
-						console.log({
-							isShadowPrice: price.metadata?.isShadow,
-							isShadowSubscription: subscription.metadata?.isShadowSubscription,
-							amountPaid: invoiceData.amount_paid,
-						});
 
 						// SHADOW SUBSCRIPTION
 						if (

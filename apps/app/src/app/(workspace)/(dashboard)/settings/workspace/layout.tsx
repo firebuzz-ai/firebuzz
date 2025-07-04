@@ -1,4 +1,5 @@
 import { WorkspaceSettingsTabs } from "@/components/navigation/settings/workspace/tabs";
+import { WorkspaceGeneralFormProvider } from "./general/_components/form-context";
 
 export default function WorkspaceSettingsLayout({
 	children,
@@ -7,8 +8,10 @@ export default function WorkspaceSettingsLayout({
 }) {
 	return (
 		<div className="flex flex-col flex-1">
-			<WorkspaceSettingsTabs />
-			<div className="flex flex-1">{children}</div>
+			<WorkspaceGeneralFormProvider>
+				<WorkspaceSettingsTabs />
+				<div className="flex overflow-hidden flex-1">{children}</div>
+			</WorkspaceGeneralFormProvider>
 		</div>
 	);
 }

@@ -4,14 +4,12 @@ import { ConfigureDomainModal } from "@/components/modals/domains/configure-doma
 import { NewDomainModal } from "@/components/modals/domains/new-domain/new-domain-modal";
 import { EmptyState } from "@/components/reusables/empty-state";
 import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Globe } from "@firebuzz/ui/icons/lucide";
-import { useState } from "react";
 import { DomainItem } from "./domain-item";
 
 export const Domains = () => {
-	const [selected, setSelected] = useState<Id<"domains">[]>([]);
 	const [, setModal] = useNewDomainModal();
 
 	const { data: domains, isPending: isLoading } = useCachedRichQuery(
@@ -32,13 +30,7 @@ export const Domains = () => {
 
 	return (
 		<div className="flex overflow-hidden relative flex-col flex-1 max-h-full">
-			<div
-				onDoubleClick={(e) => {
-					e.stopPropagation();
-					setSelected([]);
-				}}
-				className="overflow-y-auto flex-1 select-none"
-			>
+			<div className="overflow-y-auto flex-1 select-none">
 				{/* Content */}
 
 				{/* Empty State */}
@@ -64,12 +56,7 @@ export const Domains = () => {
 				{domains && domains.page.length > 0 && (
 					<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{domains.page.map((domain) => (
-							<DomainItem
-								key={domain._id}
-								domain={domain}
-								selected={selected.includes(domain._id)}
-								setSelected={setSelected}
-							/>
+							<DomainItem key={domain._id} domain={domain} />
 						))}
 					</div>
 				)}

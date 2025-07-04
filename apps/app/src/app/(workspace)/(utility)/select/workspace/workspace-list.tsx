@@ -47,6 +47,7 @@ export const WorkspaceList = () => {
 			.map((word) => word[0])
 			.join("");
 	};
+
 	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
 	return (
@@ -76,7 +77,7 @@ export const WorkspaceList = () => {
 							className: "flex justify-start items-center h-12 text-left",
 						})}
 					>
-						<Avatar className="w-6 h-6">
+						<Avatar className="size-9">
 							<AvatarImage
 								src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${workspace.logo}`}
 								alt="Logo preview"
@@ -88,7 +89,7 @@ export const WorkspaceList = () => {
 						<div className="flex flex-1 justify-between items-center">
 							<div>
 								<h3 className="font-semibold">{workspace.title}</h3>
-								<p className="text-xs text-muted-foreground">
+								<p className="text-xs capitalize text-muted-foreground">
 									{workspace.workspaceType}
 								</p>
 							</div>
@@ -106,6 +107,7 @@ export const WorkspaceList = () => {
 				<Link
 					className={buttonVariants({
 						variant: "outline",
+						size: "sm",
 						className: "flex flex-1 gap-2 justify-center items-center",
 					})}
 					href="/new/workspace"
@@ -115,6 +117,7 @@ export const WorkspaceList = () => {
 				<Link
 					className={buttonVariants({
 						variant: "outline",
+						size: "sm",
 						className: "flex flex-1 gap-2 justify-center items-center",
 					})}
 					href="/join/workspace"

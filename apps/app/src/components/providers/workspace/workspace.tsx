@@ -11,7 +11,7 @@ import {
 
 import { useUser } from "@/hooks/auth/use-user";
 import { useRouter } from "next/navigation";
-import { createContext, useMemo } from "react";
+import { createContext } from "react";
 
 const workspaceContext = createContext<{
 	currentWorkspace: (Doc<"workspaces"> & { owner: Doc<"users"> | null }) | null;
@@ -35,6 +35,8 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 		setActive,
 	} = useOrganizationList({ userMemberships: true });
 
+	console.log({ data: userMemberships.data, teamWorkspacesLoaded });
+
 	const updateUserCurrentWorkspace = useMutation(
 		api.collections.users.mutations.updateCurrentWorkspace,
 	);
@@ -55,27 +57,27 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 	const { data: currentWorkspace, isPending: isCurrentWorkspacePending } =
 		useCachedRichQuery(api.collections.workspaces.queries.getCurrent);
 
-	const personalWorkspaces = useMemo(() => {
-		return (workspaces ?? [])
-			.filter(
-				(workspace) => workspace.ownerId === user?._id && !workspace.externalId,
-			)
-			.map((workspace) => workspace._id);
-	}, [workspaces, user?._id]);
-
 	const changeWorkspace = async (workspaceId: Id<"workspaces">) => {
 		if (setActive) {
+			const externalId = workspaces?.find(
+				(workspace) => workspace._id === workspaceId,
+			)?.externalId;
+
 			await setActive({
-				organization: personalWorkspaces?.includes(workspaceId)
-					? null
-					: workspaceId,
+				// Team workspaces have an externalId that starts with "org_" personal workspaces start with "user_"
+				organization: externalId?.startsWith("org_") ? externalId : null,
 			});
 
 			await updateUserCurrentWorkspace({
 				currentWorkspaceId: workspaceId,
 			});
 
-			router.push("/");
+			// If user has no project, redirect to project selection
+			if (!user?.currentProjectId) {
+				router.push("/select/project");
+			} else {
+				router.push("/");
+			}
 		}
 	};
 

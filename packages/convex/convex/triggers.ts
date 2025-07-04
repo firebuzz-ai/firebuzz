@@ -35,6 +35,11 @@ const triggers = new Triggers<DataModel>();
 // Cascade delete all workspaces when a user is deleted
 triggers.register("users", async (ctx, change) => {
 	if (change.operation === "delete") {
+		// Delete all members associated with this user
+		await ctx.runMutation(internal.collections.members.utils.deleteByUserId, {
+			userId: change.id,
+		});
+
 		await asyncMap(
 			await getManyFrom(
 				ctx.db,
@@ -55,6 +60,26 @@ triggers.register("users", async (ctx, change) => {
 // Cascade delete all projects and customer and onboarding data when a workspace is deleted
 triggers.register("workspaces", async (ctx, change) => {
 	if (change.operation === "delete") {
+		// Delete Members
+		await cascadePool.enqueueMutation(
+			ctx,
+			internal.collections.members.utils.batchDeleteByWorkspaceId,
+			{
+				workspaceId: change.id,
+				numItems: 25,
+			},
+		);
+
+		// Delete Invitations
+		await cascadePool.enqueueMutation(
+			ctx,
+			internal.collections.invitations.utils.batchDeleteByWorkspaceId,
+			{
+				workspaceId: change.id,
+				numItems: 25,
+			},
+		);
+
 		// Delete Projects
 		await asyncMap(
 			await getManyFrom(
@@ -132,6 +157,14 @@ triggers.register("projects", async (ctx, change) => {
 		// Delete brand
 		await ctx.runMutation(
 			internal.collections.brands.mutations.deletePermanentByProjectId,
+			{
+				projectId: change.id,
+			},
+		);
+
+		// Delete onboarding
+		await ctx.runMutation(
+			internal.collections.onboarding.mutations.deleteByProjectIdInternal,
 			{
 				projectId: change.id,
 			},
@@ -389,7 +422,7 @@ triggers.register("campaigns", async (ctx, change) => {
 
 		// If the campaign is being deleted, delete the aggregate
 		if (!oldDoc.deletedAt && newDoc.deletedAt) {
-			await aggregateCampaigns.delete(ctx, oldDoc);
+			await aggregateCampaigns.deleteIfExists(ctx, oldDoc);
 		}
 		// If the campaign is being restored, insert the aggregate
 		else if (oldDoc.deletedAt && !newDoc.deletedAt) {
@@ -411,7 +444,7 @@ triggers.register("landingPages", async (ctx, change) => {
 
 		// If the landing page is being deleted, delete the aggregate
 		if (!oldDoc.deletedAt && newDoc.deletedAt) {
-			await aggregateLandingPages.delete(ctx, oldDoc);
+			await aggregateLandingPages.deleteIfExists(ctx, oldDoc);
 		}
 		// If the landing page is being restored, insert the aggregate
 		else if (oldDoc.deletedAt && !newDoc.deletedAt) {
@@ -426,7 +459,7 @@ triggers.register("landingPages", async (ctx, change) => {
 triggers.register("landingPageVersions", async (ctx, change) => {
 	if (change.operation === "delete") {
 		const doc = change.oldDoc;
-		await aggregateLandingPageVersions.delete(ctx, doc);
+		await aggregateLandingPageVersions.deleteIfExists(ctx, doc);
 	} else if (change.operation === "insert") {
 		const doc = change.newDoc;
 		await aggregateLandingPageVersions.insert(ctx, doc);
@@ -441,7 +474,7 @@ triggers.register("landingPageVersions", async (ctx, change) => {
 triggers.register("landingPageTemplates", async (ctx, change) => {
 	if (change.operation === "delete") {
 		const doc = change.oldDoc;
-		await aggregateLandingPageTemplates.delete(ctx, doc);
+		await aggregateLandingPageTemplates.deleteIfExists(ctx, doc);
 	} else if (change.operation === "insert") {
 		const doc = change.newDoc;
 		await aggregateLandingPageTemplates.insert(ctx, doc);
@@ -463,7 +496,7 @@ triggers.register("media", async (ctx, change) => {
 
 		// If the media is being deleted, delete the aggregate
 		if (!oldDoc.deletedAt && newDoc.deletedAt) {
-			await aggregateMedia.delete(ctx, oldDoc);
+			await aggregateMedia.deleteIfExists(ctx, oldDoc);
 		}
 
 		// If the media is being restored, insert the aggregate
@@ -494,7 +527,7 @@ triggers.register("documents", async (ctx, change) => {
 
 		// If the media is being deleted, delete the aggregate
 		if (!oldDoc.deletedAt && newDoc.deletedAt) {
-			await aggregateDocuments.delete(ctx, oldDoc);
+			await aggregateDocuments.deleteIfExists(ctx, oldDoc);
 		}
 
 		// If the media is being restored, insert the aggregate
@@ -520,7 +553,7 @@ triggers.register("memoizedDocuments", async (ctx, change) => {
 		await aggregateMemoizedDocuments.replace(ctx, oldDoc, newDoc);
 	} else if (change.operation === "delete") {
 		const doc = change.oldDoc;
-		await aggregateMemoizedDocuments.delete(ctx, doc);
+		await aggregateMemoizedDocuments.deleteIfExists(ctx, doc);
 	}
 });
 
@@ -554,9 +587,9 @@ triggers.register("transactions", async (ctx, change) => {
 		await aggregateCurrentPeriodAdditions.replace(ctx, oldDoc, newDoc);
 	} else if (change.operation === "delete") {
 		const doc = change.oldDoc;
-		await aggregateCredits.delete(ctx, doc);
-		await aggregateCurrentPeriodUsage.delete(ctx, doc);
-		await aggregateCurrentPeriodAdditions.delete(ctx, doc);
+		await aggregateCredits.deleteIfExists(ctx, doc);
+		await aggregateCurrentPeriodUsage.deleteIfExists(ctx, doc);
+		await aggregateCurrentPeriodAdditions.deleteIfExists(ctx, doc);
 	}
 });
 

@@ -3,7 +3,7 @@ import { type VariantProps, cva } from "class-variance-authority";
 import { cn } from "@firebuzz/ui/lib/utils";
 
 const badgeVariants = cva(
-	"inline-flex max-w-fit items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+	"inline-flex max-w-fit items-center cursor-default rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
 	{
 		variants: {
 			variant: {
@@ -13,7 +13,7 @@ const badgeVariants = cva(
 				secondary:
 					"border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
 				destructive:
-					"border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
+					"border-destructive bg-destructive/20 text-destructive hover:text-destructive-foreground hover:bg-destructive/80",
 				outline: "text-foreground",
 				emerald:
 					"border-emerald-500 bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30",

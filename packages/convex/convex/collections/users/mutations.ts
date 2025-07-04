@@ -3,6 +3,7 @@ import { ConvexError, type Validator, v } from "convex/values";
 import { internalMutation, mutation } from "../../_generated/server";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
+import { getTeamWorkspaceByExternalId } from "../workspaces/utils";
 import { getCurrentUser, getUserByExternalId } from "./utils";
 
 export const upsertFromClerk = internalMutation({
@@ -22,16 +23,6 @@ export const upsertFromClerk = internalMutation({
 		if (user === null) {
 			// If the user does not exist, create a new user
 			await ctx.db.insert("users", userAttributes);
-			// Insert a personal workspace for the user
-			/* await ctx.db.insert("workspaces", {
-				externalId: data.id,
-				workspaceType: "personal",
-				ownerId: newUserId,
-				title: `${data.first_name}'s Workspace`,
-				color: "sky",
-				icon: "cup",
-				onboardingCompleted: true,
-			}); */
 		} else {
 			// If the user exists, update the user
 			await ctx.db.patch(user._id, userAttributes);
@@ -58,7 +49,23 @@ export const updateCurrentProject = mutation({
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
-		await ctx.db.patch(user._id, { currentProjectId });
+
+		// Get the project
+		if (currentProjectId) {
+			const project = await ctx.db.get(currentProjectId);
+			if (!project) {
+				throw new ConvexError(ERRORS.NOT_FOUND);
+			}
+
+			await ctx.db.patch(user._id, {
+				currentProjectId,
+				currentWorkspaceId: project.workspaceId,
+			});
+			return;
+		}
+
+		// Clear the current project
+		await ctx.db.patch(user._id, { currentProjectId: undefined });
 	},
 });
 
@@ -72,5 +79,25 @@ export const updateCurrentWorkspace = mutation({
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 		await ctx.db.patch(user._id, { currentWorkspaceId });
+	},
+});
+
+export const updateCurrentWorkspaceByExternalId = mutation({
+	args: {
+		currentWorkspaceExternalId: v.string(),
+	},
+	handler: async (ctx, { currentWorkspaceExternalId }) => {
+		const user = await getCurrentUser(ctx);
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+		const workspace = await getTeamWorkspaceByExternalId(
+			ctx,
+			currentWorkspaceExternalId,
+		);
+		if (!workspace) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+		await ctx.db.patch(user._id, { currentWorkspaceId: workspace._id });
 	},
 });

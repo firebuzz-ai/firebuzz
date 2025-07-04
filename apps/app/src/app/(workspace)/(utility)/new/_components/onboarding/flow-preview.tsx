@@ -28,7 +28,7 @@ const FlowNode = ({
 			{/* Node */}
 			<div
 				className={cn(
-					"relative w-[280px] h-[80px] bg-background border border-border rounded-md overflow-hidden transition-all duration-300 ease-in-out",
+					"overflow-hidden relative rounded-md border transition-all duration-300 ease-in-out w-[280px] h-[80px] bg-background border-border",
 					isActive ? "scale-100" : "scale-90",
 				)}
 			>
@@ -36,7 +36,7 @@ const FlowNode = ({
 				{isActive && (
 					<div className="pointer-events-none absolute inset-0 rounded-[inherit] border border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]">
 						<motion.div
-							className="absolute rounded-full aspect-square bg-brand opacity-80"
+							className="absolute rounded-full opacity-80 aspect-square bg-brand"
 							style={{
 								offsetPath: "rect(0 auto auto 0 round 6px)",
 							}}
@@ -55,7 +55,7 @@ const FlowNode = ({
 
 						{/* Glow effect */}
 						<motion.div
-							className="absolute rounded-full aspect-square bg-brand opacity-40 blur-sm"
+							className="absolute rounded-full opacity-40 blur-sm aspect-square bg-brand"
 							style={{
 								offsetPath: "rect(0 auto auto 0 round 6px)",
 							}}
@@ -77,11 +77,11 @@ const FlowNode = ({
 				{/* Header */}
 				<div
 					className={cn(
-						"relative z-10 flex items-center h-8 px-3 border-b border-border gap-2",
+						"flex relative z-10 gap-2 items-center px-3 h-8 border-b border-border",
 						isActive ? "bg-muted" : "bg-muted/50",
 					)}
 				>
-					<div className="flex items-center justify-center w-3 h-full">
+					<div className="flex justify-center items-center w-3 h-full">
 						<AnimatePresence mode="wait">
 							{isActive && (
 								<motion.div
@@ -116,7 +116,7 @@ const FlowNode = ({
 									exit={{ opacity: 0, y: 10 }}
 									transition={{ duration: 0.2, ease: "easeInOut" }}
 								>
-									<Check className="size-3 text-emerald-500" />
+									<Check className="text-emerald-500 size-3" />
 								</motion.div>
 							)}
 						</AnimatePresence>
@@ -146,9 +146,9 @@ const FlowNode = ({
 
 			{/* Spacing and chevron connectors to next node */}
 			{!isLast && (
-				<div className="relative flex flex-col items-center justify-center py-8">
+				<div className="flex relative flex-col justify-center items-center py-8">
 					{/* Chevron connectors */}
-					<div className="flex flex-col items-center justify-center h-24 gap-3">
+					<div className="flex flex-col gap-3 justify-center items-center h-24">
 						{Array.from({ length: 4 }).map((_, index) => (
 							<motion.div
 								key={`chevron-${node.id}-${index}`}
@@ -205,24 +205,23 @@ export const OnboardingFlowPreview = ({
 	const middlePosition = totalNodeHeight;
 
 	// The target node (step) position in the full container
-	const targetNodePosition =
-		(step - Math.floor(steps.length / 2)) * totalNodeHeight;
+	const targetNodePosition = (step - (steps.length - 1) / 2) * totalNodeHeight;
 
 	// Calculate offset to center the target node in the middle position
 	const slideOffset = middlePosition - targetNodePosition;
 
 	return (
-		<div className="relative w-full h-full overflow-hidden">
+		<div className="overflow-hidden relative w-full h-full">
 			{/* Dotted Grid Background */}
 			<DottedGridBackground isDark={resolvedTheme === "dark"} />
 
 			{/* Viewport Container */}
 			<div
-				className="relative flex items-center justify-center w-full h-full mx-auto"
+				className="flex relative justify-center items-center mx-auto w-full h-full"
 				style={{ zIndex: 2 }}
 			>
 				<div
-					className="relative flex items-center justify-center w-full h-full overflow-hidden"
+					className="flex overflow-hidden relative justify-center items-center w-full h-full"
 					style={{
 						maxWidth: "320px",
 						height: `${totalNodeHeight * 3}px`, // Fixed height for exactly 3 nodes

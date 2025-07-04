@@ -3,7 +3,7 @@ import { v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { getCurrentUser } from "../users/utils";
 import {
-	getPersonalWorkspacesByOwnerId,
+	getPersonalWorkspacesByExternalId,
 	getTeamWorkspaceByExternalId,
 } from "./utils";
 
@@ -45,9 +45,9 @@ export const getAll = query({
 		});
 
 		// Get personal workspaces
-		const personalWorkspaces = await getPersonalWorkspacesByOwnerId(
+		const personalWorkspaces = await getPersonalWorkspacesByExternalId(
 			ctx,
-			user._id,
+			user.externalId,
 		);
 
 		// Return all workspaces
@@ -64,6 +64,16 @@ export const getByIdInternal = internalQuery({
 	},
 });
 
+export const getByExternalIdInternal = internalQuery({
+	args: { externalId: v.string() },
+	handler: async (ctx, { externalId }) => {
+		return await ctx.db
+			.query("workspaces")
+			.withIndex("by_external_id", (q) => q.eq("externalId", externalId))
+			.first();
+	},
+});
+
 export const getByStripeCustomerId = internalQuery({
 	args: { stripeCustomerId: v.string() },
 	handler: async (ctx, { stripeCustomerId }) => {
@@ -77,11 +87,11 @@ export const getByStripeCustomerId = internalQuery({
 });
 
 export const checkIsPersonalWorkspaceAvailable = internalQuery({
-	args: { ownerId: v.id("users") },
-	handler: async (ctx, { ownerId }) => {
-		const personalWorkspaces = await getPersonalWorkspacesByOwnerId(
+	args: { externalId: v.string() },
+	handler: async (ctx, { externalId }) => {
+		const personalWorkspaces = await getPersonalWorkspacesByExternalId(
 			ctx,
-			ownerId,
+			externalId,
 		);
 
 		return personalWorkspaces.length < 2;

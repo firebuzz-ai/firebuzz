@@ -9,314 +9,332 @@ import { engineAPIClient } from "../../lib/engine";
 import { ERRORS } from "../../utils/errors";
 
 export const createCustomDomain = action({
-  args: {
-    hostname: v.string(),
-    workspaceId: v.id("workspaces"),
-    projectId: v.id("projects"),
-  },
-  handler: async (
-    ctx,
-    { hostname, workspaceId, projectId }
-  ): Promise<{
-    success: boolean;
-    customDomainId: Id<"domains">;
-    cloudflareData: Cloudflare.CustomHostnames.CustomHostnameCreateResponse;
-  }> => {
-    try {
-      // Get user context
-      const clerkUser = await ctx.auth.getUserIdentity();
+	args: {
+		hostname: v.string(),
+		workspaceId: v.id("workspaces"),
+		projectId: v.id("projects"),
+	},
+	handler: async (
+		ctx,
+		{ hostname, workspaceId, projectId },
+	): Promise<{
+		success: boolean;
+		customDomainId: Id<"domains">;
+		cloudflareData: Cloudflare.CustomHostnames.CustomHostnameCreateResponse;
+	}> => {
+		try {
+			// Get user context
+			const clerkUser = await ctx.auth.getUserIdentity();
 
-      if (!clerkUser) {
-        throw new Error(ERRORS.UNAUTHORIZED);
-      }
+			if (!clerkUser) {
+				throw new Error(ERRORS.UNAUTHORIZED);
+			}
 
-      const user = await ctx.runQuery(
-        internal.collections.users.queries.getByExternalIdInternal,
-        {
-          externalId: clerkUser.subject,
-        }
-      );
+			const user = await ctx.runQuery(
+				internal.collections.users.queries.getByExternalIdInternal,
+				{
+					externalId: clerkUser.subject,
+				},
+			);
 
-      if (!user) {
-        throw new Error(ERRORS.NOT_FOUND);
-      }
+			if (!user) {
+				throw new Error(ERRORS.NOT_FOUND);
+			}
 
-      // Create custom hostname via Cloudflare API
-      const customHostname = await cloudflare.customHostnames.create({
-        zone_id: process.env.CLOUDFLARE_ZONE_ID!,
-        hostname,
-        ssl: {
-          method: "txt",
-          type: "dv",
-        },
-      });
+			// Check if project already has a custom domain
+			const existingDomain = await ctx.runQuery(
+				internal.collections.domains.queries.getByProjectIdInternal,
+				{
+					projectId,
+				},
+			);
 
-      // Store the Config in KV
-      await engineAPIClient.kv.config.$post({
-        json: {
-          key: `${hostname}`,
-          value: JSON.stringify({
-            w: workspaceId,
-            p: projectId,
-            e: "dev",
-          }),
-          options: {
-            metadata: {},
-          },
-        },
-      });
+			if (existingDomain) {
+				throw new ConvexError(
+					"This project already has a custom domain. Each project can only have one custom domain.",
+				);
+			}
 
-      // Wait for 4 seconds to ensure the DNS is propagated
-      await sleep(4000);
+			// Create custom hostname via Cloudflare API
+			const customHostname = await cloudflare.customHostnames.create({
+				zone_id: process.env.CLOUDFLARE_ZONE_ID!,
+				hostname,
+				ssl: {
+					method: "txt",
+					type: "dv",
+				},
+			});
 
-      // Get latest status from Cloudflare
-      const customHostnameLast = await cloudflare.customHostnames.get(
-        customHostname.id,
-        {
-          zone_id: process.env.CLOUDFLARE_ZONE_ID!,
-        }
-      );
+			// Store the Config in KV
+			await engineAPIClient.kv.config.$post({
+				json: {
+					key: `${hostname}`,
+					value: JSON.stringify({
+						w: workspaceId,
+						p: projectId,
+						e: "dev",
+					}),
+					options: {
+						metadata: {},
+					},
+				},
+			});
 
-      const verificationRecord =
-        customHostnameLast.ssl?.validation_records &&
-        customHostnameLast.ssl.validation_records.length > 0 &&
-        customHostnameLast.ssl.validation_records[0].txt_name &&
-        customHostnameLast.ssl.validation_records[0].txt_value
-          ? [
-              {
-                name: customHostnameLast.ssl.validation_records[0].txt_name,
-                type: "txt" as const,
-                value: customHostnameLast.ssl.validation_records[0].txt_value,
-              },
-            ]
-          : [];
+			// Wait for 4 seconds to ensure the DNS is propagated
+			await sleep(4000);
 
-      // Store in Convex database
-      const customDomainId = await ctx.runMutation(
-        internal.collections.domains.mutations.createInternal,
-        {
-          hostname,
-          status: customHostname.status as Doc<"domains">["status"],
-          cloudflareHostnameId: customHostname.id,
-          sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
-          sslExpiresAt: customHostname.ssl?.expires_on,
-          verificationRecord: [
-            {
-              name: hostname.split(".")[0],
-              type: "cname",
-              value: "customers.frbzz.com",
-            },
-            ...verificationRecord,
-          ],
-          workspaceId,
-          projectId,
-          createdBy: user._id,
-        }
-      );
+			// Get latest status from Cloudflare
+			const customHostnameLast = await cloudflare.customHostnames.get(
+				customHostname.id,
+				{
+					zone_id: process.env.CLOUDFLARE_ZONE_ID!,
+				},
+			);
 
-      return {
-        success: true,
-        customDomainId,
-        cloudflareData: customHostname,
-      };
-    } catch (error) {
-      console.error("Error creating custom domain:", error);
+			const verificationRecord =
+				customHostnameLast.ssl?.validation_records &&
+				customHostnameLast.ssl.validation_records.length > 0 &&
+				customHostnameLast.ssl.validation_records[0].txt_name &&
+				customHostnameLast.ssl.validation_records[0].txt_value
+					? [
+							{
+								name: customHostnameLast.ssl.validation_records[0].txt_name,
+								type: "txt" as const,
+								value: customHostnameLast.ssl.validation_records[0].txt_value,
+							},
+						]
+					: [];
 
-      // Handle Cloudflare API errors
-      if (error instanceof Cloudflare.APIError) {
-        throw new ConvexError(
-          `Cloudflare API error: ${error.errors[0].message}`
-        );
-      }
+			// Store in Convex database
+			const customDomainId = await ctx.runMutation(
+				internal.collections.domains.mutations.createInternal,
+				{
+					hostname,
+					status: customHostname.status as Doc<"domains">["status"],
+					cloudflareHostnameId: customHostname.id,
+					sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
+					sslExpiresAt: customHostname.ssl?.expires_on,
+					verificationRecord: [
+						{
+							name: hostname.split(".")[0],
+							type: "cname",
+							value: "customers.frbzz.com",
+						},
+						...verificationRecord,
+					],
+					workspaceId,
+					projectId,
+					createdBy: user._id,
+				},
+			);
 
-      throw new ConvexError("Something went wrong");
-    }
-  },
+			return {
+				success: true,
+				customDomainId,
+				cloudflareData: customHostname,
+			};
+		} catch (error) {
+			console.error("Error creating custom domain:", error);
+
+			// Handle Cloudflare API errors
+			if (error instanceof Cloudflare.APIError) {
+				throw new ConvexError(
+					`Cloudflare API error: ${error.errors[0].message}`,
+				);
+			}
+
+			if (error instanceof ConvexError) {
+				throw error;
+			}
+
+			throw new ConvexError("Something went wrong");
+		}
+	},
 });
 
 export const deleteCustomDomain = action({
-  args: {
-    customDomainId: v.id("domains"),
-  },
-  handler: async (ctx, { customDomainId }) => {
-    try {
-      // Get user context for authorization
-      const clerkUser = await ctx.auth.getUserIdentity();
-      if (!clerkUser) {
-        throw new Error(ERRORS.UNAUTHORIZED);
-      }
-      const user = await ctx.runQuery(
-        internal.collections.users.queries.getByExternalIdInternal,
-        {
-          externalId: clerkUser.subject,
-        }
-      );
+	args: {
+		customDomainId: v.id("domains"),
+	},
+	handler: async (ctx, { customDomainId }) => {
+		try {
+			// Get user context for authorization
+			const clerkUser = await ctx.auth.getUserIdentity();
+			if (!clerkUser) {
+				throw new Error(ERRORS.UNAUTHORIZED);
+			}
+			const user = await ctx.runQuery(
+				internal.collections.users.queries.getByExternalIdInternal,
+				{
+					externalId: clerkUser.subject,
+				},
+			);
 
-      // Get domain from database
-      const domain = await ctx.runQuery(
-        internal.collections.domains.queries.getByIdInternal,
-        {
-          id: customDomainId,
-        }
-      );
+			// Get domain from database
+			const domain = await ctx.runQuery(
+				internal.collections.domains.queries.getByIdInternal,
+				{
+					id: customDomainId,
+				},
+			);
 
-      if (!domain) {
-        throw new Error("Custom domain not found");
-      }
+			if (!domain) {
+				throw new Error("Custom domain not found");
+			}
 
-      // Check authorization
-      if (domain.workspaceId !== user?.currentWorkspaceId) {
-        throw new Error("You are not allowed to delete this custom domain");
-      }
+			// Check authorization
+			if (domain.workspaceId !== user?.currentWorkspaceId) {
+				throw new Error("You are not allowed to delete this custom domain");
+			}
 
-      // Delete from Cloudflare
-      await cloudflare.customHostnames.delete(domain.cloudflareHostnameId, {
-        zone_id: process.env.CLOUDFLARE_ZONE_ID!,
-      });
+			// Delete from Cloudflare
+			await cloudflare.customHostnames.delete(domain.cloudflareHostnameId, {
+				zone_id: process.env.CLOUDFLARE_ZONE_ID!,
+			});
 
-      // Delete from database
-      await ctx.runMutation(
-        internal.collections.domains.mutations.deletePermanent,
-        {
-          id: customDomainId,
-        }
-      );
+			// Delete from database
+			await ctx.runMutation(
+				internal.collections.domains.mutations.deletePermanent,
+				{
+					id: customDomainId,
+				},
+			);
 
-      return {
-        success: true,
-        message: "Custom domain deleted successfully",
-      };
-    } catch (error) {
-      console.error("Error deleting custom domain:", error);
+			return {
+				success: true,
+				message: "Custom domain deleted successfully",
+			};
+		} catch (error) {
+			console.error("Error deleting custom domain:", error);
 
-      // Handle Cloudflare API errors
-      if (error instanceof Cloudflare.APIError) {
-        throw new Error(`Cloudflare API error: ${error.message}`);
-      }
+			// Handle Cloudflare API errors
+			if (error instanceof Cloudflare.APIError) {
+				throw new Error(`Cloudflare API error: ${error.message}`);
+			}
 
-      throw new Error(`Failed to delete custom domain: ${error}`);
-    }
-  },
+			throw new Error(`Failed to delete custom domain: ${error}`);
+		}
+	},
 });
 
 export const syncWithCloudflare = action({
-  args: {
-    customDomainId: v.id("domains"),
-  },
-  handler: async (ctx, { customDomainId }) => {
-    try {
-      // Get user context
-      const clerkUser = await ctx.auth.getUserIdentity();
+	args: {
+		customDomainId: v.id("domains"),
+	},
+	handler: async (ctx, { customDomainId }) => {
+		try {
+			// Get user context
+			const clerkUser = await ctx.auth.getUserIdentity();
 
-      if (!clerkUser) {
-        throw new Error(ERRORS.UNAUTHORIZED);
-      }
+			if (!clerkUser) {
+				throw new Error(ERRORS.UNAUTHORIZED);
+			}
 
-      const user = await ctx.runQuery(
-        internal.collections.users.queries.getByExternalIdInternal,
-        {
-          externalId: clerkUser.subject,
-        }
-      );
+			const user = await ctx.runQuery(
+				internal.collections.users.queries.getByExternalIdInternal,
+				{
+					externalId: clerkUser.subject,
+				},
+			);
 
-      if (!user) {
-        throw new Error(ERRORS.NOT_FOUND);
-      }
-      // Get domain from database
-      const domain = await ctx.runQuery(
-        internal.collections.domains.queries.getByIdInternal,
-        {
-          id: customDomainId,
-        }
-      );
+			if (!user) {
+				throw new Error(ERRORS.NOT_FOUND);
+			}
+			// Get domain from database
+			const domain = await ctx.runQuery(
+				internal.collections.domains.queries.getByIdInternal,
+				{
+					id: customDomainId,
+				},
+			);
 
-      if (!domain) {
-        throw new Error("Custom domain not found");
-      }
+			if (!domain) {
+				throw new Error("Custom domain not found");
+			}
 
-      // Get latest status from Cloudflare
-      const customHostname = await cloudflare.customHostnames.get(
-        domain.cloudflareHostnameId,
-        {
-          zone_id: process.env.CLOUDFLARE_ZONE_ID!,
-        }
-      );
+			// Get latest status from Cloudflare
+			const customHostname = await cloudflare.customHostnames.get(
+				domain.cloudflareHostnameId,
+				{
+					zone_id: process.env.CLOUDFLARE_ZONE_ID!,
+				},
+			);
 
-      const verificationRecord =
-        customHostname.ssl?.validation_records &&
-        customHostname.ssl.validation_records.length > 0 &&
-        customHostname.ssl.validation_records[0].txt_name &&
-        customHostname.ssl.validation_records[0].txt_value
-          ? [
-              {
-                name: customHostname.ssl.validation_records[0].txt_name,
-                type: "txt" as const,
-                value: customHostname.ssl.validation_records[0].txt_value,
-              },
-            ]
-          : [];
+			const verificationRecord =
+				customHostname.ssl?.validation_records &&
+				customHostname.ssl.validation_records.length > 0 &&
+				customHostname.ssl.validation_records[0].txt_name &&
+				customHostname.ssl.validation_records[0].txt_value
+					? [
+							{
+								name: customHostname.ssl.validation_records[0].txt_name,
+								type: "txt" as const,
+								value: customHostname.ssl.validation_records[0].txt_value,
+							},
+						]
+					: [];
 
-      // Update domain status in database
-      await ctx.runMutation(
-        internal.collections.domains.mutations.updateStatusInternal,
-        {
-          id: customDomainId,
-          status: customHostname.status as Doc<"domains">["status"],
-          sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
-          sslExpiresAt: customHostname.ssl?.expires_on,
-          lastCheckedAt: new Date().toISOString(),
-          verificationRecord: [
-            domain.verificationRecord[0],
-            ...verificationRecord,
-          ],
-        }
-      );
+			// Update domain status in database
+			await ctx.runMutation(
+				internal.collections.domains.mutations.updateStatusInternal,
+				{
+					id: customDomainId,
+					status: customHostname.status as Doc<"domains">["status"],
+					sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
+					sslExpiresAt: customHostname.ssl?.expires_on,
+					lastCheckedAt: new Date().toISOString(),
+					verificationRecord: [
+						domain.verificationRecord[0],
+						...verificationRecord,
+					],
+				},
+			);
 
-      return {
-        success: true,
-        domain: customHostname,
-      };
-    } catch (error) {
-      console.error("Error syncing with Cloudflare:", error);
+			return {
+				success: true,
+				domain: customHostname,
+			};
+		} catch (error) {
+			console.error("Error syncing with Cloudflare:", error);
 
-      // Handle Cloudflare API errors
-      if (error instanceof Cloudflare.APIError) {
-        throw new Error(`Cloudflare API error: ${error.message}`);
-      }
+			// Handle Cloudflare API errors
+			if (error instanceof Cloudflare.APIError) {
+				throw new Error(`Cloudflare API error: ${error.message}`);
+			}
 
-      throw new Error(`Failed to sync with Cloudflare: ${error}`);
-    }
-  },
+			throw new Error(`Failed to sync with Cloudflare: ${error}`);
+		}
+	},
 });
 
 // Helper action to list all custom hostnames from Cloudflare (for debugging/admin purposes)
 export const listCloudflareHostnames = internalAction({
-  args: {
-    hostname: v.optional(v.string()),
-    page: v.optional(v.number()),
-    per_page: v.optional(v.number()),
-  },
-  handler: async (_ctx, { hostname, page, per_page }) => {
-    try {
-      const result = await cloudflare.customHostnames.list({
-        zone_id: process.env.CLOUDFLARE_ZONE_ID!,
-        hostname,
-        page,
-        per_page,
-      });
+	args: {
+		hostname: v.optional(v.string()),
+		page: v.optional(v.number()),
+		per_page: v.optional(v.number()),
+	},
+	handler: async (_ctx, { hostname, page, per_page }) => {
+		try {
+			const result = await cloudflare.customHostnames.list({
+				zone_id: process.env.CLOUDFLARE_ZONE_ID!,
+				hostname,
+				page,
+				per_page,
+			});
 
-      return {
-        success: true,
-        data: result,
-      };
-    } catch (error) {
-      console.error("Error listing Cloudflare hostnames:", error);
+			return {
+				success: true,
+				data: result,
+			};
+		} catch (error) {
+			console.error("Error listing Cloudflare hostnames:", error);
 
-      if (error instanceof Cloudflare.APIError) {
-        throw new Error(`Cloudflare API error: ${error.message}`);
-      }
+			if (error instanceof Cloudflare.APIError) {
+				throw new Error(`Cloudflare API error: ${error.message}`);
+			}
 
-      throw new Error(`Failed to list hostnames: ${error}`);
-    }
-  },
+			throw new Error(`Failed to list hostnames: ${error}`);
+		}
+	},
 });

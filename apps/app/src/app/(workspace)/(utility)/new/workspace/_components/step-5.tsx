@@ -115,7 +115,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 
 	if (isPlansLoading) {
 		return (
-			<div className="flex items-center justify-center flex-1">
+			<div className="flex flex-1 justify-center items-center">
 				<Spinner size="sm" />
 			</div>
 		);
@@ -131,10 +131,10 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 				y: 0,
 				transition: { duration: 0.3, ease: "easeInOut" },
 			}}
-			className="flex flex-col items-start justify-center flex-1 w-full max-h-full gap-8 overflow-hidden"
+			className="flex overflow-hidden flex-col flex-1 gap-8 justify-center items-start w-full max-h-full"
 		>
 			{/* Header */}
-			<div className="flex flex-col w-full gap-4 px-8 text-left">
+			<div className="flex flex-col gap-4 px-8 w-full text-left">
 				<h1 className="max-w-sm text-4xl font-bold">
 					Choose your <span className="font-mono italic">#plan</span>
 				</h1>
@@ -143,7 +143,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 				</p>
 
 				{/* Billing Toggle */}
-				<div className="flex items-center h-10 gap-3 mt-4">
+				<div className="flex gap-3 items-center mt-4 h-10">
 					<span
 						className={`text-sm ${!isYearly ? "font-medium" : "text-muted-foreground"}`}
 					>
@@ -163,7 +163,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 								exit={{ opacity: 0 }}
 								transition={{ duration: 0.2 }}
 							>
-								<Badge className="text-xs ">Save 2 months</Badge>
+								<Badge className="text-xs">Save 2 months</Badge>
 							</motion.div>
 						)}
 					</AnimatePresence>
@@ -171,7 +171,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 			</div>
 
 			{/* Plans */}
-			<div className="flex flex-col w-full max-h-full gap-4 px-8 pb-8 overflow-y-auto">
+			<div className="flex overflow-y-auto flex-col gap-4 px-8 pb-8 w-full max-h-full">
 				<div className="grid gap-4">
 					{planConfigs.map((config) => {
 						const monthlyPrice = config.plans
@@ -194,7 +194,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 
 						const isTeam = config.name === "Team";
 
-						const currentLineItems = isYearly
+						const currentLineItems = isTeam
 							? [
 									{
 										price: currentPrice?.stripePriceId ?? "",
@@ -220,10 +220,10 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 								className="relative transition-colors duration-200 cursor-pointer hover:shadow-md bg-muted hover:bg-muted/50"
 							>
 								<CardHeader className="!p-4">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
+									<div className="flex justify-between items-center">
+										<div className="flex gap-2 items-center">
 											<div>
-												<CardTitle className="flex items-center gap-2 text-xl">
+												<CardTitle className="flex gap-2 items-center text-xl">
 													{config.name}
 												</CardTitle>
 												<CardDescription className="text-sm text-muted-foreground">
@@ -260,14 +260,14 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 								</CardHeader>
 
 								<CardContent className="!px-4 !pb-4 !pt-0">
-									<div className="flex items-center gap-2">
+									<div className="flex gap-2 items-center">
 										{getPlanFeatures(config.name).map((feature) => (
 											<Badge
 												key={feature}
 												variant="outline"
-												className="flex items-center gap-1 text-xs"
+												className="flex gap-1 items-center text-xs"
 											>
-												<CheckIcon className="flex-shrink-0 size-3 text-emerald-500" />
+												<CheckIcon className="flex-shrink-0 text-emerald-500 size-3" />
 												<span className="text-xs">{feature}</span>
 											</Badge>
 										))}
@@ -283,7 +283,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 												>
 													<Badge
 														variant="outline"
-														className="flex items-center gap-2 text-xs"
+														className="flex gap-2 items-center text-xs"
 													>
 														<Spinner size="xs" className="mb-0.5" />{" "}
 														Processing...
@@ -300,7 +300,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 												>
 													<Badge
 														variant="brand"
-														className="flex items-center gap-2 text-xs"
+														className="flex gap-2 items-center text-xs"
 													>
 														Free for 7 days
 													</Badge>
@@ -314,8 +314,8 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 					})}
 				</div>
 			</div>
-			<div className="flex items-center justify-center w-full px-8 text-xs text-muted-foreground">
-				<span className="flex items-center gap-1">
+			<div className="flex justify-center items-center px-8 w-full text-xs text-muted-foreground">
+				<span className="flex gap-1 items-center">
 					We will inform you{" "}
 					<span className="font-bold">2 days before you are charged</span> to
 					prevent any surprises.

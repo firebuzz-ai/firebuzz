@@ -209,7 +209,7 @@ export const classifyLinks = internalAction({
 		// Phase 0: Get Scrape Data From KV
 		let scrapeData: ScrapeResponse | null;
 		try {
-			const kvResponse = await engineAPIClient.kv.assets.$get({
+			const kvResponse = await engineAPIClient.kv.cache.$get({
 				query: {
 					key,
 					type: "json",

@@ -31,6 +31,9 @@ import type * as collections_campaigns_utils from "../collections/campaigns/util
 import type * as collections_domains_actions from "../collections/domains/actions.js";
 import type * as collections_domains_mutations from "../collections/domains/mutations.js";
 import type * as collections_domains_queries from "../collections/domains/queries.js";
+import type * as collections_invitations_mutations from "../collections/invitations/mutations.js";
+import type * as collections_invitations_queries from "../collections/invitations/queries.js";
+import type * as collections_invitations_utils from "../collections/invitations/utils.js";
 import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
 import type * as collections_landingPages_messages_mutations from "../collections/landingPages/messages/mutations.js";
 import type * as collections_landingPages_messages_queries from "../collections/landingPages/messages/queries.js";
@@ -44,6 +47,9 @@ import type * as collections_landingPages_versions_actions from "../collections/
 import type * as collections_landingPages_versions_mutations from "../collections/landingPages/versions/mutations.js";
 import type * as collections_landingPages_versions_queries from "../collections/landingPages/versions/queries.js";
 import type * as collections_landingPages_versions_utils from "../collections/landingPages/versions/utils.js";
+import type * as collections_members_mutations from "../collections/members/mutations.js";
+import type * as collections_members_queries from "../collections/members/queries.js";
+import type * as collections_members_utils from "../collections/members/utils.js";
 import type * as collections_onboarding_actions from "../collections/onboarding/actions.js";
 import type * as collections_onboarding_mutations from "../collections/onboarding/mutations.js";
 import type * as collections_onboarding_queries from "../collections/onboarding/queries.js";
@@ -109,10 +115,12 @@ import type * as components_actionRetrier from "../components/actionRetrier.js";
 import type * as components_aggregates from "../components/aggregates.js";
 import type * as components_r2 from "../components/r2.js";
 import type * as components_ratelimits from "../components/ratelimits.js";
+import type * as components_resend from "../components/resend.js";
 import type * as components_workflows from "../components/workflows.js";
 import type * as components_workpools from "../components/workpools.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as lib_clerk from "../lib/clerk.js";
 import type * as lib_cloudflare from "../lib/cloudflare.js";
 import type * as lib_documentReaders from "../lib/documentReaders.js";
 import type * as lib_engine from "../lib/engine.js";
@@ -162,6 +170,9 @@ declare const fullApi: ApiFromModules<{
   "collections/domains/actions": typeof collections_domains_actions;
   "collections/domains/mutations": typeof collections_domains_mutations;
   "collections/domains/queries": typeof collections_domains_queries;
+  "collections/invitations/mutations": typeof collections_invitations_mutations;
+  "collections/invitations/queries": typeof collections_invitations_queries;
+  "collections/invitations/utils": typeof collections_invitations_utils;
   "collections/landingPages/actions": typeof collections_landingPages_actions;
   "collections/landingPages/messages/mutations": typeof collections_landingPages_messages_mutations;
   "collections/landingPages/messages/queries": typeof collections_landingPages_messages_queries;
@@ -175,6 +186,9 @@ declare const fullApi: ApiFromModules<{
   "collections/landingPages/versions/mutations": typeof collections_landingPages_versions_mutations;
   "collections/landingPages/versions/queries": typeof collections_landingPages_versions_queries;
   "collections/landingPages/versions/utils": typeof collections_landingPages_versions_utils;
+  "collections/members/mutations": typeof collections_members_mutations;
+  "collections/members/queries": typeof collections_members_queries;
+  "collections/members/utils": typeof collections_members_utils;
   "collections/onboarding/actions": typeof collections_onboarding_actions;
   "collections/onboarding/mutations": typeof collections_onboarding_mutations;
   "collections/onboarding/queries": typeof collections_onboarding_queries;
@@ -240,10 +254,12 @@ declare const fullApi: ApiFromModules<{
   "components/aggregates": typeof components_aggregates;
   "components/r2": typeof components_r2;
   "components/ratelimits": typeof components_ratelimits;
+  "components/resend": typeof components_resend;
   "components/workflows": typeof components_workflows;
   "components/workpools": typeof components_workpools;
   crons: typeof crons;
   http: typeof http;
+  "lib/clerk": typeof lib_clerk;
   "lib/cloudflare": typeof lib_cloudflare;
   "lib/documentReaders": typeof lib_documentReaders;
   "lib/engine": typeof lib_engine;
@@ -2799,6 +2815,62 @@ export declare const components: {
             workflowHandle: string;
           };
         }
+      >;
+    };
+  };
+  resend: {
+    lib: {
+      cancelEmail: FunctionReference<
+        "mutation",
+        "internal",
+        { emailId: string },
+        null
+      >;
+      get: FunctionReference<"query", "internal", { emailId: string }, any>;
+      getStatus: FunctionReference<
+        "query",
+        "internal",
+        { emailId: string },
+        {
+          complained: boolean;
+          errorMessage: string | null;
+          opened: boolean;
+          status:
+            | "waiting"
+            | "queued"
+            | "cancelled"
+            | "sent"
+            | "delivered"
+            | "delivery_delayed"
+            | "bounced";
+        }
+      >;
+      handleEmailEvent: FunctionReference<
+        "mutation",
+        "internal",
+        { event: any },
+        null
+      >;
+      sendEmail: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          from: string;
+          headers?: Array<{ name: string; value: string }>;
+          html?: string;
+          options: {
+            apiKey: string;
+            initialBackoffMs: number;
+            onEmailEvent?: { fnHandle: string };
+            retryAttempts: number;
+            testMode: boolean;
+          };
+          replyTo?: Array<string>;
+          subject: string;
+          text?: string;
+          to: string;
+        },
+        string
       >;
     };
   };

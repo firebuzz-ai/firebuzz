@@ -20,6 +20,7 @@ import {
 	ChevronsUpDown,
 	Plus,
 } from "@firebuzz/ui/icons/lucide";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export const ProjectSwitcher = () => {
@@ -35,22 +36,28 @@ export const ProjectSwitcher = () => {
 			<DropdownMenuTrigger asChild>
 				<SidebarMenuButton
 					size="lg"
-					className="data-[state=open]:bg-sidebar-accent h-10 group-data-[collapsible=icon]:hidden flex"
+					className="data-[state=open]:bg-sidebar-accent h-10 group-data-[collapsible=icon]:hidden flex w-full"
 				>
-					<div className="grid flex-1 text-left text-sm leading-tight">
-						<span className="truncate font-semibold">
+					<div className="grid flex-1 text-sm leading-tight text-left">
+						<span className="font-semibold truncate">
 							{currentProject.title}
 						</span>
-						<span className="truncate text-xs">{currentWorkspace?.title}</span>
+						<span className="text-xs truncate">{currentWorkspace?.title}</span>
 					</div>
 					<ChevronsUpDown className="ml-auto" />
 				</SidebarMenuButton>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
-				className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+				style={
+					{
+						"--sidebar-width": "240px",
+					} as React.CSSProperties
+				}
+				className="w-[--sidebar-width] rounded-lg"
 				align="start"
 				side={isMobile ? "bottom" : state === "collapsed" ? "right" : "bottom"}
-				sideOffset={16}
+				sideOffset={8}
+				alignOffset={isMobile ? 0 : state === "collapsed" ? 0 : -38}
 			>
 				<DropdownMenuLabel className="text-xs text-muted-foreground">
 					Projects
@@ -70,22 +77,21 @@ export const ProjectSwitcher = () => {
 					onClick={() => router.push("/select/project")}
 					className="gap-2 p-2"
 				>
-					<div className="flex size-6 items-center justify-center rounded-md border bg-background">
+					<div className="flex justify-center items-center rounded-md border size-6 bg-background">
 						<Plus className="size-3" />
 					</div>
 					<div className="font-medium text-muted-foreground">Add project</div>
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem
-					onClick={() => router.push("/select/project")}
-					className="gap-2 p-2"
-				>
-					<div className="flex size-6 items-center justify-center rounded-md border bg-background">
-						<ArrowRightLeft className="size-3" />
-					</div>
-					<div className="font-medium text-muted-foreground">
-						Switch workspace
-					</div>
+				<DropdownMenuItem asChild className="flex gap-2 p-2">
+					<Link href="/select/workspace">
+						<div className="flex justify-center items-center rounded-md border size-6 bg-background">
+							<ArrowRightLeft className="size-3" />
+						</div>
+						<div className="font-medium text-muted-foreground">
+							Switch workspace
+						</div>
+					</Link>
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

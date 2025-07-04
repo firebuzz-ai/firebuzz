@@ -15,6 +15,8 @@ import { socialSchema } from "./collections/brands/socials/schema";
 import { testimonialSchema } from "./collections/brands/testimonials/schema";
 import { themeSchema } from "./collections/brands/themes/schema";
 import { domainSchema } from "./collections/domains/schema";
+import { invitationSchema } from "./collections/invitations/schema";
+import { memberSchema } from "./collections/members/schema";
 import { onboardingSchema } from "./collections/onboarding/schema";
 import { memoizedDocumentsSchema } from "./collections/storage/documents/memoized/schema";
 import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
@@ -39,7 +41,8 @@ export default defineSchema({
 	workspaces: defineTable(workspaceSchema)
 		.index("by_external_id", ["externalId"])
 		.index("by_owner_id", ["ownerId"])
-		.index("by_stripe_customer_id", ["customerId"]),
+		.index("by_stripe_customer_id", ["customerId"])
+		.index("by_slug", ["slug"]),
 	projects: defineTable(projectSchema)
 		.index("by_workspace_id", ["workspaceId"])
 		.index("by_title", ["title"]),
@@ -192,6 +195,14 @@ export default defineSchema({
 	webhookEvents: defineTable(webhookEventSchema).index("by_stripe_event_id", [
 		"stripeEventId",
 	]),
+	invitations: defineTable(invitationSchema)
+		.index("by_workspace_id", ["workspaceId"])
+		.index("by_external_id", ["externalId"]),
+	members: defineTable(memberSchema)
+		.index("by_workspace_id", ["workspaceId"])
+		.index("by_user_id", ["userId"])
+		.index("by_external_user_id", ["userExternalId"])
+		.index("by_external_id", ["externalId"]),
 
 	// Helper Tables
 	memoizedDocuments: defineTable(memoizedDocumentsSchema)

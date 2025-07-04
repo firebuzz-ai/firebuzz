@@ -72,9 +72,6 @@ const OAuthSignIn = () => {
 					</div>
 				)}
 			</Button>
-
-			{/* CAPTCHA Widget */}
-			<div id="clerk-captcha" />
 		</div>
 	);
 };

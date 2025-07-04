@@ -104,6 +104,26 @@ export const deleteByWorkspaceIdInternal = internalMutationWithTrigger({
 			.withIndex("by_workspace_id", (q) =>
 				q.eq("workspaceId", args.workspaceId),
 			)
+			.filter((q) => q.eq(q.field("type"), "workspace"))
+			.first();
+
+		if (!onboarding) {
+			return;
+		}
+
+		await ctx.db.delete(onboarding._id);
+	},
+});
+
+export const deleteByProjectIdInternal = internalMutationWithTrigger({
+	args: {
+		projectId: v.id("projects"),
+	},
+	handler: async (ctx, args) => {
+		const onboarding = await ctx.db
+			.query("onboarding")
+			.withIndex("by_project_id", (q) => q.eq("projectId", args.projectId))
+			.filter((q) => q.eq(q.field("type"), "project"))
 			.first();
 
 		if (!onboarding) {

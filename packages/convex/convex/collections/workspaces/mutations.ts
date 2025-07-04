@@ -1,3 +1,4 @@
+import { slugify } from "@firebuzz/utils";
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { internalMutation, mutation } from "../../_generated/server";
@@ -5,6 +6,7 @@ import { retrier } from "../../components/actionRetrier";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUser } from "../users/utils";
+import { checkIfSlugIsAvailable } from "./utils";
 
 export const createPersonalWorkspace = mutation({
 	args: {
@@ -18,7 +20,7 @@ export const createPersonalWorkspace = mutation({
 		const isPersonalSpaceAvailable = await ctx.runQuery(
 			internal.collections.workspaces.queries.checkIsPersonalWorkspaceAvailable,
 			{
-				ownerId: user._id,
+				externalId: user.externalId,
 			},
 		);
 
@@ -32,6 +34,7 @@ export const createPersonalWorkspace = mutation({
 			ownerId: user._id,
 			workspaceType: "personal",
 			title,
+			slug: slugify(`${title}-${new Date().getTime().toString()}`),
 			isOnboarded: false,
 			isSubscribed: false,
 		});
@@ -83,6 +86,7 @@ export const update = mutation({
 	args: {
 		id: v.id("workspaces"),
 		title: v.optional(v.string()),
+		slug: v.optional(v.string()),
 		logo: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
@@ -114,7 +118,33 @@ export const update = mutation({
 			updateObject.logo = args.logo;
 		}
 
+		if (args.slug !== undefined) {
+			updateObject.slug = args.slug;
+			const isSlugAvailable = await checkIfSlugIsAvailable(
+				ctx,
+				args.slug,
+				args.id,
+			);
+
+			if (!isSlugAvailable) {
+				throw new ConvexError("Slug is already taken.");
+			}
+		}
+
 		await ctx.db.patch(args.id, updateObject);
+
+		// Update organization name in Clerk too
+		if (
+			(args.title !== undefined || args.slug !== undefined) &&
+			workspace.externalId &&
+			workspace.externalId.startsWith("org_")
+		) {
+			await ctx.scheduler.runAfter(0, internal.lib.clerk.updateOrganization, {
+				organizationId: workspace.externalId,
+				name: args.title,
+				slug: args.slug,
+			});
+		}
 	},
 });
 
@@ -125,5 +155,19 @@ export const updateCustomerId = internalMutation({
 	},
 	handler: async (ctx, args) => {
 		await ctx.db.patch(args.id, { customerId: args.customerId });
+	},
+});
+
+export const updateExternalId = internalMutation({
+	args: {
+		id: v.id("workspaces"),
+		externalId: v.string(),
+		type: v.union(v.literal("personal"), v.literal("team")),
+	},
+	handler: async (ctx, args) => {
+		await ctx.db.patch(args.id, {
+			externalId: args.externalId,
+			workspaceType: args.type,
+		});
 	},
 });
