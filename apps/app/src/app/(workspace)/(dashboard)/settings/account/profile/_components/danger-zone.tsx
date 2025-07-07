@@ -5,19 +5,19 @@ import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { useState } from "react";
 
-export const DangerZone = () => {
+export const AccountDangerZone = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const handleDeleteWorkspace = async () => {
+  const handleDeleteAccount = async () => {
     try {
       setIsDeleting(true);
-      // TODO: Implement workspace deletion logic
-      console.log("Deleting workspace...");
+      // TODO: Implement account deletion logic
+      console.log("Deleting account...");
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
       setIsDeleteDialogOpen(false);
     } catch (error) {
-      console.error("Failed to delete workspace:", error);
+      console.error("Failed to delete account:", error);
     } finally {
       setIsDeleting(false);
     }
@@ -30,7 +30,7 @@ export const DangerZone = () => {
         <div>
           <h1 className="text-lg font-semibold">Danger Zone</h1>
           <p className="text-sm text-muted-foreground">
-            Delete your workspace and all its data.
+            Delete your account and all your data.
           </p>
         </div>
 
@@ -40,13 +40,13 @@ export const DangerZone = () => {
           className="w-full"
           onClick={() => setIsDeleteDialogOpen(true)}
         >
-          Delete Workspace
+          Delete Account
         </Button>
 
         <InfoBox variant="destructive">
           <p>
-            Deleting your workspace will remove all your data and cannot be
-            recovered.
+            Deleting your account will remove all your data, workspaces, and
+            cannot be recovered. This action affects all workspaces you own.
           </p>
         </InfoBox>
       </div>
@@ -54,10 +54,10 @@ export const DangerZone = () => {
       <DeletionDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDeleteWorkspace}
-        title="Delete Workspace"
-        description="Are you sure you want to delete this workspace?"
-        confirmationText="DELETE MY WORKSPACE"
+        onConfirm={handleDeleteAccount}
+        title="Delete Account"
+        description="Are you sure you want to delete your account?"
+        confirmationText="DELETE MY ACCOUNT"
         isLoading={isDeleting}
       />
     </div>
