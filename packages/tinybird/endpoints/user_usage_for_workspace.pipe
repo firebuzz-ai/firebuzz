@@ -1,0 +1,19 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE user_usage
+DESCRIPTION "Calculates the total usage per user for a given workspace within a specified period. It accepts `workspaceId`, `periodStart`, and `periodEnd` as query parameters."
+
+SQL >
+    %
+    SELECT
+        userId,
+        sum(abs(amount)) AS user_total_usage
+    FROM credit_usage_v1
+    WHERE
+        workspaceId = {{ String(workspaceId, required=True) }}
+        AND createdAt BETWEEN {{ DateTime64(periodStart, required=True) }} AND {{ DateTime64(periodEnd, required=True) }}
+    GROUP BY userId
+    ORDER BY user_total_usage DESC
+
+TYPE ENDPOINT 

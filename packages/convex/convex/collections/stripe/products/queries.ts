@@ -78,3 +78,63 @@ export const getSubscriptionPlansWithPrices = query({
 		return subscriptionPlansWithPrices;
 	},
 });
+
+export const getAddOnProducts = query({
+	handler: async (ctx) => {
+		await getCurrentUserWithWorkspace(ctx); // This will throw an error if the user is not authenticated or does not have a workspace
+
+		const allActiveProducts = await ctx.db
+			.query("products")
+			.filter((q) => q.eq(q.field("active"), true))
+			.collect();
+
+		const addOnProducts = allActiveProducts.filter(
+			(product) => product.metadata?.type === "add-on",
+		);
+
+		const addOnProductsWithPrices = await Promise.all(
+			addOnProducts.map(async (product) => {
+				const prices = await ctx.db
+					.query("prices")
+					.withIndex("by_product_id", (q) => q.eq("productId", product._id))
+					.collect();
+
+				return {
+					...product,
+					prices,
+				};
+			}),
+		);
+
+		return addOnProductsWithPrices;
+	},
+});
+
+export const getAddOnProductsInternal = internalQuery({
+	handler: async (ctx) => {
+		const allActiveProducts = await ctx.db
+			.query("products")
+			.filter((q) => q.eq(q.field("active"), true))
+			.collect();
+
+		const addOnProducts = allActiveProducts.filter(
+			(product) => product.metadata?.type === "add-on",
+		);
+
+		const addOnProductsWithPrices = await Promise.all(
+			addOnProducts.map(async (product) => {
+				const prices = await ctx.db
+					.query("prices")
+					.withIndex("by_product_id", (q) => q.eq("productId", product._id))
+					.collect();
+
+				return {
+					...product,
+					prices,
+				};
+			}),
+		);
+
+		return addOnProductsWithPrices;
+	},
+});

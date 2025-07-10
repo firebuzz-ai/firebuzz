@@ -1,0 +1,16 @@
+{
+	"name": "@firebuzz/tinybird",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "tb dev",
+		"push": "tb push",
+		"populate": "tb pipe populate"
+	},
+	"devDependencies": {
+		"@types/node": "^20.12.12",
+		"@firebuzz/typescript-config": "workspace:*",
+		"typescript": "^5.4.5"
+	}
+}

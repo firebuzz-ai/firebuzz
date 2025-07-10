@@ -176,3 +176,15 @@ export const envUnsplash = () =>
 		.parse({
 			UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
 		});
+
+/* TINYBIRD */
+export const envTinybird = () =>
+	z
+		.object({
+			TINYBIRD_TOKEN: z.string(),
+			TINYBIRD_BASE_URL: z.string(),
+		})
+		.parse({
+			TINYBIRD_TOKEN: process.env.TINYBIRD_TOKEN,
+			TINYBIRD_BASE_URL: process.env.TINYBIRD_BASE_URL,
+		});

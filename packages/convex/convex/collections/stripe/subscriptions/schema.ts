@@ -17,6 +17,12 @@ export const subscriptionSchema = v.object({
 	currentPeriodStart: v.string(),
 	currentPeriodEnd: v.string(),
 	cancelAtPeriodEnd: v.boolean(),
+	interval: v.union(
+		v.literal("month"),
+		v.literal("year"),
+		v.literal("week"),
+		v.literal("day"),
+	),
 	canceledAt: v.optional(v.string()),
 	trialStart: v.optional(v.string()),
 	trialEnd: v.optional(v.string()),

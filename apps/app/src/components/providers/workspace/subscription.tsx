@@ -30,6 +30,7 @@ interface SubscriptionData {
 	isTrial: boolean;
 	isLoading: boolean;
 	isTeamPlan: boolean;
+	isCancellingAtPeriodEnd: boolean;
 	seatLimit: number;
 	projectLimit: number;
 }
@@ -46,6 +47,7 @@ const subscriptionContext = createContext<SubscriptionData>({
 	isTrial: false,
 	isLoading: true,
 	isTeamPlan: false,
+	isCancellingAtPeriodEnd: false,
 	seatLimit: 1,
 	projectLimit: 1,
 });
@@ -94,7 +96,9 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 		const baseLimit =
 			currentSubscriptionPlanProduct?.metadata?.isTeam === "true" ? 3 : 1;
 		const extraProjectSubscriptionItem = currentSubscriptionAddOns?.filter(
-			(item) => item.metadata?.addOnType === "extra-project",
+			(item) =>
+				item.metadata?.addOnType === "extra-project" ||
+				item.metadata?.addonType === "extra-project",
 		);
 
 		return (
@@ -163,6 +167,7 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 		// Flags
 		isActive,
 		isTrial,
+		isCancellingAtPeriodEnd: activeSubscription?.cancelAtPeriodEnd ?? false,
 		isLoading,
 		isTeamPlan: currentSubscriptionPlanProduct?.metadata?.isTeam === "true",
 		// Limits

@@ -253,7 +253,7 @@ export const vectorize = internalAction({
 			);
 
 			// 2. Get Document Chunks
-			const chunks = await ctx.runQuery(
+			const chunks: Doc<"documentChunks">[] = await ctx.runQuery(
 				internal.collections.storage.documents.chunks.queries.getByDocumentId,
 				{ documentId },
 			);
@@ -263,7 +263,7 @@ export const vectorize = internalAction({
 				model: openai.embedding("text-embedding-3-large", {
 					dimensions: 1536,
 				}),
-				values: chunks.map((chunk) => chunk.content),
+				values: chunks.map((chunk: Doc<"documentChunks">) => chunk.content),
 			});
 
 			// 4. Create Document Vector Items for each knowledgeBase

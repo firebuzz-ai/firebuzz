@@ -8,7 +8,7 @@ export default function SubscriptionSettingsLayout({
 	return (
 		<div className="flex flex-col flex-1">
 			<SubscriptionSettingsTabs />
-			<div className="flex flex-1">{children}</div>
+			<div className="flex overflow-hidden flex-1 max-h-full">{children}</div>
 		</div>
 	);
 }

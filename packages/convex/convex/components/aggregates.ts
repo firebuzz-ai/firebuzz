@@ -12,7 +12,10 @@ export const aggregateCreditsBalance = new TableAggregate<{
 	namespace: (doc) => doc.workspaceId,
 	// Sort by expiration date (with never-expiring credits at the end)
 	sortKey: (doc) => [doc.expiresAt || "9999-12-31", doc._creationTime],
-	sumValue: (doc) => doc.amount,
+	sumValue: (doc) =>
+		["adjustment", "refund", "usage"].includes(doc.type)
+			? -doc.amount
+			: doc.amount,
 });
 
 // Current Period Usage - aggregates usage (negative amounts) by period

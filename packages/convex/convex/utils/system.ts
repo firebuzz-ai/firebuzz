@@ -2,12 +2,42 @@ import { v } from "convex/values";
 import { internalMutation } from "../_generated/server";
 import {
 	aggregateCampaigns,
+	aggregateCreditsBalance,
+	aggregateCurrentPeriodAdditions,
+	aggregateCurrentPeriodUsage,
 	aggregateDocuments,
 	aggregateLandingPageVersions,
 	aggregateLandingPages,
 	aggregateMedia,
 } from "../components/aggregates";
 import { batchDeleteStoragePool, cascadePool } from "../components/workpools";
+
+export const cleanCreditsBalanceAggregates = internalMutation({
+	args: { workspaceId: v.id("workspaces") },
+	handler: async (ctx, args) => {
+		return await aggregateCreditsBalance.clear(ctx, {
+			namespace: args.workspaceId,
+		});
+	},
+});
+
+export const cleanCurrentPeriodUsageAggregates = internalMutation({
+	args: { workspaceId: v.id("workspaces") },
+	handler: async (ctx, args) => {
+		return await aggregateCurrentPeriodUsage.clear(ctx, {
+			namespace: args.workspaceId,
+		});
+	},
+});
+
+export const cleanCurrentPeriodAdditionsAggregates = internalMutation({
+	args: { workspaceId: v.id("workspaces") },
+	handler: async (ctx, args) => {
+		return await aggregateCurrentPeriodAdditions.clear(ctx, {
+			namespace: args.workspaceId,
+		});
+	},
+});
 
 export const cleanCampaignAggregates = internalMutation({
 	args: { projectId: v.id("projects") },

@@ -83,6 +83,14 @@ export const formatToCalendarDateTimeWithSeconds = (
 	return format(date, "yyyy-MM-dd HH:mm:ss");
 };
 
+export const formatToDateTime64 = (
+	date: Date | string | number = new Date(),
+) => {
+	// Format for DateTime64(3, 'UTC') - ISO 8601 format with milliseconds
+	const dateObj = new Date(date);
+	return dateObj.toISOString(); // Returns: 2025-07-08T14:32:45.123Z
+};
+
 export const formatToInboxTime = (date: Date | string | number) => {
 	// Check if the date is today
 	if (isToday(date)) {

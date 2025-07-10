@@ -1,0 +1,19 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE project_usage
+DESCRIPTION "Calculates the total usage per project for a given workspace within a specified period. It accepts `workspaceId`, `periodStart`, and `periodEnd` as query parameters."
+
+SQL >
+    %
+    SELECT
+        projectId,
+        sum(abs(amount)) AS project_total_usage
+    FROM credit_usage_v1
+    WHERE
+        workspaceId = {{ String(workspaceId, required=True) }}
+        AND createdAt BETWEEN {{ DateTime64(periodStart, required=True) }} AND {{ DateTime64(periodEnd, required=True) }}
+    GROUP BY projectId
+    ORDER BY project_total_usage DESC
+
+TYPE ENDPOINT

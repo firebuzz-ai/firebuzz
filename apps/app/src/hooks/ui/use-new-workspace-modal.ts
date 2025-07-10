@@ -1,11 +1,11 @@
 import { atom, useAtom } from "jotai";
 
 interface NewWorkspaceModalState {
-  create?: boolean;
+	create?: boolean;
 }
 
 const newWorkspaceModalAtom = atom<NewWorkspaceModalState | null>(null);
 
 export const useNewWorkspaceModal = () => {
-  return useAtom(newWorkspaceModalAtom);
+	return useAtom(newWorkspaceModalAtom);
 };

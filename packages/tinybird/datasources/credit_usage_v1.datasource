@@ -1,0 +1,17 @@
+TOKEN read_write READ
+TOKEN read_write APPEND
+TOKEN read_only READ
+
+DESCRIPTION "Stores usage data from Convex, including message, image-generation, etc."
+
+SCHEMA >
+    amount Float64 `json:$.amount`,
+    type LowCardinality(String) `json:$.type`,
+    idempotencyKey String `json:$.idempotencyKey`,
+    createdAt DateTime64(3, 'UTC') `json:$.createdAt`,
+    workspaceId String `json:$.workspaceId`,
+    userId String `json:$.userId`,
+    projectId String `json:$.projectId`
+    
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "workspaceId, projectId, userId, createdAt" 

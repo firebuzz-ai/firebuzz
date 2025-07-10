@@ -1,25 +1,18 @@
+import { DailyUsageChart } from "./_components/daily-usage-chart";
+import { ProjectUsageChart } from "./_components/project-usage-chart";
+import { UsageSummaryChart } from "./_components/usage-summary-chart";
+import { UserUsageChart } from "./_components/user-usage-chart";
+
 export default function SubscriptionUsageSettings() {
 	return (
-		<div className="flex flex-col flex-1 p-6">
-			<div className="max-w-2xl">
-				<h1 className="text-2xl font-semibold mb-6">Usage Settings</h1>
-
-				<div className="space-y-6">
-					<div>
-						<h2 className="text-lg font-medium mb-3">Usage Data</h2>
-						<p className="text-sm text-muted-foreground mb-4">
-							Monitor your subscription usage, view analytics, and track
-							resource consumption.
-						</p>
-
-						{/* Placeholder for usage analytics components */}
-						<div className="p-4 border rounded-lg bg-muted/50">
-							<p className="text-sm text-muted-foreground">
-								Usage data and analytics will be implemented here.
-							</p>
-						</div>
-					</div>
-				</div>
+		<div className="flex overflow-y-auto flex-col flex-1 p-6 space-y-6 max-h-full">
+			<div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+				<UsageSummaryChart />
+				<DailyUsageChart />
+			</div>
+			<div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+				<ProjectUsageChart />
+				<UserUsageChart />
 			</div>
 		</div>
 	);

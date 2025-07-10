@@ -100,6 +100,8 @@ import type * as collections_stripe_subscriptionItems_queries from "../collectio
 import type * as collections_stripe_subscriptions_mutations from "../collections/stripe/subscriptions/mutations.js";
 import type * as collections_stripe_subscriptions_queries from "../collections/stripe/subscriptions/queries.js";
 import type * as collections_stripe_subscriptions_utils from "../collections/stripe/subscriptions/utils.js";
+import type * as collections_stripe_taxIds_mutations from "../collections/stripe/taxIds/mutations.js";
+import type * as collections_stripe_taxIds_queries from "../collections/stripe/taxIds/queries.js";
 import type * as collections_stripe_transactions_mutations from "../collections/stripe/transactions/mutations.js";
 import type * as collections_stripe_transactions_queries from "../collections/stripe/transactions/queries.js";
 import type * as collections_stripe_transactions_utils from "../collections/stripe/transactions/utils.js";
@@ -113,6 +115,7 @@ import type * as collections_workspaces_queries from "../collections/workspaces/
 import type * as collections_workspaces_utils from "../collections/workspaces/utils.js";
 import type * as components_actionRetrier from "../components/actionRetrier.js";
 import type * as components_aggregates from "../components/aggregates.js";
+import type * as components_migrations from "../components/migrations.js";
 import type * as components_r2 from "../components/r2.js";
 import type * as components_ratelimits from "../components/ratelimits.js";
 import type * as components_resend from "../components/resend.js";
@@ -128,6 +131,7 @@ import type * as lib_firecrawl from "../lib/firecrawl.js";
 import type * as lib_googleai from "../lib/googleai.js";
 import type * as lib_openai from "../lib/openai.js";
 import type * as lib_stripe from "../lib/stripe.js";
+import type * as lib_tinybird from "../lib/tinybird.js";
 import type * as triggers from "../triggers.js";
 import type * as utils_errors from "../utils/errors.js";
 import type * as utils_system from "../utils/system.js";
@@ -239,6 +243,8 @@ declare const fullApi: ApiFromModules<{
   "collections/stripe/subscriptions/mutations": typeof collections_stripe_subscriptions_mutations;
   "collections/stripe/subscriptions/queries": typeof collections_stripe_subscriptions_queries;
   "collections/stripe/subscriptions/utils": typeof collections_stripe_subscriptions_utils;
+  "collections/stripe/taxIds/mutations": typeof collections_stripe_taxIds_mutations;
+  "collections/stripe/taxIds/queries": typeof collections_stripe_taxIds_queries;
   "collections/stripe/transactions/mutations": typeof collections_stripe_transactions_mutations;
   "collections/stripe/transactions/queries": typeof collections_stripe_transactions_queries;
   "collections/stripe/transactions/utils": typeof collections_stripe_transactions_utils;
@@ -252,6 +258,7 @@ declare const fullApi: ApiFromModules<{
   "collections/workspaces/utils": typeof collections_workspaces_utils;
   "components/actionRetrier": typeof components_actionRetrier;
   "components/aggregates": typeof components_aggregates;
+  "components/migrations": typeof components_migrations;
   "components/r2": typeof components_r2;
   "components/ratelimits": typeof components_ratelimits;
   "components/resend": typeof components_resend;
@@ -267,6 +274,7 @@ declare const fullApi: ApiFromModules<{
   "lib/googleai": typeof lib_googleai;
   "lib/openai": typeof lib_openai;
   "lib/stripe": typeof lib_stripe;
+  "lib/tinybird": typeof lib_tinybird;
   triggers: typeof triggers;
   "utils/errors": typeof utils_errors;
   "utils/system": typeof utils_system;

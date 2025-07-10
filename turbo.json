@@ -26,7 +26,8 @@
 				"FAL_API_KEY",
 				"UNSPLASH_ACCESS_KEY",
 				"AZURE_OPENAI_API_KEY",
-				"AZURE_OPENAI_RESOURCE_NAME"
+				"AZURE_OPENAI_RESOURCE_NAME",
+				"TINYBIRD_*"
 			]
 		},
 		"lint": {
@@ -60,7 +61,8 @@
 				"FAL_API_KEY",
 				"UNSPLASH_ACCESS_KEY",
 				"AZURE_OPENAI_API_KEY",
-				"AZURE_OPENAI_RESOURCE_NAME"
+				"AZURE_OPENAI_RESOURCE_NAME",
+				"TINYBIRD_*"
 			]
 		},
 		"start": {
@@ -86,7 +88,8 @@
 				"FAL_API_KEY",
 				"UNSPLASH_ACCESS_KEY",
 				"AZURE_OPENAI_API_KEY",
-				"AZURE_OPENAI_RESOURCE_NAME"
+				"AZURE_OPENAI_RESOURCE_NAME",
+				"TINYBIRD_*"
 			]
 		},
 		"test": {

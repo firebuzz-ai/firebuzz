@@ -2,7 +2,7 @@ import { ConvexError, v } from "convex/values";
 import Stripe from "stripe";
 import { internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
-import { internalAction } from "../_generated/server";
+import { action, internalAction } from "../_generated/server";
 import { ERRORS } from "../utils/errors";
 
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -28,6 +28,52 @@ const getCreditAmountForProduct = async (
 	}
 
 	return creditAmount;
+};
+
+// Create or get billing portal configuration for billing management
+const getBillingPortalConfiguration = async (): Promise<string> => {
+	try {
+		// Try to list existing configurations and find one for billing
+		const configurations = await stripe.billingPortal.configurations.list({
+			limit: 10, // Get more to find our billing-specific one
+		});
+
+		// Look for existing billing configuration
+		const billingConfig = configurations.data.find((config) =>
+			config.business_profile?.headline?.includes("billing information"),
+		);
+
+		if (billingConfig) {
+			return billingConfig.id;
+		}
+
+		// Create a new billing-focused configuration
+		const portalConfig = await stripe.billingPortal.configurations.create({
+			business_profile: {
+				headline: "Add Payment Method and Billing Information",
+			},
+			features: {
+				invoice_history: {
+					enabled: false,
+				},
+				subscription_cancel: {
+					enabled: false,
+				},
+				payment_method_update: {
+					enabled: true,
+				},
+				customer_update: {
+					allowed_updates: ["address", "tax_id", "name", "phone"],
+					enabled: true,
+				},
+			},
+		});
+
+		return portalConfig.id;
+	} catch (error) {
+		console.error("Failed to create billing portal configuration:", error);
+		throw error;
+	}
 };
 
 const createShadowSubscriptionForYearly = async (
@@ -152,6 +198,593 @@ export const createCheckoutSession = internalAction({
 	},
 });
 
+export const createCustomerPortalSession = action({
+	handler: async (ctx) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || user.currentRole !== "org:admin" || !user.currentWorkspaceId)
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const returnUrl = `${process.env.PUBLIC_APP_URL}/settings/subscription/billing`;
+
+		// Get or create billing portal configuration
+		const configurationId = await getBillingPortalConfiguration();
+
+		const sessionConfig = {
+			customer: stripeCustomerId,
+			return_url: returnUrl,
+			configuration: configurationId,
+			flow_data: {
+				type: "subscription_update" as const,
+				after_completion: {
+					type: "redirect" as const,
+					redirect: {
+						return_url: returnUrl,
+					},
+				},
+			},
+		};
+
+		const session = await stripe.billingPortal.sessions.create(sessionConfig);
+
+		return session.url;
+	},
+});
+
+export const createPaymentMethodPortalSession = action({
+	handler: async (ctx) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || user.currentRole !== "org:admin" || !user.currentWorkspaceId)
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const returnUrl = `${process.env.PUBLIC_APP_URL}/settings/subscription/billing`;
+
+		// Get or create billing portal configuration
+		const configurationId = await getBillingPortalConfiguration();
+
+		const session = await stripe.billingPortal.sessions.create({
+			customer: stripeCustomerId,
+			return_url: returnUrl,
+			configuration: configurationId,
+			flow_data: {
+				type: "payment_method_update",
+				after_completion: {
+					type: "redirect",
+					redirect: {
+						return_url: returnUrl,
+					},
+				},
+			},
+		});
+
+		return session.url;
+	},
+});
+
+export const updateSubscriptionSeats = action({
+	args: {
+		newQuantity: v.number(),
+		prorationBehavior: v.optional(
+			v.union(
+				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("none"), // No proration, apply at next billing cycle
+				v.literal("always_invoice"), // Always create invoice immediately
+			),
+		),
+	},
+	handler: async (
+		ctx,
+		{ newQuantity, prorationBehavior = "create_prorations" },
+	) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || user.currentRole !== "org:admin" || !user.currentWorkspaceId)
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		// Get current subscription
+		const subscription = await ctx.runQuery(
+			internal.collections.stripe.subscriptions.queries
+				.getCurrentByWorkspaceIdInternal,
+			{
+				workspaceId: user.currentWorkspaceId,
+			},
+		);
+
+		if (!subscription) {
+			throw new ConvexError("No active subscription found");
+		}
+
+		// Get subscription items
+		const subscriptionItems = await ctx.runQuery(
+			internal.collections.stripe.subscriptionItems.queries
+				.getBySubscriptionIdInternal,
+			{
+				subscriptionId: subscription._id,
+			},
+		);
+
+		// Find the team plan subscription item
+		const teamPlanItem = subscriptionItems.find(
+			(item) =>
+				item.metadata?.type === "subscription" &&
+				item.metadata?.isShadow !== "true",
+		);
+
+		if (!teamPlanItem) {
+			throw new ConvexError("No team plan subscription item found");
+		}
+
+		// Get the product to verify it's a team plan
+		const product = await ctx.runQuery(
+			internal.collections.stripe.products.queries.getByIdInternal,
+			{
+				id: teamPlanItem.productId,
+			},
+		);
+
+		if (!product || product.metadata?.isTeam !== "true") {
+			throw new ConvexError("Only team plans can manage seats");
+		}
+
+		// Validate new quantity
+		if (newQuantity < 1) {
+			throw new ConvexError("Minimum 1 seat required");
+		}
+
+		if (newQuantity === teamPlanItem.quantity) {
+			throw new ConvexError("No changes made to seat count");
+		}
+
+		try {
+			// Update subscription item in Stripe
+			await stripe.subscriptionItems.update(
+				teamPlanItem.stripeSubscriptionItemId,
+				{
+					quantity: newQuantity,
+					proration_behavior: prorationBehavior,
+				},
+			);
+
+			return { success: true };
+		} catch (error) {
+			console.error("Failed to update subscription seats:", error);
+			throw new ConvexError("Failed to update seats. Please try again.");
+		}
+	},
+});
+
+export const changePlan = action({
+	args: {
+		targetProductId: v.id("products"),
+		targetPriceId: v.id("prices"),
+		prorationBehavior: v.optional(
+			v.union(
+				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("none"), // No proration, apply at next billing cycle
+				v.literal("always_invoice"), // Always create invoice immediately
+			),
+		),
+	},
+	handler: async (
+		ctx,
+		{ targetProductId, targetPriceId, prorationBehavior = "create_prorations" },
+	) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || user.currentRole !== "org:admin" || !user.currentWorkspaceId)
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		// Get current subscription
+		const subscription = await ctx.runQuery(
+			internal.collections.stripe.subscriptions.queries
+				.getCurrentByWorkspaceIdInternal,
+			{
+				workspaceId: user.currentWorkspaceId,
+			},
+		);
+
+		if (!subscription) {
+			throw new ConvexError("No active subscription found");
+		}
+
+		// Get subscription items
+		const subscriptionItems = await ctx.runQuery(
+			internal.collections.stripe.subscriptionItems.queries
+				.getBySubscriptionIdInternal,
+			{
+				subscriptionId: subscription._id,
+			},
+		);
+
+		// Find the current plan subscription item
+		const currentPlanItem = subscriptionItems.find(
+			(item) =>
+				item.metadata?.type === "subscription" &&
+				item.metadata?.isShadow !== "true",
+		);
+
+		if (!currentPlanItem) {
+			throw new ConvexError("No current plan subscription item found");
+		}
+
+		// Get target product and price
+		const targetProduct = await ctx.runQuery(
+			internal.collections.stripe.products.queries.getByIdInternal,
+			{
+				id: targetProductId,
+			},
+		);
+
+		const targetPrice = await ctx.runQuery(
+			internal.collections.stripe.prices.queries.getByIdInternal,
+			{
+				id: targetPriceId,
+			},
+		);
+
+		if (!targetProduct || !targetPrice) {
+			throw new ConvexError("Target product or price not found");
+		}
+
+		if (!targetProduct.active || !targetPrice.active) {
+			throw new ConvexError("Target product or price is not active");
+		}
+
+		// Validate target price belongs to target product
+		if (targetPrice.productId !== targetProductId) {
+			throw new ConvexError("Price does not belong to the specified product");
+		}
+
+		// Get current product for comparison
+		const currentProduct = await ctx.runQuery(
+			internal.collections.stripe.products.queries.getByIdInternal,
+			{
+				id: currentPlanItem.productId,
+			},
+		);
+
+		if (!currentProduct) {
+			throw new ConvexError("Current product not found");
+		}
+
+		// Prevent changing to the same plan
+		if (currentProduct._id === targetProductId) {
+			throw new ConvexError("Cannot change to the same plan");
+		}
+
+		// Determine quantity for the new plan
+		let targetQuantity = 1;
+
+		// If changing to Team plan, keep current quantity if coming from Team
+		// If changing from Pro to Team, start with 1 seat
+		if (targetProduct.metadata?.isTeam === "true") {
+			if (currentProduct.metadata?.isTeam === "true") {
+				// Team to Team (shouldn't happen, but handle gracefully)
+				targetQuantity = currentPlanItem.quantity;
+			} else {
+				// Pro to Team - start with 1 seat
+				targetQuantity = 1;
+			}
+		} else {
+			// Changing to Pro plan - always 1 seat (Pro is single user)
+			targetQuantity = 1;
+		}
+
+		try {
+			// Update subscription item in Stripe
+			await stripe.subscriptionItems.update(
+				currentPlanItem.stripeSubscriptionItemId,
+				{
+					price: targetPrice.stripePriceId,
+					quantity: targetQuantity,
+					proration_behavior: prorationBehavior,
+				},
+			);
+
+			// If changing from Team to Pro and there's a Clerk organization,
+			// we should consider updating the max allowed memberships
+			// This will be handled by the webhook when the subscription is updated
+
+			return { success: true };
+		} catch (error) {
+			console.error("Failed to change plan:", error);
+			throw new ConvexError("Failed to change plan. Please try again.");
+		}
+	},
+});
+
+export const cancelSubscription = action({
+	handler: async (ctx) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || !user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Check if user is the workspace owner
+		if (workspace.ownerId !== user._id) {
+			throw new ConvexError("Only workspace owners can cancel subscriptions");
+		}
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) {
+			throw new ConvexError("No customer ID found");
+		}
+
+		// Get current subscription
+		const subscription = await ctx.runQuery(
+			internal.collections.stripe.subscriptions.queries
+				.getCurrentByWorkspaceIdInternal,
+			{
+				workspaceId: user.currentWorkspaceId,
+			},
+		);
+
+		if (!subscription) {
+			throw new ConvexError("No active subscription found");
+		}
+
+		// Check if subscription is already cancelled or set to cancel
+		if (subscription.status === "canceled") {
+			throw new ConvexError("Subscription is already cancelled");
+		}
+
+		if (subscription.cancelAtPeriodEnd) {
+			const isTrialing = subscription.status === "trialing";
+			throw new ConvexError(
+				isTrialing
+					? "Trial is already set to cancel at period end"
+					: "Subscription is already set to cancel at period end",
+			);
+		}
+
+		try {
+			// For both trials and active subscriptions, cancel at period end
+			// - Trials: User keeps free access until trial ends, then doesn't get charged
+			// - Paid: User keeps paid access until billing period ends, then subscription stops
+			await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
+				cancel_at_period_end: true,
+			});
+
+			return { success: true };
+		} catch (error) {
+			console.error("Failed to cancel subscription:", error);
+			throw new ConvexError("Failed to cancel subscription. Please try again.");
+		}
+	},
+});
+
+export const updateProjectAddOns = action({
+	args: {
+		newExtraProjectCount: v.number(),
+		prorationBehavior: v.optional(
+			v.union(
+				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("none"), // No proration, apply at next billing cycle
+				v.literal("always_invoice"), // Always create invoice immediately
+			),
+		),
+	},
+	handler: async (
+		ctx,
+		{ newExtraProjectCount, prorationBehavior = "create_prorations" },
+	) => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
+
+		if (!user || user.currentRole !== "org:admin" || !user.currentWorkspaceId)
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+
+		// Get Workspace
+		const workspace = await ctx.runQuery(
+			internal.collections.workspaces.queries.getByIdInternal,
+			{
+				id: user.currentWorkspaceId,
+			},
+		);
+
+		if (!workspace) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		const stripeCustomerId = workspace.customerId;
+
+		if (!stripeCustomerId) throw new ConvexError(ERRORS.NOT_FOUND);
+
+		// Get current subscription
+		const subscription = await ctx.runQuery(
+			internal.collections.stripe.subscriptions.queries
+				.getCurrentByWorkspaceIdInternal,
+			{
+				workspaceId: user.currentWorkspaceId,
+			},
+		);
+
+		if (!subscription) {
+			throw new ConvexError("No active subscription found");
+		}
+
+		// Get subscription items
+		const subscriptionItems = await ctx.runQuery(
+			internal.collections.stripe.subscriptionItems.queries
+				.getBySubscriptionIdInternal,
+			{
+				subscriptionId: subscription._id,
+			},
+		);
+
+		// Find current project add-on items
+		const currentProjectAddOnItems = subscriptionItems.filter(
+			(item) =>
+				item.metadata?.type === "add-on" &&
+				(item.metadata?.addOnType === "extra-project" ||
+					item.metadata?.addonType === "extra-project"),
+		);
+
+		// Calculate current extra project count
+		const currentExtraProjectCount = currentProjectAddOnItems.reduce(
+			(total, item) => total + item.quantity,
+			0,
+		);
+
+		// Validate new count
+		if (newExtraProjectCount < 0) {
+			throw new ConvexError("Extra project count cannot be negative");
+		}
+
+		if (newExtraProjectCount === currentExtraProjectCount) {
+			throw new ConvexError("No changes made to project count");
+		}
+
+		// Get project add-on product and price
+		const projectAddOnProducts = await ctx.runQuery(
+			internal.collections.stripe.products.queries.getAddOnProductsInternal,
+			{},
+		);
+
+		const projectAddOnProduct = projectAddOnProducts.find(
+			(product) =>
+				product.metadata?.addOnType === "extra-project" ||
+				product.metadata?.addonType === "extra-project",
+		);
+
+		if (!projectAddOnProduct) {
+			throw new ConvexError("Project add-on product not found");
+		}
+
+		const projectAddOnPrice = projectAddOnProduct.prices.find(
+			(price) => price.interval === "month" && price.active,
+		);
+
+		if (!projectAddOnPrice) {
+			throw new ConvexError("Project add-on price not found");
+		}
+
+		try {
+			if (newExtraProjectCount === 0) {
+				// Remove all project add-on subscription items
+				for (const item of currentProjectAddOnItems) {
+					await stripe.subscriptionItems.del(item.stripeSubscriptionItemId, {
+						proration_behavior: prorationBehavior,
+					});
+				}
+			} else if (currentProjectAddOnItems.length === 0) {
+				// Add new project add-on subscription item
+				await stripe.subscriptionItems.create({
+					subscription: subscription.stripeSubscriptionId,
+					price: projectAddOnPrice.stripePriceId,
+					quantity: newExtraProjectCount,
+					proration_behavior: prorationBehavior,
+				});
+			} else {
+				// Update existing project add-on subscription item
+				const firstItem = currentProjectAddOnItems[0];
+				await stripe.subscriptionItems.update(
+					firstItem.stripeSubscriptionItemId,
+					{
+						quantity: newExtraProjectCount,
+						proration_behavior: prorationBehavior,
+					},
+				);
+
+				// Remove any additional items (consolidate into one)
+				for (let i = 1; i < currentProjectAddOnItems.length; i++) {
+					await stripe.subscriptionItems.del(
+						currentProjectAddOnItems[i].stripeSubscriptionItemId,
+						{
+							proration_behavior: prorationBehavior,
+						},
+					);
+				}
+			}
+
+			return { success: true };
+		} catch (error) {
+			console.error("Failed to update project add-ons:", error);
+			throw new ConvexError("Failed to update projects. Please try again.");
+		}
+	},
+});
+
 // Event Handler
 export const handleStripeEvent = internalAction({
 	args: {
@@ -203,6 +836,23 @@ export const handleStripeEvent = internalAction({
 							name: customerData.name || "",
 							metadata: customerData.metadata || {},
 							updatedAt: new Date().toISOString(),
+							shipping: customerData.shipping
+								? {
+										address: {
+											city: customerData.shipping?.address?.city || undefined,
+											country:
+												customerData.shipping?.address?.country || undefined,
+											line1: customerData.shipping?.address?.line1 || undefined,
+											line2: customerData.shipping?.address?.line2 || undefined,
+											postal_code:
+												customerData.shipping?.address?.postal_code ||
+												undefined,
+											state: customerData.shipping?.address?.state || undefined,
+										},
+										name: customerData.shipping?.name || undefined,
+										phone: customerData.shipping?.phone || undefined,
+									}
+								: undefined,
 						},
 					);
 
@@ -227,6 +877,26 @@ export const handleStripeEvent = internalAction({
 								name: customerData.name || undefined,
 								metadata: customerData.metadata || undefined,
 								updatedAt: new Date().toISOString(),
+								shipping: customerData.shipping
+									? {
+											address: {
+												city: customerData.shipping?.address?.city || undefined,
+												country:
+													customerData.shipping?.address?.country || undefined,
+												line1:
+													customerData.shipping?.address?.line1 || undefined,
+												line2:
+													customerData.shipping?.address?.line2 || undefined,
+												postal_code:
+													customerData.shipping?.address?.postal_code ||
+													undefined,
+												state:
+													customerData.shipping?.address?.state || undefined,
+											},
+											name: customerData.shipping?.name || undefined,
+											phone: customerData.shipping?.phone || undefined,
+										}
+									: undefined,
 							},
 						);
 					} else {
@@ -276,6 +946,112 @@ export const handleStripeEvent = internalAction({
 					} else {
 						console.warn("Customer not found for deletion:", customerData.id);
 					}
+					break;
+				}
+
+				// ✅ TAX ID EVENTS
+				case "customer.tax_id.created": {
+					const taxIdData = event.data.object as Stripe.TaxId;
+
+					// Find the customer in our database
+					const customer = await ctx.runQuery(
+						internal.collections.stripe.customers.queries.getByStripeId,
+						{ stripeCustomerId: taxIdData.customer as string },
+					);
+
+					if (!customer) {
+						console.warn(
+							"Customer not found for tax ID creation:",
+							taxIdData.customer,
+						);
+						break;
+					}
+
+					// Create tax ID
+					await ctx.runMutation(
+						internal.collections.stripe.taxIds.mutations.createInternal,
+						{
+							customerId: customer._id,
+							taxId: taxIdData.id,
+							country: taxIdData.country || undefined,
+							type: taxIdData.type || undefined,
+							value: taxIdData.value,
+							verification: taxIdData.verification
+								? {
+										status:
+											taxIdData.verification.status ?? ("unavailable" as const),
+										verifiedAddress:
+											taxIdData.verification.verified_address || undefined,
+										verifiedName:
+											taxIdData.verification.verified_name || undefined,
+									}
+								: undefined,
+						},
+					);
+
+					break;
+				}
+
+				case "customer.tax_id.updated": {
+					const taxIdData = event.data.object as Stripe.TaxId;
+
+					// Find the tax ID in our database
+					const taxId = await ctx.runQuery(
+						internal.collections.stripe.taxIds.queries.getByStripeIdInternal,
+						{ stripeTaxId: taxIdData.id },
+					);
+
+					if (!taxId) {
+						console.warn("Tax ID not found for update:", taxIdData.id);
+						break;
+					}
+
+					// Update tax ID
+					await ctx.runMutation(
+						internal.collections.stripe.taxIds.mutations.updateInternal,
+						{
+							id: taxId._id,
+							verification: taxIdData.verification
+								? {
+										status:
+											taxIdData.verification.status ?? ("unavailable" as const),
+										verifiedAddress:
+											taxIdData.verification.verified_address || undefined,
+										verifiedName:
+											taxIdData.verification.verified_name || undefined,
+									}
+								: undefined,
+							country: taxIdData.country || undefined,
+							type: taxIdData.type || undefined,
+							value: taxIdData.value,
+						},
+					);
+
+					break;
+				}
+
+				case "customer.tax_id.deleted": {
+					const taxIdData = event.data.object as Stripe.TaxId;
+
+					// Find the tax ID in our database
+					const taxId = await ctx.runQuery(
+						internal.collections.stripe.taxIds.queries.getByStripeIdInternal,
+						{ stripeTaxId: taxIdData.id },
+					);
+
+					if (!taxId) {
+						console.warn("Tax ID not found for deletion:", taxIdData.id);
+						break;
+					}
+
+					// Delete tax ID
+					await ctx.runMutation(
+						internal.collections.stripe.taxIds.mutations.deleteInternal,
+						{
+							id: taxId._id,
+						},
+					);
+
 					break;
 				}
 
@@ -333,6 +1109,8 @@ export const handleStripeEvent = internalAction({
 							status: subscriptionData.status,
 							currentPeriodStart,
 							currentPeriodEnd,
+							interval:
+								firstItem?.price.recurring?.interval ?? ("month" as const),
 							cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
 							canceledAt: subscriptionData.canceled_at
 								? new Date(subscriptionData.canceled_at * 1000).toISOString()
@@ -435,6 +1213,8 @@ export const handleStripeEvent = internalAction({
 								currentPeriodStart,
 								currentPeriodEnd,
 								cancelAtPeriodEnd: subscriptionData.cancel_at_period_end,
+								interval:
+									firstItem?.price.recurring?.interval ?? ("month" as const),
 								canceledAt: subscriptionData.canceled_at
 									? new Date(subscriptionData.canceled_at * 1000).toISOString()
 									: undefined,
@@ -471,6 +1251,71 @@ export const handleStripeEvent = internalAction({
 								`Trial cancelled for workspace ${existingSubscription.workspaceId} - credits will expire at trial end`,
 							);
 							// No action needed - trial credits will expire naturally at currentPeriodEnd
+						}
+
+						// Check for plan changes before updating subscription items
+						const oldSubscriptionItems = await ctx.runQuery(
+							internal.collections.stripe.subscriptionItems.queries
+								.getBySubscriptionIdInternal,
+							{ subscriptionId: existingSubscription._id },
+						);
+						const oldMainPlanItem = oldSubscriptionItems.find(
+							(item) =>
+								item.metadata?.type === "subscription" &&
+								item.metadata?.isShadow !== "true",
+						);
+						const newMainPlanItem = subscriptionData.items.data.find(
+							(item) => item.metadata?.isShadowSubscription !== "true",
+						);
+
+						if (
+							oldMainPlanItem &&
+							newMainPlanItem &&
+							oldMainPlanItem.stripeSubscriptionItemId === newMainPlanItem.id && // It's an update, not a new item
+							oldMainPlanItem.priceId !==
+								(
+									await ctx.runQuery(
+										internal.collections.stripe.prices.queries.getByStripeId,
+										{ stripePriceId: newMainPlanItem.price.id },
+									)
+								)?._id
+						) {
+							// This indicates a plan change (price has changed on the main item)
+							// If the old plan was a yearly plan, we need to cancel its shadow subscription.
+							const oldPrice = await ctx.runQuery(
+								internal.collections.stripe.prices.queries.getByIdInternal,
+								{ id: oldMainPlanItem.priceId },
+							);
+
+							if (oldPrice?.interval === "year") {
+								try {
+									// Get all active subscriptions for this customer
+									const shadowSubscriptions = await stripe.subscriptions.list({
+										customer: subscriptionData.customer as string,
+										status: "active",
+									});
+
+									// Filter for shadow subscriptions related to this parent subscription
+									for (const shadow of shadowSubscriptions.data) {
+										if (
+											shadow.metadata?.isShadowSubscription === "true" &&
+											shadow.metadata?.parentSubscription ===
+												subscriptionData.id
+										) {
+											console.log(
+												`Canceling shadow subscription ${shadow.id} due to plan change from yearly plan.`,
+											);
+											await stripe.subscriptions.cancel(shadow.id);
+										}
+									}
+								} catch (error) {
+									console.error(
+										"Failed to cancel shadow subscription during plan change:",
+										error,
+									);
+									// Non-critical, don't block webhook processing
+								}
+							}
 						}
 
 						// Check for plan upgrade to Team before updating subscription items

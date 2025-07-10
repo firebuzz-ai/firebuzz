@@ -29,6 +29,14 @@ export const updateInternal = internalMutation({
 				v.literal("paused"),
 			),
 		),
+		interval: v.optional(
+			v.union(
+				v.literal("month"),
+				v.literal("year"),
+				v.literal("week"),
+				v.literal("day"),
+			),
+		),
 		currentPeriodStart: v.optional(v.string()),
 		currentPeriodEnd: v.optional(v.string()),
 		cancelAtPeriodEnd: v.optional(v.boolean()),
@@ -87,6 +95,10 @@ export const updateInternal = internalMutation({
 
 		if (args.updatedAt) {
 			updateObject.updatedAt = args.updatedAt;
+		}
+
+		if (args.interval) {
+			updateObject.interval = args.interval;
 		}
 
 		await ctx.db.patch(args.subscriptionId, updateObject);

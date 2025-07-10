@@ -1,0 +1,44 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE date_range
+DESCRIPTION "Generates a date range between periodStart and periodEnd"
+
+SQL >
+    %
+    SELECT
+        toDate({{ DateTime64(periodStart, required=True) }}) + INTERVAL number DAY AS date
+    FROM numbers(
+        dateDiff('day', toDate({{ DateTime64(periodStart, required=True) }}), toDate({{ DateTime64(periodEnd, required=True) }})) + 1
+    )
+
+NODE actual_usage
+DESCRIPTION "Aggregates actual usage per day for the workspace"
+
+SQL >
+    %
+    SELECT
+        toDate(createdAt) AS date,
+        sum(abs(amount)) AS daily_usage
+    FROM credit_usage_v1
+    WHERE
+        workspaceId = {{ String(workspaceId, required=True) }}
+        AND createdAt BETWEEN {{ DateTime64(periodStart, required=True) }} AND {{ DateTime64(periodEnd, required=True) }}
+    GROUP BY toDate(createdAt)
+
+NODE daily_usage
+DESCRIPTION "Combines date range with actual usage, filling gaps with zero values"
+
+SQL >
+    %
+    SELECT
+        dr.date,
+        coalesce(au.daily_usage, 0) AS daily_usage
+    FROM date_range dr
+    LEFT JOIN actual_usage au ON dr.date = au.date
+    ORDER BY dr.date
+
+TYPE ENDPOINT 
+
+jd7fe2b53mc68dvvac66ygvy9s7k3vq5
+2025-07-07 20:09:26.304

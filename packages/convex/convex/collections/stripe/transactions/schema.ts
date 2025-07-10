@@ -20,6 +20,7 @@ export const transactionSchema = v.object({
 	workspaceId: v.id("workspaces"),
 	customerId: v.id("customers"),
 	createdBy: v.optional(v.id("users")),
+	projectId: v.optional(v.id("projects")),
 	subscriptionId: v.optional(v.id("subscriptions")),
 	// System fields
 	reason: v.optional(v.string()), // Human readable reason for the credit transaction

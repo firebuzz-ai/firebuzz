@@ -7,23 +7,23 @@ import { WorkspaceInvitations } from "./_components/workspace-invitations";
 import { WorkspacesList } from "./_components/workspaces-list";
 
 export default function WorkspacesPage() {
-  const { isLoading: isWorkspaceLoading } = useWorkspace();
+	const { isLoading: isWorkspaceLoading } = useWorkspace();
 
-  if (isWorkspaceLoading) {
-    return (
-      <div className="flex flex-1 justify-center items-center w-full h-full">
-        <Spinner size="sm" />
-      </div>
-    );
-  }
+	if (isWorkspaceLoading) {
+		return (
+			<div className="flex flex-1 justify-center items-center w-full h-full">
+				<Spinner size="sm" />
+			</div>
+		);
+	}
 
-  return (
-    <div className="flex flex-col flex-1">
-      <WorkspacesList />
-      <WorkspaceInvitations />
+	return (
+		<div className="flex flex-col flex-1">
+			<WorkspacesList />
+			<WorkspaceInvitations />
 
-      {/* Modals */}
-      <NewWorkspaceModal />
-    </div>
-  );
+			{/* Modals */}
+			<NewWorkspaceModal />
+		</div>
+	);
 }

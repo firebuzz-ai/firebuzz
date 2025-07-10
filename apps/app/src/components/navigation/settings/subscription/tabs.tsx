@@ -4,19 +4,14 @@ import {
 	AnimatedTabs,
 	type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
-import {
-	BarChart3,
-	CreditCard,
-	Plus,
-	Receipt,
-} from "@firebuzz/ui/icons/lucide";
+import { BarChart3, CreditCard, Receipt } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS: TabItem[] = [
 	{
 		value: "plan",
-		href: "/settings/subscription",
+		href: "/settings/subscription/plan",
 		icon: CreditCard,
 		label: "Plan",
 	},
@@ -32,19 +27,13 @@ const TABS: TabItem[] = [
 		icon: BarChart3,
 		label: "Usage",
 	},
-	{
-		value: "add-ons",
-		href: "/settings/subscription/add-ons",
-		icon: Plus,
-		label: "Add-ons",
-	},
 ];
 
 export const SubscriptionSettingsTabs = () => {
 	const pathname = usePathname();
 
 	return (
-		<div className="relative flex items-center justify-between px-2 border-b">
+		<div className="flex relative justify-between items-center px-2 border-b">
 			{/* Tabs */}
 			<AnimatedTabs
 				tabs={TABS}

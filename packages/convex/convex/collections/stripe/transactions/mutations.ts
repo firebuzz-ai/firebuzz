@@ -1,6 +1,8 @@
 import { v } from "convex/values";
+import { internal } from "../../../_generated/api";
 import type { Doc } from "../../../_generated/dataModel";
 import { internalMutation } from "../../../_generated/server";
+import { retrier } from "../../../components/actionRetrier";
 import {
 	internalMutationWithTrigger,
 	mutationWithTrigger,
@@ -70,6 +72,7 @@ export const addUsageIdempotent = mutationWithTrigger({
 
 		const usage = {
 			workspaceId: workspace._id,
+			projectId: user.currentProjectId,
 			customerId: subscription.customerId,
 			amount: args.amount,
 			type: "usage" as const,
@@ -82,7 +85,31 @@ export const addUsageIdempotent = mutationWithTrigger({
 			createdBy: user._id,
 		};
 
-		return await ctx.db.insert("transactions", usage);
+		// Check ratelimit for ingestCreditUsage
+		const { ok, retryAfter } = await ctx.runQuery(
+			internal.components.ratelimits.checkLimit,
+			{
+				key: "ingestCreditUsage",
+			},
+		);
+
+		await retrier.runAfter(
+			ctx,
+			ok ? 0 : retryAfter,
+			internal.lib.tinybird.ingestCreditUsageAction,
+			{
+				amount: args.amount,
+				type: "usage",
+				idempotencyKey: args.idempotencyKey,
+				workspaceId: workspace._id,
+				userId: user._id,
+				projectId: user.currentProjectId!,
+			},
+		);
+
+		const transaction = await ctx.db.insert("transactions", usage);
+
+		return transaction;
 	},
 });
 

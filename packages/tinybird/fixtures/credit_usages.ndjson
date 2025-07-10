@@ -1,0 +1,6 @@
+{"amount": -10, "type": "message", "idempotencyKey": null, "createdAt": "2023-10-26T10:00:00.000Z", "workspaceId": "ws_1", "userId": "user_1", "projectId": "proj_A"}
+{"amount": -50, "type": "image-generation", "idempotencyKey": null, "createdAt": "2023-10-26T11:00:00.000Z", "workspaceId": "ws_1", "userId": "user_1", "projectId": "proj_A"}
+{"amount": -15, "type": "message", "idempotencyKey": null, "createdAt": "2023-10-26T12:00:00.000Z", "workspaceId": "ws_1", "userId": "user_2", "projectId": "proj_B"}
+{"amount": -5, "type": "message", "idempotencyKey": null, "createdAt": "2023-10-25T09:00:00.000Z", "workspaceId": "ws_1", "userId": "user_1", "projectId": "proj_A"}
+{"amount": -100, "type": "image-generation", "idempotencyKey": null, "createdAt": "2023-10-25T14:00:00.000Z", "workspaceId": "ws_1", "userId": "user_2", "projectId": "proj_B"}
+{"amount": -20, "type": "message", "idempotencyKey": null, "createdAt": "2023-10-27T08:00:00.000Z", "workspaceId": "ws_1", "userId": "user_2", "projectId": "proj_B"} 

@@ -21,6 +21,7 @@ export const updateInternal = internalMutation({
 		name: v.optional(v.string()),
 		metadata: v.optional(v.record(v.string(), v.any())),
 		updatedAt: v.optional(v.string()),
+		shipping: customerSchema.fields.shipping,
 	},
 	handler: async (ctx, args) => {
 		const updateObject: Partial<Doc<"customers">> = {};
@@ -47,6 +48,10 @@ export const updateInternal = internalMutation({
 
 		if (args.updatedAt) {
 			updateObject.updatedAt = args.updatedAt;
+		}
+
+		if (args.shipping) {
+			updateObject.shipping = args.shipping;
 		}
 
 		await ctx.db.patch(args.customerId, updateObject);
