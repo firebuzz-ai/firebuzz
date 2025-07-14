@@ -18,6 +18,7 @@ export const create = internalMutation({
 		projectId: v.id("projects"),
 		createdBy: v.id("users"),
 		type: v.union(v.literal("project"), v.literal("workspace")),
+		isTrialActive: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		await ctx.db.insert("onboarding", {
@@ -29,6 +30,7 @@ export const create = internalMutation({
 			isProcessing: false,
 			type: args.type,
 			createdBy: args.createdBy,
+			isTrialActive: args.isTrialActive ?? false,
 		});
 	},
 });

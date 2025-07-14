@@ -1,31 +1,30 @@
+import { asyncMap } from "convex-helpers";
 import type { UserIdentity } from "convex/server";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../../_generated/server";
 
-export const getTeamWorkspaceByExternalId = async (
+export const getWorkspaceByExternalId = async (
 	ctx: QueryCtx | MutationCtx,
 	externalId: string,
 ) => {
 	const workspace = await ctx.db
 		.query("workspaces")
 		.withIndex("by_external_id", (q) => q.eq("externalId", externalId))
-		.unique();
+		.first();
 	return workspace;
 };
 
-export const getPersonalWorkspacesByExternalId = async (
+export const getWorkspacesByExternalIds = async (
 	ctx: QueryCtx | MutationCtx,
-	externalId: string,
+	externalIds: string[],
 ) => {
-	const workspace = await ctx.db
-		.query("workspaces")
-		.withIndex("by_external_id", (q) => q.eq("externalId", externalId))
-		.collect();
-
-	return workspace;
+	const workspaces = await asyncMap(externalIds, async (externalId) => {
+		return await getWorkspaceByExternalId(ctx, externalId);
+	});
+	return workspaces.filter((workspace) => workspace !== null);
 };
 
-export const getPersonalWorkspacesByOwnerId = async (
+export const getWorkspacesByOwnerId = async (
 	ctx: QueryCtx | MutationCtx,
 	ownerId: Id<"users">,
 ) => {
@@ -43,23 +42,16 @@ export const getCurrentWorkspace = async (
 ) => {
 	// If the user has a current workspace, return it.
 	if (user.currentWorkspaceId) {
-		return await ctx.db.get(user.currentWorkspaceId);
+		const workspace = await ctx.db.get(user.currentWorkspaceId);
+		if (workspace) return workspace;
 	}
 
-	// If the user is a member of a team, return the team workspace.
-	if (clerkUser.org_id) {
-		return await getTeamWorkspaceByExternalId(ctx, clerkUser.org_id as string); // clerkUser.org_id is the team's ID
-	}
-
-	// If the user has a personal workspace, return it.
-	const personalWorkspaces = await getPersonalWorkspacesByExternalId(
+	const workspace = await getWorkspaceByExternalId(
 		ctx,
-		user.externalId,
+		clerkUser.org_id ? (clerkUser.org_id as string) : user.externalId,
 	);
 
-	if (personalWorkspaces.length > 0) {
-		return personalWorkspaces[0];
-	}
+	if (workspace) return workspace;
 
 	return null;
 };

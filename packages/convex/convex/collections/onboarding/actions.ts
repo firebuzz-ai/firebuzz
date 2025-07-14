@@ -1521,6 +1521,7 @@ export const createCheckoutSession = action({
 			}),
 		),
 		baseUrl: v.string(),
+		isTrialActive: v.boolean(),
 	},
 	handler: async (ctx, args): Promise<string | null> => {
 		const user = await ctx.auth.getUserIdentity();
@@ -1565,6 +1566,7 @@ export const createCheckoutSession = action({
 				stripeLineItems: args.stripeLineItems,
 				successUrl: `${args.baseUrl}/new/workspace`,
 				cancelUrl: `${args.baseUrl}/new/workspace`,
+				isTrialActive: args.isTrialActive ?? false,
 			},
 		);
 

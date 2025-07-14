@@ -83,7 +83,7 @@ http.route({
 				break;
 			case "organizationMembership.deleted":
 				await ctx.runMutation(
-					internal.collections.members.mutations.deleteInternal,
+					internal.collections.members.mutations.deleteInternalByExternalId,
 					{
 						externalId: event.data.id,
 					},

@@ -8,7 +8,7 @@ import { ERRORS } from "../../utils/errors";
 import { getCurrentUser } from "../users/utils";
 import { checkIfSlugIsAvailable } from "./utils";
 
-export const createPersonalWorkspace = mutation({
+export const createWorkspace = mutation({
 	args: {
 		title: v.string(),
 		slug: v.optional(v.string()),
@@ -20,17 +20,6 @@ export const createPersonalWorkspace = mutation({
 		const slug =
 			args.slug || slugify(`${title}-${new Date().getTime().toString()}`);
 
-		const isPersonalSpaceAvailable = await ctx.runQuery(
-			internal.collections.workspaces.queries.checkIsPersonalWorkspaceAvailable,
-			{
-				externalId: user.externalId,
-			},
-		);
-
-		if (!isPersonalSpaceAvailable) {
-			throw new ConvexError(ERRORS.PERSONAL_WORKSPACE_LIMIT_REACHED);
-		}
-
 		const isSlugAvailable = await checkIfSlugIsAvailable(ctx, slug);
 
 		if (!isSlugAvailable) {
@@ -40,7 +29,7 @@ export const createPersonalWorkspace = mutation({
 		// Create workspace
 		const workspaceId = await ctx.db.insert("workspaces", {
 			externalId: user.externalId,
-			ownerId: user._id,
+			ownerId: user._id, // We will change this to the organization id when we create the organization
 			workspaceType: "personal",
 			title,
 			slug,
@@ -64,18 +53,32 @@ export const createPersonalWorkspace = mutation({
 		// Set user's current project
 		await ctx.db.patch(user._id, { currentProjectId: projectId });
 
+		// Check if it's first time creating a workspace
+		const hasWorkspace = await ctx.db
+			.query("workspaces")
+			.withIndex("by_owner_id", (q) => q.eq("ownerId", user._id))
+			.first();
+
 		// Create Onboarding
 		await ctx.runMutation(internal.collections.onboarding.mutations.create, {
 			workspaceId: workspaceId,
 			projectId: projectId,
 			createdBy: user._id,
 			type: "workspace",
+			isTrialActive: !hasWorkspace,
 		});
 
 		// Create Stripe customer
 		await retrier.run(ctx, internal.lib.stripe.createStripeCustomer, {
 			workspaceId: workspaceId,
 			userId: user._id,
+		});
+
+		// Create Organization
+		await retrier.run(ctx, internal.lib.clerk.createOrganizationInternal, {
+			workspaceId: workspaceId,
+			maxAllowedMemberships: 1, // We will change this to the number of memberships the user has purchased
+			type: "personal",
 		});
 
 		return workspaceId;
@@ -148,11 +151,15 @@ export const update = mutation({
 			workspace.externalId &&
 			workspace.externalId.startsWith("org_")
 		) {
-			await ctx.scheduler.runAfter(0, internal.lib.clerk.updateOrganization, {
-				organizationId: workspace.externalId,
-				name: args.title,
-				slug: args.slug,
-			});
+			await ctx.scheduler.runAfter(
+				0,
+				internal.lib.clerk.updateOrganizationInternal,
+				{
+					organizationId: workspace.externalId,
+					name: args.title,
+					slug: args.slug,
+				},
+			);
 		}
 	},
 });
@@ -178,5 +185,34 @@ export const updateExternalId = internalMutation({
 			externalId: args.externalId,
 			workspaceType: args.type,
 		});
+	},
+});
+
+export const updateSeatsAndPlan = internalMutation({
+	args: {
+		workspaceId: v.id("workspaces"),
+		type: v.optional(v.union(v.literal("personal"), v.literal("team"))),
+		seats: v.optional(v.number()),
+	},
+	handler: async (ctx, args) => {
+		const workspace = await ctx.db.get(args.workspaceId);
+
+		if (!workspace) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (args.type) {
+			await ctx.db.patch(args.workspaceId, { workspaceType: args.type });
+		}
+
+		// Update organization max allowed memberships
+		await ctx.scheduler.runAfter(
+			0,
+			internal.lib.clerk.updateOrganizationInternal,
+			{
+				organizationId: workspace.externalId!,
+				maxAllowedMemberships: args.type === "team" ? args.seats : 1,
+			},
+		);
 	},
 });

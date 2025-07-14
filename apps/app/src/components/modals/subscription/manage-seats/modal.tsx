@@ -8,6 +8,7 @@ import {
 	api,
 	useAction,
 	useCachedRichQuery,
+	useMutation,
 } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
@@ -104,7 +105,9 @@ export const ManageSeatsModal = () => {
 	}, [requiresMemberRemoval, currentMemberCount, newSeats]);
 
 	const updateSeats = useAction(api.lib.stripe.updateSubscriptionSeats);
-	const removeMember = useAction(api.lib.clerk.handleRemoveMember);
+	const removeMember = useMutation(
+		api.collections.members.mutations.handleRemoveMember,
+	);
 
 	// Reset state when modal opens
 	useEffect(() => {
@@ -208,7 +211,7 @@ export const ManageSeatsModal = () => {
 			// Remove selected members first
 			for (const memberExternalId of selectedMembersToRemove) {
 				await removeMember({
-					userId: memberExternalId,
+					userExternalId: memberExternalId,
 				});
 			}
 

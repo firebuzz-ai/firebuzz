@@ -37,7 +37,7 @@ interface WorkspaceFormProps {
 export const WorkspaceForm = ({ onSuccess }: WorkspaceFormProps) => {
 	const router = useRouter();
 	const createWorkspace = useMutation(
-		api.collections.workspaces.mutations.createPersonalWorkspace,
+		api.collections.workspaces.mutations.createWorkspace,
 	);
 
 	const form = useForm<FormData>({

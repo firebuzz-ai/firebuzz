@@ -9,8 +9,9 @@ export const batchDeleteByWorkspaceId = internalMutation({
 		cursor: v.optional(v.string()),
 		workspaceId: v.id("workspaces"),
 		numItems: v.number(),
+		ownerId: v.optional(v.id("users")), // If provided, the owner will not be deleted
 	},
-	handler: async (ctx, { workspaceId, cursor, numItems }) => {
+	handler: async (ctx, { workspaceId, cursor, numItems, ownerId }) => {
 		// Get the members
 		const { page, continueCursor } = await ctx.db
 			.query("members")
@@ -26,7 +27,31 @@ export const batchDeleteByWorkspaceId = internalMutation({
 		}
 
 		// Delete the members
-		await asyncMap(page, async (member) => await ctx.db.delete(member._id));
+		await asyncMap(
+			page.filter(ownerId ? (member) => member.userId !== ownerId : () => true),
+			async (member) => {
+				// Get the user
+				const user = await ctx.db.get(member.userId);
+
+				if (user) {
+					// Update user's current workspace
+					await ctx.db.patch(member.userId, {
+						currentWorkspaceId: undefined,
+						currentProjectId: undefined,
+					});
+
+					// Remove member from Clerk organization (Webhook will handle deleting Convex)
+					await ctx.scheduler.runAfter(
+						0,
+						internal.lib.clerk.removeClerkMemberInternal,
+						{
+							userExternalId: user.externalId,
+							organizationExternalId: member.organizationExternalId,
+						},
+					);
+				}
+			},
+		);
 
 		// If there are more members, delete them
 		if (
@@ -41,22 +66,9 @@ export const batchDeleteByWorkspaceId = internalMutation({
 					workspaceId,
 					cursor: continueCursor,
 					numItems,
+					ownerId,
 				},
 			);
 		}
-	},
-});
-
-export const deleteByUserId = internalMutation({
-	args: {
-		userId: v.id("users"),
-	},
-	handler: async (ctx, { userId }) => {
-		const members = await ctx.db
-			.query("members")
-			.withIndex("by_user_id", (q) => q.eq("userId", userId))
-			.collect();
-
-		await asyncMap(members, async (member) => await ctx.db.delete(member._id));
 	},
 });

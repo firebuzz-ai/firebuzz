@@ -58,6 +58,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 					onboardingId: onboardingData._id,
 					stripeLineItems,
 					baseUrl: window.location.origin,
+					isTrialActive: onboardingData.isTrialActive,
 				});
 
 				// Redirect to Stripe Checkout
@@ -75,7 +76,7 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 				}
 			}
 		},
-		[createCheckoutAction, onboardingData._id],
+		[createCheckoutAction, onboardingData.isTrialActive, onboardingData._id],
 	);
 
 	const formatPrice = (amount: number | undefined, currency: string) => {
@@ -302,7 +303,9 @@ export const Step5 = ({ onboardingData }: Step5Props) => {
 														variant="brand"
 														className="flex gap-2 items-center text-xs"
 													>
-														Free for 7 days
+														{onboardingData.isTrialActive
+															? "Free for 7 days"
+															: "No trial"}
 													</Badge>
 												</motion.div>
 											)}

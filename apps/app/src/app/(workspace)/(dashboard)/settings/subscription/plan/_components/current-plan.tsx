@@ -16,6 +16,7 @@ import {
 	ArrowRight,
 	CreditCard,
 } from "@firebuzz/ui/icons/lucide";
+import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { CancelSubscriptionDialog } from "./cancel-subscription-dialog";
 
@@ -42,6 +43,10 @@ export const CurrentPlan = () => {
 		if (!currentUser || !currentWorkspace) return false;
 		return currentWorkspace.ownerId === currentUser._id;
 	}, [currentUser, currentWorkspace]);
+
+	const isAdmin = useMemo(() => {
+		return currentUser?.currentRole === "org:admin";
+	}, [currentUser]);
 
 	// Get current plan product
 	const currentPlanItem = useMemo(() => {
@@ -110,18 +115,29 @@ export const CurrentPlan = () => {
 		if (!currentPlanProduct?.name) return "Free";
 		return currentPlanProduct.name;
 	}, [currentPlanProduct]);
-	/*   disabled={!isWorkspaceOwner || !isActive || isSetToCancel} */
 
 	const handleManageSeats = () => {
-		setManageSeatsState({ manageSeats: true });
+		if (isAdmin || isWorkspaceOwner) {
+			setManageSeatsState({ manageSeats: true });
+		} else {
+			toast.error("You are not authorized to manage seats");
+		}
 	};
 
 	const handleChangePlan = () => {
-		setChangePlanState({ changePlan: true });
+		if (isAdmin || isWorkspaceOwner) {
+			setChangePlanState({ changePlan: true });
+		} else {
+			toast.error("You are not authorized to change plan");
+		}
 	};
 
 	const handleCancelSubscription = () => {
-		setIsCancelDialogOpen(true);
+		if (isAdmin || isWorkspaceOwner) {
+			setIsCancelDialogOpen(true);
+		} else {
+			toast.error("You are not authorized to cancel subscription");
+		}
 	};
 
 	const handleCloseCancelDialog = () => {
@@ -235,7 +251,7 @@ export const CurrentPlan = () => {
 									<ArrowRight className="size-3.5" />
 								</Button>
 								<Button
-									disabled={!isTeamPlan}
+									disabled={!isTeamPlan || !isAdmin || !isWorkspaceOwner}
 									variant="outline"
 									size="sm"
 									className="flex gap-2 items-center"

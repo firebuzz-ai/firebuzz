@@ -71,6 +71,8 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 				: { workspaceId: currentWorkspace._id },
 		);
 
+	console.log("creditBalance", creditBalance);
+
 	// Current Subcription Item (Plan Item)
 	const currentSubscriptionPlanItem = useMemo(() => {
 		return activeSubscription?.items.find(
@@ -132,7 +134,6 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 				? "skip"
 				: {
 						workspaceId: currentWorkspace._id,
-						periodStart: currentPeriod.start,
 						periodEnd: currentPeriod.end,
 					},
 		);

@@ -27,7 +27,7 @@ export const Selection: React.FC<SelectionProps> = ({ handleFadeout }) => {
 	const [isCreating, setIsCreating] = useState(false);
 
 	const createWorkspace = useMutation(
-		api.collections.workspaces.mutations.createPersonalWorkspace,
+		api.collections.workspaces.mutations.createWorkspace,
 	);
 
 	const startFadeout = useCallback(() => {

@@ -18,30 +18,30 @@ export const aggregateCreditsBalance = new TableAggregate<{
 			: doc.amount,
 });
 
-// Current Period Usage - aggregates usage (negative amounts) by period
+// Current Period Usage - aggregates usage (negative amounts) by expiration date only
 export const aggregateCurrentPeriodUsage = new TableAggregate<{
 	Namespace: Id<"workspaces">;
-	Key: [string, string, number]; // [periodStart, expiresAt (periodEnd), _creationTime]
+	Key: [string, number]; // [expiresAt, _creationTime]
 	DataModel: DataModel;
 	TableName: "transactions";
 }>(components.aggregateCurrentPeriodUsage, {
 	namespace: (doc) => doc.workspaceId,
-	// Sort by period start, period end (expiresAt), then creation time
-	sortKey: (doc) => [doc.periodStart, doc.expiresAt, doc._creationTime],
+	// Sort by expiration date, then creation time
+	sortKey: (doc) => [doc.expiresAt, doc._creationTime],
 	// Only sum negative amounts (usage)
 	sumValue: (doc) => (doc.type === "usage" ? doc.amount : 0),
 });
 
-// Current Period Additions - aggregates credit additions (positive amounts) by period
+// Current Period Additions By Expiration - aggregates credit additions by expiration date only
 export const aggregateCurrentPeriodAdditions = new TableAggregate<{
 	Namespace: Id<"workspaces">;
-	Key: [string, string, number]; // [periodStart, expiresAt (periodEnd), _creationTime]
+	Key: [string, number]; // [expiresAt, _creationTime]
 	DataModel: DataModel;
 	TableName: "transactions";
 }>(components.aggregateCurrentPeriodAdditions, {
 	namespace: (doc) => doc.workspaceId,
-	// Sort by period start, period end (expiresAt), then creation time
-	sortKey: (doc) => [doc.periodStart, doc.expiresAt, doc._creationTime],
+	// Sort by expiration date, then creation time
+	sortKey: (doc) => [doc.expiresAt, doc._creationTime],
 	// Only sum positive amounts (additions)
 	sumValue: (doc) =>
 		["subscription", "topup", "gift", "trial"].includes(doc.type)

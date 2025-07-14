@@ -3,11 +3,12 @@ import { v } from "convex/values";
 import { themeInsertSchema } from "../brands/themes/schema";
 
 export const onboardingSchema = {
-	isCompleted: v.boolean(),
 	step: v.number(),
 	animationStep: v.number(),
 	type: v.union(v.literal("project"), v.literal("workspace")),
 	isProcessing: v.boolean(),
+	isCompleted: v.boolean(),
+	isTrialActive: v.boolean(),
 	step1: v.optional(
 		v.object({
 			workflowId: v.optional(vWorkflowId),

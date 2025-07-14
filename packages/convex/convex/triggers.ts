@@ -36,9 +36,12 @@ const triggers = new Triggers<DataModel>();
 triggers.register("users", async (ctx, change) => {
 	if (change.operation === "delete") {
 		// Delete all members associated with this user
-		await ctx.runMutation(internal.collections.members.utils.deleteByUserId, {
-			userId: change.id,
-		});
+		await ctx.runMutation(
+			internal.collections.members.mutations.deleteInternalByUserId,
+			{
+				userId: change.id,
+			},
+		);
 
 		await asyncMap(
 			await getManyFrom(
@@ -108,6 +111,27 @@ triggers.register("workspaces", async (ctx, change) => {
 			internal.collections.onboarding.mutations.deleteByWorkspaceIdInternal,
 			{ workspaceId: change.id },
 		);
+	}
+
+	// Downgrade to pro
+	if (change.operation === "update") {
+		const newDoc = change.newDoc;
+		const oldDoc = change.oldDoc;
+
+		if (
+			newDoc.workspaceType === "personal" &&
+			oldDoc.workspaceType === "team"
+		) {
+			// Delete Members
+			await cascadePool.enqueueMutation(
+				ctx,
+				internal.collections.members.utils.batchDeleteByWorkspaceId,
+				{
+					workspaceId: change.id,
+					numItems: 25,
+				},
+			);
+		}
 	}
 });
 

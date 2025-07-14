@@ -3,7 +3,7 @@ import { ConvexError, type Validator, v } from "convex/values";
 import { internalMutation, mutation } from "../../_generated/server";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
-import { getTeamWorkspaceByExternalId } from "../workspaces/utils";
+import { getWorkspaceByExternalId } from "../workspaces/utils";
 import { getCurrentUser, getUserByExternalId } from "./utils";
 
 export const upsertFromClerk = internalMutation({
@@ -91,7 +91,7 @@ export const updateCurrentWorkspaceByExternalId = mutation({
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
-		const workspace = await getTeamWorkspaceByExternalId(
+		const workspace = await getWorkspaceByExternalId(
 			ctx,
 			currentWorkspaceExternalId,
 		);

@@ -3,7 +3,7 @@
 import { useUser } from "@/hooks/auth/use-user";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import type { Doc } from "@firebuzz/convex";
-import { api, useAction } from "@firebuzz/convex";
+import { api, useMutation } from "@firebuzz/convex";
 import {
 	Avatar,
 	AvatarFallback,
@@ -39,8 +39,12 @@ export const MemberListItem = ({ member }: MemberListItemProps) => {
 	const { currentWorkspace } = useWorkspace();
 	const [isLoading, setIsLoading] = useState(false);
 
-	const changeRoleAction = useAction(api.lib.clerk.handleChangeRole);
-	const removeMemberAction = useAction(api.lib.clerk.handleRemoveMember);
+	const changeRoleMutation = useMutation(
+		api.collections.members.mutations.handleChangeRole,
+	);
+	const removeMemberMutation = useMutation(
+		api.collections.members.mutations.handleRemoveMember,
+	);
 
 	const isMemberCurrentUser = member.userId === currentUser?._id;
 	const isMemberOwner = currentWorkspace?.ownerId === member.userId;
@@ -86,8 +90,8 @@ export const MemberListItem = ({ member }: MemberListItemProps) => {
 
 		setIsLoading(true);
 		try {
-			await changeRoleAction({
-				userId: user.externalId,
+			await changeRoleMutation({
+				userExternalId: user.externalId,
 				newRole: role,
 			});
 
@@ -112,8 +116,8 @@ export const MemberListItem = ({ member }: MemberListItemProps) => {
 
 		setIsLoading(true);
 		try {
-			await removeMemberAction({
-				userId: user.externalId,
+			await removeMemberMutation({
+				userExternalId: user.externalId,
 			});
 
 			toast.success(

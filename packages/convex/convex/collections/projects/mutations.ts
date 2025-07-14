@@ -41,6 +41,7 @@ export const create = mutation({
 			step: 1,
 			animationStep: 2,
 			isProcessing: false,
+			isTrialActive: false,
 		});
 
 		// Change user's current project

@@ -2,6 +2,7 @@
 
 import { ManageProjectsModal } from "@/components/modals/subscription/manage-projects/modal";
 import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
 import { useManageProjects } from "@/hooks/ui/use-manage-projects";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -13,11 +14,16 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { FolderOpen, MoreHorizontal, Plus } from "@firebuzz/ui/icons/lucide";
+import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo } from "react";
 
 export const AddOns = () => {
 	const { subscription, isLoading } = useSubscription();
+	const { user } = useUser();
 	const [isManageProjectsOpen, setManageProjectsState] = useManageProjects();
+	const isAdmin = useMemo(() => {
+		return user?.currentRole === "org:admin";
+	}, [user]);
 
 	// Get add-ons from subscription items
 	const addOns = useMemo(() => {
@@ -60,7 +66,11 @@ export const AddOns = () => {
 	}
 
 	const openManageProjectsModal = () => {
-		setManageProjectsState({ manageProjects: true });
+		if (isAdmin) {
+			setManageProjectsState({ manageProjects: true });
+		} else {
+			toast.error("You are not authorized to manage projects");
+		}
 	};
 
 	if (isLoading) {
@@ -153,6 +163,7 @@ export const AddOns = () => {
 														<Tooltip>
 															<TooltipTrigger asChild>
 																<Button
+																	disabled={!isAdmin}
 																	onClick={openManageProjectsModal}
 																	variant="ghost"
 																	size="iconXs"
@@ -184,6 +195,7 @@ export const AddOns = () => {
 											plan.
 										</p>
 										<Button
+											disabled={!isAdmin}
 											variant="outline"
 											size="sm"
 											className="flex gap-2 items-center mt-3"

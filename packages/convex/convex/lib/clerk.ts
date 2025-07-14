@@ -79,6 +79,39 @@ export const createOrganizationInternal = internalAction({
 	},
 });
 
+export const updateOrganizationInternal = internalAction({
+	args: {
+		name: v.optional(v.string()),
+		slug: v.optional(v.string()),
+		organizationId: v.string(),
+		maxAllowedMemberships: v.optional(v.number()),
+	},
+	handler: async (_ctx, args) => {
+		const updateObject: {
+			name?: string;
+			slug?: string;
+			maxAllowedMemberships?: number;
+		} = {};
+
+		if (args.name) {
+			updateObject.name = args.name;
+		}
+
+		if (args.slug) {
+			updateObject.slug = args.slug;
+		}
+
+		if (args.maxAllowedMemberships) {
+			updateObject.maxAllowedMemberships = args.maxAllowedMemberships;
+		}
+
+		await clerkClient.organizations.updateOrganization(
+			args.organizationId,
+			updateObject,
+		);
+	},
+});
+
 export const createOrganizationInvitation = action({
 	args: {
 		email: v.string(),
@@ -229,33 +262,6 @@ export const resendOrganizationInvitation = action({
 	},
 });
 
-export const updateOrganization = internalAction({
-	args: {
-		name: v.optional(v.string()),
-		slug: v.optional(v.string()),
-		organizationId: v.string(),
-	},
-	handler: async (_ctx, args) => {
-		const updateObject: {
-			name?: string;
-			slug?: string;
-		} = {};
-
-		if (args.name) {
-			updateObject.name = args.name;
-		}
-
-		if (args.slug) {
-			updateObject.slug = args.slug;
-		}
-
-		await clerkClient.organizations.updateOrganization(
-			args.organizationId,
-			updateObject,
-		);
-	},
-});
-
 export const getSessionsWithActivities = action({
 	args: {},
 	handler: async (ctx) => {
@@ -337,241 +343,63 @@ export const revokeSession = action({
 	},
 });
 
-export const handleChangeRole = action({
+export const revokeAllSessionsForUser = internalAction({
 	args: {
-		userId: v.string(),
-		newRole: v.union(v.literal("org:admin"), v.literal("org:member")),
+		userExternalId: v.string(),
 	},
-	handler: async (ctx, args) => {
+	handler: async (_ctx, args) => {
 		try {
-			// Get current user
-			const currentUser = await ctx.runQuery(
-				internal.collections.users.queries.getCurrentUserInternal,
-			);
-
-			if (
-				!currentUser ||
-				!currentUser.externalId ||
-				!currentUser.currentWorkspaceExternalId ||
-				!currentUser.currentWorkspaceId
-			) {
-				throw new ConvexError(ERRORS.UNAUTHORIZED);
-			}
-
-			// Get the target user
-			const targetUser = await ctx.runQuery(
-				internal.collections.users.queries.getByExternalIdInternal,
-				{ externalId: args.userId },
-			);
-
-			if (!targetUser) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Get current workspace
-			const workspace = await ctx.runQuery(
-				internal.collections.workspaces.queries.getByIdInternal,
-				{ id: currentUser.currentWorkspaceId },
-			);
-
-			if (!workspace) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Get target member info
-			const targetMember = await ctx.runQuery(
-				internal.collections.members.queries.getByUserIdAndWorkspaceInternal,
-				{ userId: targetUser._id, workspaceId: workspace._id },
-			);
-
-			if (!targetMember) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Authorization checks
-			const isCurrentUserOwner = workspace.ownerId === currentUser._id;
-			const isCurrentUserAdmin = currentUser.currentRole === "org:admin";
-			const isTargetUserOwner = workspace.ownerId === targetUser._id;
-			const isTargetUserAdmin = targetMember.role === "org:admin";
-			const isSameUser = currentUser._id === targetUser._id;
-
-			// Can't change own role
-			if (isSameUser) {
-				throw new ConvexError("Cannot change your own role");
-			}
-
-			// Can't change owner's role
-			if (isTargetUserOwner) {
-				throw new ConvexError("Cannot change owner's role");
-			}
-
-			// Only admins can change roles
-			if (!isCurrentUserAdmin && !isCurrentUserOwner) {
-				throw new ConvexError(ERRORS.UNAUTHORIZED);
-			}
-
-			// Only owner can change admin roles
-			if (isTargetUserAdmin && !isCurrentUserOwner) {
-				throw new ConvexError("Only the owner can change admin roles");
-			}
-
-			// Update role in Clerk
-			await clerkClient.organizations.updateOrganizationMembership({
-				organizationId: currentUser.currentWorkspaceExternalId,
-				userId: args.userId,
-				role: args.newRole,
+			const sessionsResponse = await clerkClient.sessions.getSessionList({
+				userId: args.userExternalId,
 			});
 
-			// Update role in Convex
-			await ctx.runMutation(
-				internal.collections.members.mutations.updateRoleInternal,
-				{
-					userId: targetUser._id,
-					workspaceId: workspace._id,
-					role: args.newRole,
-				},
+			await Promise.all(
+				sessionsResponse.data?.map(async (session) => {
+					if (session.status === "active") {
+						await clerkClient.sessions.revokeSession(session.id);
+					}
+				}),
 			);
-
-			return { success: true };
 		} catch (error) {
-			if (error instanceof ConvexError) {
-				throw error;
-			}
-			console.log("Error changing role", error);
+			console.log("Error revoking all sessions for user", error);
 			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
 		}
 	},
 });
 
-export const handleRemoveMember = action({
+export const updateClerkMemberInternal = internalAction({
 	args: {
-		userId: v.string(),
+		userExternalId: v.string(),
+		organizationExternalId: v.string(),
+		role: v.union(v.literal("org:admin"), v.literal("org:member")),
 	},
-	handler: async (ctx, args) => {
+	handler: async (_ctx, args) => {
 		try {
-			// Get current user
-			const currentUser = await ctx.runQuery(
-				internal.collections.users.queries.getCurrentUserInternal,
-			);
-
-			if (
-				!currentUser ||
-				!currentUser.externalId ||
-				!currentUser.currentWorkspaceExternalId ||
-				!currentUser.currentWorkspaceId
-			) {
-				throw new ConvexError(ERRORS.UNAUTHORIZED);
-			}
-
-			// Get the target user
-			const targetUser = await ctx.runQuery(
-				internal.collections.users.queries.getByExternalIdInternal,
-				{ externalId: args.userId },
-			);
-
-			if (!targetUser) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Get current workspace
-			const workspace = await ctx.runQuery(
-				internal.collections.workspaces.queries.getByIdInternal,
-				{ id: currentUser.currentWorkspaceId },
-			);
-
-			if (!workspace) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Get target member info
-			const targetMember = await ctx.runQuery(
-				internal.collections.members.queries.getByUserIdAndWorkspaceInternal,
-				{ userId: targetUser._id, workspaceId: workspace._id },
-			);
-
-			if (!targetMember) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			// Authorization checks
-			const isCurrentUserOwner = workspace.ownerId === currentUser._id;
-			const isCurrentUserAdmin = currentUser.currentRole === "org:admin";
-			const isTargetUserOwner = workspace.ownerId === targetUser._id;
-			const isTargetUserAdmin = targetMember.role === "org:admin";
-			const isSameUser = currentUser._id === targetUser._id;
-
-			// Can't remove yourself
-			if (isSameUser) {
-				throw new ConvexError("Cannot remove yourself from the workspace");
-			}
-
-			// Can't remove owner
-			if (isTargetUserOwner) {
-				throw new ConvexError("Cannot remove the workspace owner");
-			}
-
-			// Only admins can remove members
-			if (!isCurrentUserAdmin && !isCurrentUserOwner) {
-				throw new ConvexError(ERRORS.UNAUTHORIZED);
-			}
-
-			// Only owner can remove admins
-			if (isTargetUserAdmin && !isCurrentUserOwner) {
-				throw new ConvexError("Only the owner can remove admin members");
-			}
-
-			// Remove member from Clerk organization
-			await clerkClient.organizations.deleteOrganizationMembership({
-				organizationId: currentUser.currentWorkspaceExternalId,
-				userId: args.userId,
+			await clerkClient.organizations.updateOrganizationMembership({
+				organizationId: args.organizationExternalId,
+				userId: args.userExternalId,
+				role: args.role,
 			});
-
-			// Revoke all sessions for the removed user
-			try {
-				const sessionsResponse = await clerkClient.sessions.getSessionList({
-					userId: args.userId,
-				});
-
-				// Revoke each active session
-				if (sessionsResponse.data && sessionsResponse.data.length > 0) {
-					await Promise.all(
-						sessionsResponse.data.map(async (session) => {
-							if (session.status === "active") {
-								await clerkClient.sessions.revokeSession(session.id);
-							}
-						}),
-					);
-				}
-			} catch (error) {
-				// Log error but don't fail the entire operation
-				console.log("Error revoking sessions for removed user:", error);
-			}
-
-			// Remove member from Convex
-			await ctx.runMutation(
-				internal.collections.members.mutations.removeInternal,
-				{
-					userId: targetUser._id,
-					workspaceId: workspace._id,
-				},
-			);
-
-			// Clear user's current workspace and project if they match the workspace they're being removed from
-			await ctx.runMutation(
-				internal.collections.users.mutations
-					.clearCurrentWorkspaceAndProjectInternal,
-				{
-					userId: targetUser._id,
-					workspaceId: workspace._id,
-				},
-			);
-
-			return { success: true };
 		} catch (error) {
-			if (error instanceof ConvexError) {
-				throw error;
-			}
-			console.log("Error removing member", error);
+			console.log("Error updating clerk member", error);
+			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
+		}
+	},
+});
+
+export const removeClerkMemberInternal = internalAction({
+	args: {
+		userExternalId: v.string(),
+		organizationExternalId: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		try {
+			await clerkClient.organizations.deleteOrganizationMembership({
+				organizationId: args.organizationExternalId,
+				userId: args.userExternalId,
+			});
+		} catch (error) {
+			console.log("Error removing clerk member", error);
 			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
 		}
 	},

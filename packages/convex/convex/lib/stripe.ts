@@ -174,10 +174,11 @@ export const createCheckoutSession = internalAction({
 		), // This should be Stripe price ID, not our internal ID
 		successUrl: v.string(),
 		cancelUrl: v.string(),
+		isTrialActive: v.boolean(),
 	},
 	handler: async (
 		_ctx,
-		{ stripeCustomerId, stripeLineItems, successUrl, cancelUrl },
+		{ stripeCustomerId, stripeLineItems, successUrl, cancelUrl, isTrialActive },
 	) => {
 		const session = await stripe.checkout.sessions.create({
 			customer: stripeCustomerId,
@@ -187,7 +188,7 @@ export const createCheckoutSession = internalAction({
 			success_url: successUrl,
 			cancel_url: cancelUrl,
 			subscription_data: {
-				trial_period_days: 7, // 7-day free trial
+				trial_period_days: isTrialActive ? 7 : undefined, // 7-day free trial
 				metadata: {
 					isShadowSubscription: "false",
 				},
@@ -299,16 +300,13 @@ export const updateSubscriptionSeats = action({
 		newQuantity: v.number(),
 		prorationBehavior: v.optional(
 			v.union(
-				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("create_prorations"), // Prorate immediately (no invoice)
 				v.literal("none"), // No proration, apply at next billing cycle
 				v.literal("always_invoice"), // Always create invoice immediately
 			),
 		),
 	},
-	handler: async (
-		ctx,
-		{ newQuantity, prorationBehavior = "create_prorations" },
-	) => {
+	handler: async (ctx, { newQuantity, prorationBehavior }) => {
 		const user = await ctx.runQuery(
 			internal.collections.users.queries.getCurrentUserInternal,
 		);
@@ -384,13 +382,28 @@ export const updateSubscriptionSeats = action({
 			throw new ConvexError("No changes made to seat count");
 		}
 
+		// Determine proration behavior based on seat change direction
+		let finalProrationBehavior = prorationBehavior;
+
+		if (!prorationBehavior) {
+			// Auto-determine proration behavior if not explicitly set
+			if (newQuantity > teamPlanItem.quantity) {
+				// Seat increase: Invoice immediately so users get credits
+				finalProrationBehavior = "always_invoice";
+			} else {
+				// Seat decrease: No proration/refund, apply at next billing cycle
+				// Users keep their credits until next cycle
+				finalProrationBehavior = "none";
+			}
+		}
+
 		try {
 			// Update subscription item in Stripe
 			await stripe.subscriptionItems.update(
 				teamPlanItem.stripeSubscriptionItemId,
 				{
 					quantity: newQuantity,
-					proration_behavior: prorationBehavior,
+					proration_behavior: finalProrationBehavior,
 				},
 			);
 
@@ -408,15 +421,15 @@ export const changePlan = action({
 		targetPriceId: v.id("prices"),
 		prorationBehavior: v.optional(
 			v.union(
-				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("create_prorations"), // Prorate immediately (no invoice)
 				v.literal("none"), // No proration, apply at next billing cycle
-				v.literal("always_invoice"), // Always create invoice immediately
+				v.literal("always_invoice"), // Default - always create invoice immediately
 			),
 		),
 	},
 	handler: async (
 		ctx,
-		{ targetProductId, targetPriceId, prorationBehavior = "create_prorations" },
+		{ targetProductId, targetPriceId, prorationBehavior = "always_invoice" },
 	) => {
 		const user = await ctx.runQuery(
 			internal.collections.users.queries.getCurrentUserInternal,
@@ -639,15 +652,15 @@ export const updateProjectAddOns = action({
 		newExtraProjectCount: v.number(),
 		prorationBehavior: v.optional(
 			v.union(
-				v.literal("create_prorations"), // Default - prorate immediately
+				v.literal("create_prorations"), // Prorate immediately (no invoice)
 				v.literal("none"), // No proration, apply at next billing cycle
-				v.literal("always_invoice"), // Always create invoice immediately
+				v.literal("always_invoice"), // Default - always create invoice immediately
 			),
 		),
 	},
 	handler: async (
 		ctx,
-		{ newExtraProjectCount, prorationBehavior = "create_prorations" },
+		{ newExtraProjectCount, prorationBehavior = "always_invoice" },
 	) => {
 		const user = await ctx.runQuery(
 			internal.collections.users.queries.getCurrentUserInternal,
@@ -1190,7 +1203,13 @@ export const handleStripeEvent = internalAction({
 						{ stripeSubscriptionId: subscriptionData.id },
 					);
 
-					if (existingSubscription) {
+					// Find the workspace
+					const workspace = await ctx.runQuery(
+						internal.collections.workspaces.queries.getByIdInternal,
+						{ id: existingSubscription?.workspaceId! },
+					);
+
+					if (existingSubscription && workspace) {
 						// Get period dates from the first subscription item (Stripe's new structure)
 						const firstItem = subscriptionData.items?.data?.[0];
 						const currentPeriodStart = firstItem?.current_period_start
@@ -1234,7 +1253,7 @@ export const handleStripeEvent = internalAction({
 							await ctx.runMutation(
 								internal.collections.stripe.transactions.mutations
 									.expireTrialCredits,
-								{ workspaceId: existingSubscription.workspaceId },
+								{ workspaceId: workspace._id },
 							);
 						}
 
@@ -1248,7 +1267,7 @@ export const handleStripeEvent = internalAction({
 
 						if (isTrialCancellation) {
 							console.log(
-								`Trial cancelled for workspace ${existingSubscription.workspaceId} - credits will expire at trial end`,
+								`Trial cancelled for workspace ${workspace._id} - credits will expire at trial end`,
 							);
 							// No action needed - trial credits will expire naturally at currentPeriodEnd
 						}
@@ -1318,9 +1337,13 @@ export const handleStripeEvent = internalAction({
 							}
 						}
 
-						// Check for plan upgrade to Team before updating subscription items
+						// Check for plan changes before updating subscription items
 						let hasUpgradedToTeam = false;
 						let newTeamQuantity = 1;
+						let teamSeatCountChanged = false;
+						let newTeamSeatCount = 0;
+						let hasDowngradedFromTeam = false;
+						let oldTeamQuantity = 1;
 
 						// Get current subscription items to compare
 						const currentSubscriptionItems = await ctx.runQuery(
@@ -1338,6 +1361,75 @@ export const handleStripeEvent = internalAction({
 							);
 							if (currentProduct?.metadata?.isTeam === "true") {
 								currentTeamItems.push(currentItem);
+							}
+						}
+
+						// Check for new subscription items to detect plan changes
+						const newTeamItems = [];
+						if (subscriptionData.items?.data) {
+							for (const item of subscriptionData.items.data) {
+								// Find the price in our database
+								const price = await ctx.runQuery(
+									internal.collections.stripe.prices.queries.getByStripeId,
+									{ stripePriceId: item.price.id },
+								);
+
+								if (price) {
+									// Get the product to check if it's a Team plan
+									const product = await ctx.runQuery(
+										internal.collections.stripe.products.queries
+											.getByIdInternal,
+										{ id: price.productId },
+									);
+
+									if (product?.metadata?.isTeam === "true") {
+										newTeamItems.push({ item, product });
+									}
+								}
+							}
+						}
+
+						// Detect downgrade from Team to Pro
+						if (currentTeamItems.length > 0 && newTeamItems.length === 0) {
+							hasDowngradedFromTeam = true;
+							oldTeamQuantity = currentTeamItems.reduce(
+								(total, item) => total + item.quantity,
+								0,
+							);
+							console.log(
+								`Team to Pro downgrade detected for workspace ${existingSubscription.workspaceId} - was ${oldTeamQuantity} seats`,
+							);
+						}
+
+						// Detect upgrade to Team plan
+						if (currentTeamItems.length === 0 && newTeamItems.length > 0) {
+							hasUpgradedToTeam = true;
+							newTeamQuantity = newTeamItems.reduce(
+								(total, { item }) => total + (item.quantity || 1),
+								0,
+							);
+							console.log(
+								`Pro to Team upgrade detected for workspace ${existingSubscription.workspaceId} - now ${newTeamQuantity} seats`,
+							);
+						}
+
+						// Detect team seat count changes
+						if (currentTeamItems.length > 0 && newTeamItems.length > 0) {
+							const currentTotalSeats = currentTeamItems.reduce(
+								(total, item) => total + item.quantity,
+								0,
+							);
+							const newTotalSeats = newTeamItems.reduce(
+								(total, { item }) => total + (item.quantity || 1),
+								0,
+							);
+
+							if (currentTotalSeats !== newTotalSeats) {
+								teamSeatCountChanged = true;
+								newTeamSeatCount = newTotalSeats;
+								console.log(
+									`Team seat count changed from ${currentTotalSeats} to ${newTotalSeats} for workspace ${existingSubscription.workspaceId}`,
+								);
 							}
 						}
 
@@ -1363,21 +1455,6 @@ export const handleStripeEvent = internalAction({
 										item.price.id,
 									);
 									continue;
-								}
-
-								// Get the product to check if it's a Team plan
-								const product = await ctx.runQuery(
-									internal.collections.stripe.products.queries.getByIdInternal,
-									{ id: price.productId },
-								);
-
-								// Check if this is a new Team plan (upgrade scenario)
-								if (product?.metadata?.isTeam === "true") {
-									if (currentTeamItems.length === 0) {
-										// No existing Team plan, this is an upgrade to Team
-										hasUpgradedToTeam = true;
-										newTeamQuantity = item.quantity || 1;
-									}
 								}
 
 								if (existingItem) {
@@ -1413,27 +1490,60 @@ export const handleStripeEvent = internalAction({
 							}
 						}
 
-						// Create Clerk Organization if upgraded to Team plan
-						if (hasUpgradedToTeam) {
-							console.log(
-								`Creating Clerk organization for workspace ${existingSubscription.workspaceId} - upgraded to Team plan`,
-							);
-
+						// Update workspace type and seats
+						if (hasUpgradedToTeam || teamSeatCountChanged) {
 							try {
-								await ctx.runAction(
-									internal.lib.clerk.createOrganizationInternal,
+								await ctx.runMutation(
+									internal.collections.workspaces.mutations.updateSeatsAndPlan,
 									{
 										workspaceId: existingSubscription.workspaceId,
-										maxAllowedMemberships: newTeamQuantity,
-										type: "team" as const,
+										type: "team",
+										seats: hasUpgradedToTeam
+											? newTeamQuantity
+											: newTeamSeatCount,
 									},
 								);
 							} catch (error) {
 								console.error(
-									`Failed to create Clerk organization for workspace ${existingSubscription.workspaceId}:`,
+									`Failed to update Clerk organization max allowed memberships for workspace ${existingSubscription.workspaceId}:`,
 									error,
 								);
 								// Don't throw error to avoid webhook failure - organization can be created later if needed
+							}
+						}
+
+						// Handle downgrade from Team to Pro
+						if (hasDowngradedFromTeam) {
+							try {
+								console.log(
+									`Handling Team to Pro downgrade for workspace ${existingSubscription.workspaceId} - was ${oldTeamQuantity} seats, now Pro (1 seat)`,
+								);
+
+								// Update workspace to Pro plan
+								await ctx.runMutation(
+									internal.collections.workspaces.mutations.updateSeatsAndPlan,
+									{
+										workspaceId: existingSubscription.workspaceId,
+										type: "personal",
+										seats: 1,
+									},
+								);
+
+								// Delete all members except the owner
+								await ctx.runMutation(
+									internal.collections.members.utils.batchDeleteByWorkspaceId,
+									{
+										workspaceId: workspace._id,
+										ownerId: workspace.ownerId,
+										numItems: 25,
+									},
+								);
+							} catch (error) {
+								console.error(
+									`Failed to handle Team to Pro downgrade for workspace ${existingSubscription.workspaceId}:`,
+									error,
+								);
+								// Don't throw error to avoid webhook failure - can be handled later if needed
 							}
 						}
 					} else {
@@ -1774,13 +1884,18 @@ export const handleStripeEvent = internalAction({
 						break;
 					}
 
-					// Check if this is an upgrade/downgrade scenario (multiple proration lines)
+					// Check if this is an upgrade/downgrade scenario (different products involved)
 					const prorationLines = lines.filter(
 						(line) =>
 							line.parent?.subscription_item_details?.proration &&
 							invoiceData.amount_paid > 0,
 					);
-					const hasUpgradeDowngrade = prorationLines.length >= 2;
+
+					// True upgrade/downgrade involves different products
+					const uniqueProducts = new Set(
+						prorationLines.map((line) => line.pricing?.price_details?.product),
+					);
+					const hasUpgradeDowngrade = uniqueProducts.size > 1;
 
 					for (const line of lines) {
 						// Find subscription if it exists
@@ -1984,7 +2099,8 @@ export const handleStripeEvent = internalAction({
 							invoiceData.amount_paid > 0 &&
 							proration &&
 							hasUpgradeDowngrade &&
-							price.interval === "month"
+							price.interval === "month" &&
+							line.amount > 0 // Only process positive line items (new plan charges)
 						) {
 							// Handle upgrade/downgrade scenario
 							// Only process positive line items (the new plan)
@@ -2049,53 +2165,84 @@ export const handleStripeEvent = internalAction({
 							invoiceData.amount_paid > 0 &&
 							proration &&
 							!hasUpgradeDowngrade &&
-							price.interval === "month"
+							price.interval === "month" &&
+							line.amount > 0 // Only process positive line items (charges, not refunds)
 						) {
-							const quantity = line.quantity || 1;
-
-							// Calculate prorated credits based on the line period
-							const lineStart = line.period?.start
-								? new Date(line.period.start * 1000)
-								: new Date(subscription.currentPeriodStart);
-							const lineEnd = line.period?.end
-								? new Date(line.period.end * 1000)
-								: new Date(subscription.currentPeriodEnd);
-
-							// Get the full monthly credit amount for this product
-							const monthlyCreditsPerSeat = await getCreditAmountForProduct(
-								product,
-								1,
+							// Calculate the difference in seats by looking at negative line items
+							const negativeLines = lines.filter(
+								(l) =>
+									l.amount < 0 &&
+									l.parent?.subscription_item_details?.proration,
 							);
 
-							// Calculate prorated credits: (remaining days / total days) * credits * quantity
-							const totalDaysInPeriod =
-								(new Date(subscription.currentPeriodEnd).getTime() -
-									new Date(subscription.currentPeriodStart).getTime()) /
-								(1000 * 60 * 60 * 24);
-							const remainingDays =
-								(lineEnd.getTime() - lineStart.getTime()) /
-								(1000 * 60 * 60 * 24);
-							const prorationRatio = remainingDays / totalDaysInPeriod;
-							const proratedCredits = Math.floor(
-								monthlyCreditsPerSeat * prorationRatio * quantity,
+							// Find the corresponding negative line for the same product
+							const negativeLineForSameProduct = negativeLines.find(
+								(negLine) =>
+									negLine.pricing?.price_details?.product ===
+									line.pricing?.price_details?.product,
 							);
 
-							await ctx.runMutation(
-								internal.collections.stripe.transactions.mutations
-									.createIdempotent,
-								{
-									workspaceId: customer.workspaceId,
-									customerId: customer._id,
-									subscriptionId: subscription?._id,
-									amount: proratedCredits,
-									type: "subscription",
-									periodStart: lineStart.toISOString(),
-									expiresAt: subscription.currentPeriodEnd,
-									reason: `Mid-cycle seat addition - prorated credits (${quantity} seats, ${Math.round(prorationRatio * 100)}% of period)`,
-									idempotencyKey: `proration-${customer.workspaceId}-${product.stripeProductId}-${lineStart.toISOString()}-${lineEnd.toISOString()}-q:${quantity}`,
-									updatedAt: new Date().toISOString(),
-								},
-							);
+							let seatDifference = line.quantity || 1; // Default to total quantity if no negative line found
+
+							if (negativeLineForSameProduct) {
+								// Calculate actual seat difference: new quantity - old quantity
+								const newQuantity = line.quantity || 1;
+								const oldQuantity = Math.abs(
+									negativeLineForSameProduct.quantity || 0,
+								);
+								seatDifference = newQuantity - oldQuantity;
+
+								console.log(
+									`Mid-cycle seat change: ${oldQuantity} -> ${newQuantity} (difference: ${seatDifference})`,
+								);
+							}
+
+							// Only process if there's actually an increase
+							if (seatDifference > 0) {
+								// Calculate prorated credits based on the line period
+								const lineStart = line.period?.start
+									? new Date(line.period.start * 1000)
+									: new Date(subscription.currentPeriodStart);
+								const lineEnd = line.period?.end
+									? new Date(line.period.end * 1000)
+									: new Date(subscription.currentPeriodEnd);
+
+								// Get the full monthly credit amount for this product
+								const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+									product,
+									1,
+								);
+
+								// Calculate prorated credits: (remaining days / total days) * credits * NEW_SEATS_ONLY
+								const totalDaysInPeriod =
+									(new Date(subscription.currentPeriodEnd).getTime() -
+										new Date(subscription.currentPeriodStart).getTime()) /
+									(1000 * 60 * 60 * 24);
+								const remainingDays =
+									(lineEnd.getTime() - lineStart.getTime()) /
+									(1000 * 60 * 60 * 24);
+								const prorationRatio = remainingDays / totalDaysInPeriod;
+								const proratedCredits = Math.floor(
+									monthlyCreditsPerSeat * prorationRatio * seatDifference,
+								);
+
+								await ctx.runMutation(
+									internal.collections.stripe.transactions.mutations
+										.createIdempotent,
+									{
+										workspaceId: customer.workspaceId,
+										customerId: customer._id,
+										subscriptionId: subscription?._id,
+										amount: proratedCredits,
+										type: "subscription",
+										periodStart: lineStart.toISOString(),
+										expiresAt: subscription.currentPeriodEnd,
+										reason: `Mid-cycle seat addition - prorated credits (${seatDifference} new seats, ${Math.round(prorationRatio * 100)}% of period)`,
+										idempotencyKey: `proration-${customer.workspaceId}-${product.stripeProductId}-${lineStart.toISOString()}-${lineEnd.toISOString()}-q:${seatDifference}`,
+										updatedAt: new Date().toISOString(),
+									},
+								);
+							}
 
 							break;
 						}
@@ -2105,7 +2252,8 @@ export const handleStripeEvent = internalAction({
 							invoiceData.amount_paid > 0 &&
 							proration &&
 							hasUpgradeDowngrade &&
-							price.interval === "year"
+							price.interval === "year" &&
+							line.amount > 0 // Only process positive line items (new plan charges)
 						) {
 							// Handle yearly plan upgrade/downgrade
 							// Only process positive line items (the new plan)
@@ -2186,73 +2334,109 @@ export const handleStripeEvent = internalAction({
 							invoiceData.amount_paid > 0 &&
 							proration &&
 							!hasUpgradeDowngrade &&
-							price.interval === "year"
+							price.interval === "year" &&
+							line.amount > 0 // Only process positive line items (charges, not refunds)
 						) {
-							const quantity = line.quantity || 1;
-
-							// For yearly plans, we need to give prorated credits for the current month
-							// The shadow subscription will handle ongoing monthly credits
-							const lineStart = line.period?.start
-								? new Date(line.period.start * 1000)
-								: new Date(subscription.currentPeriodStart);
-
-							// Get the monthly credit amount per seat (not yearly)
-							const monthlyCreditsPerSeat = await getCreditAmountForProduct(
-								product,
-								1,
+							// Calculate the difference in seats by looking at negative line items
+							const negativeLines = lines.filter(
+								(l) =>
+									l.amount < 0 &&
+									l.parent?.subscription_item_details?.proration,
 							);
 
-							// Calculate prorated credits for the current month only
-							// Find the current month boundary within the yearly subscription
-							const now = new Date();
-							const currentMonthStart = new Date(
-								now.getFullYear(),
-								now.getMonth(),
-								1,
-							);
-							const nextMonthStart = new Date(
-								now.getFullYear(),
-								now.getMonth() + 1,
-								1,
+							// Find the corresponding negative line for the same product
+							const negativeLineForSameProduct = negativeLines.find(
+								(negLine) =>
+									negLine.pricing?.price_details?.product ===
+									line.pricing?.price_details?.product,
 							);
 
-							// Calculate how much of the current month remains
-							const totalDaysInMonth =
-								(nextMonthStart.getTime() - currentMonthStart.getTime()) /
-								(1000 * 60 * 60 * 24);
-							const remainingDaysInMonth = Math.max(
-								0,
-								(nextMonthStart.getTime() -
-									Math.max(lineStart.getTime(), currentMonthStart.getTime())) /
-									(1000 * 60 * 60 * 24),
-							);
-							const monthlyProrationRatio =
-								remainingDaysInMonth / totalDaysInMonth;
-							const proratedCredits = Math.floor(
-								monthlyCreditsPerSeat * monthlyProrationRatio * quantity,
-							);
+							let seatDifference = line.quantity || 1; // Default to total quantity if no negative line found
 
-							if (proratedCredits > 0) {
-								await ctx.runMutation(
-									internal.collections.stripe.transactions.mutations
-										.createIdempotent,
-									{
-										workspaceId: customer.workspaceId,
-										customerId: customer._id,
-										subscriptionId: subscription?._id,
-										amount: proratedCredits,
-										type: "subscription",
-										periodStart: lineStart.toISOString(),
-										expiresAt: nextMonthStart.toISOString(),
-										reason: `Yearly plan mid-cycle seat addition - prorated credits for current month (${quantity} seats, ${Math.round(monthlyProrationRatio * 100)}% of month)`,
-										idempotencyKey: `yearly-proration-${customer.workspaceId}-${product.stripeProductId}-${currentMonthStart.toISOString()}-${nextMonthStart.toISOString()}-q:${quantity}`,
-										updatedAt: new Date().toISOString(),
-									},
+							if (negativeLineForSameProduct) {
+								// Calculate actual seat difference: new quantity - old quantity
+								const newQuantity = line.quantity || 1;
+								const oldQuantity = Math.abs(
+									negativeLineForSameProduct.quantity || 0,
+								);
+								seatDifference = newQuantity - oldQuantity;
+
+								console.log(
+									`Yearly mid-cycle seat change: ${oldQuantity} -> ${newQuantity} (difference: ${seatDifference})`,
 								);
 							}
 
-							// The shadow subscription will be updated automatically via subscription.updated webhook
-							// to handle ongoing monthly credits for the new seats
+							// Only process if there's actually an increase
+							if (seatDifference > 0) {
+								// For yearly plans, we need to give prorated credits for the current month
+								// The shadow subscription will handle ongoing monthly credits
+								const lineStart = line.period?.start
+									? new Date(line.period.start * 1000)
+									: new Date(subscription.currentPeriodStart);
+
+								// Get the monthly credit amount per seat (not yearly)
+								const monthlyCreditsPerSeat = await getCreditAmountForProduct(
+									product,
+									1,
+								);
+
+								// Calculate prorated credits for the current month only
+								// Find the current month boundary within the yearly subscription
+								const now = new Date();
+								const currentMonthStart = new Date(
+									now.getFullYear(),
+									now.getMonth(),
+									1,
+								);
+								const nextMonthStart = new Date(
+									now.getFullYear(),
+									now.getMonth() + 1,
+									1,
+								);
+
+								// Calculate how much of the current month remains
+								const totalDaysInMonth =
+									(nextMonthStart.getTime() - currentMonthStart.getTime()) /
+									(1000 * 60 * 60 * 24);
+								const remainingDaysInMonth = Math.max(
+									0,
+									(nextMonthStart.getTime() -
+										Math.max(
+											lineStart.getTime(),
+											currentMonthStart.getTime(),
+										)) /
+										(1000 * 60 * 60 * 24),
+								);
+								const monthlyProrationRatio =
+									remainingDaysInMonth / totalDaysInMonth;
+								const proratedCredits = Math.floor(
+									monthlyCreditsPerSeat *
+										monthlyProrationRatio *
+										seatDifference,
+								);
+
+								if (proratedCredits > 0) {
+									await ctx.runMutation(
+										internal.collections.stripe.transactions.mutations
+											.createIdempotent,
+										{
+											workspaceId: customer.workspaceId,
+											customerId: customer._id,
+											subscriptionId: subscription?._id,
+											amount: proratedCredits,
+											type: "subscription",
+											periodStart: lineStart.toISOString(),
+											expiresAt: nextMonthStart.toISOString(),
+											reason: `Yearly plan mid-cycle seat addition - prorated credits for current month (${seatDifference} new seats, ${Math.round(monthlyProrationRatio * 100)}% of month)`,
+											idempotencyKey: `yearly-proration-${customer.workspaceId}-${product.stripeProductId}-${currentMonthStart.toISOString()}-${nextMonthStart.toISOString()}-q:${seatDifference}`,
+											updatedAt: new Date().toISOString(),
+										},
+									);
+								}
+
+								// The shadow subscription will be updated automatically via subscription.updated webhook
+								// to handle ongoing monthly credits for the new seats
+							}
 							break;
 						}
 
