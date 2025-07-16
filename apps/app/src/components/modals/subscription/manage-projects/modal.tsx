@@ -2,6 +2,7 @@
 
 import { useProject } from "@/hooks/auth/use-project";
 import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
 import { useManageProjects } from "@/hooks/ui/use-manage-projects";
 import {
 	ConvexError,
@@ -34,11 +35,16 @@ export const ManageProjectsModal = () => {
 	const [state, setState] = useManageProjects();
 	const { isTeamPlan, projectLimit } = useSubscription();
 	const { projects } = useProject();
+	const { user } = useUser();
 	const [isLoading, setIsLoading] = useState(false);
 	const [currentStep, setCurrentStep] = useState<ModalStep>("projects");
 	const [selectedProjectsToDelete, setSelectedProjectsToDelete] = useState<
 		Id<"projects">[]
 	>([]);
+
+	const isAdmin = useMemo(() => {
+		return user?.currentRole === "org:admin";
+	}, [user]);
 
 	// Get available project add-on products
 	const { data: availableProducts } = useCachedRichQuery(
@@ -126,17 +132,6 @@ export const ManageProjectsModal = () => {
 		api.collections.projects.mutations.deletePermanent,
 	);
 
-	// Simple state reset - only when modal opens (Convex handles data reactivity)
-	/*  useEffect(() => {
-    const isOpening = !prevModalState.current && state.manageProjects;
-    if (isOpening) {
-      setNewExtraProjects(currentExtraProjects);
-      setCurrentStep("projects");
-      setSelectedProjectsToDelete([]);
-    }
-    prevModalState.current = state.manageProjects;
-  }, [state.manageProjects, currentExtraProjects]); */
-
 	useHotkeys(
 		"meta+s",
 		async () => {
@@ -153,6 +148,14 @@ export const ManageProjectsModal = () => {
 	);
 
 	const handleProjectsStep = async () => {
+		if (!isAdmin) {
+			toast.error("You are not authorized to manage projects.", {
+				description: "Please contact your administrator to manage projects.",
+				id: "manage-projects",
+			});
+			return;
+		}
+
 		if (newExtraProjects === currentExtraProjects) {
 			toast.error("No changes made to project count.", {
 				description: "Please adjust the number of projects.",
@@ -208,6 +211,14 @@ export const ManageProjectsModal = () => {
 	};
 
 	const handleSelectionStep = async () => {
+		if (!isAdmin) {
+			toast.error("You are not authorized to manage projects.", {
+				description: "Please contact your administrator to manage projects.",
+				id: "manage-projects",
+			});
+			return;
+		}
+
 		if (selectedProjectsToDelete.length !== deleteAmount) {
 			toast.error("Please select the required number of projects.", {
 				description: `You need to select ${deleteAmount} project${deleteAmount > 1 ? "s" : ""} to delete.`,

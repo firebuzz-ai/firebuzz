@@ -43,6 +43,14 @@ export const upsertFromClerk = internalMutation({
 		} else {
 			// If the user exists, update the user
 			await ctx.db.patch(user._id, userAttributes);
+			await ctx.scheduler.runAfter(
+				0,
+				internal.components.r2.uploadUserAvatarFromURL,
+				{
+					url: data.image_url,
+					userExternalId: data.id,
+				},
+			);
 		}
 	},
 });

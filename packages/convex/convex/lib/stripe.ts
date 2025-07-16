@@ -1112,6 +1112,20 @@ export const handleStripeEvent = internalAction({
 						break;
 					}
 
+					// Find the workspace in our database
+					const workspace = await ctx.runQuery(
+						internal.collections.workspaces.queries.getByIdInternal,
+						{ id: customer?.workspaceId },
+					);
+
+					if (!workspace) {
+						console.warn(
+							"Workspace not found for subscription:",
+							customer?.workspaceId,
+						);
+						break;
+					}
+
 					// Get Product Data
 					const productData = await ctx.runQuery(
 						internal.collections.stripe.products.queries.getByStripeId,
@@ -1196,16 +1210,15 @@ export const handleStripeEvent = internalAction({
 							}
 						}
 					}
-
-					// Create Clerk Organization if it's a team plan
 					const isTeamPlan = productData?.metadata?.isTeam === "true";
+					const seatCount = firstItem?.quantity || 1;
+					const organiationId = workspace?.externalId;
 
-					if (isTeamPlan) {
-						// Create Clerk Organization
-						await ctx.runAction(internal.lib.clerk.createOrganizationInternal, {
-							workspaceId: customer.workspaceId,
-							maxAllowedMemberships: firstItem?.quantity || 1,
-							type: "team" as const,
+					if (isTeamPlan && seatCount > 1 && organiationId) {
+						// Update Clerk Organization (maxAllowedMemberships)
+						await ctx.runAction(internal.lib.clerk.updateOrganizationInternal, {
+							organizationId: organiationId,
+							maxAllowedMemberships: seatCount,
 						});
 					}
 

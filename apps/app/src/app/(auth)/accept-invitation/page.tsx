@@ -48,6 +48,7 @@ const AcceptInvitationPage = () => {
 		userInvitations,
 		userMemberships,
 		isLoaded: isOrganizationListLoaded,
+		setActive,
 	} = useOrganizationList({
 		userInvitations: {
 			infinite: true,
@@ -211,11 +212,13 @@ const AcceptInvitationPage = () => {
 
 			await invitation.accept();
 
-			if (userMemberships?.revalidate) {
+			if (userMemberships?.revalidate && setActive) {
 				await userMemberships.revalidate();
 				await updateUserCurrentWorkspace({
 					currentWorkspaceExternalId: invitation.publicOrganizationData.id,
 				});
+				setActive({ organization: invitation.publicOrganizationData.id });
+
 				router.push("/select/project");
 			}
 		} catch (error) {

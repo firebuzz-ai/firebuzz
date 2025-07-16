@@ -34,7 +34,9 @@ export const getCurrentUser = async (ctx: QueryCtx) => {
 		currentWorkspaceExternalId: currentWorkspace?.externalId,
 		currentRole: (clerkUser.org_role
 			? clerkUser.org_role.toString()
-			: "org:admin") as "org:admin" | "org:member",
+			: currentWorkspace?.ownerId === user._id
+				? "org:admin"
+				: "org:member") as "org:admin" | "org:member",
 	};
 
 	return userWithCurrentWorkspace;

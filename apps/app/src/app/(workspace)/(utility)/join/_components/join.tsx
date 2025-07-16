@@ -24,7 +24,7 @@ export const Join: React.FC = memo(() => {
 		api.collections.users.mutations.updateCurrentWorkspaceByExternalId,
 	);
 
-	const { userInvitations, userMemberships } = useOrganizationList({
+	const { userInvitations, userMemberships, setActive } = useOrganizationList({
 		userInvitations: {
 			infinite: true,
 			status: "pending",
@@ -53,13 +53,21 @@ export const Join: React.FC = memo(() => {
 
 				await invitation.accept();
 
-				if (userMemberships?.revalidate) {
+				if (userMemberships?.revalidate && setActive) {
 					const membershipPromise = userMemberships.revalidate();
 					const updatePromise = updateUserCurrentWorkspace({
 						currentWorkspaceExternalId: invitation.publicOrganizationData.id,
 					});
 
-					await Promise.all([membershipPromise, updatePromise]);
+					const setActivePromise = setActive({
+						organization: invitation.publicOrganizationData.id,
+					});
+
+					await Promise.all([
+						membershipPromise,
+						updatePromise,
+						setActivePromise,
+					]);
 				}
 
 				toast.success("Invitation accepted!", { id: "accept-invitation" });
@@ -73,7 +81,7 @@ export const Join: React.FC = memo(() => {
 				setIsJoining(false);
 			}
 		},
-		[userMemberships, updateUserCurrentWorkspace, router],
+		[userMemberships, updateUserCurrentWorkspace, router, setActive],
 	);
 
 	useHotkeys("escape", handleBack);

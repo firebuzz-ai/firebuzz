@@ -1,6 +1,6 @@
 "use client";
 
-import { api, useAction } from "@firebuzz/convex";
+import { ConvexError, api, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	Form,
@@ -62,7 +62,11 @@ export const InvitationForm = ({ onSuccess }: InvitationFormProps) => {
 			onSuccess();
 		} catch (error) {
 			console.error("Error inviting member:", error);
-			toast.error("Failed to send invitation. Please try again.");
+			if (error instanceof ConvexError) {
+				toast.error(error.data);
+			} else {
+				toast.error("Failed to send invitation. Please try again.");
+			}
 		}
 	};
 

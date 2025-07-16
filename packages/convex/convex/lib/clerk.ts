@@ -193,6 +193,26 @@ export const createOrganizationInvitation = action({
 			}
 
 			console.log("Error creating organization invitation", error);
+
+			// Check if it's a Clerk error and extract the message
+			if (
+				error &&
+				typeof error === "object" &&
+				"clerkError" in error &&
+				error.clerkError
+			) {
+				const clerkError = error as {
+					errors?: Array<{ longMessage?: string; message?: string }>;
+				};
+				if (clerkError.errors && clerkError.errors.length > 0) {
+					const errorMessage =
+						clerkError.errors[0].longMessage ||
+						clerkError.errors[0].message ||
+						"Unknown error";
+					throw new ConvexError(errorMessage);
+				}
+			}
+
 			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
 		}
 	},

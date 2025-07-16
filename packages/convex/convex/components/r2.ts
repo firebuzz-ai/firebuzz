@@ -55,13 +55,12 @@ export const uploadFromURL = internalAction({
 	handler: async (ctx, args) => {
 		const image = await fetch(args.url);
 		const imageBuffer = await image.arrayBuffer();
-		const imageBlob = new Blob([imageBuffer], {
-			type: image.headers.get("content-type") || undefined,
-		});
+		const imageData = new Uint8Array(imageBuffer);
 		const key = `${args.workspaceId}/${args.projectId}/${crypto.randomUUID()}`;
 
-		await r2.store(ctx, imageBlob, {
+		await r2.store(ctx, imageData, {
 			key,
+			type: image.headers.get("content-type") || "image/png",
 		});
 
 		return key;
@@ -76,13 +75,12 @@ export const uploadUserAvatarFromURL = internalAction({
 	handler: async (ctx, args) => {
 		const image = await fetch(args.url);
 		const imageBuffer = await image.arrayBuffer();
-		const imageBlob = new Blob([imageBuffer], {
-			type: image.headers.get("content-type") || undefined,
-		});
+		const imageData = new Uint8Array(imageBuffer);
 		const key = `users/${args.userExternalId}/avatar-${crypto.randomUUID()}`;
 
-		await r2.store(ctx, imageBlob, {
+		await r2.store(ctx, imageData, {
 			key,
+			type: image.headers.get("content-type") || "image/png",
 		});
 
 		await ctx.runMutation(

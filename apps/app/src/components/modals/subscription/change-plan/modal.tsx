@@ -1,6 +1,7 @@
 "use client";
 
 import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
 import { useChangePlan } from "@/hooks/ui/use-change-plan";
 import {
 	ConvexError,
@@ -35,6 +36,12 @@ export const ChangePlanModal = () => {
 	const [state, setState] = useChangePlan();
 	const { subscription, isTeamPlan } = useSubscription();
 	const [isLoading, setIsLoading] = useState(false);
+
+	const { user } = useUser();
+
+	const isAdmin = useMemo(() => {
+		return user?.currentRole === "org:admin";
+	}, [user]);
 
 	// Get available plans
 	const { data: availablePlans, isPending: plansLoading } = useCachedRichQuery(
@@ -123,6 +130,14 @@ export const ChangePlanModal = () => {
 	);
 
 	const handleChangePlan = async () => {
+		if (!isAdmin) {
+			toast.error("You are not authorized to change plans.", {
+				description: "Please contact your administrator to change plans.",
+				id: "change-plan",
+			});
+			return;
+		}
+
 		if (!targetPlan || !targetPrice) {
 			toast.error("Target plan not found.", {
 				description: "Please try again.",

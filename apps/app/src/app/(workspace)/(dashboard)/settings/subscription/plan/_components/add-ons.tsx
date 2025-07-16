@@ -26,6 +26,8 @@ export const AddOns = () => {
 		return user?.currentRole === "org:admin";
 	}, [user]);
 
+	console.log({ user, isAdmin });
+
 	// Get add-ons from subscription items
 	const addOns = useMemo(() => {
 		if (!subscription?.items) return [];
