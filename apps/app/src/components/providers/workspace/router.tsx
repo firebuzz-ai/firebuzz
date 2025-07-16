@@ -52,18 +52,6 @@ export const RouterProvider = ({ children }: { children: React.ReactNode }) => {
 	const pathname = usePathname();
 	const [isCheckDone, setIsCheckDone] = useState(false);
 
-	console.log({
-		isAuthenticated,
-		isUserLoading,
-		isWorkspaceLoading,
-		isProjectsLoading,
-		isSubscriptionLoading,
-		currentWorkspace,
-		currentProject,
-		projects,
-		workspaces,
-	});
-
 	// Routing Checks (ONBOARDING, WORKSPACE SELECTION, PROJECT SELECTION, NEW USER FLOW)
 	const handleRoutingChecks = useCallback(async () => {
 		// Check if user is authenticated

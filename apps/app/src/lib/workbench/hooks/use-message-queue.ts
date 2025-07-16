@@ -18,7 +18,7 @@ import {
 	workbenchStore,
 } from "../atoms";
 import type { QuickEditAction } from "../parser/message-parser";
-import { webcontainerInstance } from "../webcontainer";
+import { getWebcontainerInstance } from "../webcontainer";
 
 export function useMessageQueue() {
 	const [messageQueue, setMessageQueue] = useAtom(messageQueueAtom);
@@ -41,6 +41,8 @@ export function useMessageQueue() {
 	// Process Artifacts
 	const processArtifacts = useCallback(
 		async (item: MessageQueueItem) => {
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			if (item.type !== "artifact" || item.isProcessed) {
 				return;
 			}
@@ -158,6 +160,8 @@ export function useMessageQueue() {
 	// Process Actions
 	const processActions = useCallback(
 		async (item: MessageQueueItem) => {
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			if (item.type !== "action" || item.isProcessed) {
 				return;
 			}

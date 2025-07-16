@@ -10,10 +10,11 @@ import {
 	selectedElementAtom,
 } from "./atoms";
 import { PREVIEW_SCRIPT } from "./constants";
-import { webcontainerInstance } from "./webcontainer";
+import { getWebcontainerInstance } from "./webcontainer";
 
 // Set Preview Script
 async function setPreviewScript() {
+	const webcontainerInstance = await getWebcontainerInstance();
 	await webcontainerInstance.setPreviewScript(PREVIEW_SCRIPT);
 }
 
@@ -26,58 +27,104 @@ export const WebcontainerProvider = ({
 	const setIsIframeLoaded = useSetAtom(isIframeLoadedAtom);
 	const setSelectedElement = useSetAtom(selectedElementAtom);
 	const setErrors = useSetAtom(errorsAtom);
-	// Port Listener
+
+	// Initialize WebContainer and set up listeners
 	useEffect(() => {
-		const unsubPort = webcontainerInstance.on("port", (port, type, url) => {
-			if (type === "open") {
-				setPort({
-					port,
-					url,
-				});
-			}
-		});
+		let isMounted = true;
+		let unsubscribeCallbacks: (() => void)[] = [];
 
-		// Client Error Listener
-		const unsubClientError = webcontainerInstance.on(
-			"preview-message",
-			(message) => {
-				setErrors((prev) => {
-					return [
-						...prev,
-						{
-							type: "client",
-							// @ts-expect-error - message property may not exist on preview message type but is accessed at runtime
-							message: message?.message ?? "",
-							rawError: JSON.stringify(message),
-						},
-					];
-				});
-			},
-		);
+		const initializeWebcontainer = async () => {
+			try {
+				const webcontainerInstance = await getWebcontainerInstance();
 
-		// Container Error Listener
-		const unsubContainerError = webcontainerInstance.on("error", (error) => {
-			console.log("container error", error);
-			setErrors((prev) => {
-				return [
+				// Check if component is still mounted
+				if (!isMounted) return;
+
+				// Set up event listeners
+				const unsubPort = webcontainerInstance.on("port", (port, type, url) => {
+					if (type === "open") {
+						setPort({
+							port,
+							url,
+						});
+					}
+				});
+
+				const unsubClientError = webcontainerInstance.on(
+					"preview-message",
+					(message) => {
+						setErrors((prev) => {
+							return [
+								...prev,
+								{
+									type: "client",
+									// @ts-expect-error - message property may not exist on preview message type but is accessed at runtime
+									message: message?.message ?? "",
+									rawError: JSON.stringify(message),
+								},
+							];
+						});
+					},
+				);
+
+				const unsubContainerError = webcontainerInstance.on(
+					"error",
+					(error) => {
+						console.log("container error", error);
+						setErrors((prev) => {
+							return [
+								...prev,
+								{
+									type: "container",
+									message: error.message,
+									rawError: JSON.stringify(error),
+								},
+							];
+						});
+					},
+				);
+
+				// Store cleanup functions
+				unsubscribeCallbacks = [
+					unsubPort,
+					unsubClientError,
+					unsubContainerError,
+				];
+
+				// Set preview script
+				await setPreviewScript();
+			} catch (error) {
+				console.error("Failed to initialize WebContainer:", error);
+				// Add error to state so UI can handle it
+				setErrors((prev) => [
 					...prev,
 					{
 						type: "container",
-						message: error.message,
+						message: "Failed to initialize WebContainer",
 						rawError: JSON.stringify(error),
 					},
-				];
-			});
-		});
+				]);
+			}
+		};
 
-		setPreviewScript();
+		// Start initialization
+		initializeWebcontainer();
 
-		// Cleanup
+		// Cleanup function
 		return () => {
+			isMounted = false;
 			resetState();
-			unsubPort();
-			unsubClientError();
-			unsubContainerError();
+
+			// Clean up event listeners
+			// Use for...of for better readability and to follow linting rules
+			for (const cleanup of unsubscribeCallbacks) {
+				try {
+					cleanup();
+				} catch (error) {
+					// Warn so we can track cleanup issues, but don't block other cleanups
+					console.warn("Error during cleanup:", error);
+				}
+			}
 		};
 	}, [setPort, setErrors]);
 

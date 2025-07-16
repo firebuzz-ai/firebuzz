@@ -6,7 +6,7 @@ import {
 	isPreviewVersionDifferentAtom,
 } from "@/lib/workbench/atoms";
 import { WORK_DIR } from "@/lib/workbench/constants";
-import { webcontainerInstance } from "@/lib/workbench/webcontainer";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { api } from "@firebuzz/convex/nextjs";
@@ -64,6 +64,8 @@ export const VersionWarning = ({ inputValue, shake }: VersionWarningProps) => {
 	const handleRevertToCurrent = useCallback(async () => {
 		setIsProcessing(true);
 		try {
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			if (!currentVersion?.signedUrl || !landingPageId) {
 				toast.error("Missing current version data");
 				return;
@@ -136,21 +138,21 @@ export const VersionWarning = ({ inputValue, shake }: VersionWarningProps) => {
 				}}
 				style={{ x: shakeX }}
 				className={cn(
-					"px-3 py-2 bg-muted border rounded-lg shadow-sm flex w-full items-center justify-between",
+					"flex justify-between items-center px-3 py-2 w-full rounded-lg border shadow-sm bg-muted",
 				)}
 				initial={{ opacity: 0, y: 10 }}
 				transition={{ duration: 0.2 }}
 			>
-				<div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-500">
+				<div className="flex gap-2 items-center text-yellow-700 dark:text-yellow-500">
 					<AlertTriangle className="size-4" />
 					<p className="text-sm">
 						<span className="font-medium">Version mismatch</span>
-						<span className="text-muted-foreground ml-2">
+						<span className="ml-2 text-muted-foreground">
 							You are previewing version {currentPreviewVersion.number}
 						</span>
 					</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex gap-2 items-center">
 					<Button
 						onClick={handleRevertToCurrent}
 						size="sm"
@@ -158,7 +160,7 @@ export const VersionWarning = ({ inputValue, shake }: VersionWarningProps) => {
 						className="h-8"
 						disabled={isProcessing}
 					>
-						<div className="flex items-center gap-2">
+						<div className="flex gap-2 items-center">
 							<div>{isProcessing ? "Processing..." : "Revert to current"}</div>
 							<ButtonShortcut>Esc</ButtonShortcut>
 						</div>
@@ -170,7 +172,7 @@ export const VersionWarning = ({ inputValue, shake }: VersionWarningProps) => {
 						variant="outline"
 						disabled={isProcessing}
 					>
-						<div className="flex items-center gap-2">
+						<div className="flex gap-2 items-center">
 							<div>{isProcessing ? "Processing..." : "Make current"}</div>
 							<ButtonShortcut>Enter</ButtonShortcut>
 						</div>

@@ -1,7 +1,9 @@
 import type { FileSystemTree } from "@webcontainer/api";
-import { webcontainerInstance } from "./webcontainer";
+import { getWebcontainerInstance } from "./webcontainer";
 
 export const checkProjectMounted = async (id: string) => {
+	const webcontainerInstance = await getWebcontainerInstance();
+
 	const projectMounted = await webcontainerInstance.fs
 		.readdir(id)
 		.then((files) => files.length > 0)
@@ -14,6 +16,7 @@ export const mountProjectFiles = async (
 	initialFiles: FileSystemTree,
 ) => {
 	try {
+		const webcontainerInstance = await getWebcontainerInstance();
 		await webcontainerInstance.fs.mkdir(id);
 		await webcontainerInstance.mount(initialFiles, { mountPoint: id });
 		return true;
@@ -24,6 +27,8 @@ export const mountProjectFiles = async (
 };
 
 export const configurePnpmStore = async (id: string) => {
+	const webcontainerInstance = await getWebcontainerInstance();
+
 	await webcontainerInstance.spawn(
 		"pnpm",
 		["config", "set", "store-dir", "false/v3"],
@@ -32,6 +37,8 @@ export const configurePnpmStore = async (id: string) => {
 };
 
 export const checkDependenciesInstalled = async (id: string) => {
+	const webcontainerInstance = await getWebcontainerInstance();
+
 	const isDependenciesInstalled = await webcontainerInstance.fs
 		.readdir(`${id}/node_modules`)
 		.then((files) => files.length > 0)
@@ -47,6 +54,7 @@ export const checkDependenciesInstalled = async (id: string) => {
 
 export const installDependencies = async (id: string) => {
 	try {
+		const webcontainerInstance = await getWebcontainerInstance();
 		const installProcess = await webcontainerInstance.spawn(
 			"pnpm",
 			["install", "--store-dir", "false/v3"],
@@ -73,6 +81,7 @@ export const installDependencies = async (id: string) => {
 
 export const startDevServer = async (id: string) => {
 	try {
+		const webcontainerInstance = await getWebcontainerInstance();
 		const devProcess = await webcontainerInstance.spawn(
 			"pnpm",
 			["run", "dev"],

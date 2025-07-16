@@ -16,7 +16,7 @@ import {
 	mountProjectFiles,
 	startDevServer,
 } from "../utils";
-import { webcontainerInstance } from "../webcontainer";
+import { getWebcontainerInstance } from "../webcontainer";
 
 export const useWorkbench = (
 	initialFiles: FileSystemTree | undefined,
@@ -33,6 +33,8 @@ export const useWorkbench = (
 	);
 
 	const initialize = useCallback(async () => {
+		const webcontainerInstance = await getWebcontainerInstance();
+
 		if (!webcontainerInstance || !initialFiles) {
 			return false;
 		}

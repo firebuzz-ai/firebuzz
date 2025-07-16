@@ -1,5 +1,5 @@
 import { parsedFilesAtom, seoConfigAtom } from "@/lib/workbench/atoms";
-import { webcontainerInstance } from "@/lib/workbench/webcontainer";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
@@ -125,6 +125,8 @@ export const SeoTab = ({
 			if (!seoConfig) {
 				throw new Error("SEO configuration not found");
 			}
+
+			const webcontainerInstance = await getWebcontainerInstance();
 
 			setIsLoading(true);
 

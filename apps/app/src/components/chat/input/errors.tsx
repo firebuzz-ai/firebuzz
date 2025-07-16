@@ -24,6 +24,8 @@ export const Errors = ({
 }) => {
 	const [errors, setErrors] = useAtom(errorsAtom);
 
+	console.log("errors", errors);
+
 	const { submit, isLoading: isHandlingError } = useObject({
 		api: "/api/chat/landing/fix-error",
 		schema: z.array(schema),
@@ -57,17 +59,17 @@ export const Errors = ({
 	if (errors.length === 0) return null;
 
 	return (
-		<div className="absolute w-full px-4 -top-16">
+		<div className="absolute -top-16 px-4 w-full">
 			<motion.div
-				className="flex items-center justify-between w-full px-3 py-2 border rounded-lg shadow-sm bg-muted"
+				className="flex justify-between items-center px-3 py-2 w-full rounded-lg border shadow-sm bg-muted"
 				initial={{ opacity: 0, y: 10 }}
 				animate={{ opacity: 1, y: 0 }}
 			>
-				<div className="flex items-center gap-2 text-red-400">
+				<div className="flex gap-2 items-center text-red-400">
 					<Bug className="size-4" />
 					<p className="text-sm">{errors.length} errors found.</p>
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="flex gap-2 items-center">
 					<Button onClick={handleMarkAsResolved} size="sm" variant="ghost">
 						Mark as resolved
 					</Button>
@@ -80,7 +82,7 @@ export const Errors = ({
 						{isHandlingError ? (
 							<Spinner size="xs" />
 						) : (
-							<div className="flex items-center gap-2">
+							<div className="flex gap-2 items-center">
 								<div>Fix Errors</div>
 								<ButtonShortcut>⌘E</ButtonShortcut>
 							</div>

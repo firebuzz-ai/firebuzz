@@ -1,11 +1,13 @@
 import { useSetAtom } from "jotai";
 import { errorsAtom } from "../atoms";
-import { webcontainerInstance } from "../webcontainer";
+import { getWebcontainerInstance } from "../webcontainer";
 
 export const useWorkbenchHelpers = () => {
 	const setErrors = useSetAtom(errorsAtom);
 	// Handlers
 	const buildProject = async (id: string) => {
+		const webcontainerInstance = await getWebcontainerInstance();
+
 		// Start building process
 		const buildProcess = await webcontainerInstance.spawn(
 			"pnpm",
@@ -50,6 +52,8 @@ export const useWorkbenchHelpers = () => {
 		type: "preview" | "production",
 		campaignSlug?: string,
 	) => {
+		const webcontainerInstance = await getWebcontainerInstance();
+
 		const indexHTML = await webcontainerInstance.fs.readFile(
 			`${id}/dist/index.html`,
 			"utf-8",

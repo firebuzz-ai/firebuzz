@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
 
 	try {
 		const response = streamText({
-			model: anthropic("claude-3-7-sonnet-20250219"),
+			model: anthropic("claude-4-sonnet-20250514"),
 			system: stripIndents(`
         ${getSystemPrompt(`./${projectId}`)}
         -----------------

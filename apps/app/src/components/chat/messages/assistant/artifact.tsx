@@ -8,7 +8,7 @@ import {
 } from "@/lib/workbench/atoms";
 import type { ParsedFile } from "@/lib/workbench/parser/current-files-parser";
 import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
-import { webcontainerInstance } from "@/lib/workbench/webcontainer";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { api, fetchQuery } from "@firebuzz/convex/nextjs";
@@ -94,6 +94,8 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
 	const handleRestore = async () => {
 		setIsRestoring(true);
 		try {
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			if (!versionId || !landingPageId) return;
 
 			// 1. Get files from the version
@@ -186,6 +188,8 @@ export const Artifact = ({ id, setMessages }: ArtifactProps) => {
 		try {
 			if (!versionId) return;
 			setIsViewing(true);
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			const files = await getFiles(versionId as Id<"landingPageVersions">);
 
 			if (!files || !files.signedUrl) {

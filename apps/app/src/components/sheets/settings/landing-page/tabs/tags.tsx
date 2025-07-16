@@ -1,5 +1,5 @@
 import { parsedFilesAtom, tagsConfigAtom } from "@/lib/workbench/atoms";
-import { webcontainerInstance } from "@/lib/workbench/webcontainer";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
@@ -94,6 +94,8 @@ export const TagsTab = ({
 				throw new Error("Tags configuration not found");
 			}
 
+			const webcontainerInstance = await getWebcontainerInstance();
+
 			setIsLoading(true);
 
 			// Validate the form
@@ -166,7 +168,7 @@ export const TagsTab = ({
 
 	if (!parsedConfig) {
 		return (
-			<div className="flex items-center justify-center h-48">
+			<div className="flex justify-center items-center h-48">
 				<Spinner />
 				<span className="ml-2">Loading Tags configuration...</span>
 			</div>
@@ -189,8 +191,8 @@ export const TagsTab = ({
 						name="googleTagManagerId"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel className="flex items-center gap-2">
-									<div className="p-1 border rounded-md size-5">
+								<FormLabel className="flex gap-2 items-center">
+									<div className="p-1 rounded-md border size-5">
 										<GoogleTagManagerIcon />
 									</div>
 									Google Tag Manager ID
@@ -220,8 +222,8 @@ export const TagsTab = ({
 						name="googleAnalyticsId"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel className="flex items-center gap-2">
-									<div className="p-1 border rounded-md size-5">
+								<FormLabel className="flex gap-2 items-center">
+									<div className="p-1 rounded-md border size-5">
 										<GoogleAnalyticsIcon />
 									</div>
 									Google Analytics ID
@@ -252,8 +254,8 @@ export const TagsTab = ({
 						name="googleSiteVerificationId"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel className="flex items-center gap-2">
-									<div className="p-1 border rounded-md size-5">
+								<FormLabel className="flex gap-2 items-center">
+									<div className="p-1 rounded-md border size-5">
 										<GoogleIcon />
 									</div>
 									Google Site Verification ID
@@ -283,8 +285,8 @@ export const TagsTab = ({
 						name="facebookPixelId"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel className="flex items-center gap-2">
-									<div className="p-1 border rounded-md size-5">
+								<FormLabel className="flex gap-2 items-center">
+									<div className="p-1 rounded-md border size-5">
 										<FacebookIcon />
 									</div>
 									Facebook Pixel ID
