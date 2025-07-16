@@ -1,23 +1,38 @@
 "use client";
 
 import { DeletionDialog } from "@/components/modals/confirmation/deletion-dialog";
+import { useRouterContext } from "@/components/providers/workspace/router";
+import { ConvexError, api, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
+import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 
 export const DangerZone = () => {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	const { setIsCheckDone } = useRouterContext();
+
+	const deleteWorkspaceMutation = useMutation(
+		api.collections.workspaces.mutations.deleteWorkspace,
+	);
+
 	const handleDeleteWorkspace = async () => {
 		try {
 			setIsDeleting(true);
-			// TODO: Implement workspace deletion logic
-			console.log("Deleting workspace...");
-			await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
+
+			await deleteWorkspaceMutation();
 			setIsDeleteDialogOpen(false);
+
+			setIsCheckDone(true);
 		} catch (error) {
 			console.error("Failed to delete workspace:", error);
+			if (error instanceof ConvexError) {
+				toast.error(error.data);
+			} else {
+				toast.error("Failed to delete workspace");
+			}
 		} finally {
 			setIsDeleting(false);
 		}

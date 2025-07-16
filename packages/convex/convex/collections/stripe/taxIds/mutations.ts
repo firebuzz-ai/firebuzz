@@ -1,3 +1,4 @@
+import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
 import { internalMutation } from "../../../_generated/server";
 import { taxIdSchema } from "./schema";
@@ -61,5 +62,21 @@ export const deleteInternal = internalMutation({
 		await ctx.db.delete(id);
 
 		return true;
+	},
+});
+
+export const deleteByCustomerIdInternal = internalMutation({
+	args: {
+		customerId: v.id("customers"),
+	},
+	handler: async (ctx, args) => {
+		const { customerId } = args;
+
+		const taxIds = await ctx.db
+			.query("taxIds")
+			.withIndex("by_customer_id", (q) => q.eq("customerId", customerId))
+			.collect();
+
+		await asyncMap(taxIds, (taxId) => ctx.db.delete(taxId._id));
 	},
 });

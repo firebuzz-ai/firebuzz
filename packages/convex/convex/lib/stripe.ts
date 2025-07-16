@@ -280,15 +280,6 @@ export const createPaymentMethodPortalSession = action({
 			customer: stripeCustomerId,
 			return_url: returnUrl,
 			configuration: configurationId,
-			flow_data: {
-				type: "payment_method_update",
-				after_completion: {
-					type: "redirect",
-					redirect: {
-						return_url: returnUrl,
-					},
-				},
-			},
 		});
 
 		return session.url;
@@ -847,6 +838,17 @@ export const handleStripeEvent = internalAction({
 							workspaceId: workspaceId as Id<"workspaces">,
 							email: customerData.email || "",
 							name: customerData.name || "",
+							phone: customerData.phone || undefined,
+							address: customerData.address
+								? {
+										city: customerData.address?.city || undefined,
+										country: customerData.address?.country || undefined,
+										line1: customerData.address?.line1 || undefined,
+										line2: customerData.address?.line2 || undefined,
+										postal_code: customerData.address?.postal_code || undefined,
+										state: customerData.address?.state || undefined,
+									}
+								: undefined,
 							metadata: customerData.metadata || {},
 							updatedAt: new Date().toISOString(),
 							shipping: customerData.shipping
@@ -888,6 +890,18 @@ export const handleStripeEvent = internalAction({
 								customerId: existingCustomer._id,
 								email: customerData.email || undefined,
 								name: customerData.name || undefined,
+								phone: customerData.phone || undefined,
+								address: customerData.address
+									? {
+											city: customerData.address?.city || undefined,
+											country: customerData.address?.country || undefined,
+											line1: customerData.address?.line1 || undefined,
+											line2: customerData.address?.line2 || undefined,
+											postal_code:
+												customerData.address?.postal_code || undefined,
+											state: customerData.address?.state || undefined,
+										}
+									: undefined,
 								metadata: customerData.metadata || undefined,
 								updatedAt: new Date().toISOString(),
 								shipping: customerData.shipping
@@ -931,6 +945,18 @@ export const handleStripeEvent = internalAction({
 								workspaceId: workspaceId as Id<"workspaces">,
 								email: customerData.email || "",
 								name: customerData.name || "",
+								phone: customerData.phone || undefined,
+								address: customerData.address
+									? {
+											city: customerData.address?.city || undefined,
+											country: customerData.address?.country || undefined,
+											line1: customerData.address?.line1 || undefined,
+											line2: customerData.address?.line2 || undefined,
+											postal_code:
+												customerData.address?.postal_code || undefined,
+											state: customerData.address?.state || undefined,
+										}
+									: undefined,
 								metadata: customerData.metadata || {},
 								updatedAt: new Date().toISOString(),
 							},

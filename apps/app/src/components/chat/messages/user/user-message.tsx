@@ -1,4 +1,5 @@
 import { useUser } from "@/hooks/auth/use-user";
+import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
 	AvatarFallback,
@@ -27,26 +28,30 @@ export const UserMessage = ({
 }: UserMessageProps) => {
 	const { user } = useUser();
 	const [mode, setMode] = useState<"view" | "edit">("view");
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
 	if (isLoading || !chatId) return null;
 
 	return (
 		<AnimatePresence>
 			<motion.div
-				className="w-full max-w-4xl px-4 group/message"
+				className="px-4 w-full max-w-4xl group/message"
 				initial={{ y: 5, opacity: 0 }}
 				animate={{ y: 0, opacity: 1 }}
 				data-role={message.role}
 			>
-				<div className="flex w-full gap-4">
-					<Avatar className="flex items-center justify-center overflow-hidden rounded-full size-8 ring-1 shrink-0 ring-border bg-background">
+				<div className="flex gap-4 w-full">
+					<Avatar className="flex overflow-hidden justify-center items-center rounded-full ring-1 size-8 shrink-0 ring-border bg-background">
 						<AvatarFallback className="rounded-none">
 							{user?.firstName?.charAt(0)}
 						</AvatarFallback>
-						<AvatarImage src={user?.imageUrl} className="w-full h-full" />
+						<AvatarImage
+							src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${user?.imageKey}`}
+							className="w-full h-full"
+						/>
 					</Avatar>
 
-					<div className="flex flex-col w-full gap-4">
+					<div className="flex flex-col gap-4 w-full">
 						<Attachments message={message} />
 
 						{mode === "view" &&
@@ -55,9 +60,9 @@ export const UserMessage = ({
 									return (
 										<div
 											key={`${message.id}-text-${index}`}
-											className="flex flex-row items-start w-full gap-2"
+											className="flex flex-row gap-2 items-start w-full"
 										>
-											<div className="flex flex-col w-full gap-4">
+											<div className="flex flex-col gap-4 w-full">
 												<Markdown setMessages={setMessages}>
 													{part.text}
 												</Markdown>
@@ -68,7 +73,7 @@ export const UserMessage = ({
 							})}
 
 						{message.content && mode === "edit" && (
-							<div className="flex flex-row items-start w-full gap-2">
+							<div className="flex flex-row gap-2 items-start w-full">
 								<div className="size-8" />
 
 								<MessageEditor

@@ -4,6 +4,7 @@ import { useUser } from "@/hooks/auth/use-user";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import type { Doc } from "@firebuzz/convex";
 import { api, useMutation } from "@firebuzz/convex";
+import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
 	AvatarFallback,
@@ -38,6 +39,8 @@ export const MemberListItem = ({ member }: MemberListItemProps) => {
 	const { user: currentUser } = useUser();
 	const { currentWorkspace } = useWorkspace();
 	const [isLoading, setIsLoading] = useState(false);
+
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
 	const changeRoleMutation = useMutation(
 		api.collections.members.mutations.handleChangeRole,
@@ -137,7 +140,10 @@ export const MemberListItem = ({ member }: MemberListItemProps) => {
 		<div className="flex justify-between items-center px-4 py-3 rounded-lg border transition-colors bg-muted bg-card hover:bg-muted/50">
 			<div className="flex gap-3 items-center">
 				<Avatar className="border size-8">
-					<AvatarImage src={user?.imageUrl} alt={user?.firstName || "User"} />
+					<AvatarImage
+						src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${user?.imageKey}`}
+						alt={user?.firstName || "User"}
+					/>
 					<AvatarFallback className="bg-primary/10">
 						{user?.firstName?.[0]?.toUpperCase() ||
 							user?.lastName?.[0]?.toUpperCase() || <User className="size-4" />}

@@ -112,27 +112,6 @@ triggers.register("workspaces", async (ctx, change) => {
 			{ workspaceId: change.id },
 		);
 	}
-
-	// Downgrade to pro
-	if (change.operation === "update") {
-		const newDoc = change.newDoc;
-		const oldDoc = change.oldDoc;
-
-		if (
-			newDoc.workspaceType === "personal" &&
-			oldDoc.workspaceType === "team"
-		) {
-			// Delete Members
-			await cascadePool.enqueueMutation(
-				ctx,
-				internal.collections.members.utils.batchDeleteByWorkspaceId,
-				{
-					workspaceId: change.id,
-					numItems: 25,
-				},
-			);
-		}
-	}
 });
 
 // Cascade delete all campaigns and brands and media when a project is deleted
@@ -404,6 +383,14 @@ triggers.register("customers", async (ctx, change) => {
 		// Delete all payments
 		await ctx.runMutation(
 			internal.collections.stripe.payments.mutations.deleteByCustomerIdInternal,
+			{
+				customerId: change.id,
+			},
+		);
+
+		// Delete all tax ids
+		await ctx.runMutation(
+			internal.collections.stripe.taxIds.mutations.deleteByCustomerIdInternal,
 			{
 				customerId: change.id,
 			},

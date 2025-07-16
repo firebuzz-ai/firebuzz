@@ -100,7 +100,7 @@ export const BillingInformation = () => {
 	}
 
 	const { customer, taxIds } = billingData;
-	const address = customer?.shipping?.address ?? {};
+	const address = customer?.address ?? {};
 	const formattedAddress = formatAddress(address || {});
 
 	return (

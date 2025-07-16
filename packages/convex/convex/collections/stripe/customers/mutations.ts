@@ -19,6 +19,8 @@ export const updateInternal = internalMutation({
 		workspaceId: v.optional(v.id("workspaces")),
 		email: v.optional(v.string()),
 		name: v.optional(v.string()),
+		phone: v.optional(v.string()),
+		address: customerSchema.fields.address,
 		metadata: v.optional(v.record(v.string(), v.any())),
 		updatedAt: v.optional(v.string()),
 		shipping: customerSchema.fields.shipping,
@@ -40,6 +42,14 @@ export const updateInternal = internalMutation({
 
 		if (args.name) {
 			updateObject.name = args.name;
+		}
+
+		if (args.phone) {
+			updateObject.phone = args.phone;
+		}
+
+		if (args.address) {
+			updateObject.address = args.address;
 		}
 
 		if (args.metadata) {

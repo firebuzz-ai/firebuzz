@@ -6,7 +6,7 @@ export const userSchema = v.object({
 	firstName: v.optional(v.string()),
 	lastName: v.optional(v.string()),
 	fullName: v.optional(v.string()),
-	imageUrl: v.optional(v.string()),
+	imageKey: v.optional(v.string()),
 	currentProjectId: v.optional(v.id("projects")),
 	currentWorkspaceId: v.optional(v.id("workspaces")),
 });

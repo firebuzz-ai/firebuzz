@@ -1,23 +1,40 @@
 "use client";
 
 import { DeletionDialog } from "@/components/modals/confirmation/deletion-dialog";
+import { useRouterContext } from "@/components/providers/workspace/router";
+import { useAuth } from "@clerk/nextjs";
+import { ConvexError, api, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
+import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 
 export const AccountDangerZone = () => {
 	const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 	const [isDeleting, setIsDeleting] = useState(false);
+	const { setIsCheckDone } = useRouterContext();
+	const { signOut } = useAuth();
+
+	const deleteUserMutation = useMutation(
+		api.collections.users.mutations.deleteUserFromClerk,
+	);
 
 	const handleDeleteAccount = async () => {
 		try {
 			setIsDeleting(true);
-			// TODO: Implement account deletion logic
-			console.log("Deleting account...");
-			await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate API call
+
+			await deleteUserMutation();
+
+			await signOut();
+
+			setIsCheckDone(false); // Show global loading indicator
+
 			setIsDeleteDialogOpen(false);
 		} catch (error) {
 			console.error("Failed to delete account:", error);
+			if (error instanceof ConvexError) {
+				toast.error(error.data);
+			}
 		} finally {
 			setIsDeleting(false);
 		}

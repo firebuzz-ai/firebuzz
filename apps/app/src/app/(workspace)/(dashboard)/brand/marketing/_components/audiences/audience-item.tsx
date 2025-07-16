@@ -195,7 +195,7 @@ export const AudienceItem = ({
 						<Button
 							variant="ghost"
 							size="iconXs"
-							className="absolute transition-all duration-200 top-2 right-2 hover:scale-110"
+							className="absolute top-2 right-2 transition-all duration-200 hover:scale-110"
 							onClick={(e) => e.stopPropagation()}
 							onMouseEnter={() => setIsDropdownHovered(true)}
 							onMouseLeave={() => setIsDropdownHovered(false)}
@@ -205,20 +205,20 @@ export const AudienceItem = ({
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
 						<DropdownMenuItem onClick={editHandler}>
-							<Pencil className="w-4 h-4 mr-2" />
+							<Pencil className="mr-2 w-4 h-4" />
 							Edit
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							onClick={async () => await duplicateHandler(audience._id)}
 						>
-							<Copy className="w-4 h-4 mr-2" />
+							<Copy className="mr-2 w-4 h-4" />
 							Duplicate
 						</DropdownMenuItem>
 						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onClick={async () => await deleteHandler(audience._id)}
 						>
-							<Trash className="w-4 h-4 mr-2" />
+							<Trash className="mr-2 w-4 h-4" />
 							Delete
 						</DropdownMenuItem>
 					</DropdownMenuContent>
@@ -227,7 +227,7 @@ export const AudienceItem = ({
 					{/* Avatar */}
 					<div className="relative">
 						<Avatar
-							className="z-10 p-1 transition-all duration-300 ease-out border size-20 bg-background-subtle group-hover:shadow-lg"
+							className="z-10 p-1 border transition-all duration-300 ease-out size-20 bg-background-subtle group-hover:shadow-lg"
 							style={{
 								transform: avatarTransform,
 								transformStyle: "preserve-3d",

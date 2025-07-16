@@ -1,6 +1,7 @@
 "use client";
 import { useUser } from "@/hooks/auth/use-user";
 import { useAuth } from "@clerk/nextjs";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { AvatarFallback, AvatarImage } from "@firebuzz/ui/components/ui/avatar";
 
 import { Avatar } from "@firebuzz/ui/components/ui/avatar";
@@ -39,6 +40,26 @@ const AvatarMenu = () => {
 	const { setTheme } = useTheme();
 	const { user } = useUser();
 	const { isMobile, state } = useSidebar();
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
+
+	const getUserInitials = (
+		firstName: string | undefined,
+		lastName: string | undefined,
+	) => {
+		if (firstName && lastName) {
+			return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+		}
+
+		if (firstName && !lastName) {
+			return firstName.slice(0, 2).toLocaleUpperCase();
+		}
+
+		if (!firstName && lastName) {
+			return lastName.slice(0, 2).toLocaleUpperCase();
+		}
+
+		return "FR";
+	};
 
 	return (
 		<DropdownMenu>
@@ -47,17 +68,19 @@ const AvatarMenu = () => {
 					size="lg"
 					className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 				>
-					<Avatar className="h-8 w-8 rounded-lg">
+					<Avatar className="w-8 h-8 rounded-lg">
 						<AvatarImage
-							className="rounded-lg object-cover object-center w-full h-full"
-							src={user?.imageUrl}
+							className="object-cover object-center w-full h-full rounded-lg"
+							src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${user?.imageKey}`}
 							alt={user?.fullName ?? ""}
 						/>
-						<AvatarFallback className="rounded-lg">CN</AvatarFallback>
+						<AvatarFallback className="rounded-lg">
+							{getUserInitials(user?.firstName, user?.lastName)}
+						</AvatarFallback>
 					</Avatar>
-					<div className="grid flex-1 text-left text-sm leading-tight">
-						<span className="truncate font-semibold">{user?.fullName}</span>
-						<span className="truncate text-xs">{user?.email}</span>
+					<div className="grid flex-1 text-sm leading-tight text-left">
+						<span className="font-semibold truncate">{user?.fullName}</span>
+						<span className="text-xs truncate">{user?.email}</span>
 					</div>
 					<ChevronsUpDown className="ml-auto size-4" />
 				</SidebarMenuButton>
@@ -70,17 +93,17 @@ const AvatarMenu = () => {
 			>
 				<DropdownMenuLabel className="p-0 font-normal">
 					<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-						<Avatar className="h-8 w-8 rounded-lg">
+						<Avatar className="w-8 h-8 rounded-lg">
 							<AvatarImage
-								className="rounded-lg object-cover w-full h-full"
-								src={user?.imageUrl}
+								className="object-cover w-full h-full rounded-lg"
+								src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${user?.imageKey}`}
 								alt={user?.fullName ?? ""}
 							/>
 							<AvatarFallback className="rounded-lg">CN</AvatarFallback>
 						</Avatar>
-						<div className="grid flex-1 text-left text-sm leading-tight">
-							<span className="truncate font-semibold">{user?.fullName}</span>
-							<span className="truncate text-xs">{user?.email}</span>
+						<div className="grid flex-1 text-sm leading-tight text-left">
+							<span className="font-semibold truncate">{user?.fullName}</span>
+							<span className="text-xs truncate">{user?.email}</span>
 						</div>
 					</div>
 				</DropdownMenuLabel>

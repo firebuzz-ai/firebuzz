@@ -1,6 +1,7 @@
 "use client";
 
 import { ProjectModal } from "@/components/modals/projects/project-modal";
+import { useRouterContext } from "@/components/providers/workspace/router";
 import { useProject } from "@/hooks/auth/use-project";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { useProjectModal } from "@/hooks/ui/use-project-modal";
@@ -47,6 +48,7 @@ export const ProjectList = () => {
 	const { projects, changeProject } = useProject();
 	const { currentWorkspace } = useWorkspace();
 	const [, setProjectModal] = useProjectModal();
+	const { setIsCheckDone } = useRouterContext();
 
 	const handleCreateProject = () => {
 		setProjectModal({ create: true });
@@ -77,7 +79,10 @@ export const ProjectList = () => {
 							<motion.button
 								key={project._id}
 								variants={item}
-								onClick={() => changeProject(project._id)}
+								onClick={() => {
+									changeProject(project._id);
+									setIsCheckDone(false);
+								}}
 								className={buttonVariants({
 									variant: "outline",
 									className: "flex justify-start items-center h-12 text-left",

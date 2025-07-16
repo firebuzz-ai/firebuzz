@@ -18,7 +18,8 @@ import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo } from "react";
 
 export const AddOns = () => {
-	const { subscription, isLoading } = useSubscription();
+	const { subscription, isLoading, isCancellingAtPeriodEnd } =
+		useSubscription();
 	const { user } = useUser();
 	const [isManageProjectsOpen, setManageProjectsState] = useManageProjects();
 	const isAdmin = useMemo(() => {
@@ -114,6 +115,7 @@ export const AddOns = () => {
 								<Button
 									variant="outline"
 									size="sm"
+									disabled={!isAdmin || isCancellingAtPeriodEnd}
 									onClick={openManageProjectsModal}
 								>
 									<Plus className="size-3.5" />
@@ -163,7 +165,7 @@ export const AddOns = () => {
 														<Tooltip>
 															<TooltipTrigger asChild>
 																<Button
-																	disabled={!isAdmin}
+																	disabled={!isAdmin || isCancellingAtPeriodEnd}
 																	onClick={openManageProjectsModal}
 																	variant="ghost"
 																	size="iconXs"
@@ -185,24 +187,23 @@ export const AddOns = () => {
 								<CardContent className="p-6">
 									<div className="text-center">
 										<div className="flex justify-center mb-3">
-											<div className="p-3 rounded-md bg-muted">
+											<div className="p-3 rounded-md border bg-muted">
 												<Plus className="size-6 text-muted-foreground" />
 											</div>
 										</div>
 										<p className="font-medium">No add-ons yet</p>
 										<p className="text-sm text-muted-foreground">
-											Add extra seats, projects, or credits to enhance your
-											plan.
+											Add extra projects to your plan.
 										</p>
 										<Button
-											disabled={!isAdmin}
+											disabled={!isAdmin || isCancellingAtPeriodEnd}
 											variant="outline"
 											size="sm"
-											className="flex gap-2 items-center mt-3"
+											className="flex gap-2 items-center mt-3 w-full"
 											onClick={openManageProjectsModal}
 										>
 											<Plus className="size-3.5" />
-											Browse Add-ons
+											Add Projects
 										</Button>
 									</div>
 								</CardContent>

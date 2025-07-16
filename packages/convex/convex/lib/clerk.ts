@@ -79,6 +79,34 @@ export const createOrganizationInternal = internalAction({
 	},
 });
 
+export const deleteUserInternal = internalAction({
+	args: {
+		userExternalId: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		try {
+			// 1) Revoke all sessions
+			const sessionsResponse = await clerkClient.sessions.getSessionList({
+				userId: args.userExternalId,
+			});
+
+			await Promise.all(
+				sessionsResponse.data?.map(async (session) => {
+					if (session.status === "active") {
+						await clerkClient.sessions.revokeSession(session.id);
+					}
+				}),
+			);
+
+			// 2) Delete the user
+			await clerkClient.users.deleteUser(args.userExternalId);
+		} catch (error) {
+			console.log("Error deleting user", error);
+			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
+		}
+	},
+});
+
 export const updateOrganizationInternal = internalAction({
 	args: {
 		name: v.optional(v.string()),

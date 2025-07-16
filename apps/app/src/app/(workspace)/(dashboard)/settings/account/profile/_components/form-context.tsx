@@ -9,7 +9,7 @@ import { z } from "zod";
 const formSchema = z.object({
 	firstName: z.string().min(1, "First name is required"),
 	lastName: z.string().min(1, "Last name is required"),
-	imageUrl: z.string().optional(),
+	imageKey: z.string().optional(),
 });
 
 interface ProfileFormContextType {
@@ -42,7 +42,7 @@ export const ProfileFormProvider = ({ children }: ProfileFormProviderProps) => {
 		defaultValues: {
 			firstName: currentUser?.firstName || "",
 			lastName: currentUser?.lastName || "",
-			imageUrl: currentUser?.imageUrl || "",
+			imageKey: currentUser?.imageKey || "",
 		},
 		mode: "onChange",
 	});
@@ -60,7 +60,7 @@ export const ProfileFormProvider = ({ children }: ProfileFormProviderProps) => {
 			await updateProfileMutation({
 				firstName: data.firstName,
 				lastName: data.lastName,
-				imageUrl: data.imageUrl || undefined,
+				imageKey: data.imageKey || undefined,
 			});
 
 			toast.success("Profile updated successfully", {

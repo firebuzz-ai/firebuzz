@@ -1,10 +1,16 @@
 import type { UserJSON } from "@clerk/backend";
+import { asyncMap } from "convex-helpers";
 import { ConvexError, type Validator, v } from "convex/values";
+import { internal } from "../../_generated/api";
 import { internalMutation, mutation } from "../../_generated/server";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getWorkspaceByExternalId } from "../workspaces/utils";
-import { getCurrentUser, getUserByExternalId } from "./utils";
+import {
+	getCurrentUser,
+	getCurrentUserWithWorkspace,
+	getUserByExternalId,
+} from "./utils";
 
 export const upsertFromClerk = internalMutation({
 	args: { data: v.any() as Validator<UserJSON> }, // no runtime validation, trust Clerk
@@ -13,7 +19,6 @@ export const upsertFromClerk = internalMutation({
 			firstName: data.first_name ?? undefined,
 			lastName: data.last_name ?? undefined,
 			fullName: `${data.first_name} ${data.last_name}`,
-			imageUrl: data.image_url ?? undefined,
 			email: data.email_addresses[0].email_address,
 			externalId: data.id,
 		};
@@ -23,10 +28,76 @@ export const upsertFromClerk = internalMutation({
 		if (user === null) {
 			// If the user does not exist, create a new user
 			await ctx.db.insert("users", userAttributes);
+
+			// Upload the avatar to R2
+			if (data.image_url) {
+				await ctx.scheduler.runAfter(
+					0,
+					internal.components.r2.uploadUserAvatarFromURL,
+					{
+						url: data.image_url,
+						userExternalId: data.id,
+					},
+				);
+			}
 		} else {
 			// If the user exists, update the user
 			await ctx.db.patch(user._id, userAttributes);
 		}
+	},
+});
+
+export const deleteUserFromClerk = mutation({
+	handler: async (ctx) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Check if user owns any workspaces
+		const ownedWorkspaces = await ctx.db
+			.query("workspaces")
+			.withIndex("by_owner_id", (q) => q.eq("ownerId", user._id))
+			.collect();
+
+		if (ownedWorkspaces.length > 0) {
+			let hasActiveSubscriptions = false;
+			// Check active subscriptions
+			await asyncMap(ownedWorkspaces, async (workspace) => {
+				const subscriptions = await ctx.db
+					.query("subscriptions")
+					.withIndex("by_workspace_id", (q) =>
+						q.eq("workspaceId", workspace._id),
+					)
+					.filter((q) =>
+						q.and(
+							q.or(
+								q.eq(q.field("status"), "active"),
+								q.eq(q.field("status"), "trialing"),
+								q.eq(q.field("status"), "incomplete"),
+								q.eq(q.field("status"), "incomplete_expired"),
+								q.eq(q.field("status"), "past_due"),
+								q.eq(q.field("status"), "unpaid"),
+							),
+							q.eq(q.field("cancelAtPeriodEnd"), false),
+						),
+					)
+					.collect();
+
+				hasActiveSubscriptions = subscriptions.length > 0;
+			});
+
+			if (hasActiveSubscriptions) {
+				throw new ConvexError(
+					"You cannot delete your account because you have active subscriptions.",
+				);
+			}
+		}
+
+		// Delete user from Clerk (Webhook will handle deleting Convex)
+		await ctx.scheduler.runAfter(0, internal.lib.clerk.deleteUserInternal, {
+			userExternalId: user.externalId,
+		});
 	},
 });
 
@@ -106,9 +177,9 @@ export const updateProfile = mutation({
 	args: {
 		firstName: v.optional(v.string()),
 		lastName: v.optional(v.string()),
-		imageUrl: v.optional(v.string()),
+		imageKey: v.optional(v.string()),
 	},
-	handler: async (ctx, { firstName, lastName, imageUrl }) => {
+	handler: async (ctx, { firstName, lastName, imageKey }) => {
 		const user = await getCurrentUser(ctx);
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
@@ -124,28 +195,26 @@ export const updateProfile = mutation({
 			firstName,
 			lastName,
 			fullName,
-			imageUrl,
+			imageKey,
 		});
 	},
 });
 
-export const clearCurrentWorkspaceAndProjectInternal = internalMutation({
+export const updateAvatarInternal = internalMutation({
 	args: {
-		userId: v.id("users"),
-		workspaceId: v.id("workspaces"),
+		imageKey: v.string(),
+		userExternalId: v.string(),
 	},
-	handler: async (ctx, { userId, workspaceId }) => {
-		const user = await ctx.db.get(userId);
+	handler: async (ctx, { imageKey, userExternalId }) => {
+		// Get the user
+		const user = await getUserByExternalId(ctx, userExternalId);
 		if (!user) {
 			throw new ConvexError(ERRORS.NOT_FOUND);
 		}
 
-		// Only clear if the user's current workspace matches the workspace they're being removed from
-		if (user.currentWorkspaceId === workspaceId) {
-			await ctx.db.patch(userId, {
-				currentWorkspaceId: undefined,
-				currentProjectId: undefined,
-			});
-		}
+		// Update the user
+		await ctx.db.patch(user._id, {
+			imageKey,
+		});
 	},
 });

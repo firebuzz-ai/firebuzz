@@ -41,8 +41,18 @@ export const getAll = query({
 			user.externalId,
 		]);
 
-		// Return all workspaces
-		return workspaces;
+		// Owned workspaces
+		const ownedWorkspaces = await ctx.db
+			.query("workspaces")
+			.withIndex("by_owner_id", (q) => q.eq("ownerId", user._id))
+			.collect();
+
+		// Return all workspaces (unique)
+		return [...workspaces, ...ownedWorkspaces].filter(
+			(workspace, index, self) =>
+				workspace?._id &&
+				self.findIndex((t) => t._id === workspace._id) === index,
+		);
 	},
 });
 

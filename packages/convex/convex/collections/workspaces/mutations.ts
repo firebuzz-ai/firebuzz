@@ -5,7 +5,7 @@ import { internalMutation, mutation } from "../../_generated/server";
 import { retrier } from "../../components/actionRetrier";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
-import { getCurrentUser } from "../users/utils";
+import { getCurrentUser, getCurrentUserWithWorkspace } from "../users/utils";
 import { checkIfSlugIsAvailable } from "./utils";
 
 export const createWorkspace = mutation({
@@ -54,10 +54,12 @@ export const createWorkspace = mutation({
 		await ctx.db.patch(user._id, { currentProjectId: projectId });
 
 		// Check if it's first time creating a workspace
-		const hasWorkspace = await ctx.db
+		const hasAnotherWorkspace = await ctx.db
 			.query("workspaces")
 			.withIndex("by_owner_id", (q) => q.eq("ownerId", user._id))
-			.first();
+			.filter((q) => q.neq(q.field("_id"), workspaceId))
+			.first()
+			.then((workspace) => workspace !== null);
 
 		// Create Onboarding
 		await ctx.runMutation(internal.collections.onboarding.mutations.create, {
@@ -65,7 +67,7 @@ export const createWorkspace = mutation({
 			projectId: projectId,
 			createdBy: user._id,
 			type: "workspace",
-			isTrialActive: !hasWorkspace,
+			isTrialActive: !hasAnotherWorkspace,
 		});
 
 		// Create Stripe customer
@@ -82,6 +84,61 @@ export const createWorkspace = mutation({
 		});
 
 		return workspaceId;
+	},
+});
+
+export const deleteWorkspace = mutation({
+	handler: async (ctx) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const workspace = await ctx.db.get(user.currentWorkspaceId);
+
+		if (!workspace) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (workspace.ownerId !== user._id) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Check if there are any active subscriptions
+		const subscriptions = await ctx.db
+			.query("subscriptions")
+			.withIndex("by_workspace_id", (q) => q.eq("workspaceId", workspace._id))
+			.filter((q) =>
+				q.and(
+					q.or(
+						q.eq(q.field("status"), "active"),
+						q.eq(q.field("status"), "trialing"),
+						q.eq(q.field("status"), "incomplete"),
+						q.eq(q.field("status"), "incomplete_expired"),
+						q.eq(q.field("status"), "past_due"),
+						q.eq(q.field("status"), "unpaid"),
+					),
+					q.eq(q.field("cancelAtPeriodEnd"), false),
+				),
+			)
+			.collect();
+
+		const hasActiveSubscriptions =
+			subscriptions.filter(
+				(s) =>
+					s.metadata?.isShadowSubscription !== "true" &&
+					s.metadata?.isShadowSubscription !== true,
+			).length > 0;
+
+		if (hasActiveSubscriptions) {
+			throw new ConvexError(
+				"You cannot delete your workspace because you have active subscriptions.",
+			);
+		}
+
+		// Delete workspace
+		await ctx.db.delete(workspace._id);
 	},
 });
 

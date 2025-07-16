@@ -2,6 +2,7 @@
 
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
+import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
 	AvatarFallback,
@@ -31,7 +32,7 @@ export const MemberSelection = ({
 	isLoading = false,
 }: MemberSelectionProps) => {
 	const { currentWorkspace } = useWorkspace();
-
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 	// Get all members for the workspace
 	const { data: members, isPending: isMembersPending } = useCachedRichQuery(
 		api.collections.members.queries.getByWorkspace,
@@ -123,7 +124,7 @@ export const MemberSelection = ({
 
 							<Avatar className="w-8 h-8">
 								<AvatarImage
-									src={member.user?.imageUrl || ""}
+									src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${member.user?.imageKey}`}
 									alt={member.user?.fullName || ""}
 								/>
 								<AvatarFallback>

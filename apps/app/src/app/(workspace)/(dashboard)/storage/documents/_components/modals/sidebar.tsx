@@ -194,8 +194,8 @@ export const DetailsSidebar = () => {
 		: getVectorizationStatusInfo(undefined);
 
 	return (
-		<div className="flex flex-col p-4 border-l w-80 bg-muted border-border">
-			<div className="flex items-center justify-between mb-4">
+		<div className="flex flex-col p-4 w-80 border-l bg-muted border-border">
+			<div className="flex justify-between items-center mb-4">
 				<h3 className="text-lg font-semibold">Document Details</h3>
 				<Button variant="ghost" size="icon" onClick={handleClose}>
 					<X className="w-4 h-4" />
@@ -215,7 +215,7 @@ export const DetailsSidebar = () => {
 						<div>
 							<Badge
 								variant="outline"
-								className="flex items-center gap-1 max-w-fit"
+								className="flex gap-1 items-center max-w-fit"
 							>
 								{documentTypeInfo.icon}
 								{documentTypeInfo.label}
@@ -260,11 +260,11 @@ export const DetailsSidebar = () => {
 
 					<div className="space-y-1">
 						<Label className="text-muted-foreground">Created By</Label>
-						<div className="flex items-center gap-2">
+						<div className="flex gap-2 items-center">
 							<Avatar className="w-8 h-8 rounded-lg">
 								<AvatarImage
 									className="object-cover object-center w-full h-full rounded-lg"
-									src={document.createdBy?.imageUrl} // Assuming createdBy structure is similar
+									src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${document.createdBy?.imageKey}`} // Assuming createdBy structure is similar
 									alt={document.createdBy?.fullName ?? ""}
 								/>
 								<AvatarFallback className="rounded-lg">
@@ -317,7 +317,7 @@ export const DetailsSidebar = () => {
 								Download <Download className="size-4" />
 							</a>
 						</div>
-						<div className="flex items-center gap-2">
+						<div className="flex gap-2 items-center">
 							<Button
 								onClick={
 									document.isArchived
@@ -347,7 +347,7 @@ export const DetailsSidebar = () => {
 					</div>
 				</div>
 			) : (
-				<div className="flex items-center justify-center flex-1">
+				<div className="flex flex-1 justify-center items-center">
 					<Spinner size="xs" />
 				</div>
 			)}

@@ -245,13 +245,18 @@ export const CurrentPlan = () => {
 									size="sm"
 									className="flex gap-2 items-center"
 									onClick={handleChangePlan}
-									disabled={!isActive && !isTrial}
+									disabled={!isActive || isTrial || isCancellingAtPeriodEnd}
 								>
 									{isTeamPlan ? "Downgrade to Pro" : "Upgrade to Team"}
 									<ArrowRight className="size-3.5" />
 								</Button>
 								<Button
-									disabled={!isTeamPlan || !isAdmin || !isWorkspaceOwner}
+									disabled={
+										!isTeamPlan ||
+										!isAdmin ||
+										!isWorkspaceOwner ||
+										isCancellingAtPeriodEnd
+									}
 									variant="outline"
 									size="sm"
 									className="flex gap-2 items-center"
@@ -277,7 +282,10 @@ export const CurrentPlan = () => {
 								</Button>
 							) : (
 								<Badge variant="destructive">
-									Cancelling at {currentPeriodEnd}
+									Cancelling at{" "}
+									{currentPeriodEnd
+										? new Date(currentPeriodEnd).toLocaleDateString()
+										: "Unknown"}
 								</Badge>
 							)}
 						</div>

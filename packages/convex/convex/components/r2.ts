@@ -1,6 +1,6 @@
 import { R2 } from "@convex-dev/r2";
 import { ConvexError, v } from "convex/values";
-import { components } from "../_generated/api";
+import { components, internal } from "../_generated/api";
 import {
 	internalAction,
 	internalMutation,
@@ -65,5 +65,32 @@ export const uploadFromURL = internalAction({
 		});
 
 		return key;
+	},
+});
+
+export const uploadUserAvatarFromURL = internalAction({
+	args: {
+		url: v.string(),
+		userExternalId: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const image = await fetch(args.url);
+		const imageBuffer = await image.arrayBuffer();
+		const imageBlob = new Blob([imageBuffer], {
+			type: image.headers.get("content-type") || undefined,
+		});
+		const key = `users/${args.userExternalId}/avatar-${crypto.randomUUID()}`;
+
+		await r2.store(ctx, imageBlob, {
+			key,
+		});
+
+		await ctx.runMutation(
+			internal.collections.users.mutations.updateAvatarInternal,
+			{
+				imageKey: key,
+				userExternalId: args.userExternalId,
+			},
+		);
 	},
 });

@@ -1,6 +1,7 @@
 "use client";
 
 import { NewWorkspaceModal } from "@/components/modals/workspaces/workspace-modal";
+import { useRouterContext } from "@/components/providers/workspace/router";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
@@ -44,7 +45,7 @@ const header = {
 export const WorkspaceList = () => {
 	const { workspaces, changeWorkspace } = useWorkspace();
 	const [, setNewWorkspaceModal] = useNewWorkspaceModal();
-
+	const { setIsCheckDone } = useRouterContext();
 	const getWorkspaceInitials = (title: string) => {
 		return title
 			.split(" ")
@@ -82,7 +83,10 @@ export const WorkspaceList = () => {
 						<motion.button
 							key={workspace._id}
 							variants={item}
-							onClick={() => changeWorkspace(workspace._id)}
+							onClick={() => {
+								changeWorkspace(workspace._id);
+								setIsCheckDone(false);
+							}}
 							className={buttonVariants({
 								variant: "outline",
 								className: "flex justify-start items-center h-12 text-left",

@@ -11,9 +11,10 @@ import {
 
 import { useUser } from "@/hooks/auth/use-user";
 import { useRouter } from "next/navigation";
-import { createContext } from "react";
+import { createContext, useCallback } from "react";
 
 const workspaceContext = createContext<{
+	refetchOrganizations: () => Promise<void>;
 	currentWorkspace: (Doc<"workspaces"> & { owner: Doc<"users"> | null }) | null;
 	workspaces: Doc<"workspaces">[];
 	changeWorkspace: (workspaceId: Id<"workspaces">) => Promise<void>;
@@ -23,6 +24,7 @@ const workspaceContext = createContext<{
 	workspaces: [],
 	changeWorkspace: async () => {},
 	isLoading: true,
+	refetchOrganizations: async () => {},
 });
 
 const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
@@ -38,6 +40,10 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 	const updateUserCurrentWorkspace = useMutation(
 		api.collections.users.mutations.updateCurrentWorkspace,
 	);
+
+	const refetchOrganizations = useCallback(async () => {
+		await userMemberships?.revalidate?.();
+	}, [userMemberships]);
 
 	const { data: workspaces, isPending: isWorkspacesPending } =
 		useCachedRichQuery(
@@ -80,6 +86,7 @@ const WorkspaceProvider = ({ children }: { children: React.ReactNode }) => {
 	};
 
 	const exposed = {
+		refetchOrganizations,
 		workspaces: workspaces ?? [],
 		currentWorkspace: currentWorkspace ?? null,
 		changeWorkspace,

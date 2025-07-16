@@ -6,6 +6,16 @@ export const customerSchema = v.object({
 	email: v.string(),
 	name: v.optional(v.string()),
 	phone: v.optional(v.string()),
+	address: v.optional(
+		v.object({
+			city: v.optional(v.string()),
+			country: v.optional(v.string()),
+			line1: v.optional(v.string()),
+			line2: v.optional(v.string()),
+			postal_code: v.optional(v.string()),
+			state: v.optional(v.string()),
+		}),
+	),
 	shipping: v.optional(
 		v.object({
 			address: v.object({

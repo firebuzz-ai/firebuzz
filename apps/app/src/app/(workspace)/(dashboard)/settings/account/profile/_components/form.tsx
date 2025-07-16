@@ -28,18 +28,23 @@ export const ProfileForm = () => {
 	const formContext = useProfileForm();
 	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
-	const getUserInitials = (firstName: string, lastName: string) => {
-		return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-	};
-
-	const getImageUrl = (imageUrl: string | undefined) => {
-		if (!imageUrl) return undefined;
-		// Check if it's already a full URL (starts with http/https)
-		if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-			return imageUrl;
+	const getUserInitials = (
+		firstName: string | undefined,
+		lastName: string | undefined,
+	) => {
+		if (firstName && lastName) {
+			return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 		}
-		// Otherwise, it's a key that needs our CDN prefix
-		return `${NEXT_PUBLIC_R2_PUBLIC_URL}/${imageUrl}`;
+
+		if (firstName && !lastName) {
+			return firstName.slice(0, 2).toLocaleUpperCase();
+		}
+
+		if (!firstName && lastName) {
+			return lastName.slice(0, 2).toLocaleUpperCase();
+		}
+
+		return "FR";
 	};
 
 	if (isUserLoading || !currentUser || !formContext) {
@@ -69,9 +74,7 @@ export const ProfileForm = () => {
 						<div className="flex gap-2 items-center p-2 mt-2 rounded-md border bg-muted/50">
 							<Avatar className="w-6 h-6">
 								<AvatarImage
-									src={getImageUrl(
-										form.getValues().imageUrl || currentUser.imageUrl,
-									)}
+									src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${form.getValues().imageKey || currentUser.imageKey}`}
 									alt="Profile preview"
 								/>
 								<AvatarFallback className="text-xs">
@@ -139,7 +142,7 @@ export const ProfileForm = () => {
 						{/* Avatar */}
 						<FormField
 							control={form.control}
-							name="imageUrl"
+							name="imageKey"
 							render={({ field }) => (
 								<FormItem>
 									<FormLabel>Profile Avatar</FormLabel>
@@ -159,7 +162,7 @@ export const ProfileForm = () => {
 											/>
 										) : (
 											<ImagePreview
-												src={getImageUrl(field.value) || ""}
+												src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${field.value}`}
 												handleDeselect={() => {
 													field.onChange("");
 												}}

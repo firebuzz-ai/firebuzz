@@ -44,6 +44,7 @@ export const Selection: React.FC<SelectionProps> = ({ handleFadeout }) => {
 			});
 
 			startFadeout();
+			router.push("/new/workspace");
 		} catch (error) {
 			console.log(error);
 			if (error instanceof ConvexError) {
@@ -54,7 +55,7 @@ export const Selection: React.FC<SelectionProps> = ({ handleFadeout }) => {
 		} finally {
 			setIsCreating(false);
 		}
-	}, [createWorkspace, startFadeout, user]);
+	}, [createWorkspace, startFadeout, user, router]);
 
 	const handleJoin = useCallback(() => {
 		router.push("/join");
