@@ -130,6 +130,7 @@ import type * as lib_clerk from "../lib/clerk.js";
 import type * as lib_cloudflare from "../lib/cloudflare.js";
 import type * as lib_documentReaders from "../lib/documentReaders.js";
 import type * as lib_engine from "../lib/engine.js";
+import type * as lib_exa from "../lib/exa.js";
 import type * as lib_firecrawl from "../lib/firecrawl.js";
 import type * as lib_googleai from "../lib/googleai.js";
 import type * as lib_openai from "../lib/openai.js";
@@ -276,6 +277,7 @@ declare const fullApi: ApiFromModules<{
   "lib/cloudflare": typeof lib_cloudflare;
   "lib/documentReaders": typeof lib_documentReaders;
   "lib/engine": typeof lib_engine;
+  "lib/exa": typeof lib_exa;
   "lib/firecrawl": typeof lib_firecrawl;
   "lib/googleai": typeof lib_googleai;
   "lib/openai": typeof lib_openai;

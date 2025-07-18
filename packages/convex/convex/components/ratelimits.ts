@@ -6,6 +6,7 @@ import { internalQuery } from "../_generated/server";
 export const rateLimiter = new RateLimiter(components.rateLimiter, {
 	firecrawlScrape: { kind: "fixed window", rate: 100, period: MINUTE },
 	ingestCreditUsage: { kind: "fixed window", rate: 10, period: SECOND },
+	exaSearchAndCrawl: { kind: "fixed window", rate: 5, period: SECOND },
 });
 
 export const checkLimit = internalQuery({
