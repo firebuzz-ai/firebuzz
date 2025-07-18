@@ -26,16 +26,15 @@ export function Frame({
 	}, [port?.url, ref]);
 
 	return (
-		<div className="relative size-full overflow-hidden">
+		<div className="overflow-hidden relative size-full">
 			{/* Loading Component */}
 			{(!isIframeLoaded || !port?.url) && <Loading />}
 			<iframe
 				ref={ref}
-				sandbox="allow-same-origin allow-scripts allow-forms"
+				sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
 				referrerPolicy="no-referrer"
-				allow="geolocation cross-origin-isolated"
 				title="Preview"
-				className="border-none w-full h-full bg-white"
+				className="w-full h-full bg-white border-none"
 				rel="noopener"
 			/>
 		</div>

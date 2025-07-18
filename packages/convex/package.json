@@ -37,6 +37,7 @@
 		"@firebuzz/emails": "workspace:*",
 		"@firebuzz/env": "workspace:*",
 		"@firebuzz/utils": "workspace:*",
+		"@firebuzz/file-system": "workspace:*",
 		"@llamaindex/core": "^0.6.4",
 		"@llamaindex/readers": "^3.1.1",
 		"@mastra/rag": "^0.1.22",

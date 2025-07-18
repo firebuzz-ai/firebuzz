@@ -19,6 +19,7 @@ export const landingPagesSchema = v.object({
 	originalId: v.optional(v.id("landingPages")), // For translations
 	parentId: v.optional(v.id("landingPages")), // For Variants
 	templateId: v.id("landingPageTemplates"),
+	themeId: v.optional(v.id("themes")), // Theme selection
 	landingPageVersionId: v.optional(v.id("landingPageVersions")),
 	createdBy: v.id("users"),
 	// System

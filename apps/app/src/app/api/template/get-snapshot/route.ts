@@ -27,7 +27,7 @@ interface FileSystem {
 export async function GET(req: NextRequest) {
 	const searchParams = req.nextUrl.searchParams;
 	const slug = searchParams.get("slug");
-	console.log(slug);
+
 	try {
 		const targetPath = path.resolve(`../../templates/${slug}`);
 		// We'll use the snapshot result for verification purposes
@@ -43,16 +43,20 @@ export async function GET(req: NextRequest) {
 			for (const entry of entries) {
 				const fullPath = path.join(dirPath, entry.name);
 
-				if (entry.isDirectory()) {
-					// Skip node_modules and other common directories to exclude
-					if (
-						entry.name === "node_modules" ||
-						entry.name === "dist" ||
-						entry.name === ".git"
-					) {
-						continue;
-					}
+				// Skip node_modules and other common directories to exclude
+				if (
+					entry.name === "node_modules" ||
+					entry.name === "dist" ||
+					entry.name === ".git" ||
+					entry.name === ".gitignore" ||
+					entry.name === ".DS_Store" ||
+					entry.name === ".vscode" ||
+					entry.name === "README.md"
+				) {
+					continue;
+				}
 
+				if (entry.isDirectory()) {
 					// Create a new directory entry
 					currentDir[entry.name] = {
 						directory: {},

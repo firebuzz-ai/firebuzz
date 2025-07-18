@@ -39,27 +39,27 @@ export const ActionErrorExplanation = ({
 	const getActionIcon = (type: string) => {
 		switch (type) {
 			case "file":
-				return <FileCode className="h-4 w-4 text-amber-400" />;
+				return <FileCode className="w-4 h-4 text-amber-400" />;
 			case "shell":
-				return <Terminal className="h-4 w-4 text-blue-400" />;
+				return <Terminal className="w-4 h-4 text-blue-400" />;
 			case "quick-edit":
-				return <ExternalLink className="h-4 w-4 text-green-400" />;
+				return <ExternalLink className="w-4 h-4 text-green-400" />;
 			default:
-				return <XCircle className="h-4 w-4 text-red-400" />;
+				return <XCircle className="w-4 h-4 text-red-400" />;
 		}
 	};
 
 	return (
-		<div className="border rounded-md overflow-hidden w-full">
+		<div className="overflow-hidden w-full rounded-md border">
 			<div className="flex items-stretch">
 				<Button
 					variant="ghost"
-					className="flex-1 justify-start px-4 py-2 h-auto hover:bg-accent rounded-none"
+					className="flex-1 justify-start px-4 py-2 h-auto rounded-none hover:bg-accent"
 					onClick={() => setIsErrorsVisible(!isErrorsVisible)}
 				>
-					<div className="flex items-center gap-2 text-left">
+					<div className="flex gap-2 items-center text-left">
 						<div>
-							<div className="font-medium text-sm">Action errors detected</div>
+							<div className="text-sm font-medium">Action errors detected</div>
 							<div className="text-xs text-muted-foreground mt-0.5">
 								Click to {isErrorsVisible ? "close" : "open"} error details
 							</div>
@@ -95,8 +95,8 @@ export const ActionErrorExplanation = ({
 												value={`action-error-${error.actionType}-${index}`}
 												className="border-b-0 last:border-0"
 											>
-												<AccordionTrigger className="py-2 text-sm font-medium hover:bg-muted/70 px-2 rounded-none">
-													<div className="flex items-center gap-2">
+												<AccordionTrigger className="px-2 py-2 text-sm font-medium rounded-none hover:bg-muted/70">
+													<div className="flex gap-2 items-center">
 														{getActionIcon(error.actionType)}
 														<span>
 															{error.actionType === "file"
@@ -111,15 +111,15 @@ export const ActionErrorExplanation = ({
 														</span>
 													</div>
 												</AccordionTrigger>
-												<AccordionContent className="pt-2 pb-3 px-2">
+												<AccordionContent className="px-2 pt-2 pb-3">
 													<div className="space-y-3">
 														<div className="text-sm">{error.errorMessage}</div>
 
 														{error.actionType === "quick-edit" &&
 															error.from &&
 															error.to && (
-																<div className="bg-background border p-3 rounded-md">
-																	<p className="text-xs font-medium mb-1">
+																<div className="p-3 rounded-md border bg-background">
+																	<p className="mb-1 text-xs font-medium">
 																		Quick Edit Details:
 																	</p>
 																	<div className="space-y-2">
@@ -127,7 +127,7 @@ export const ActionErrorExplanation = ({
 																			<span className="text-xs font-medium">
 																				From:{" "}
 																			</span>
-																			<code className="text-xs bg-muted/50 p-1 rounded">
+																			<code className="p-1 text-xs rounded bg-muted/50">
 																				{error.from}
 																			</code>
 																		</p>
@@ -135,7 +135,7 @@ export const ActionErrorExplanation = ({
 																			<span className="text-xs font-medium">
 																				To:{" "}
 																			</span>
-																			<code className="text-xs bg-muted/50 p-1 rounded">
+																			<code className="p-1 text-xs rounded bg-muted/50">
 																				{error.to}
 																			</code>
 																		</p>
@@ -143,8 +143,8 @@ export const ActionErrorExplanation = ({
 																</div>
 															)}
 
-														<div className="bg-background border p-3 rounded-md">
-															<p className="text-xs font-medium mb-1">
+														<div className="p-3 rounded-md border bg-background">
+															<p className="mb-1 text-xs font-medium">
 																Suggestion:
 															</p>
 															<p className="text-sm text-muted-foreground">

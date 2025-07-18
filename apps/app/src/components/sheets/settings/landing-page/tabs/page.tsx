@@ -2,9 +2,9 @@
 
 import {
 	api,
+	useCachedQuery,
 	useCachedRichQuery,
 	useMutation,
-	useQuery,
 } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -56,13 +56,13 @@ export const PageTab = ({
 		});
 
 	// Get campaign data
-	const campaign = useQuery(
+	const campaign = useCachedQuery(
 		api.collections.campaigns.queries.getById,
 		landingPage?.campaignId ? { id: landingPage.campaignId } : "skip",
 	);
 
 	// Get template data
-	const template = useQuery(
+	const template = useCachedQuery(
 		api.collections.landingPages.templates.queries.getById,
 		landingPage?.templateId ? { id: landingPage.templateId } : "skip",
 	);
@@ -135,7 +135,7 @@ export const PageTab = ({
 
 	if (!landingPage) {
 		return (
-			<div className="flex items-center justify-center h-48">
+			<div className="flex justify-center items-center h-48">
 				<Spinner />
 				<span className="ml-2">Loading landing page data...</span>
 			</div>
@@ -204,11 +204,11 @@ export const PageTab = ({
 						</div>
 
 						<div className="space-y-2">
-							<Label className="flex items-center gap-2 text-xs text-muted-foreground">
+							<Label className="flex gap-2 items-center text-xs text-muted-foreground">
 								<span>Template</span>
 							</Label>
-							<div className="flex items-center gap-2 p-2 border rounded-md">
-								<div className="flex items-center justify-center w-8 h-8 rounded-md bg-muted">
+							<div className="flex gap-2 items-center p-2 rounded-md border">
+								<div className="flex justify-center items-center w-8 h-8 rounded-md bg-muted">
 									<FileCode className="size-4 text-muted-foreground" />
 								</div>
 								{template ? (
@@ -225,11 +225,11 @@ export const PageTab = ({
 						</div>
 
 						<div className="space-y-2">
-							<Label className="flex items-center gap-2 text-xs text-muted-foreground">
+							<Label className="flex gap-2 items-center text-xs text-muted-foreground">
 								<span>Campaign</span>
 							</Label>
-							<div className="flex items-center gap-2 p-2 border rounded-md">
-								<div className="flex items-center justify-center w-8 h-8 rounded-md bg-muted">
+							<div className="flex gap-2 items-center p-2 rounded-md border">
+								<div className="flex justify-center items-center w-8 h-8 rounded-md bg-muted">
 									<Layers className="size-4 text-muted-foreground" />
 								</div>
 								{!isLandingPageLoading && campaign ? (

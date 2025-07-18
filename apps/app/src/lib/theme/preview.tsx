@@ -115,18 +115,18 @@ const LandingPagePreview = ({
 	return (
 		<div className="h-full max-w-4xl max-h-full mx-auto overflow-hidden border rounded-lg shadow-xl bg-background @container">
 			{/* Browser Header - NO THEME STYLES APPLIED HERE */}
-			<div className="flex items-center gap-3 px-4 py-3 border-b bg-muted/50">
+			<div className="flex gap-3 items-center px-4 py-3 border-b bg-muted/50">
 				{/* Traffic Lights */}
-				<div className="flex items-center gap-2">
+				<div className="flex gap-2 items-center">
 					<div className="w-3 h-3 bg-red-500 rounded-full" />
 					<div className="w-3 h-3 bg-yellow-500 rounded-full" />
 					<div className="w-3 h-3 bg-green-500 rounded-full" />
 				</div>
 
 				{/* Address Bar */}
-				<div className="flex items-center flex-1 gap-2 ml-4">
+				<div className="flex flex-1 gap-2 items-center ml-4">
 					<div className="flex items-center bg-background border rounded-md px-3 py-1.5 flex-1 max-w-lg">
-						<div className="flex items-center gap-1">
+						<div className="flex gap-1 items-center">
 							{brandData.favicon ? (
 								<Image
 									src={`${NEXT_PUBLIC_R2_PUBLIC_URL}/${brandData.favicon}`}
@@ -174,11 +174,11 @@ const LandingPagePreview = ({
 			</div>
 
 			{/* Website Content - THEME STYLES APPLIED ONLY HERE */}
-			<div className="h-full max-h-full pb-16 overflow-y-auto themed-content bg-background">
+			<div className="overflow-y-auto pb-16 h-full max-h-full themed-content bg-background">
 				{/* Navigation */}
-				<nav className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
+				<nav className="sticky top-0 z-10 border-b backdrop-blur bg-background/95">
 					<div className="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-						<div className="flex items-center justify-between h-16">
+						<div className="flex justify-between items-center h-16">
 							{/* Logo */}
 							<div className="flex items-center">
 								{brandData.logo ? (
@@ -192,7 +192,7 @@ const LandingPagePreview = ({
 									/>
 								) : (
 									<div className="flex items-center">
-										<div className="flex items-center justify-center w-8 h-8 rounded bg-primary">
+										<div className="flex justify-center items-center w-8 h-8 rounded bg-primary">
 											<span className="text-sm font-bold text-primary-foreground">
 												{brandData.name.charAt(0)}
 											</span>
@@ -221,16 +221,16 @@ const LandingPagePreview = ({
 							</div>
 
 							{/* Right Side - Theme Switcher & CTA */}
-							<div className="flex items-center gap-4">
+							<div className="flex gap-4 items-center">
 								{/* Theme Switcher */}
-								<div className="flex items-center gap-2">
+								<div className="flex gap-2 items-center">
 									<Button
 										variant="ghost"
 										size="iconSm"
 										onClick={() => onThemeToggle(!previewMode.includes("dark"))}
 										className="relative transition-all duration-300 hover:scale-110"
 									>
-										<div className="absolute inset-0 flex items-center justify-center">
+										<div className="flex absolute inset-0 justify-center items-center">
 											<Sun
 												className={`size-4 transition-all  duration-500 ${
 													previewMode === "dark"
@@ -251,7 +251,7 @@ const LandingPagePreview = ({
 
 								<Button size="sm" className="hidden @2xl:inline-flex">
 									Get Started
-									<ArrowRight className="w-4 h-4 ml-1" />
+									<ArrowRight className="ml-1 w-4 h-4" />
 								</Button>
 								<Button variant="ghost" size="sm" className="@2xl:hidden">
 									<Menu className="w-4 h-4" />
@@ -262,14 +262,14 @@ const LandingPagePreview = ({
 				</nav>
 
 				{/* Hero Section */}
-				<div className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-muted/20">
+				<div className="overflow-hidden relative bg-gradient-to-br from-primary/5 via-background to-muted/20">
 					<div className="px-4 py-16 mx-auto max-w-7xl @2xl:px-6 @2xl:py-20">
 						<div className="text-center">
 							<Badge
 								variant="secondary"
 								className="mb-4 !text-secondary-foreground"
 							>
-								<Star className="w-3 h-3 mr-1" />
+								<Star className="mr-1 w-3 h-3" />
 								{previewMode === "dark" ? "Dark" : "Light"} Theme Preview
 							</Badge>
 
@@ -278,15 +278,15 @@ const LandingPagePreview = ({
 								<span className="text-primary">{brandData.name}</span>
 							</h1>
 
-							<p className="max-w-2xl mx-auto mb-8 text-lg text-muted-foreground">
+							<p className="mx-auto mb-8 max-w-2xl text-lg text-muted-foreground">
 								{brandData.description ||
 									`Experience how your custom theme looks and feels across different components and layouts. 
                 See your colors, typography, and styling in action.`}
 							</p>
 
-							<div className="flex flex-col items-center justify-center gap-4 mb-12 sm:flex-row">
+							<div className="flex flex-col gap-4 justify-center items-center mb-12 sm:flex-row">
 								<Button size="lg" className="px-8 text-base">
-									<Play className="w-4 h-4 mr-2" />
+									<Play className="mr-2 w-4 h-4" />
 									Get Started Now
 								</Button>
 								<Button
@@ -300,7 +300,7 @@ const LandingPagePreview = ({
 
 							{/* Info Box */}
 							<div className="mb-12">
-								<div className="inline-flex items-center gap-2 px-4 py-2 mx-auto rounded-md bg-muted">
+								<div className="inline-flex gap-2 items-center px-4 py-2 mx-auto rounded-md bg-muted">
 									<Check className="w-4 h-4 text-primary" />
 									<span className="font-mono text-xs">
 										No credit card required
@@ -311,7 +311,7 @@ const LandingPagePreview = ({
 							{/* Stats */}
 							<div className="grid max-w-2xl grid-cols-1 gap-8 mx-auto @lg:grid-cols-3">
 								<div className="text-center">
-									<div className="flex items-center justify-center gap-2 mb-2">
+									<div className="flex gap-2 justify-center items-center mb-2">
 										<Users className="w-5 h-5 text-primary" />
 										<span className="text-2xl font-bold">10k+</span>
 									</div>
@@ -320,14 +320,14 @@ const LandingPagePreview = ({
 									</p>
 								</div>
 								<div className="text-center">
-									<div className="flex items-center justify-center gap-2 mb-2">
+									<div className="flex gap-2 justify-center items-center mb-2">
 										<TrendingUp className="w-5 h-5 text-primary" />
 										<span className="text-2xl font-bold">99%</span>
 									</div>
 									<p className="text-sm text-muted-foreground">Uptime</p>
 								</div>
 								<div className="text-center">
-									<div className="flex items-center justify-center gap-2 mb-2">
+									<div className="flex gap-2 justify-center items-center mb-2">
 										<Shield className="w-5 h-5 text-primary" />
 										<span className="text-2xl font-bold">100%</span>
 									</div>
@@ -373,9 +373,9 @@ const LandingPagePreview = ({
 							].map((feature) => (
 								<div
 									key={feature.id}
-									className="p-6 transition-shadow border rounded-lg bg-background hover:shadow-md"
+									className="p-6 rounded-lg border transition-shadow bg-background hover:shadow-md"
 								>
-									<div className="flex items-center justify-center w-10 h-10 mb-4 rounded-lg bg-primary/10">
+									<div className="flex justify-center items-center mb-4 w-10 h-10 rounded-lg bg-primary/10">
 										<feature.icon className="w-5 h-5 text-primary" />
 									</div>
 									<h3 className="mb-2 font-semibold">{feature.title}</h3>
@@ -426,12 +426,12 @@ const LandingPagePreview = ({
 							].map((testimonial) => (
 								<div
 									key={testimonial.id}
-									className="p-6 border rounded-lg bg-card"
+									className="p-6 rounded-lg border bg-card"
 								>
-									<Quote className="w-8 h-8 mb-4 text-muted-foreground" />
+									<Quote className="mb-4 w-8 h-8 text-muted-foreground" />
 									<p className="mb-4 text-sm italic">"{testimonial.content}"</p>
-									<div className="flex items-center gap-3">
-										<div className="flex items-center justify-center w-10 h-10 rounded-full bg-muted">
+									<div className="flex gap-3 items-center">
+										<div className="flex justify-center items-center w-10 h-10 rounded-full bg-muted">
 											<span className="text-sm font-medium text-muted-foreground">
 												{testimonial.name
 													.split(" ")
@@ -465,8 +465,8 @@ const LandingPagePreview = ({
 								</p>
 
 								<div className="space-y-4">
-									<div className="flex items-center gap-3">
-										<div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+									<div className="flex gap-3 items-center">
+										<div className="flex justify-center items-center w-10 h-10 rounded-lg bg-primary/10">
 											<Mail className="w-5 h-5 text-primary" />
 										</div>
 										<div>
@@ -477,8 +477,8 @@ const LandingPagePreview = ({
 										</div>
 									</div>
 
-									<div className="flex items-center gap-3">
-										<div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+									<div className="flex gap-3 items-center">
+										<div className="flex justify-center items-center w-10 h-10 rounded-lg bg-primary/10">
 											<Phone className="w-5 h-5 text-primary" />
 										</div>
 										<div>
@@ -489,8 +489,8 @@ const LandingPagePreview = ({
 										</div>
 									</div>
 
-									<div className="flex items-center gap-3">
-										<div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10">
+									<div className="flex gap-3 items-center">
+										<div className="flex justify-center items-center w-10 h-10 rounded-lg bg-primary/10">
 											<MapPin className="w-5 h-5 text-primary" />
 										</div>
 										<div>
@@ -505,7 +505,7 @@ const LandingPagePreview = ({
 							</div>
 
 							{/* Contact Form */}
-							<div className="p-6 border rounded-lg bg-card">
+							<div className="p-6 rounded-lg border bg-card">
 								<h3 className="mb-4 text-lg font-semibold">
 									Send us a message
 								</h3>
@@ -556,7 +556,7 @@ const LandingPagePreview = ({
 									</div>
 
 									<Button className="w-full">
-										<Check className="w-4 h-4 mr-2" />
+										<Check className="mr-2 w-4 h-4" />
 										Send Message
 									</Button>
 								</div>
@@ -576,7 +576,7 @@ const LandingPagePreview = ({
 							</p>
 						</div>
 
-						<div className="flex items-center justify-center gap-4">
+						<div className="flex gap-4 justify-center items-center">
 							<Button size="lg" className="px-8 text-base">
 								Start Your Journey
 							</Button>

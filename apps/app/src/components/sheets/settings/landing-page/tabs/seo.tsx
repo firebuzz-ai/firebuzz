@@ -2,6 +2,7 @@ import { parsedFilesAtom, seoConfigAtom } from "@/lib/workbench/atoms";
 import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
+import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Form,
 	FormControl,
@@ -34,16 +35,16 @@ const seoSchema = z.object({
 	openGraph: z.object({
 		title: z.string().min(1, "Open Graph title is required"),
 		description: z.string().min(1, "Open Graph description is required"),
-		image: z.string().url("Must be a valid URL"),
-		url: z.string().url("Must be a valid URL"),
-		type: z.string(),
+		image: z.string().url("Must be a valid URL").optional(),
+		url: z.string().url("Must be a valid URL").optional(),
+		type: z.string().optional(),
 	}),
 	twitter: z.object({
 		card: z.string(),
 		title: z.string().min(1, "Twitter title is required"),
 		description: z.string().min(1, "Twitter description is required"),
-		image: z.string().url("Must be a valid URL"),
-		url: z.string().url("Must be a valid URL"),
+		image: z.string().url("Must be a valid URL").optional(),
+		url: z.string().url("Must be a valid URL").optional(),
 	}),
 });
 
@@ -62,6 +63,7 @@ export const SeoTab = ({
 	setSaveHandler,
 	setUnsavedChanges,
 }: SeoTabProps) => {
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 	const [isLoading, setIsLoading] = useState(false);
 	const seoConfig = useAtomValue(seoConfigAtom);
 	const setParsedFiles = useSetAtom(parsedFilesAtom);
@@ -133,6 +135,8 @@ export const SeoTab = ({
 			// Validate the form
 			const valid = await form.trigger();
 			if (!valid) {
+				console.log(form.getValues());
+				console.log(form.formState.errors);
 				throw new Error("Form validation failed");
 			}
 
@@ -209,7 +213,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
 
 	if (!parsedConfig) {
 		return (
-			<div className="flex items-center justify-center h-48">
+			<div className="flex justify-center items-center h-48">
 				<Spinner />
 				<span className="ml-2">Loading SEO configuration...</span>
 			</div>
@@ -294,7 +298,13 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
 												/>
 											</FormControl>
 											{!field.value ? (
-												<ImageSelect onChange={field.onChange} />
+												<ImageSelect
+													onChange={(url) => {
+														field.onChange(
+															`${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`,
+														);
+													}}
+												/>
 											) : (
 												<ImagePreview
 													src={field.value}
@@ -314,7 +324,7 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
 								name="indexable"
 								render={({ field }) => (
 									<FormItem>
-										<div className="flex items-center justify-between p-3 border rounded-md">
+										<div className="flex justify-between items-center p-3 rounded-md border">
 											<FormLabel>
 												{field.value ? "Indexable" : "No Index"}
 											</FormLabel>
@@ -402,7 +412,13 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
 												/>
 											</FormControl>
 											{!field.value ? (
-												<ImageSelect onChange={field.onChange} />
+												<ImageSelect
+													onChange={(url) => {
+														field.onChange(
+															`${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`,
+														);
+													}}
+												/>
 											) : (
 												<ImagePreview
 													src={field.value}
@@ -489,7 +505,13 @@ export const seoConfiguration = ${JSON.stringify(data, null, 2)};
 												/>
 											</FormControl>
 											{!field.value ? (
-												<ImageSelect onChange={field.onChange} />
+												<ImageSelect
+													onChange={(url) => {
+														field.onChange(
+															`${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`,
+														);
+													}}
+												/>
 											) : (
 												<ImagePreview
 													src={field.value}

@@ -5,6 +5,7 @@ import type { Id } from "@firebuzz/convex";
 import {
 	ConvexError,
 	api,
+	useCachedQuery,
 	useMutation,
 	usePaginatedQuery,
 } from "@firebuzz/convex";
@@ -45,6 +46,7 @@ const formSchema = z.object({
 	description: z.string().optional(),
 	campaignId: z.string().min(1, "Campaign is required"),
 	templateId: z.string().min(1, "Template is required"),
+	themeId: z.string(),
 });
 
 export function CreateLandingPage() {
@@ -79,6 +81,10 @@ export function CreateLandingPage() {
 		{ initialNumItems: 50 },
 	);
 
+	const themes = useCachedQuery(api.collections.brands.themes.queries.getAll, {
+		showHidden: false,
+	});
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -86,6 +92,7 @@ export function CreateLandingPage() {
 			description: "",
 			campaignId: "",
 			templateId: "",
+			themeId: "",
 		},
 	});
 
@@ -104,6 +111,7 @@ export function CreateLandingPage() {
 				projectId: currentProject._id,
 				campaignId: data.campaignId as Id<"campaigns">,
 				templateId: data.templateId as Id<"landingPageTemplates">,
+				themeId: data.themeId as Id<"themes">,
 			});
 
 			toast.success("Landing page created", {
@@ -126,7 +134,7 @@ export function CreateLandingPage() {
 	};
 
 	return (
-		<div className="flex flex-col items-center justify-center flex-1 max-w-lg mx-auto">
+		<div className="flex flex-col flex-1 justify-center items-center mx-auto max-w-lg">
 			<Card className="w-full">
 				<CardHeader className="space-y-1">
 					<CardTitle>Create Landing Page</CardTitle>
@@ -226,13 +234,39 @@ export function CreateLandingPage() {
 								)}
 							/>
 
+							{/* Theme */}
+							<FormField
+								control={form.control}
+								name="themeId"
+								render={({ field }) => (
+									<FormItem>
+										<FormLabel>Theme</FormLabel>
+										<Select onValueChange={field.onChange} value={field.value}>
+											<FormControl>
+												<SelectTrigger>
+													<SelectValue placeholder="Select a theme" />
+												</SelectTrigger>
+											</FormControl>
+											<SelectContent>
+												{themes?.map((theme) => (
+													<SelectItem key={theme._id} value={theme._id}>
+														{theme.name}
+													</SelectItem>
+												))}
+											</SelectContent>
+										</Select>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
+
 							<Button
 								type="submit"
-								className="w-full mt-4"
+								className="mt-4 w-full"
 								disabled={isLoading}
 							>
 								{isLoading ? (
-									<div className="flex items-center gap-2">
+									<div className="flex gap-2 items-center">
 										<Spinner size="xs" variant="default" /> Creating...
 									</div>
 								) : (
@@ -245,7 +279,7 @@ export function CreateLandingPage() {
 			</Card>
 
 			{/* Information */}
-			<div className="border border-border rounded-lg p-3 mt-4 w-full flex items-center gap-2">
+			<div className="flex gap-2 items-center p-3 mt-4 w-full rounded-lg border border-border">
 				<div className="p-1.5 rounded-md bg-muted border border-border">
 					<Info className="w-3.5 h-3.5" />
 				</div>

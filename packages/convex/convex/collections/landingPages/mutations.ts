@@ -7,6 +7,9 @@ import {
 	mutationWithTrigger,
 } from "../../triggers";
 import { getCurrentUserWithWorkspace } from "../users/utils";
+import { applyBrandAssetsToTemplate } from "./helpers/brand";
+import { applySeoToTemplate } from "./helpers/seo";
+import { applyThemeToTemplate } from "./helpers/theme";
 import { createInternal } from "./versions/utils";
 
 export const create = mutationWithTrigger({
@@ -15,6 +18,7 @@ export const create = mutationWithTrigger({
 		projectId: v.id("projects"),
 		campaignId: v.id("campaigns"),
 		templateId: v.id("landingPageTemplates"),
+		themeId: v.id("themes"),
 	},
 	handler: async (ctx, args) => {
 		// Get current user
@@ -33,6 +37,35 @@ export const create = mutationWithTrigger({
 			throw new ConvexError("Campaign not found");
 		}
 
+		// Get theme
+		const theme = await ctx.db.get(args.themeId);
+		if (!theme) {
+			throw new ConvexError("Theme not found");
+		}
+
+		// Get Brand
+		const brand = await ctx.db
+			.query("brands")
+			.withIndex("by_project_id", (q) => q.eq("projectId", args.projectId))
+			.first();
+
+		if (!brand) {
+			throw new ConvexError("Brand not found");
+		}
+
+		// Apply customizations to template in sequence
+		// 1. Apply theme (colors, fonts, CSS)
+		const themedTemplateFiles = applyThemeToTemplate(template.files, theme);
+
+		// 2. Apply SEO configuration
+		const seoTemplateFiles = applySeoToTemplate(themedTemplateFiles, brand);
+
+		// 3. Apply brand assets (logos, icons)
+		const finalTemplateFiles = applyBrandAssetsToTemplate(
+			seoTemplateFiles,
+			brand,
+		);
+
 		// Create landing page
 		const landingPageId = await ctx.db.insert("landingPages", {
 			...args,
@@ -48,7 +81,7 @@ export const create = mutationWithTrigger({
 		await createInternal(ctx, {
 			userId: user._id,
 			landingPageId,
-			filesString: template.files,
+			filesString: finalTemplateFiles,
 			workspaceId: user.currentWorkspaceId,
 			projectId: args.projectId,
 			campaignId: args.campaignId,
@@ -102,6 +135,7 @@ export const createVariant = mutationWithTrigger({
 			projectId: parentLandingPage.projectId,
 			campaignId: parentLandingPage.campaignId,
 			templateId: parentLandingPage.templateId,
+			themeId: parentLandingPage.themeId,
 			title: parentLandingPage.title,
 			description: parentLandingPage.description,
 			workspaceId: user.currentWorkspaceId,

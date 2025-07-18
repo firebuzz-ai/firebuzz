@@ -1,0 +1,14 @@
+{
+	"name": "@firebuzz/file-system",
+	"version": "1.0.0",
+	"private": true,
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"scripts": {
+		"test": "vitest"
+	},
+	"devDependencies": {
+		"vitest": "^0.33.0",
+		"@firebuzz/typescript-config": "workspace:*"
+	}
+}

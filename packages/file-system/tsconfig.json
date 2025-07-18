@@ -1,0 +1,3 @@
+{
+	"extends": "@firebuzz/typescript-config/base.json"
+}
