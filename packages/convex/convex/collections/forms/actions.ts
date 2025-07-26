@@ -5,38 +5,38 @@ import { engineAPIClient } from "../../lib/engine";
 import { ERRORS } from "../../utils/errors";
 
 export const publishForm = internalAction({
-  args: {
-    id: v.id("forms"),
-  },
-  handler: async (ctx, { id }) => {
-    const form = await ctx.runQuery(
-      internal.collections.forms.queries.getByIdInternal,
-      { id }
-    );
+	args: {
+		id: v.id("forms"),
+	},
+	handler: async (ctx, { id }) => {
+		const form = await ctx.runQuery(
+			internal.collections.forms.queries.getByIdInternal,
+			{ id },
+		);
 
-    if (!form) {
-      throw new ConvexError(ERRORS.NOT_FOUND);
-    }
+		if (!form) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
 
-    const config = {
-      campaignId: form.campaignId,
-      schema: form.schema,
-    };
+		const config = {
+			campaignId: form.campaignId,
+			schema: form.schema,
+		};
 
-    try {
-      // Store the Config in KV
-      await engineAPIClient.kv.config.$post({
-        json: {
-          key: `form:${form._id}`,
-          value: JSON.stringify(config),
-          options: {
-            metadata: {},
-          },
-        },
-      });
-    } catch (error) {
-      console.error(error);
-      throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
-    }
-  },
+		try {
+			// Store the Config in KV
+			await engineAPIClient.kv.config.$post({
+				json: {
+					key: `form:${form._id}`,
+					value: JSON.stringify(config),
+					options: {
+						metadata: {},
+					},
+				},
+			});
+		} catch (error) {
+			console.error(error);
+			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);
+		}
+	},
 });

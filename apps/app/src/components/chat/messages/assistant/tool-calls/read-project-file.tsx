@@ -9,117 +9,117 @@ import { useMemo, useState } from "react";
 import { CodeBlock } from "../../code-block";
 
 interface ToolCallProps {
-  toolCall: ToolInvocation;
+	toolCall: ToolInvocation;
 }
 
 export const ReadProjectFile = ({ toolCall }: ToolCallProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+	const [isExpanded, setIsExpanded] = useState(false);
 
-  const content = useMemo(() => {
-    if (toolCall.state !== "result") return "...";
-    if (!toolCall.result.success) return toolCall.result.message;
+	const content = useMemo(() => {
+		if (toolCall.state !== "result") return "...";
+		if (!toolCall.result.success) return toolCall.result.message;
 
-    const fileContent = toolCall.result.content as string;
-    if (fileContent.length > 500) {
-      return `${fileContent.slice(0, 500)}...`;
-    }
-    return fileContent;
-  }, [toolCall]);
+		const fileContent = toolCall.result.content as string;
+		if (fileContent.length > 500) {
+			return `${fileContent.slice(0, 500)}...`;
+		}
+		return fileContent;
+	}, [toolCall]);
 
-  const status = toolCall.state;
-  const result =
-    toolCall.state === "result"
-      ? (toolCall.result as
-          | {
-              success: true;
-              content: string;
-            }
-          | {
-              success: false;
-              message: string;
-            })
-      : undefined;
+	const status = toolCall.state;
+	const result =
+		toolCall.state === "result"
+			? (toolCall.result as
+					| {
+							success: true;
+							content: string;
+					  }
+					| {
+							success: false;
+							message: string;
+					  })
+			: undefined;
 
-  return (
-    <div className="overflow-hidden mb-2 rounded-md border">
-      <div
-        className={cn(
-          "flex justify-between items-center px-3 py-2 bg-muted/30",
-          { "border-b": isExpanded }
-        )}
-      >
-        <div className="flex gap-1 items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="p-0 w-6 h-6"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            {isExpanded ? (
-              <ChevronDown className="size-3.5" />
-            ) : (
-              <ChevronRight className="size-3.5" />
-            )}
-          </Button>
-          <File className="size-3.5" />
-          <TextShimmer
-            as="span"
-            duration={1.5}
-            className="ml-2 text-sm italic"
-            active={status !== "result"}
-          >
-            read-project-file
-          </TextShimmer>
-        </div>
-      </div>
+	return (
+		<div className="overflow-hidden mb-2 rounded-md border">
+			<div
+				className={cn(
+					"flex justify-between items-center px-3 py-2 bg-muted/30",
+					{ "border-b": isExpanded },
+				)}
+			>
+				<div className="flex gap-1 items-center">
+					<Button
+						variant="ghost"
+						size="sm"
+						className="p-0 w-6 h-6"
+						onClick={() => setIsExpanded(!isExpanded)}
+					>
+						{isExpanded ? (
+							<ChevronDown className="size-3.5" />
+						) : (
+							<ChevronRight className="size-3.5" />
+						)}
+					</Button>
+					<File className="size-3.5" />
+					<TextShimmer
+						as="span"
+						duration={1.5}
+						className="ml-2 text-sm italic"
+						active={status !== "result"}
+					>
+						read-project-file
+					</TextShimmer>
+				</div>
+			</div>
 
-      <AnimatePresence initial={false}>
-        {isExpanded && (
-          <motion.div
-            initial={{ height: 0 }}
-            animate={{ height: "auto" }}
-            exit={{ height: 0 }}
-            className="overflow-hidden"
-          >
-            <div className="p-3 text-sm">
-              <div className="mb-2">
-                <h4 className="mb-1 text-xs font-medium text-muted-foreground">
-                  Arguments:
-                </h4>
-                <pre className="overflow-x-auto p-2 text-xs rounded-sm bg-muted/50">
-                  {JSON.stringify(toolCall.args, null, 2)}
-                </pre>
-              </div>
+			<AnimatePresence initial={false}>
+				{isExpanded && (
+					<motion.div
+						initial={{ height: 0 }}
+						animate={{ height: "auto" }}
+						exit={{ height: 0 }}
+						className="overflow-hidden"
+					>
+						<div className="p-3 text-sm">
+							<div className="mb-2">
+								<h4 className="mb-1 text-xs font-medium text-muted-foreground">
+									Arguments:
+								</h4>
+								<pre className="overflow-x-auto p-2 text-xs rounded-sm bg-muted/50">
+									{JSON.stringify(toolCall.args, null, 2)}
+								</pre>
+							</div>
 
-              {result && (
-                <div>
-                  <div>
-                    <h4 className="mb-1 text-xs font-medium text-muted-foreground">
-                      Result:{" "}
-                      <Badge variant="outline" className="ml-1">
-                        {result?.success ? "Success" : "Failed"}
-                      </Badge>
-                    </h4>
-                  </div>
-                  <div className="overflow-x-auto p-2 text-xs rounded-sm bg-muted/50">
-                    <CodeBlock
-                      node={{
-                        attrs: {
-                          language: "typescript",
-                        },
-                      }}
-                      inline={false}
-                      className="!my-0"
-                    >
-                      {content}
-                    </CodeBlock>
-                  </div>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+							{result && (
+								<div>
+									<div>
+										<h4 className="mb-1 text-xs font-medium text-muted-foreground">
+											Result:{" "}
+											<Badge variant="outline" className="ml-1">
+												{result?.success ? "Success" : "Failed"}
+											</Badge>
+										</h4>
+									</div>
+									<div className="overflow-x-auto p-2 text-xs rounded-sm bg-muted/50">
+										<CodeBlock
+											node={{
+												attrs: {
+													language: "typescript",
+												},
+											}}
+											inline={false}
+											className="!my-0"
+										>
+											{content}
+										</CodeBlock>
+									</div>
+								</div>
+							)}
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
+	);
 };
