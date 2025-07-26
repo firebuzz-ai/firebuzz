@@ -109,7 +109,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
     } catch (err) {
       const error = err as Error;
       if (error instanceof ConvexError) {
-        toast.error(error.message);
+        toast.error(error.data);
       } else {
         toast.error("Failed to publish campaign");
         console.error("Publish error:", error.message);

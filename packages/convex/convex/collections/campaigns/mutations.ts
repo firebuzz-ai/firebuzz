@@ -1,5 +1,7 @@
 import { ConvexError, v } from "convex/values";
+import { internal } from "../../_generated/api";
 import type { Doc } from "../../_generated/dataModel";
+import { retrier } from "../../components/actionRetrier";
 import {
   internalMutationWithTrigger,
   mutationWithTrigger,
@@ -42,7 +44,7 @@ export const create = mutationWithTrigger({
     }
 
     // Create campaign
-    await ctx.db.insert("campaigns", {
+    const campaignId = await ctx.db.insert("campaigns", {
       title: args.title,
       status: "draft",
       slug: args.slug,
@@ -52,10 +54,28 @@ export const create = mutationWithTrigger({
       workspaceId: user.currentWorkspaceId,
       isPublished: false,
       isArchived: false,
+      isFinished: false,
       nodes: [initialNode],
       edges: [],
       config: {},
     });
+
+    // Create form if it's lead-generation campaign
+    if (args.type === "lead-generation") {
+      await ctx.runMutation(
+        internal.collections.forms.mutations.createInternal,
+        {
+          workspaceId: user.currentWorkspaceId,
+          projectId: args.projectId,
+          campaignId: campaignId,
+          schema: [],
+          createdBy: user._id,
+          updatedAt: new Date().toISOString(),
+        }
+      );
+    }
+
+    return campaignId;
   },
 });
 
@@ -138,11 +158,11 @@ export const publish = mutationWithTrigger({
       throw new ConvexError("Campaign must have a slug before publishing");
     }
 
-    if (!campaign.config || Object.keys(campaign.config).length === 0) {
+    /*  if (!campaign.config || Object.keys(campaign.config).length === 0) {
       throw new ConvexError(
         "Campaign must have configuration before publishing"
       );
-    }
+    } */
 
     // Validate slug length
     if (campaign.slug.length < 3) {
@@ -158,6 +178,23 @@ export const publish = mutationWithTrigger({
 
     if (existingCampaign) {
       throw new ConvexError("Campaign slug must be unique");
+    }
+
+    // Check if campaign has a form
+    if (campaign.type === "lead-generation") {
+      const form = await ctx.db
+        .query("forms")
+        .withIndex("by_campaign_id", (q) => q.eq("campaignId", id))
+        .first();
+
+      if (!form) {
+        throw new ConvexError("Campaign must have a form before publishing");
+      }
+
+      // Publish the form
+      await retrier.run(ctx, internal.collections.forms.actions.publishForm, {
+        id: form._id,
+      });
     }
 
     // Update campaign status and timestamps

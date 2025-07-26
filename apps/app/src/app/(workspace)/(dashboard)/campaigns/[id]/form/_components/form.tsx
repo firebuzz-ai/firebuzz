@@ -6,8 +6,8 @@ import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
-import { Panel } from "./panel";
-import { Preview } from "./preview";
+import { Panel } from "./panel/panel";
+import { Preview } from "./preview/preview";
 
 interface FormCampaignProps {
   id: string;
@@ -57,10 +57,10 @@ export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
     >
       <CanvasProvider>
         <FlowLayout>
-          <Preview />
+          <Preview campaignId={campaign._id} />
         </FlowLayout>
         <PanelLayout>
-          <Panel />
+          <Panel campaignId={campaign._id} />
         </PanelLayout>
       </CanvasProvider>
     </TwoPanelsProvider>

@@ -18,7 +18,6 @@ export const audienceSchema = defineTable(
     motivations: v.string(),
     frustrations: v.string(),
     terminologies: v.array(v.string()),
-
     avatar: v.optional(
       v.union(
         v.literal("old-female-1"),

@@ -46,18 +46,23 @@ export const campaignSchema = defineTable(
     status: v.union(
       v.literal("draft"),
       v.literal("published"),
-      v.literal("cancelled")
+      v.literal("cancelled"),
+      v.literal("finished")
     ),
     config: v.record(v.string(), v.any()),
     nodes: v.array(nodeSchema),
     edges: v.array(edgeSchema),
+    // Timestamps
     updatedAt: v.optional(v.string()),
     startedAt: v.optional(v.string()),
     finishedAt: v.optional(v.string()),
     publishedAt: v.optional(v.string()),
     deletedAt: v.optional(v.string()),
+    // Flags
     isPublished: v.boolean(),
     isArchived: v.boolean(),
+    isFinished: v.boolean(),
+    // Relations
     workspaceId: v.id("workspaces"),
     projectId: v.id("projects"),
     createdBy: v.id("users"),
@@ -68,6 +73,3 @@ export const campaignSchema = defineTable(
   .index("by_deleted_at", ["deletedAt"])
   .index("by_slug_project_id", ["slug", "projectId"])
   .searchIndex("by_title", { searchField: "title" });
-
-export type CampaignType = "lead-generation" | "click-through";
-export type CampaignStatus = "draft" | "published" | "cancelled";

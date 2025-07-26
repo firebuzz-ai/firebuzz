@@ -15,6 +15,8 @@ import { socialSchema } from "./collections/brands/socials/schema";
 import { testimonialSchema } from "./collections/brands/testimonials/schema";
 import { themeSchema } from "./collections/brands/themes/schema";
 import { domainSchema } from "./collections/domains/schema";
+import { formSchema } from "./collections/forms/schema";
+import { formSubmissionSchema } from "./collections/forms/submissions/schema";
 import { invitationSchema } from "./collections/invitations/schema";
 import { memberSchema } from "./collections/members/schema";
 import { onboardingSchema } from "./collections/onboarding/schema";
@@ -43,6 +45,8 @@ export default defineSchema({
   projects: projectSchema,
   onboarding: onboardingSchema,
   campaigns: campaignSchema,
+  forms: formSchema,
+  formSubmissions: formSubmissionSchema,
   landingPageTemplates: landingPageTemplatesSchema,
   landingPages: landingPagesSchema,
   landingPageVersions: landingPageVersionsSchema,

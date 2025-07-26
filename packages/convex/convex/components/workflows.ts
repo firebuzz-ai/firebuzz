@@ -1,812 +1,812 @@
 import {
-	type WorkflowId,
-	WorkflowManager,
-	vWorkflowId,
+  type WorkflowId,
+  WorkflowManager,
+  vWorkflowId,
 } from "@convex-dev/workflow";
 import { ConvexError, v } from "convex/values";
 import { components, internal } from "../_generated/api";
 import { internalMutation, internalQuery } from "../_generated/server";
 import {
-	defaultDarkTheme,
-	defaultFonts,
-	defaultLightTheme,
+  defaultDarkTheme,
+  defaultFonts,
+  defaultLightTheme,
 } from "../collections/onboarding/utils";
 import { ERRORS } from "../utils/errors";
 
 export const workflow = new WorkflowManager(components.workflow);
 
 export const onboardingWorkspaceStepOne = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-		domain: v.string(),
-	},
-	handler: async (step, args) => {
-		const { onboardingId, domain } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+    domain: v.string(),
+  },
+  handler: async (step, args) => {
+    const { onboardingId, domain } = args;
 
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		// STEP-2 - Check ratelimit of Firecrawl
-		const { ok, retryAfter } = await step.runQuery(
-			internal.components.ratelimits.checkLimit,
-			{
-				key: "firecrawlScrape",
-			},
-		);
+    // STEP-2 - Check ratelimit of Firecrawl
+    const { ok, retryAfter } = await step.runQuery(
+      internal.components.ratelimits.checkLimit,
+      {
+        name: "firecrawlScrape",
+      }
+    );
 
-		// STEP-3 - Scrape Domain (Homepage)
-		await step.runAction(
-			internal.lib.firecrawl.scrapeUrl,
-			{
-				url: domain,
-				formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
-				onlyMainContent: false,
-				waitFor: 3000,
-				returnType: "key",
-			},
-			{
-				runAfter: ok ? undefined : retryAfter,
-			},
-		);
+    // STEP-3 - Scrape Domain (Homepage)
+    await step.runAction(
+      internal.lib.firecrawl.scrapeUrl,
+      {
+        url: domain,
+        formats: ["screenshot@fullPage", "markdown", "links", "rawHtml"],
+        onlyMainContent: false,
+        waitFor: 3000,
+        returnType: "key",
+      },
+      {
+        runAfter: ok ? undefined : retryAfter,
+      }
+    );
 
-		// STEP-4 - Update Onboarding with Scraped Data
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			animationStep: 4,
-		});
+    // STEP-4 - Update Onboarding with Scraped Data
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      onboardingId,
+      animationStep: 4,
+    });
 
-		// STEP-5 - Classify Links with LLM
-		const classifiedLinks = await step.runAction(
-			internal.collections.onboarding.actions.classifyLinks,
-			{
-				domain,
-			},
-		);
+    // STEP-5 - Classify Links with LLM
+    const classifiedLinks = await step.runAction(
+      internal.collections.onboarding.actions.classifyLinks,
+      {
+        domain,
+      }
+    );
 
-		// STEP-6 - Update Onboarding with Classified Links
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			isProcessing: false,
-			animationStep: 5,
-			step: 2,
-			step2: {
-				formData: {
-					domain,
-					urls: classifiedLinks,
-				},
-			},
-		});
+    // STEP-6 - Update Onboarding with Classified Links
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      onboardingId,
+      isProcessing: false,
+      animationStep: 5,
+      step: 2,
+      step2: {
+        formData: {
+          domain,
+          urls: classifiedLinks,
+        },
+      },
+    });
 
-		// STEP-7 - Fire off internal workflow
-		await step.runMutation(
-			internal.components.workflows.startOnboardingWorkspaceInternalStepOne,
-			{
-				onboardingId,
-			},
-		);
-	},
+    // STEP-7 - Fire off internal workflow
+    await step.runMutation(
+      internal.components.workflows.startOnboardingWorkspaceInternalStepOne,
+      {
+        onboardingId,
+      }
+    );
+  },
 });
 
 export const onboardingWorkspaceStepTwo = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-		urls: v.array(v.string()),
-	},
-	handler: async (step, args) => {
-		const { onboardingId, urls } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+    urls: v.array(v.string()),
+  },
+  handler: async (step, args) => {
+    const { onboardingId, urls } = args;
 
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		const domain = onboarding.step2?.formData?.domain;
+    const domain = onboarding.step2?.formData?.domain;
 
-		if (!domain) {
-			throw new ConvexError("Domain not found");
-		}
+    if (!domain) {
+      throw new ConvexError("Domain not found");
+    }
 
-		// STEP-2 - Check ratelimit of Firecrawl
-		const { ok, retryAfter } = await step.runQuery(
-			internal.components.ratelimits.checkLimit,
-			{
-				key: "firecrawlScrape",
-			},
-		);
+    // STEP-2 - Check ratelimit of Firecrawl
+    const { ok, retryAfter } = await step.runQuery(
+      internal.components.ratelimits.checkLimit,
+      {
+        name: "firecrawlScrape",
+      }
+    );
 
-		// STEP-3 - Scrape URLs (Store in KV)
-		await step.runAction(
-			internal.lib.firecrawl.batchScrapeUrls,
-			{
-				urls,
-				formats: ["markdown"],
-				onlyMainContent: true,
-				waitFor: 1000,
-				returnType: "key",
-			},
-			{
-				runAfter: ok ? undefined : retryAfter,
-			},
-		);
+    // STEP-3 - Scrape URLs (Store in KV)
+    await step.runAction(
+      internal.lib.firecrawl.batchScrapeUrls,
+      {
+        urls,
+        formats: ["markdown"],
+        onlyMainContent: true,
+        waitFor: 1000,
+        returnType: "key",
+      },
+      {
+        runAfter: ok ? undefined : retryAfter,
+      }
+    );
 
-		// STEP-4 - Update Onboarding Animation
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			animationStep: 7,
-			onboardingId,
-		});
+    // STEP-4 - Update Onboarding Animation
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      animationStep: 7,
+      onboardingId,
+    });
 
-		// STEP-5 - Generate Brand Data
-		const brandData = await step.runAction(
-			internal.collections.onboarding.actions.generateBrandData,
-			{
-				domain,
-				urls,
-			},
-		);
+    // STEP-5 - Generate Brand Data
+    const brandData = await step.runAction(
+      internal.collections.onboarding.actions.generateBrandData,
+      {
+        domain,
+        urls,
+      }
+    );
 
-		// STEP-6 - Update Brand Data
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			isProcessing: false,
-			animationStep: 8,
-			step: 3,
-			step3: {
-				formData: {
-					brandName: brandData.brandName,
-					brandDescription: brandData.brandDescription,
-					brandPersona: brandData.brandPersona,
-				},
-			},
-			onboardingId,
-		});
-	},
+    // STEP-6 - Update Brand Data
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      isProcessing: false,
+      animationStep: 8,
+      step: 3,
+      step3: {
+        formData: {
+          brandName: brandData.brandName,
+          brandDescription: brandData.brandDescription,
+          brandPersona: brandData.brandPersona,
+        },
+      },
+      onboardingId,
+    });
+  },
 });
 
 export const onboardingWorkspaceStepThree = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-	},
-	handler: async (step, args) => {
-		const { onboardingId } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+  },
+  handler: async (step, args) => {
+    const { onboardingId } = args;
 
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		// Check if user skipped theme generation
-		if (!onboarding.step1?.formData?.domain) {
-			// Create default theme
-			await step.runMutation(internal.collections.onboarding.mutations.update, {
-				isProcessing: false,
-				animationStep: 10,
-				step: 4,
-				onboardingId,
-				step4: {
-					formData: {
-						theme: {
-							name: "Default",
-							description: "Default theme generated by Firebuzz.",
-							index: 0,
-							isVisible: true,
-							isSystem: true,
-							lightTheme: defaultLightTheme,
-							darkTheme: defaultDarkTheme,
-							fonts: defaultFonts,
-						},
-					},
-				},
-			});
+    // Check if user skipped theme generation
+    if (!onboarding.step1?.formData?.domain) {
+      // Create default theme
+      await step.runMutation(internal.collections.onboarding.mutations.update, {
+        isProcessing: false,
+        animationStep: 10,
+        step: 4,
+        onboardingId,
+        step4: {
+          formData: {
+            theme: {
+              name: "Default",
+              description: "Default theme generated by Firebuzz.",
+              index: 0,
+              isVisible: true,
+              isSystem: true,
+              lightTheme: defaultLightTheme,
+              darkTheme: defaultDarkTheme,
+              fonts: defaultFonts,
+            },
+          },
+        },
+      });
 
-			return;
-		}
+      return;
+    }
 
-		// STEP-2 - Check Internal Workflow Status
-		const workflowId = onboarding.internalWorkflowIds?.themeWorkflowId;
-		if (!workflowId) {
-			throw new ConvexError("Internal workflow not found");
-		}
+    // STEP-2 - Check Internal Workflow Status
+    const workflowId = onboarding.internalWorkflowIds?.themeWorkflowId;
+    if (!workflowId) {
+      throw new ConvexError("Internal workflow not found");
+    }
 
-		const workflowStatus = await step.runQuery(
-			internal.components.workflows.getWorkflowStatus,
-			{
-				workflowId,
-			},
-		);
+    const workflowStatus = await step.runQuery(
+      internal.components.workflows.getWorkflowStatus,
+      {
+        workflowId,
+      }
+    );
 
-		if (workflowStatus.type === "inProgress") {
-			// Second check to see if workflow is still in progress
-			const newStatus = await step.runQuery(
-				internal.components.workflows.getWorkflowStatus,
-				{
-					workflowId,
-				},
-				{
-					runAfter: 8000,
-				},
-			);
+    if (workflowStatus.type === "inProgress") {
+      // Second check to see if workflow is still in progress
+      const newStatus = await step.runQuery(
+        internal.components.workflows.getWorkflowStatus,
+        {
+          workflowId,
+        },
+        {
+          runAfter: 8000,
+        }
+      );
 
-			// Last check to see if workflow is still in progress
-			if (newStatus.type === "inProgress") {
-				await step.runQuery(
-					internal.components.workflows.getWorkflowStatus,
-					{
-						workflowId,
-					},
-					{ runAfter: 10000 },
-				);
-			}
-		}
+      // Last check to see if workflow is still in progress
+      if (newStatus.type === "inProgress") {
+        await step.runQuery(
+          internal.components.workflows.getWorkflowStatus,
+          {
+            workflowId,
+          },
+          { runAfter: 10000 }
+        );
+      }
+    }
 
-		// STEP-3 - Update Onboarding Step
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			isProcessing: false,
-			animationStep: 10,
-			step: 4,
-			onboardingId,
-		});
-	},
+    // STEP-3 - Update Onboarding Step
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      isProcessing: false,
+      animationStep: 10,
+      step: 4,
+      onboardingId,
+    });
+  },
 });
 
 export const onboardingWorkspaceStepFour = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-		logo: v.string(),
-	},
-	handler: async (step, { onboardingId, logo }) => {
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+  args: {
+    onboardingId: v.id("onboarding"),
+    logo: v.string(),
+  },
+  handler: async (step, { onboardingId, logo }) => {
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		if (!onboarding.step4?.formData?.theme) {
-			throw new ConvexError("Theme not found");
-		}
+    if (!onboarding.step4?.formData?.theme) {
+      throw new ConvexError("Theme not found");
+    }
 
-		// STEP-2 - Create Brand
-		const brandId = await step.runMutation(
-			internal.collections.brands.mutations.createInternal,
-			{
-				name: onboarding.step3?.formData?.brandName ?? "Untitled Brand",
-				description:
-					onboarding.step3?.formData?.brandDescription ?? "No description",
-				persona: onboarding.step3?.formData?.brandPersona ?? "No persona",
-				logo,
-				website: onboarding.step2?.formData?.domain,
-				workspaceId: onboarding.workspaceId,
-				projectId: onboarding.projectId,
-				createdBy: onboarding.createdBy,
-			},
-		);
+    // STEP-2 - Create Brand
+    const brandId = await step.runMutation(
+      internal.collections.brands.mutations.createInternal,
+      {
+        name: onboarding.step3?.formData?.brandName ?? "Untitled Brand",
+        description:
+          onboarding.step3?.formData?.brandDescription ?? "No description",
+        persona: onboarding.step3?.formData?.brandPersona ?? "No persona",
+        logo,
+        website: onboarding.step2?.formData?.domain,
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        createdBy: onboarding.createdBy,
+      }
+    );
 
-		// STEP-3 Update Project Name
-		await step.runMutation(
-			internal.collections.projects.mutations.updateInternal,
-			{
-				projectId: onboarding.projectId,
-				name: onboarding.step3?.formData?.brandName ?? "Untitled Project",
-			},
-		);
+    // STEP-3 Update Project Name
+    await step.runMutation(
+      internal.collections.projects.mutations.updateInternal,
+      {
+        projectId: onboarding.projectId,
+        name: onboarding.step3?.formData?.brandName ?? "Untitled Project",
+      }
+    );
 
-		// STEP-4 - Create Theme
-		const themeId = await step.runMutation(
-			internal.collections.brands.themes.mutations.createInternal,
-			{
-				name: "Default",
-				description: "Default theme generated by Firebuzz.",
-				lightTheme: onboarding.step4?.formData?.theme?.lightTheme,
-				darkTheme: onboarding.step4?.formData?.theme?.darkTheme,
-				fonts: onboarding.step4?.formData?.theme?.fonts ?? [],
-				brandId,
-				workspaceId: onboarding.workspaceId,
-				projectId: onboarding.projectId,
-				createdBy: onboarding.createdBy,
-			},
-		);
+    // STEP-4 - Create Theme
+    const themeId = await step.runMutation(
+      internal.collections.brands.themes.mutations.createInternal,
+      {
+        name: "Default",
+        description: "Default theme generated by Firebuzz.",
+        lightTheme: onboarding.step4?.formData?.theme?.lightTheme,
+        darkTheme: onboarding.step4?.formData?.theme?.darkTheme,
+        fonts: onboarding.step4?.formData?.theme?.fonts ?? [],
+        brandId,
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        createdBy: onboarding.createdBy,
+      }
+    );
 
-		// STEP-4 - Update Brand with Theme
-		await step.runMutation(
-			internal.collections.brands.mutations.updateInternal,
-			{
-				id: brandId,
-				defaultThemeId: themeId,
-			},
-		);
+    // STEP-4 - Update Brand with Theme
+    await step.runMutation(
+      internal.collections.brands.mutations.updateInternal,
+      {
+        id: brandId,
+        defaultThemeId: themeId,
+      }
+    );
 
-		// STEP-5 - Create Knowledge Base
-		const knowledgeBaseId = await step.runMutation(
-			internal.collections.storage.knowledgeBases.mutations.createInternal,
-			{
-				name: "Brand",
-				description: "Default knowledge base for the brand.",
-				workspaceId: onboarding.workspaceId,
-				projectId: onboarding.projectId,
-				index: 0,
-				isVisible: true,
-				isSystem: true,
-				createdBy: onboarding.createdBy,
-			},
-		);
+    // STEP-5 - Create Knowledge Base
+    const knowledgeBaseId = await step.runMutation(
+      internal.collections.storage.knowledgeBases.mutations.createInternal,
+      {
+        name: "Brand",
+        description: "Default knowledge base for the brand.",
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        index: 0,
+        isVisible: true,
+        isSystem: true,
+        createdBy: onboarding.createdBy,
+      }
+    );
 
-		// STEP-5 - Update Onboarding (Only for workspace onboarding)
-		if (onboarding.type === "workspace") {
-			await step.runMutation(internal.collections.onboarding.mutations.update, {
-				onboardingId,
-				isProcessing: false,
-				animationStep: 12,
-				step: 5,
-			});
-		}
+    // STEP-5 - Update Onboarding (Only for workspace onboarding)
+    if (onboarding.type === "workspace") {
+      await step.runMutation(internal.collections.onboarding.mutations.update, {
+        onboardingId,
+        isProcessing: false,
+        animationStep: 12,
+        step: 5,
+      });
+    }
 
-		// STEP-6 Update Project Onboarding Status
-		await step.runMutation(
-			internal.collections.projects.mutations.updateInternal,
-			{
-				projectId: onboarding.projectId,
-				isOnboarded: true,
-			},
-		);
+    // STEP-6 Update Project Onboarding Status
+    await step.runMutation(
+      internal.collections.projects.mutations.updateInternal,
+      {
+        projectId: onboarding.projectId,
+        isOnboarded: true,
+      }
+    );
 
-		// STEP-7 - Start Marketing Workflow
-		if (
-			onboarding.step1?.formData?.domain &&
-			onboarding.step2?.formData?.urls &&
-			onboarding.step2?.formData?.urls.length > 0
-		) {
-			// Generate Marketing Data
-			await step.runMutation(
-				internal.components.workflows.startOnboardingWorkspaceInternalStepTwo,
-				{
-					onboardingId,
-					brandId,
-					knowledgeBaseId,
-				},
-			);
-		} else {
-			// Generate Marketing Data (Light - without website context)
-			await step.runMutation(
-				internal.components.workflows.startOnboardingWorkspaceInternalStepThree,
-				{ onboardingId, brandId },
-			);
-		}
-	},
+    // STEP-7 - Start Marketing Workflow
+    if (
+      onboarding.step1?.formData?.domain &&
+      onboarding.step2?.formData?.urls &&
+      onboarding.step2?.formData?.urls.length > 0
+    ) {
+      // Generate Marketing Data
+      await step.runMutation(
+        internal.components.workflows.startOnboardingWorkspaceInternalStepTwo,
+        {
+          onboardingId,
+          brandId,
+          knowledgeBaseId,
+        }
+      );
+    } else {
+      // Generate Marketing Data (Light - without website context)
+      await step.runMutation(
+        internal.components.workflows.startOnboardingWorkspaceInternalStepThree,
+        { onboardingId, brandId }
+      );
+    }
+  },
 });
 
 // Generate Theme
 export const startOnboardingWorkspaceInternalStepOne = internalMutation({
-	args: {
-		onboardingId: v.id("onboarding"),
-	},
-	handler: async (ctx, args) => {
-		const { onboardingId } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+  },
+  handler: async (ctx, args) => {
+    const { onboardingId } = args;
 
-		// STEP-1 - Start Workflow
-		await workflow.start(
-			ctx,
-			internal.components.workflows.onboardingWorkspaceInternalStepOne,
-			{
-				onboardingId,
-			},
-		);
-	},
+    // STEP-1 - Start Workflow
+    await workflow.start(
+      ctx,
+      internal.components.workflows.onboardingWorkspaceInternalStepOne,
+      {
+        onboardingId,
+      }
+    );
+  },
 });
 
 export const onboardingWorkspaceInternalStepOne = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-	},
-	handler: async (step, { onboardingId }) => {
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+  args: {
+    onboardingId: v.id("onboarding"),
+  },
+  handler: async (step, { onboardingId }) => {
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		const domain = onboarding.step2?.formData?.domain;
+    const domain = onboarding.step2?.formData?.domain;
 
-		if (!domain) {
-			throw new ConvexError("Domain not found");
-		}
+    if (!domain) {
+      throw new ConvexError("Domain not found");
+    }
 
-		// STEP-2 - Update Onboarding with Workflow ID
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			internalWorkflowIds: {
-				themeWorkflowId: step.workflowId as WorkflowId,
-			},
-		});
+    // STEP-2 - Update Onboarding with Workflow ID
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      onboardingId,
+      internalWorkflowIds: {
+        themeWorkflowId: step.workflowId as WorkflowId,
+      },
+    });
 
-		// STEP-3 - Generate Theme
-		const theme = await step.runAction(
-			internal.collections.onboarding.actions.generateBrandTheme,
-			{
-				domain,
-			},
-		);
+    // STEP-3 - Generate Theme
+    const theme = await step.runAction(
+      internal.collections.onboarding.actions.generateBrandTheme,
+      {
+        domain,
+      }
+    );
 
-		// STEP-4 - Find and Upload Logo
-		const logoKey = await step.runAction(
-			internal.collections.onboarding.actions.findAndUploadSiteLogo,
-			{
-				domain,
-				projectId: onboarding.projectId,
-				workspaceId: onboarding.workspaceId,
-				createdBy: onboarding.createdBy,
-			},
-		);
-		// STEP-5 - Update Onboarding with Theme
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			step4: {
-				workflowId: step.workflowId as WorkflowId,
-				formData: {
-					theme: {
-						name: "Default",
-						isVisible: true,
-						description: "Default theme generated by Firebuzz.",
-						index: 0,
-						isSystem: false,
-						darkTheme: theme.darkTheme,
-						lightTheme: theme.lightTheme,
-						fonts: theme.fonts,
-					},
-					logo: logoKey ?? undefined,
-				},
-			},
-			onboardingId,
-		});
-	},
+    // STEP-4 - Find and Upload Logo
+    const logoKey = await step.runAction(
+      internal.collections.onboarding.actions.findAndUploadSiteLogo,
+      {
+        domain,
+        projectId: onboarding.projectId,
+        workspaceId: onboarding.workspaceId,
+        createdBy: onboarding.createdBy,
+      }
+    );
+    // STEP-5 - Update Onboarding with Theme
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      step4: {
+        workflowId: step.workflowId as WorkflowId,
+        formData: {
+          theme: {
+            name: "Default",
+            isVisible: true,
+            description: "Default theme generated by Firebuzz.",
+            index: 0,
+            isSystem: false,
+            darkTheme: theme.darkTheme,
+            lightTheme: theme.lightTheme,
+            fonts: theme.fonts,
+          },
+          logo: logoKey ?? undefined,
+        },
+      },
+      onboardingId,
+    });
+  },
 });
 
 // Generate Marketing Materials
 export const startOnboardingWorkspaceInternalStepTwo = internalMutation({
-	args: {
-		onboardingId: v.id("onboarding"),
-		brandId: v.id("brands"),
-		knowledgeBaseId: v.id("knowledgeBases"),
-	},
-	handler: async (ctx, { onboardingId, brandId, knowledgeBaseId }) => {
-		// STEP-1 - Start Workflow
-		await workflow.start(
-			ctx,
-			internal.components.workflows.onboardingWorkspaceInternalStepTwo,
-			{
-				onboardingId,
-				brandId,
-				knowledgeBaseId,
-			},
-		);
-	},
+  args: {
+    onboardingId: v.id("onboarding"),
+    brandId: v.id("brands"),
+    knowledgeBaseId: v.id("knowledgeBases"),
+  },
+  handler: async (ctx, { onboardingId, brandId, knowledgeBaseId }) => {
+    // STEP-1 - Start Workflow
+    await workflow.start(
+      ctx,
+      internal.components.workflows.onboardingWorkspaceInternalStepTwo,
+      {
+        onboardingId,
+        brandId,
+        knowledgeBaseId,
+      }
+    );
+  },
 });
 
 export const onboardingWorkspaceInternalStepTwo = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-		brandId: v.id("brands"),
-		knowledgeBaseId: v.id("knowledgeBases"),
-	},
-	handler: async (step, args) => {
-		const { onboardingId, brandId, knowledgeBaseId } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+    brandId: v.id("brands"),
+    knowledgeBaseId: v.id("knowledgeBases"),
+  },
+  handler: async (step, args) => {
+    const { onboardingId, brandId, knowledgeBaseId } = args;
 
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError("Onboarding not found");
-		}
+    if (!onboarding) {
+      throw new ConvexError("Onboarding not found");
+    }
 
-		const domain = onboarding.step2?.formData?.domain;
-		const urls = onboarding.step2?.formData?.urls;
-		const brandName = onboarding.step3?.formData?.brandName ?? "Untitled Brand";
-		const brandDescription =
-			onboarding.step3?.formData?.brandDescription ?? "No description";
-		const brandPersona =
-			onboarding.step3?.formData?.brandPersona ?? "No persona";
+    const domain = onboarding.step2?.formData?.domain;
+    const urls = onboarding.step2?.formData?.urls;
+    const brandName = onboarding.step3?.formData?.brandName ?? "Untitled Brand";
+    const brandDescription =
+      onboarding.step3?.formData?.brandDescription ?? "No description";
+    const brandPersona =
+      onboarding.step3?.formData?.brandPersona ?? "No persona";
 
-		// STEP-0 Update Onboarding
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			internalWorkflowIds: {
-				...onboarding.internalWorkflowIds,
-				marketingWorkflowId: step.workflowId as WorkflowId,
-			},
-		});
+    // STEP-0 Update Onboarding
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      onboardingId,
+      internalWorkflowIds: {
+        ...onboarding.internalWorkflowIds,
+        marketingWorkflowId: step.workflowId as WorkflowId,
+      },
+    });
 
-		if (!domain || !urls) {
-			throw new ConvexError("Domain or URLs not found");
-		}
+    if (!domain || !urls) {
+      throw new ConvexError("Domain or URLs not found");
+    }
 
-		// STEP-2 - Generate Marketing Materials
-		const marketingMaterials = await step.runAction(
-			internal.collections.onboarding.actions.generateMarketingData,
-			{
-				domain,
-				urls,
-				brandName,
-				brandDescription,
-				brandPersona,
-			},
-		);
+    // STEP-2 - Generate Marketing Materials
+    const marketingMaterials = await step.runAction(
+      internal.collections.onboarding.actions.generateMarketingData,
+      {
+        domain,
+        urls,
+        brandName,
+        brandDescription,
+        brandPersona,
+      }
+    );
 
-		// STEP-3 - Find Favicon
-		const favicon = await step.runAction(
-			internal.collections.onboarding.actions.findAndUploadFavicon,
-			{
-				domain,
-				projectId: onboarding.projectId,
-				workspaceId: onboarding.workspaceId,
-				createdBy: onboarding.createdBy,
-			},
-		);
+    // STEP-3 - Find Favicon
+    const favicon = await step.runAction(
+      internal.collections.onboarding.actions.findAndUploadFavicon,
+      {
+        domain,
+        projectId: onboarding.projectId,
+        workspaceId: onboarding.workspaceId,
+        createdBy: onboarding.createdBy,
+      }
+    );
 
-		// STEP-3 - Update Brand with SEO Data
-		const seoPromise = step.runMutation(
-			internal.collections.brands.mutations.updateInternal,
-			{
-				id: brandId,
-				seo: {
-					metaTitleTemplate: brandName,
-					favicon: favicon ?? undefined,
-					...marketingMaterials.seo,
-				},
-			},
-		);
+    // STEP-3 - Update Brand with SEO Data
+    const seoPromise = step.runMutation(
+      internal.collections.brands.mutations.updateInternal,
+      {
+        id: brandId,
+        seo: {
+          metaTitleTemplate: brandName,
+          favicon: favicon ?? undefined,
+          ...marketingMaterials.seo,
+        },
+      }
+    );
 
-		// STEP-4 - Fill Default Knowledge Base
-		const fillDefaultKnowledgeBasePromise = step.runAction(
-			internal.collections.onboarding.actions.fillDefaultKnowledgeBase,
-			{
-				domain,
-				urls,
-				knowledgeBaseId,
-				workspaceId: onboarding.workspaceId,
-				projectId: onboarding.projectId,
-				createdBy: onboarding.createdBy,
-			},
-		);
+    // STEP-4 - Fill Default Knowledge Base
+    const fillDefaultKnowledgeBasePromise = step.runAction(
+      internal.collections.onboarding.actions.fillDefaultKnowledgeBase,
+      {
+        domain,
+        urls,
+        knowledgeBaseId,
+        workspaceId: onboarding.workspaceId,
+        projectId: onboarding.projectId,
+        createdBy: onboarding.createdBy,
+      }
+    );
 
-		// STEP-4 - Create Audiences
-		const audiencesPromise = step.runMutation(
-			internal.collections.brands.audiences.mutations.createManyInternal,
-			{
-				audiences: marketingMaterials.audiences.map((audience) => ({
-					...audience,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-4 - Create Audiences
+    const audiencesPromise = step.runMutation(
+      internal.collections.brands.audiences.mutations.createManyInternal,
+      {
+        audiences: marketingMaterials.audiences.map((audience) => ({
+          ...audience,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-5 - Create Features
-		const featuresPromise = step.runMutation(
-			internal.collections.brands.features.mutations.createManyInternal,
-			{
-				features: marketingMaterials.features.map((feature) => ({
-					...feature,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-5 - Create Features
+    const featuresPromise = step.runMutation(
+      internal.collections.brands.features.mutations.createManyInternal,
+      {
+        features: marketingMaterials.features.map((feature) => ({
+          ...feature,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-6 - Create Socials
-		const socialsPromise = step.runMutation(
-			internal.collections.brands.socials.mutations.createManyInternal,
-			{
-				socials: marketingMaterials.socials.map((social) => ({
-					...social,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-6 - Create Socials
+    const socialsPromise = step.runMutation(
+      internal.collections.brands.socials.mutations.createManyInternal,
+      {
+        socials: marketingMaterials.socials.map((social) => ({
+          ...social,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-7 - Create Testimonials
-		const testimonialsPromise = step.runMutation(
-			internal.collections.brands.testimonials.mutations.createManyInternal,
-			{
-				testimonials: marketingMaterials.testimonials.map((testimonial) => ({
-					...testimonial,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-7 - Create Testimonials
+    const testimonialsPromise = step.runMutation(
+      internal.collections.brands.testimonials.mutations.createManyInternal,
+      {
+        testimonials: marketingMaterials.testimonials.map((testimonial) => ({
+          ...testimonial,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-8 - Wait for all promises to resolve
-		await Promise.all([
-			seoPromise,
-			audiencesPromise,
-			featuresPromise,
-			socialsPromise,
-			testimonialsPromise,
-			fillDefaultKnowledgeBasePromise,
-		]);
+    // STEP-8 - Wait for all promises to resolve
+    await Promise.all([
+      seoPromise,
+      audiencesPromise,
+      featuresPromise,
+      socialsPromise,
+      testimonialsPromise,
+      fillDefaultKnowledgeBasePromise,
+    ]);
 
-		// STEP-9 - Update Onboarding (Only for project onboarding)
-		if (onboarding.type === "project") {
-			await step.runMutation(internal.collections.onboarding.mutations.update, {
-				onboardingId,
-				isProcessing: false,
-				isCompleted: true,
-				animationStep: 12,
-			});
-		}
-	},
+    // STEP-9 - Update Onboarding (Only for project onboarding)
+    if (onboarding.type === "project") {
+      await step.runMutation(internal.collections.onboarding.mutations.update, {
+        onboardingId,
+        isProcessing: false,
+        isCompleted: true,
+        animationStep: 12,
+      });
+    }
+  },
 });
 
 export const startOnboardingWorkspaceInternalStepThree = internalMutation({
-	args: {
-		onboardingId: v.id("onboarding"),
-		brandId: v.id("brands"),
-	},
-	handler: async (ctx, { onboardingId, brandId }) => {
-		// STEP-1 - Start Workflow
-		await workflow.start(
-			ctx,
-			internal.components.workflows.onboardingWorkspaceInternalStepThree,
-			{ onboardingId, brandId },
-		);
-	},
+  args: {
+    onboardingId: v.id("onboarding"),
+    brandId: v.id("brands"),
+  },
+  handler: async (ctx, { onboardingId, brandId }) => {
+    // STEP-1 - Start Workflow
+    await workflow.start(
+      ctx,
+      internal.components.workflows.onboardingWorkspaceInternalStepThree,
+      { onboardingId, brandId }
+    );
+  },
 });
 
 export const onboardingWorkspaceInternalStepThree = workflow.define({
-	args: {
-		onboardingId: v.id("onboarding"),
-		brandId: v.id("brands"),
-	},
-	handler: async (step, args) => {
-		const { onboardingId, brandId } = args;
+  args: {
+    onboardingId: v.id("onboarding"),
+    brandId: v.id("brands"),
+  },
+  handler: async (step, args) => {
+    const { onboardingId, brandId } = args;
 
-		// STEP-1 - Get Onboarding
-		const onboarding = await step.runQuery(
-			internal.collections.onboarding.queries.getByIdInternal,
-			{
-				onboardingId,
-			},
-		);
+    // STEP-1 - Get Onboarding
+    const onboarding = await step.runQuery(
+      internal.collections.onboarding.queries.getByIdInternal,
+      {
+        onboardingId,
+      }
+    );
 
-		if (!onboarding) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
+    if (!onboarding) {
+      throw new ConvexError(ERRORS.NOT_FOUND);
+    }
 
-		const brandName = onboarding.step3?.formData?.brandName;
-		const brandDescription = onboarding.step3?.formData?.brandDescription;
-		const brandPersona = onboarding.step3?.formData?.brandPersona;
+    const brandName = onboarding.step3?.formData?.brandName;
+    const brandDescription = onboarding.step3?.formData?.brandDescription;
+    const brandPersona = onboarding.step3?.formData?.brandPersona;
 
-		if (!brandName || !brandDescription || !brandPersona) {
-			throw new ConvexError("Brand data not found");
-		}
+    if (!brandName || !brandDescription || !brandPersona) {
+      throw new ConvexError("Brand data not found");
+    }
 
-		// STEP-1 Update Onboarding
-		await step.runMutation(internal.collections.onboarding.mutations.update, {
-			onboardingId,
-			internalWorkflowIds: {
-				...onboarding.internalWorkflowIds,
-				marketingWorkflowId: step.workflowId as WorkflowId,
-			},
-		});
+    // STEP-1 Update Onboarding
+    await step.runMutation(internal.collections.onboarding.mutations.update, {
+      onboardingId,
+      internalWorkflowIds: {
+        ...onboarding.internalWorkflowIds,
+        marketingWorkflowId: step.workflowId as WorkflowId,
+      },
+    });
 
-		// STEP-2 - Generate Marketing Materials
-		const marketingMaterials = await step.runAction(
-			internal.collections.onboarding.actions.generateMarketingDataLight,
-			{
-				brandName,
-				brandDescription,
-				brandPersona,
-			},
-		);
+    // STEP-2 - Generate Marketing Materials
+    const marketingMaterials = await step.runAction(
+      internal.collections.onboarding.actions.generateMarketingDataLight,
+      {
+        brandName,
+        brandDescription,
+        brandPersona,
+      }
+    );
 
-		// STEP-3 - Update Brand with SEO Data
-		const seoPromise = step.runMutation(
-			internal.collections.brands.mutations.updateInternal,
-			{
-				id: brandId,
-				seo: {
-					metaTitleTemplate: brandName,
-					...marketingMaterials.seo,
-				},
-			},
-		);
+    // STEP-3 - Update Brand with SEO Data
+    const seoPromise = step.runMutation(
+      internal.collections.brands.mutations.updateInternal,
+      {
+        id: brandId,
+        seo: {
+          metaTitleTemplate: brandName,
+          ...marketingMaterials.seo,
+        },
+      }
+    );
 
-		// STEP-4 - Create Audiences
-		const audiencesPromise = step.runMutation(
-			internal.collections.brands.audiences.mutations.createManyInternal,
-			{
-				audiences: marketingMaterials.audiences.map((audience) => ({
-					...audience,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-4 - Create Audiences
+    const audiencesPromise = step.runMutation(
+      internal.collections.brands.audiences.mutations.createManyInternal,
+      {
+        audiences: marketingMaterials.audiences.map((audience) => ({
+          ...audience,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-5 - Create Features
-		const featuresPromise = step.runMutation(
-			internal.collections.brands.features.mutations.createManyInternal,
-			{
-				features: marketingMaterials.features.map((feature) => ({
-					...feature,
-					brandId,
-					workspaceId: onboarding.workspaceId,
-					projectId: onboarding.projectId,
-					createdBy: onboarding.createdBy,
-				})),
-			},
-		);
+    // STEP-5 - Create Features
+    const featuresPromise = step.runMutation(
+      internal.collections.brands.features.mutations.createManyInternal,
+      {
+        features: marketingMaterials.features.map((feature) => ({
+          ...feature,
+          brandId,
+          workspaceId: onboarding.workspaceId,
+          projectId: onboarding.projectId,
+          createdBy: onboarding.createdBy,
+        })),
+      }
+    );
 
-		// STEP-6 - Wait for all promises to resolve
-		await Promise.all([seoPromise, audiencesPromise, featuresPromise]);
+    // STEP-6 - Wait for all promises to resolve
+    await Promise.all([seoPromise, audiencesPromise, featuresPromise]);
 
-		// STEP-7 - Update Onboarding (Only for project onboarding)
-		if (onboarding.type === "project") {
-			await step.runMutation(internal.collections.onboarding.mutations.update, {
-				onboardingId,
-				isProcessing: false,
-				isCompleted: true,
-				animationStep: 12,
-			});
-		}
-	},
+    // STEP-7 - Update Onboarding (Only for project onboarding)
+    if (onboarding.type === "project") {
+      await step.runMutation(internal.collections.onboarding.mutations.update, {
+        onboardingId,
+        isProcessing: false,
+        isCompleted: true,
+        animationStep: 12,
+      });
+    }
+  },
 });
 
 // Helpers
 export const getWorkflowStatus = internalQuery({
-	args: {
-		workflowId: vWorkflowId,
-	},
-	handler: async (ctx, { workflowId }) => {
-		const status = await workflow.status(ctx, workflowId);
+  args: {
+    workflowId: vWorkflowId,
+  },
+  handler: async (ctx, { workflowId }) => {
+    const status = await workflow.status(ctx, workflowId);
 
-		return status;
-	},
+    return status;
+  },
 });

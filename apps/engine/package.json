@@ -2,6 +2,11 @@
 	"name": "engine",
 	"version": "0.0.0",
 	"private": true,
+	"type": "module",
+	"exports": {
+		"./api": "./src/api/index.ts",
+		"./client-api": "./src/client-api/index.ts"
+	},
 	"scripts": {
 		"deploy": "wrangler deploy",
 		"deploy:preview": "wrangler deploy --env preview",

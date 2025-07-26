@@ -89,7 +89,7 @@ export const addUsageIdempotent = mutationWithTrigger({
     const { ok, retryAfter } = await ctx.runQuery(
       internal.components.ratelimits.checkLimit,
       {
-        key: "ingestCreditUsage",
+        name: "ingestCreditUsage",
       }
     );
 
