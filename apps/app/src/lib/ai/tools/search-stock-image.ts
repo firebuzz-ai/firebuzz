@@ -26,7 +26,7 @@ interface UnsplashResult {
 }
 
 export const searchStockImage = tool({
-	description: "Search for stock images on Unsplash",
+	description: "Search for stock images on Unsplash with support for refresh and custom queries",
 	parameters: z.object({
 		query: z.string().describe("The search term for the image"),
 		orientation: z
@@ -48,10 +48,22 @@ export const searchStockImage = tool({
 			])
 			.optional()
 			.describe("Filter by a specific color"),
+		page: z
+			.number()
+			.min(1)
+			.max(50)
+			.default(1)
+			.describe("Page number for pagination (1-50)"),
+		perPage: z
+			.number()
+			.min(1)
+			.max(30)
+			.default(8)
+			.describe("Number of images per page (1-30)"),
 	}),
-	execute: async ({ query, orientation, color }) => {
+	execute: async ({ query, orientation, color, page = 1, perPage = 8 }) => {
 		try {
-			let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}`;
+			let url = `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&orientation=${orientation}&page=${page}&per_page=${perPage}`;
 
 			if (color) {
 				url += `&color=${color}`;
@@ -72,8 +84,8 @@ export const searchStockImage = tool({
 
 			const data = await response.json();
 
-			// Limit to 8 results to avoid overwhelming the UI
-			const results = data.results.slice(0, 8).map((result: UnsplashResult) => {
+			// Process all results from the API response (already limited by perPage parameter)
+			const results = data.results.map((result: UnsplashResult) => {
 				return {
 					id: result.id,
 					width: result.width,
@@ -96,8 +108,11 @@ export const searchStockImage = tool({
 			return {
 				success: true,
 				count: results.length,
+				total: data.total || results.length,
+				page,
+				perPage,
 				images: results,
-				message: `Found ${results.length} images for "${query}"`,
+				message: `Found ${results.length} images for "${query}" (page ${page})`,
 			};
 		} catch (error) {
 			console.error("Error searching stock images:", error);

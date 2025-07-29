@@ -12,6 +12,7 @@
 		"start": "turbo start",
 		"start:app": "pnpm with-env turbo start --filter app",
 		"lint": "turbo lint",
+		"typecheck": "turbo typecheck",
 		"format": "pnpm biome format . --write && pnpm biome check . --write",
 		"clean": "turbo clean && rm -rf .turbo node_modules",
 		"ui": "pnpm --filter @firebuzz/ui ui",
