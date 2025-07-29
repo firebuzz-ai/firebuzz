@@ -76,4 +76,7 @@ export const campaignConfiguration = {
       default: undefined,
     },
   ],
+  submitButtonText: "Send",
+  successMessage: "Thank you for your submission!",
+  redirectUrl: undefined,
 };
