@@ -15,6 +15,7 @@
 		"dev:remote": "npx convex disable-local-deployments && convex dev",
 		"setup": "convex dev --until-success",
 		"deploy": "npx convex deploy",
+		"typecheck": "tsc --noEmit",
 		"clean": "rm -rf node_modules"
 	},
 	"dependencies": {

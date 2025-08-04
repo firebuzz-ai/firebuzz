@@ -77,6 +77,10 @@ export const CampaignNode = memo(
 						nodes.map((node) => ({
 							...node,
 							selected: node.id === placeholderNode.target,
+							data: {
+								...node.data,
+								isHovered: false, // Clear external hover state for all nodes
+							}
 						})),
 					);
 					return;
@@ -109,7 +113,14 @@ export const CampaignNode = memo(
 
 				// Unselect select current node and select the new node
 				setNodes((nodes) =>
-					nodes.map((node) => ({ ...node, selected: node.id === newNodeId })),
+					nodes.map((node) => ({ 
+						...node, 
+						selected: node.id === newNodeId,
+						data: {
+							...node.data,
+							isHovered: false, // Clear external hover state for all nodes
+						}
+					})),
 				);
 			},
 			[id, addNodes, addEdges, getAllChildren, setNodes, getNode],
@@ -117,7 +128,14 @@ export const CampaignNode = memo(
 
 		const handleSelectNode = useCallback(async () => {
 			setNodes((nodes) =>
-				nodes.map((node) => ({ ...node, selected: node.id === id })),
+				nodes.map((node) => ({ 
+					...node, 
+					selected: node.id === id,
+					data: {
+						...node.data,
+						isHovered: false, // Clear external hover state for all nodes
+					}
+				})),
 			);
 
 			// Check if it has a placeholder node

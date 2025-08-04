@@ -19,7 +19,6 @@ pnpm build            # Build all packages
 pnpm build:app        # Build main app only
 
 # Code Quality
-pnpm lint             # Run linting
 pnpm format           # Format code with Biome
 pnpm test             # Run tests with Vitest
 pnpm typecheck        # Run TypeScript type checking
@@ -56,7 +55,6 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
 1. **Data Flow**:
    - Frontend → Convex (for CRUD operations and real-time data)
    - Frontend → Engine (via Convex) → AI Services (for generation tasks)
- 
 
 2. **AI Integration Pattern**:
    - Unified chat interface in `/apps/app/src/app/api/chat/*`
@@ -75,7 +73,7 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
 
 - **TypeScript**: Strict mode enabled across all packages
 - **Formatting**: Biome with tab indentation and double quotes
-- **Imports**: Organized imports enabled (external → @firebuzz/* → relative)
+- **Imports**: Organized imports enabled (external → @firebuzz/\* → relative)
 - **File Naming**: kebab-case for files, PascalCase for components
 
 ### Coding Patterns and Conventions
@@ -86,17 +84,18 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
    - ForwardRef pattern: `const Component = React.forwardRef<...>(); Component.displayName = "Component";`
 
 2. **Component Structure**:
+
    ```typescript
    "use client"; // if client component
-   
+
    import { external } from "package";
    import { internal } from "@firebuzz/package";
    import { local } from "./local";
-   
+
    export interface ComponentProps {
      // props definition
    }
-   
+
    export const Component = ({ prop1, prop2 }: ComponentProps) => {
      // component logic
    };
@@ -108,13 +107,13 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
    - Context for app-wide state with providers
 
 4. **Error Handling Pattern**:
+
    ```typescript
    try {
      await mutation();
    } catch (error) {
-     const errorMessage = error instanceof ConvexError 
-       ? error.data 
-       : "Unexpected error occurred";
+     const errorMessage =
+       error instanceof ConvexError ? error.data : "Unexpected error occurred";
      toast.error("Failed to...", {
        id: "unique-id",
        description: errorMessage,
@@ -144,6 +143,15 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
    - Custom hooks in `hooks/`
    - Utilities in `lib/`
 
+9. **JavaScript Best Practices**:
+   - Use `Number.parseInt()` instead of the global `parseInt()`
+   - Avoid using array index as key property in React elements - use stable, unique identifiers instead
+
+10. **TypeScript Best Practices**:
+   - Never use `any` type - always provide proper typing
+   - Use specific types, interfaces, or generics instead of `any`
+   - If type is unknown, use `unknown` and type guard it properly
+
 ### Testing Strategy
 
 - Use Vitest for unit tests
@@ -161,3 +169,40 @@ Required environment variables are defined in `.env.local`. Key services:
 - Resend for emails
 - Tinybird for analytics
 - Stripe for payments
+
+## Common Patterns to Avoid
+
+### 1. Array Index as React Key
+- NEVER use array index directly as key in React elements
+- Always use a stable, unique identifier
+- Good: `key={\`item-${item.id}\`}` or `key={\`hour-toggle-${hour}\`}`
+- Bad: `key={i}` or `key={index}`
+
+### 2. TypeScript Type Narrowing
+- Be careful with union type comparisons after type narrowing
+- If code is in a branch where type is already narrowed, don't compare with impossible values
+- Example: If inside `mode !== "range"` block, don't use `mode === "range"`
+
+### 3. Unnecessary Else Clauses
+- Avoid else clauses when previous branches return early
+- Use early return pattern without else:
+  ```typescript
+  if (condition1) return value1;
+  if (condition2) return value2;
+  return defaultValue;
+  ```
+
+### 4. Deprecated Icons
+- Check for deprecated icons from lucide-react
+- Common deprecated icons: Chrome (use Globe or other appropriate icon)
+
+### 5. Operator-Based Value Types
+- Use `operatorValueTypes` mapping in rule definitions
+- Handle value type conversions when switching operators
+- Clear incompatible values when operator changes
+
+### 6. Component State Management
+- When switching between single/multi select modes, properly reset state
+- Initialize values based on the operator type
+- Handle Array vs single value conversions carefully
+- When SegmentRule value includes number[], always convert to string[] for string-based components using `.map(String)`

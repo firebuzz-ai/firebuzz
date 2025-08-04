@@ -1,189 +1,89 @@
 import type {
-	ABTestNode,
-	AdvancedTargetingNode,
-	AllCampaignNodes,
-	CampaignNodeTypes,
-	PlaceholderNode,
-	SegmentNode,
-	VariantNode,
-} from "@/components/canvas/nodes/campaign/types";
-import { Button } from "@firebuzz/ui/components/ui/button";
-import { Split, Target, TestTube } from "@firebuzz/ui/icons/lucide";
-import { useNodes, useReactFlow } from "@xyflow/react";
-import { nanoid } from "nanoid";
+  ABTestNode,
+  AllCampaignNodes,
+  SegmentNode,
+  TrafficNode,
+  VariantNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
+import type { Doc } from "@firebuzz/convex";
+import { useNodes } from "@xyflow/react";
 import { useMemo } from "react";
+import { ABTestPanel } from "./panel/screens/abtest-panel";
+import { CampaignOverviewPanel } from "./panel/screens/campaign-overview-panel";
+import { SegmentPanel } from "./panel/screens/segment-panel";
+import { TrafficPanel } from "./panel/screens/traffic-panel";
+import { VariantPanel } from "./panel/screens/variant-panel";
 
-const AllNodes: Array<{
-	type: CampaignNodeTypes;
-	title: string;
-	description: string;
-	icon: React.ReactNode;
-}> = [
-	{
-		type: "ab-test",
-		title: "AB Test",
-		description: "A/B test to see which version performs better",
-		icon: <TestTube />,
-	},
-	{
-		type: "advanced-targeting",
-		title: "Advanced Targeting",
-		description: "Advanced targeting to reach the right audience",
-		icon: <Target />,
-	},
-	{
-		type: "segment",
-		title: "Segment",
-		description: "Segment to split traffic for managing multiple tests",
-		icon: <Split />,
-	},
-];
+interface PanelProps {
+  campaign?: Doc<"campaigns">;
+}
 
-const PlaceholderNodePanel = ({ node }: { node: PlaceholderNode }) => {
-	const { getNode, deleteElements, addNodes, addEdges } = useReactFlow();
+export const Panel = ({ campaign }: PanelProps) => {
+  const nodes = useNodes<AllCampaignNodes>();
+  const selectedNodes = useMemo(
+    () => nodes.filter((node) => node.selected),
+    [nodes]
+  );
 
-	const parentNode = getNode(node.parentId ?? "");
+  const lastSelectedNode = useMemo(
+    () => selectedNodes[selectedNodes.length - 1],
+    [selectedNodes]
+  );
 
-	const AvailableNodes = useMemo(() => {
-		if (!parentNode) return AllNodes;
-		switch (parentNode.type) {
-			case "segment":
-				return AllNodes.filter((n) => n.type !== "segment");
-			default:
-				return AllNodes;
-		}
-	}, [parentNode]);
+  if (!lastSelectedNode) {
+    if (campaign) {
+      return <CampaignOverviewPanel campaign={campaign} />;
+    }
+    return (
+      <div className="flex flex-col gap-2 p-4">
+        <p className="text-muted-foreground">No node selected</p>
+        <p className="text-sm text-muted-foreground">
+          Select a node to view its configuration
+        </p>
+      </div>
+    );
+  }
 
-	const handleReplaceNode = (type: CampaignNodeTypes) => {
-		let newNode: SegmentNode | ABTestNode | AdvancedTargetingNode;
+  // Handle different node types
+  switch (lastSelectedNode.type) {
+    case "traffic":
+      return (
+        <TrafficPanel
+          key={lastSelectedNode.id}
+          node={lastSelectedNode as TrafficNode}
+          campaign={campaign}
+        />
+      );
+    case "segment":
+      return (
+        <SegmentPanel
+          key={lastSelectedNode.id}
+          node={lastSelectedNode as SegmentNode}
+          campaign={campaign}
+        />
+      );
+    case "ab-test":
+      return (
+        <ABTestPanel
+          key={lastSelectedNode.id}
+          node={lastSelectedNode as ABTestNode}
+        />
+      );
+    case "variant":
+      return (
+        <VariantPanel
+          key={lastSelectedNode.id}
+          node={lastSelectedNode as VariantNode}
+        />
+      );
 
-		// Build new node object
-		switch (type) {
-			case "segment":
-				newNode = {
-					id: nanoid(8),
-					type: "segment",
-					position: node.position,
-					selected: true,
-					parentId: parentNode?.id ?? "",
-					data: {
-						title: AvailableNodes.find((n) => n.type === type)?.title ?? "",
-						description:
-							AvailableNodes.find((n) => n.type === type)?.description ?? "",
-						defaultVariantId: null,
-						target: null,
-						validations: [
-							{ isValid: false, message: "Default variant not selected." },
-							{ isValid: false, message: "Targeting not selected." },
-						],
-					},
-				};
-				break;
-			case "ab-test":
-				newNode = {
-					id: nanoid(8),
-					type: "ab-test",
-					position: node.position,
-					selected: true,
-					parentId: parentNode?.id ?? "",
-					data: {
-						title: AvailableNodes.find((n) => n.type === type)?.title ?? "",
-						description:
-							AvailableNodes.find((n) => n.type === type)?.description ?? "",
-						variants: [],
-						validations: [
-							{
-								isValid: false,
-								message: "No variants selected.",
-							},
-						],
-					},
-				};
-				break;
-			case "advanced-targeting":
-				newNode = {
-					id: nanoid(8),
-					type: "advanced-targeting",
-					position: node.position,
-					selected: true,
-					parentId: parentNode?.id ?? "",
-					data: {
-						title: AvailableNodes.find((n) => n.type === type)?.title ?? "",
-						description:
-							AvailableNodes.find((n) => n.type === type)?.description ?? "",
-						defaultVariantId: null,
-						target: null,
-						validations: [
-							{ isValid: false, message: "Default variant not selected." },
-							{ isValid: false, message: "Targeting not selected." },
-						],
-					},
-				};
-				break;
-			default:
-				return;
-		}
-
-		// Delete the placeholder node
-		deleteElements({ nodes: [{ id: node.id }] });
-
-		// Add the new node
-		addNodes(newNode);
-
-		// Create an edge connecting the parent to the new node
-		addEdges({
-			id: `${parentNode?.id}-${newNode.id}`,
-			source: parentNode?.id ?? "",
-			target: newNode.id,
-		});
-	};
-
-	return (
-		<div className="flex flex-col gap-2 p-4">
-			{AvailableNodes.map((node) => (
-				<Button
-					key={node.type}
-					variant="outline"
-					onClick={() => handleReplaceNode(node.type)}
-				>
-					<div>{node.icon}</div>
-					<div>{node.title}</div>
-				</Button>
-			))}
-		</div>
-	);
-};
-
-export const Panel = () => {
-	const nodes = useNodes<AllCampaignNodes | PlaceholderNode>();
-	const selectedNodes = useMemo(
-		() => nodes.filter((node) => node.selected),
-		[nodes],
-	);
-
-	const lastSelectedNode = useMemo(
-		() => selectedNodes[selectedNodes.length - 1],
-		[selectedNodes],
-	);
-
-	if (!lastSelectedNode) {
-		return (
-			<div className="flex flex-col gap-2">
-				<p>No node selected</p>
-				<Button>Add Node</Button>
-			</div>
-		);
-	}
-
-	if (lastSelectedNode?.type === "variant") {
-		const node = lastSelectedNode as VariantNode;
-		return <div>{node.data.trafficPercentage}</div>;
-	}
-
-	if (lastSelectedNode?.type !== "placeholder") {
-		const node = lastSelectedNode as AllCampaignNodes;
-		return <div>{node.data.title}</div>;
-	}
-
-	return <PlaceholderNodePanel node={lastSelectedNode as PlaceholderNode} />;
+    default:
+      return (
+        <div className="p-4">
+          <p className="text-muted-foreground">
+            Unknown node type: {lastSelectedNode.type}
+          </p>
+        </div>
+      );
+  }
 };

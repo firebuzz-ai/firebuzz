@@ -13,7 +13,7 @@ import {
 	useReactFlow,
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { CampaignNodeIcons } from "./icons";
 import type { ABTestNode as ABTestNodeType, VariantNode } from "./types";
 
@@ -35,6 +35,16 @@ export const ABTestNode = memo(
 	({ selected, data, id }: NodeProps<ABTestNodeType>) => {
 		const { title, description } = data;
 		const [isHovered, setIsHovered] = useState(false);
+		
+		// Check for external hover state from panel
+		const isExternallyHovered = data.isHovered || false;
+
+		// Reset hover state when node is not selected
+		useEffect(() => {
+			if (!selected) {
+				setIsHovered(false);
+			}
+		}, [selected]);
 		const parentConnections = useNodeConnections({ id, handleType: "target" });
 		const childConnections = useNodeConnections({ id, handleType: "source" });
 		const {
@@ -211,6 +221,10 @@ export const ABTestNode = memo(
 						return {
 							...node,
 							selected: node.id === newNodeId,
+							data: {
+								...node.data,
+								isHovered: false, // Clear external hover state for all nodes
+							}
 						};
 					}),
 				);
@@ -222,8 +236,9 @@ export const ABTestNode = memo(
 			<BaseNodeComponent
 				onMouseEnter={() => setIsHovered(true)}
 				onMouseLeave={() => setIsHovered(false)}
-				className={cn("relative z-20 w-[450px] group")}
+				className="relative z-20 w-[450px] group"
 				selected={selected}
+				externallyHovered={isExternallyHovered}
 			>
 				<Handle
 					type="source"
@@ -242,17 +257,18 @@ export const ABTestNode = memo(
 				/>
 
 				{/* Updated Plus Button with onClick handler */}
-				{(selected || isHovered) && isConnectableAsSource && (
+				{isConnectableAsSource && (
 					<div
 						className={cn(
-							"absolute -bottom-16 left-0 right-0 h-16 transition-all duration-300 flex gap-2 items-center justify-end flex-col z-10",
+							"absolute -bottom-16 left-0 right-0 h-16 transition-all duration-300 ease-in-out flex gap-2 items-center justify-end flex-col z-10",
+							(selected || isHovered) ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
 						)}
 					>
 						<div className="h-2 w-px bg-brand/50" />
 						<Button
 							size="iconSm"
 							variant="brand"
-							className="rounded-full"
+							className="rounded-full transform transition-transform duration-200 hover:scale-110"
 							onClick={handleAddNode}
 						>
 							<Plus className="size-3" />

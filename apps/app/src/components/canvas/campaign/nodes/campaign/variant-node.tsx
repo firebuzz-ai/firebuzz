@@ -10,7 +10,7 @@ import {
 	useNodeConnections,
 	useReactFlow,
 } from "@xyflow/react";
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useState, useEffect } from "react";
 import { CampaignNodeIcons } from "./icons";
 import type { VariantNode as VariantNodeType } from "./types";
 
@@ -18,6 +18,17 @@ import type { VariantNode as VariantNodeType } from "./types";
 export const VariantNode = memo(
 	({ selected, data, id }: NodeProps<VariantNodeType>) => {
 		const { title, description } = data;
+		const [isHovered, setIsHovered] = useState(false);
+		
+		// Check for external hover state from panel
+		const isExternallyHovered = data.isHovered || false;
+
+		// Reset hover state when node is not selected
+		useEffect(() => {
+			if (!selected) {
+				setIsHovered(false);
+			}
+		}, [selected]);
 		const parentConnections = useNodeConnections({ id, handleType: "source" });
 
 		const isValidTargetConnection = useCallback(
@@ -41,8 +52,11 @@ export const VariantNode = memo(
 
 		return (
 			<BaseNodeComponent
-				className={cn("relative z-20 w-[450px] group")}
+				onMouseEnter={() => setIsHovered(true)}
+				onMouseLeave={() => setIsHovered(false)}
+				className="relative z-20 w-[450px] group"
 				selected={selected}
+				externallyHovered={isExternallyHovered}
 			>
 				<Handle
 					type="target"

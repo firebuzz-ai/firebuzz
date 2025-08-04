@@ -1,7 +1,6 @@
 import {
 	AppWindowMac,
-	ArrowUpDown,
-	CircleArrowOutDownRight,
+	Globe,
 	Notebook,
 	Split,
 	Target,
@@ -9,8 +8,8 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 
 export const CampaignNodeIcons = {
-	"traffic-badge": <CircleArrowOutDownRight className="!size-3" />,
-	traffic: <ArrowUpDown className="!size-3" />,
+	"traffic-badge": <Globe className="!size-3" />,
+	traffic: <Globe className="!size-3" />,
 	"ab-test": <TestTube className="!size-3" />,
 	segment: <Split className="!size-3" />,
 	"advanced-targeting": <Target className="!size-3" />,
