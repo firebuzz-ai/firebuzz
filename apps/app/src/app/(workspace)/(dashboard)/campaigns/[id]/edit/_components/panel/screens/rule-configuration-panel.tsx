@@ -11,7 +11,7 @@ import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { ArrowLeft } from "@firebuzz/ui/icons/lucide";
 import { useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { BrowserRule } from "../rule-configurations/browser-rule";
 import { CountryRule } from "../rule-configurations/country-rule";
@@ -33,9 +33,6 @@ interface RuleConfigurationPanelProps {
   ruleTypeId: RuleTypeId;
   onBack: () => void;
   existingRule?: SegmentRule;
-  onUpdateRule?: (rule: SegmentRule) => void;
-  onAddRule?: () => void; // Callback specifically for when a new rule is added
-  onDeleteRule?: (ruleId: string) => void; // Callback for deleting a rule
 }
 
 export const RuleConfigurationPanel = ({
@@ -43,22 +40,13 @@ export const RuleConfigurationPanel = ({
   ruleTypeId,
   onBack,
   existingRule,
-  onUpdateRule,
-  onAddRule,
-  onDeleteRule,
 }: RuleConfigurationPanelProps) => {
   const { updateNodeData } = useReactFlow();
   const ruleType = RULE_TYPE_DEFINITIONS[ruleTypeId];
-  const [currentRule, setCurrentRule] = useState<Partial<SegmentRule> | null>(
-    null
-  );
-
-  // Initialize with existing rule data if editing
-  useEffect(() => {
-    if (existingRule) {
-      setCurrentRule(existingRule);
-    }
-  }, [existingRule]);
+  const [currentRule, setCurrentRule] = useState<
+    Partial<SegmentRule> | undefined
+  >(existingRule);
+  const [createdRuleId, setCreatedRuleId] = useState<string | null>(null);
 
   const updateSegmentData = (updates: Partial<typeof node.data>) => {
     updateNodeData(node.id, updates);
@@ -67,46 +55,59 @@ export const RuleConfigurationPanel = ({
   const handleRuleChange = (rule: Partial<SegmentRule>) => {
     setCurrentRule(rule);
 
-    // For existing rules, update immediately
-    if (existingRule && onUpdateRule && rule.value !== undefined) {
-      const updatedRule: SegmentRule = {
-        ...existingRule,
-        operator: rule.operator || existingRule.operator,
-        value: rule.value,
-        label: rule.label || existingRule.label,
-      };
-      onUpdateRule(updatedRule);
+    // For existing rules or already created rules, update immediately
+    if ((existingRule || createdRuleId) && rule.value !== undefined) {
+      const ruleToUpdate = existingRule || 
+        node.data.rules.find(r => r.id === createdRuleId);
+      
+      if (ruleToUpdate) {
+        const updatedRule: SegmentRule = {
+          ...ruleToUpdate,
+          operator: rule.operator || ruleToUpdate.operator,
+          value: rule.value,
+          label: rule.label || ruleToUpdate.label,
+        };
+        updateSegmentData({
+          rules: node.data.rules.map((r) =>
+            r.id === updatedRule.id ? updatedRule : r
+          ),
+        });
+      }
     }
     // For new rules, add immediately when all required fields are present
     else if (
       !existingRule &&
+      !createdRuleId &&
       rule.value !== undefined &&
       rule.operator &&
       rule.label
     ) {
+      const newRuleId = `rule-${nanoid(8)}`;
       const newRule: SegmentRule = {
-        id: nanoid(8),
+        id: newRuleId,
         ruleType: ruleTypeId,
         operator: rule.operator,
         value: rule.value,
         label: rule.label,
       };
 
+      setCreatedRuleId(newRuleId);
       updateSegmentData({
         rules: [...node.data.rules, newRule],
       });
-
-      // Don't navigate back automatically - let user stay and continue editing
-      // Only call onAddRule callback if provided (for any additional logic)
-      if (onAddRule) {
-        onAddRule();
-      }
     }
   };
 
   const deleteRule = () => {
-    if (existingRule && onDeleteRule) {
-      onDeleteRule(existingRule.id);
+    if (existingRule) {
+      if (existingRule.isRequired) {
+        return;
+      }
+
+      updateSegmentData({
+        rules: node.data.rules.filter((rule) => rule.id !== existingRule.id),
+      });
+
       onBack();
     }
   };
@@ -269,15 +270,15 @@ export const RuleConfigurationPanel = ({
           )}
 
           {/* Delete Button - Only show when editing existing rule */}
-          {existingRule && onDeleteRule && (
-            <div className="flex justify-end mt-4">
+          {existingRule && !existingRule.isRequired && (
+            <div className="flex justify-end mt-4 w-full">
               <Button
                 onClick={deleteRule}
                 size="sm"
                 variant="ghost"
                 type="button"
                 disabled={existingRule.isRequired}
-                className="text-destructive hover:bg-destructive/10"
+                className="flex-1 text-destructive hover:bg-destructive/10"
               >
                 Delete Rule
               </Button>

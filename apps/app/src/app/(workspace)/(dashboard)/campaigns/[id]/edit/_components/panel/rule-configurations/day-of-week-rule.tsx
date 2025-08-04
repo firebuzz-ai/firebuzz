@@ -30,7 +30,9 @@ export const DayOfWeekRule = ({
     if (existingRule) {
       if (Array.isArray(existingRule.value)) {
         return existingRule.value.map(String);
-      } else if (typeof existingRule.value === "string") {
+      }
+
+      if (typeof existingRule.value === "string") {
         return existingRule.value;
       }
     }

@@ -46,7 +46,6 @@ export const AddRulesPanel = ({ node, onBack }: AddRulesPanelProps) => {
         node={node}
         ruleTypeId={selectedRuleType}
         onBack={() => setSelectedRuleType(null)}
-        onAddRule={() => onBack()} // Go directly back to segment panel after adding rule
       />
     );
   }

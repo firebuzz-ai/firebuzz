@@ -26,7 +26,6 @@ import {
   Split,
 } from "@firebuzz/ui/icons/lucide";
 import { useNodes, useReactFlow } from "@xyflow/react";
-import { nanoid } from "nanoid";
 import { useMemo, useState } from "react";
 import { RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { AddRulesPanel } from "./add-rules-panel";
@@ -57,19 +56,16 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
       : "skip"
   );
 
-  // Ensure all rules have IDs for backward compatibility
-  const rulesWithIds = useMemo(() => {
+  // Calculate available rule types (custom parameters can have multiple instances)
+  const rules = useMemo(() => {
     return node.data.rules.map((rule) => ({
       ...rule,
-      id: rule.id || nanoid(8),
     }));
   }, [node.data.rules]);
-
-  // Calculate available rule types (custom parameters can have multiple instances)
   const totalRuleTypes = Object.keys(RULE_TYPE_DEFINITIONS).length;
-  const uniqueRuleTypes = new Set(rulesWithIds.map((rule) => rule.ruleType));
+  const uniqueRuleTypes = new Set(rules.map((rule) => rule.ruleType));
   const usedRuleTypes = uniqueRuleTypes.size;
-  const customParameterCount = rulesWithIds.filter(
+  const customParameterCount = rules.filter(
     (rule) => rule.ruleType === "customParameter"
   ).length;
   const canAddMoreRules =
@@ -122,29 +118,8 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
     setIsEditingDescription(false);
   };
 
-  const removeRule = (ruleId: string) => {
-    // Don't allow removing required rules
-    const ruleToRemove = rulesWithIds.find((rule) => rule.id === ruleId);
-    if (ruleToRemove?.isRequired) {
-      return;
-    }
-
-    updateSegmentData({
-      rules: rulesWithIds.filter((rule) => rule.id !== ruleId),
-    });
-  };
-
   const handleEditRule = (rule: SegmentRule) => {
     setEditingRule(rule);
-  };
-
-  const handleUpdateRule = (updatedRule: SegmentRule) => {
-    updateSegmentData({
-      rules: rulesWithIds.map((rule) =>
-        rule.id === updatedRule.id ? updatedRule : rule
-      ),
-    });
-    setEditingRule(null);
   };
 
   const getRuleIcon = (ruleType: RuleTypeId) => {
@@ -191,7 +166,7 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
                 onChange={(e) => setDescription(e.target.value)}
                 onBlur={handleDescriptionSave}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  if (e.key === "Enter") {
                     handleDescriptionSave();
                   } else if (e.key === "Escape") {
                     setDescription(node.data.description || "");
@@ -295,7 +270,7 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
               <div className="flex gap-2 items-center">
                 <Label>Current Rules</Label>
                 <Badge variant="outline" className="text-xs bg-muted">
-                  {rulesWithIds.length} rules
+                  {rules.length} rules
                   {customParameterCount > 1 && (
                     <span className="ml-1 text-muted-foreground">
                       ({customParameterCount} custom)
@@ -315,9 +290,9 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
               </Button>
             </div>
 
-            {rulesWithIds.length > 0 ? (
+            {rules.length > 0 ? (
               <div className="grid grid-cols-1 gap-2">
-                {rulesWithIds.map((rule) => {
+                {rules.map((rule) => {
                   const ruleTypeDefinition =
                     RULE_TYPE_DEFINITIONS[rule.ruleType];
                   return (
@@ -414,11 +389,6 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
             ruleTypeId={editingRule.ruleType}
             existingRule={editingRule}
             onBack={() => setEditingRule(null)}
-            onUpdateRule={handleUpdateRule}
-            onDeleteRule={(ruleId) => {
-              removeRule(ruleId);
-              setEditingRule(null);
-            }}
           />
         </div>
       )}

@@ -7,6 +7,7 @@ import {
   mutationWithTrigger,
 } from "../../triggers";
 import { getCurrentUserWithWorkspace } from "../users/utils";
+import { ERRORS } from "../../utils/errors";
 
 export const create = mutationWithTrigger({
   args: {
@@ -218,7 +219,7 @@ export const publish = mutationWithTrigger({
 export const update = mutationWithTrigger({
   args: {
     id: v.id("campaigns"),
-    projectId: v.id("projects"),
+    projectId: v.optional(v.id("projects")),
     title: v.optional(v.string()),
     description: v.optional(v.string()),
     slug: v.optional(v.string()),
@@ -229,11 +230,15 @@ export const update = mutationWithTrigger({
   },
   handler: async (ctx, args) => {
     // Check if user is authenticated
-    await getCurrentUserWithWorkspace(ctx);
+    const user = await getCurrentUserWithWorkspace(ctx);
 
     const campaign = await ctx.db.get(args.id);
     if (!campaign) {
       throw new ConvexError("Campaign not found");
+    }
+
+    if (campaign.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
     }
 
     // If slug is being updated, validate it
@@ -270,6 +275,7 @@ export const update = mutationWithTrigger({
     if (args.slug !== undefined) updateFields.slug = args.slug;
     if (args.type !== undefined) updateFields.type = args.type;
     if (args.config !== undefined) updateFields.config = args.config;
+    if (args.projectId !== undefined) updateFields.projectId = args.projectId;
 
     // Update campaign with all fields
     await ctx.db.patch(args.id, updateFields);

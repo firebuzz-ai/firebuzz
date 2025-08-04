@@ -13,14 +13,19 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 
+import { type Id, api, useMutation } from "@firebuzz/convex";
+import { toast } from "@firebuzz/ui/lib/utils";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { useAutoSave } from "../../../hooks/ui/use-auto-save";
 import { Background } from "./background";
 import { Controller } from "./controller/controller";
 import { useCanvasController } from "./controller/provider";
 import { TrafficWeightEdge } from "./edges/traffic-weight-edge";
+import { SaveStatusComponent } from "./save-status";
 
 // Add this at the top of your file or in a global.d.ts file
 declare global {
@@ -44,9 +49,13 @@ const edgeTypes: EdgeTypes = {
 };
 
 export const Canvas = ({
+  campaignId,
+  projectId,
   initialData,
   nodeTypes,
 }: {
+  campaignId: Id<"campaigns">;
+  projectId: Id<"projects">;
   initialData: {
     nodes: Node[];
     edges: Edge[];
@@ -59,6 +68,77 @@ export const Canvas = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialData.edges);
   const { deleteElements, addNodes, getViewport, setViewport } = useReactFlow();
+
+  // Mutation for saving campaign
+  const updateCampaign = useMutation(
+    api.collections.campaigns.mutations.update
+  );
+
+  // Function to get current canvas data
+  const getCurrentCanvasData = useCallback(
+    () => ({
+      nodes,
+      edges,
+      viewport: getViewport(),
+    }),
+    [nodes, edges, getViewport]
+  );
+
+  // Auto-save hook
+  const { status, hasChanges, saveNow, triggerAutoSave } = useAutoSave({
+    getData: getCurrentCanvasData,
+    onSave: async (data: {
+      nodes: Node[];
+      edges: Edge[];
+      viewport: Viewport;
+    }) => {
+      try {
+        await updateCampaign({
+          id: campaignId,
+          projectId,
+          config: data,
+        });
+      } catch (error) {
+        console.error("❌ Auto-save failed:", error);
+        toast.error("Auto-save failed", {
+          id: "canvas-auto-save-error",
+          description: error instanceof Error ? error.message : "Unknown error",
+        });
+        throw error;
+      }
+    },
+    delay: 5000, // 5 seconds
+    enabled: true,
+  });
+
+  // Wrapped handlers to trigger auto-save
+  const handleNodesChange = useCallback(
+    (changes: Parameters<typeof onNodesChange>[0]) => {
+      onNodesChange(changes);
+      triggerAutoSave();
+    },
+    [onNodesChange, triggerAutoSave]
+  );
+
+  const handleEdgesChange = useCallback(
+    (changes: Parameters<typeof onEdgesChange>[0]) => {
+      onEdgesChange(changes);
+      triggerAutoSave();
+    },
+    [onEdgesChange, triggerAutoSave]
+  );
+
+  // Keyboard shortcut for manual save (Cmd+S / Ctrl+S)
+  useHotkeys(
+    "s+meta",
+    () => {
+      saveNow();
+    },
+    {
+      preventDefault: true,
+      enabled: status !== "saving",
+    }
+  );
 
   // Show placeholder note while adding
   useEffect(() => {
@@ -131,6 +211,7 @@ export const Canvas = ({
   const onConnect = useCallback(
     (params: Connection) => {
       setEdges((eds) => addEdge(params, eds));
+      triggerAutoSave();
 
       const childId = params.target;
       const parentId = params.source;
@@ -193,11 +274,12 @@ export const Canvas = ({
         });
       });
     },
-    [setEdges, setNodes]
+    [setEdges, setNodes, triggerAutoSave]
   );
 
   const onEdgesDelete = useCallback(
     (edges: Edge[]) => {
+      triggerAutoSave();
       // Process each deleted edge
       for (const edge of edges) {
         if (edge.target.includes("placeholder")) continue;
@@ -333,7 +415,7 @@ export const Canvas = ({
         });
       }
     },
-    [setNodes, setEdges]
+    [setNodes, setEdges, triggerAutoSave]
   );
 
   // Handle node selection and cleanup
@@ -522,8 +604,8 @@ export const Canvas = ({
           padding: 0.4,
         }}
         maxZoom={3}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
         onBeforeDelete={onBeforeDelete}
         onEdgesDelete={onEdgesDelete}
         onConnect={onConnect}
@@ -543,6 +625,7 @@ export const Canvas = ({
       >
         <Background />
         <Controller />
+        <SaveStatusComponent status={status} hasChanges={hasChanges} />
       </ReactFlow>
 
       {isAddingNote && (
@@ -585,119 +668,3 @@ export const Canvas = ({
     </div>
   );
 };
-
-/* {
-  edges: [
-    {
-      animated: false,
-      id: "initial-traffic-node-segment-PSoNs9eY",
-      source: "initial-traffic-node",
-      target: "segment-PSoNs9eY",
-    },
-    {
-      animated: false,
-      id: "initial-traffic-node-segment-ERwNeYDA-2",
-      source: "initial-traffic-node",
-      target: "segment-ERwNeYDA",
-    },
-  ],
-  nodes: [
-    {
-      data: {
-        defaultVariantId: null,
-        description: "Start of the campaign",
-        isHovered: false,
-        title: "Incoming Traffic",
-        validations: [
-          {
-            isValid: false,
-            message: "No default landing page selected",
-          },
-        ],
-      },
-      dragging: false,
-      id: "initial-traffic-node",
-      measured: { height: 107, width: 450 },
-      position: { x: -160, y: -330 },
-      selected: true,
-      type: "traffic",
-    },
-    {
-      data: {
-        description: "Facebook | Mobile | 25",
-        isHovered: false,
-        primaryLandingPageId: "",
-        priority: 1,
-        rules: [
-          {
-            id: "YojWbyH_",
-            isRequired: true,
-            label: "Visitor Type: All Visitors",
-            operator: "equals",
-            ruleType: "visitorType",
-            value: "all",
-          },
-          {
-            id: "DOUPjJ7c",
-            label:
-              "Country is not one of Albania, American Samoa",
-            operator: "not_in",
-            ruleType: "country",
-            value: ["AL", "AS"],
-          },
-        ],
-        title: "Facebook",
-        validations: [
-          {
-            isValid: false,
-            message: "No default landing page selected",
-          },
-        ],
-      },
-      dragging: false,
-      id: "segment-PSoNs9eY",
-      measured: { height: 107, width: 450 },
-      parentId: "initial-traffic-node",
-      position: { x: -230, y: 290 },
-      selected: false,
-      type: "segment",
-    },
-    {
-      data: {
-        description: "Instagram | Stories",
-        isHovered: false,
-        primaryLandingPageId: "",
-        priority: 2,
-        rules: [
-          {
-            id: "nZsvuLU8",
-            isRequired: true,
-            label: "Visitor Type: All Visitors",
-            operator: "equals",
-            ruleType: "visitorType",
-            value: "all",
-          },
-        ],
-        title: "Instagram",
-        validations: [
-          {
-            isValid: false,
-            message: "No default landing page selected",
-          },
-        ],
-      },
-      dragging: false,
-      id: "segment-ERwNeYDA",
-      measured: { height: 107, width: 450 },
-      parentId: "initial-traffic-node",
-      position: { x: 310, y: 290 },
-      selected: false,
-      type: "segment",
-    },
-  ],
-  viewport: {
-    x: 378.9953830759382,
-    y: 465.2834843201889,
-    zoom: 0.5307420431425086,
-  },
-} */

@@ -63,7 +63,7 @@ const TABS: TabItem[] = [
 
 export const CampaignTabs = ({ id }: CampaignTabsProps) => {
   const pathname = usePathname();
-  const { getNodes, getEdges, getViewport } = useReactFlow();
+  const reactFlowInstance = useReactFlow();
 
   // Mutations
   const updateCampaign = useMutation(
@@ -98,11 +98,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
         await updateCampaign({
           id: id as Id<"campaigns">,
           projectId: campaign.projectId,
-          config: {
-            nodes: getNodes(),
-            edges: getEdges(),
-            viewport: getViewport(),
-          },
+          config: reactFlowInstance.toObject(),
         });
       } else {
         console.log("📝 Using basic campaign save (metadata only)");

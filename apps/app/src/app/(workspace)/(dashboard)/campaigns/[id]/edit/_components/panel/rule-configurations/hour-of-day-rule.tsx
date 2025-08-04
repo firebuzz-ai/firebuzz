@@ -6,11 +6,7 @@ import type {
 } from "@/components/canvas/campaign/nodes/campaign/types";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { useState } from "react";
-import {
-  RULE_TYPE_DEFINITIONS,
-  getOperatorLabel,
-  getValueTypeForOperator,
-} from "../helpers/rule-types";
+import { RULE_TYPE_DEFINITIONS, getOperatorLabel } from "../helpers/rule-types";
 import { HourOfDaySelector } from "../value-selectors";
 import { FilterOperatorSelector } from "../value-selectors/filter-operator-selector";
 
@@ -31,7 +27,9 @@ export const HourOfDayRule = ({
       if (existingRule) {
         if (Array.isArray(existingRule.value)) {
           return existingRule.value.map(Number) as number[] | [number, number];
-        } else if (typeof existingRule.value === "number") {
+        }
+
+        if (typeof existingRule.value === "number") {
           return existingRule.value;
         }
       }
@@ -40,7 +38,6 @@ export const HourOfDayRule = ({
   );
 
   const ruleType = RULE_TYPE_DEFINITIONS.hourOfDay;
-  const currentValueType = getValueTypeForOperator(ruleType, operator);
 
   // Determine mode based on operator
   const getMode = (op: FilterOperator): "single" | "multiple" | "range" => {
