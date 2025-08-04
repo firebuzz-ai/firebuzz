@@ -4,6 +4,7 @@ import type {
   SegmentNode,
   TrafficNode,
 } from "@/components/canvas/campaign/nodes/campaign/types";
+import { PanelHeader } from "@/components/ui/panel-header";
 import { type Doc, api, useCachedQuery } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -208,21 +209,11 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
   return (
     <div className="flex flex-col h-full">
       {/* Header - Fixed */}
-      <div className="flex flex-shrink-0 gap-3 items-center p-4 border-b bg-muted">
-        <div className="p-2 rounded-lg border bg-brand/10 border-brand text-brand">
-          <Globe className="size-4" />
-        </div>
-        <div className="flex-1">
-          <div className="flex flex-col">
-            <div className="text-lg font-semibold leading-tight">
-              Incoming Traffic
-            </div>
-            <div className="text-sm leading-tight text-muted-foreground">
-              Control the incoming traffic to the campaign.
-            </div>
-          </div>
-        </div>
-      </div>
+      <PanelHeader
+        icon={Globe}
+        title="Incoming Traffic"
+        description="Control the incoming traffic to the campaign."
+      />
 
       {/* Content - Scrollable */}
       <div className="overflow-y-auto flex-1">

@@ -1,7 +1,8 @@
 "use client";
 
+import { useFormAutoSave } from "@/hooks/ui/use-form-auto-save";
+import { useFormContext } from "../form-provider";
 import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
-import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
   Form,
@@ -20,9 +21,8 @@ import {
   SelectValue,
 } from "@firebuzz/ui/components/ui/select";
 import { Switch } from "@firebuzz/ui/components/ui/switch";
-import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { ArrowLeft } from "@firebuzz/ui/icons/lucide";
-import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
+import { useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import type { FormField, PanelScreen } from "../form-types";
@@ -65,10 +65,15 @@ export const FieldSettingsView = ({
   onFieldDeleted,
   currentScreen,
 }: FieldSettingsViewProps) => {
+  const { setSaveStatus, registerGlobalSave, unregisterGlobalSave } = useFormContext();
   const [selectedOption, setSelectedOption] = useState<{
     label: string;
     value: string;
   } | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
 
   const updateFormMutation = useMutation(
     api.collections.forms.mutations.update
@@ -117,10 +122,61 @@ export const FieldSettingsView = ({
     },
   });
 
+  // Auto-save hook
+  const { status, resetWithoutAutoSave, saveNow } = useFormAutoSave({
+    form: fieldSettingsForm,
+    onSave: async (data) => {
+      if (!selectedField || !form) return;
+
+      // Helper function to convert "no-default" back to undefined
+      const convertDefault = (
+        value: string | number | boolean | "no-default" | undefined
+      ) => {
+        return value === "no-default" ? undefined : value;
+      };
+
+      const updatedFields = formFields.map((field) =>
+        field.id === selectedField.id
+          ? {
+              ...field,
+              title: data.title,
+              placeholder: data.placeholder || "",
+              description: data.description || "",
+              required: data.required,
+              unique: data.unique || false,
+              visible: data.visible ?? true,
+              // Convert "no-default" back to undefined when saving
+              default: convertDefault(data.default),
+              options: data.options?.length ? data.options : undefined,
+            }
+          : field
+      );
+
+      await saveFormFields(updatedFields);
+    },
+    delay: 5000, // 5 seconds for field updates
+    enabled: !!selectedField && !!form,
+  });
+
+  // Update global save status
+  useEffect(() => {
+    setSaveStatus(status);
+  }, [status, setSaveStatus]);
+
+  // Register/unregister global save function
+  useEffect(() => {
+    if (selectedField) {
+      registerGlobalSave(saveNow);
+      return () => unregisterGlobalSave();
+    }
+  }, [selectedField, saveNow, registerGlobalSave, unregisterGlobalSave]);
+
   // Update form when selected field changes
   useEffect(() => {
     if (selectedField) {
-      fieldSettingsForm.reset({
+      setTitle(selectedField.title);
+      setDescription(selectedField.description || "");
+      resetWithoutAutoSave({
         title: selectedField.title,
         placeholder: selectedField.placeholder || "",
         description: selectedField.description || "",
@@ -131,7 +187,35 @@ export const FieldSettingsView = ({
         options: selectedField.options || [],
       });
     }
-  }, [selectedField, fieldSettingsForm.reset]);
+  }, [selectedField, resetWithoutAutoSave]);
+
+  const handleTitleSave = async () => {
+    if (!selectedField) return;
+    
+    const updatedFields = formFields.map((field) =>
+      field.id === selectedField.id
+        ? { ...field, title: title.trim() || "Untitled Field" }
+        : field
+    );
+    
+    await saveFormFields(updatedFields);
+    fieldSettingsForm.setValue("title", title.trim() || "Untitled Field");
+    setIsEditingTitle(false);
+  };
+
+  const handleDescriptionSave = async () => {
+    if (!selectedField) return;
+    
+    const updatedFields = formFields.map((field) =>
+      field.id === selectedField.id
+        ? { ...field, description: description.trim() }
+        : field
+    );
+    
+    await saveFormFields(updatedFields);
+    fieldSettingsForm.setValue("description", description.trim());
+    setIsEditingDescription(false);
+  };
 
   const saveFormFields = async (newFields: FormField[]) => {
     if (!form || !form._id) return;
@@ -162,39 +246,6 @@ export const FieldSettingsView = ({
     }
   };
 
-  const onFieldSettingsSubmit = async (
-    data: z.infer<typeof fieldSettingsSchema>
-  ) => {
-    if (!selectedField) return;
-
-    // Helper function to convert "no-default" back to undefined
-    const convertDefault = (
-      value: string | number | boolean | "no-default" | undefined
-    ) => {
-      return value === "no-default" ? undefined : value;
-    };
-
-    const updatedFields = formFields.map((field) =>
-      field.id === selectedField.id
-        ? {
-            ...field,
-            title: data.title,
-            placeholder: data.placeholder || "",
-            description: data.description || "",
-            required: data.required,
-            unique: data.unique || false,
-            visible: data.visible ?? true,
-            // Convert "no-default" back to undefined when saving
-            default: convertDefault(data.default),
-            options: data.options?.length ? data.options : undefined,
-          }
-        : field
-    );
-
-    await saveFormFields(updatedFields);
-    onScreenChange("form-settings");
-    toast.success("Field updated successfully");
-  };
 
   const handleDeleteField = async () => {
     if (!selectedField) return;
@@ -285,15 +336,25 @@ export const FieldSettingsView = ({
   if (!selectedField) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex gap-2 items-center mb-4">
+        <div className="flex flex-shrink-0 gap-3 items-center p-4 border-b bg-muted">
           <Button
-            size="sm"
-            variant="ghost"
+            size="iconSm"
+            variant="outline"
             onClick={() => onScreenChange("form-settings")}
+            className="!px-2 !py-2 !h-auto rounded-lg border bg-brand/10 border-brand text-brand hover:bg-brand/5 hover:text-brand"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="size-4" />
           </Button>
-          <h2 className="text-lg font-semibold">Field Settings</h2>
+          <div className="flex-1">
+            <div className="flex flex-col">
+              <div className="text-lg font-semibold leading-tight">
+                Field Settings
+              </div>
+              <div className="text-sm leading-tight text-muted-foreground">
+                Select a field to configure
+              </div>
+            </div>
+          </div>
         </div>
         <div className="flex flex-1 justify-center items-center">
           <p className="text-sm text-muted-foreground">No field selected</p>
@@ -434,47 +495,73 @@ export const FieldSettingsView = ({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex gap-2 justify-between items-center px-4 py-3 border-b bg-muted">
-        <div className="flex gap-2 items-center">
-          <Button
-            size="iconXs"
-            variant="outline"
-            className="!p-1.5"
-            onClick={() => onScreenChange("form-settings")}
-          >
-            <ArrowLeft className="size-3" />
-          </Button>
-          <h2 className="font-semibold">{selectedField.title}</h2>
+      <div className="flex flex-shrink-0 gap-3 items-center p-4 border-b bg-muted">
+        <Button
+          size="iconSm"
+          variant="outline"
+          onClick={() => onScreenChange("form-settings")}
+          className="!px-2 !py-2 !h-auto rounded-lg border bg-brand/10 border-brand text-brand hover:bg-brand/5 hover:text-brand"
+        >
+          <ArrowLeft className="size-4" />
+        </Button>
+        <div className="flex-1">
+          <div className="flex flex-col">
+            {isEditingTitle ? (
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onBlur={handleTitleSave}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleTitleSave();
+                  } else if (e.key === "Escape") {
+                    setTitle(selectedField.title);
+                    setIsEditingTitle(false);
+                  }
+                }}
+                autoFocus
+                className="p-0 !h-auto text-lg font-semibold leading-tight bg-transparent border-none !ring-0 shadow-none focus-visible:ring-0 border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            ) : (
+              <div
+                className="text-lg font-semibold leading-tight transition-colors cursor-pointer hover:text-brand"
+                onClick={() => setIsEditingTitle(true)}
+              >
+                {title || "Untitled Field"}
+              </div>
+            )}
+            {isEditingDescription ? (
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={handleDescriptionSave}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleDescriptionSave();
+                  } else if (e.key === "Escape") {
+                    setDescription(selectedField.description || "");
+                    setIsEditingDescription(false);
+                  }
+                }}
+                placeholder="Add a description..."
+                autoFocus
+                className="p-0 !h-auto text-sm leading-tight bg-transparent border-none shadow-none text-muted-foreground focus-visible:ring-0 placeholder:text-muted-foreground border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            ) : (
+              <div
+                className="text-sm leading-tight transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
+                onClick={() => setIsEditingDescription(true)}
+              >
+                {description || `Configure ${selectedField.inputType} field settings`}
+              </div>
+            )}
+          </div>
         </div>
-        <Badge variant="outline" className="text-xs capitalize">
-          {selectedField.inputType}
-        </Badge>
       </div>
 
       <div className="overflow-y-auto flex-1 p-4 min-h-0">
         <Form {...fieldSettingsForm}>
-          <form
-            onSubmit={fieldSettingsForm.handleSubmit(onFieldSettingsSubmit)}
-            className="space-y-4"
-          >
-            <FormFieldComponent
-              control={fieldSettingsForm.control}
-              name="title"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Field Title</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="h-8"
-                      placeholder="Enter field title"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
+          <form className="space-y-4">
             <FormFieldComponent
               control={fieldSettingsForm.control}
               name="placeholder"
@@ -485,23 +572,6 @@ export const FieldSettingsView = ({
                     <Input
                       className="h-8"
                       placeholder="Enter placeholder text"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormFieldComponent
-              control={fieldSettingsForm.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Field description (optional)"
                       {...field}
                     />
                   </FormControl>
@@ -595,23 +665,13 @@ export const FieldSettingsView = ({
               />
             )}
 
-            <div className="flex gap-2 items-center pt-4">
-              <Button
-                size="sm"
-                variant="outline"
-                type="submit"
-                disabled={fieldSettingsForm.formState.isSubmitting}
-                className="w-full"
-              >
-                Save Changes
-              </Button>
+            <div className="pt-4 border-t">
               <Button
                 onClick={handleDeleteField}
                 size="sm"
-                variant="ghost"
+                variant="destructive"
                 type="button"
-                disabled={fieldSettingsForm.formState.isSubmitting}
-                className="w-full text-destructive"
+                className="w-full"
               >
                 Delete Field
               </Button>

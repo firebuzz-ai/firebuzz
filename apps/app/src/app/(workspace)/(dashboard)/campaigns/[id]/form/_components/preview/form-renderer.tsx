@@ -1,5 +1,7 @@
 "use client";
 
+import { SaveStatusBadge } from "@/components/ui/save-status";
+import { useFormContext } from "../form-provider";
 import type { Id } from "@firebuzz/convex";
 import { api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
@@ -47,6 +49,7 @@ interface FormRendererProps {
 }
 
 export const FormRenderer = ({ campaignId }: FormRendererProps) => {
+  const { saveStatus } = useFormContext();
   const updateFormMutation = useMutation(
     api.collections.forms.mutations.update
   );
@@ -422,13 +425,16 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
   return (
     <div className="relative w-full h-full">
       <DottedGridBackground />
-      <Badge
-        variant="outline"
-        className="flex absolute top-4 left-4 gap-1 bg-muted"
-      >
-        <Eye className="size-3.5" />
-        Preview
-      </Badge>
+      <div className="flex absolute top-4 left-4 gap-2">
+        <Badge
+          variant="outline"
+          className="flex gap-1 bg-muted"
+        >
+          <Eye className="size-3.5" />
+          Preview
+        </Badge>
+        <SaveStatusBadge status={saveStatus} />
+      </div>
       {/* Preview */}
       <div className="flex relative z-10 justify-center items-center p-6 w-full h-full">
         <Card className="w-full max-w-md shadow-lg backdrop-blur-sm bg-card/90">

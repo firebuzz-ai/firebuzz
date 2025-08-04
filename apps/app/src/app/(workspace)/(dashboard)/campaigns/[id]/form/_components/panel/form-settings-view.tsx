@@ -1,7 +1,10 @@
 "use client";
 
+import { PanelHeader } from "@/components/ui/panel-header";
+import { useFormAutoSave } from "@/hooks/ui/use-form-auto-save";
+import { useFormContext } from "../form-provider";
 import type { Id } from "@firebuzz/convex";
-import { api, useCachedQuery } from "@firebuzz/convex";
+import { api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Form,
@@ -19,7 +22,7 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { Plus, Settings } from "@firebuzz/ui/icons/lucide";
-import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
+import { useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useEffect } from "react";
 import { z } from "zod";
 import type { PanelScreen } from "../form-types";
@@ -47,12 +50,15 @@ export const FormSettingsView = ({
 	onScreenChange,
 	onFieldSelect,
 }: FormSettingsViewProps) => {
-	// TODO: Create a custom mutation to handle form settings updates
-
+	const { setSaveStatus, registerGlobalSave, unregisterGlobalSave } = useFormContext();
+	
 	// Get form data directly from Convex
 	const form = useCachedQuery(api.collections.forms.queries.getByCampaignId, {
 		campaignId,
 	});
+
+	// Mutation for updating form settings
+	const updateFormSettings = useMutation(api.collections.forms.mutations.updateFormSettings);
 
 	// Form for form settings
 	const formSettingsForm = useForm<z.infer<typeof formSettingsSchema>>({
@@ -64,33 +70,45 @@ export const FormSettingsView = ({
 		},
 	});
 
+	// Auto-save hook
+	const { status, saveNow, resetWithoutAutoSave } = useFormAutoSave({
+		form: formSettingsForm,
+		onSave: async (data) => {
+			if (!form) return;
+			
+			await updateFormSettings({
+				id: form._id,
+				submitButtonText: data.submitButtonText || "",
+				successMessage: data.successMessage || "",
+				successRedirectUrl: data.successRedirectUrl || "",
+			});
+		},
+		delay: 5000, // 5 seconds for forms
+		enabled: !!form,
+	});
+
+	// Update global save status
+	useEffect(() => {
+		setSaveStatus(status);
+	}, [status, setSaveStatus]);
+
 	// Update form when form data changes
 	useEffect(() => {
 		if (form) {
-			formSettingsForm.reset({
+			resetWithoutAutoSave({
 				submitButtonText: form.submitButtonText || "",
 				successMessage: form.successMessage || "",
 				successRedirectUrl: form.successRedirectUrl || "",
 			});
 		}
-	}, [form, formSettingsForm.reset]);
+	}, [form, resetWithoutAutoSave]);
 
-	const onFormSettingsSubmit = async (
-		data: z.infer<typeof formSettingsSchema>,
-	) => {
-		if (!form) return;
+	// Register/unregister global save function
+	useEffect(() => {
+		registerGlobalSave(saveNow);
+		return () => unregisterGlobalSave();
+	}, [saveNow, registerGlobalSave, unregisterGlobalSave]);
 
-		try {
-			// For now, we'll need to patch the form directly since the mutation only handles schema
-			// This is a temporary solution - ideally we'd update the mutation to handle these fields
-			console.log("Form settings would be updated with:", data);
-			toast.success("Form settings updated");
-		} catch {
-			toast.error("Failed to update form settings", {
-				description: "Please try again",
-			});
-		}
-	};
 
 	const handleFieldSelect = (fieldId: string) => {
 		onFieldSelect?.(fieldId);
@@ -107,12 +125,11 @@ export const FormSettingsView = ({
 	return (
 		<div className="flex flex-col h-full">
 			{/* Header */}
-			<div className="flex gap-2 items-center px-4 py-3 border-b bg-muted">
-				<div className="flex justify-center items-center rounded-md border size-6 bg-background-subtle">
-					<Settings className="size-3 text-muted-foreground" />
-				</div>
-				<h2 className="font-semibold">Form Settings</h2>
-			</div>
+			<PanelHeader
+				icon={Settings}
+				title="Form Settings"
+				description="Configure your form fields and settings"
+			/>
 
 			<div className="flex overflow-y-auto flex-col flex-1 max-h-full">
 				{/* Form Fields Section */}
@@ -141,10 +158,7 @@ export const FormSettingsView = ({
 				</div>
 				{/* Form Settings */}
 				<Form {...formSettingsForm}>
-					<form
-						onSubmit={formSettingsForm.handleSubmit(onFormSettingsSubmit)}
-						className="p-4 space-y-4"
-					>
+					<form className="p-4 space-y-4">
 						<FormFieldComponent
 							control={formSettingsForm.control}
 							name="submitButtonText"
@@ -198,16 +212,6 @@ export const FormSettingsView = ({
 								</FormItem>
 							)}
 						/>
-
-						<Button
-							type="submit"
-							size="sm"
-							variant="outline"
-							className="w-full"
-							disabled={formSettingsForm.formState.isSubmitting}
-						>
-							Save Settings
-						</Button>
 					</form>
 				</Form>
 			</div>

@@ -16,6 +16,7 @@ export const update = mutation({
     schema: formSchema.validator.fields.schema,
     submitButtonText: v.optional(v.string()),
     successMessage: v.optional(v.string()),
+    successRedirectUrl: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const updateFields: Partial<Doc<"forms">> = {
@@ -31,6 +32,30 @@ export const update = mutation({
       updateFields.successMessage = args.successMessage;
     }
 
+    if (args.successRedirectUrl !== undefined) {
+      updateFields.successRedirectUrl = args.successRedirectUrl;
+    }
+
     return await ctx.db.patch(args.id, updateFields);
+  },
+});
+
+export const updateFormSettings = mutation({
+  args: {
+    id: v.id("forms"),
+    submitButtonText: v.optional(v.string()),
+    successMessage: v.optional(v.string()),
+    successRedirectUrl: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const { id, ...updateFields } = args;
+    
+    // Add updatedAt timestamp
+    const fieldsToUpdate = {
+      ...updateFields,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return await ctx.db.patch(id, fieldsToUpdate);
   },
 });

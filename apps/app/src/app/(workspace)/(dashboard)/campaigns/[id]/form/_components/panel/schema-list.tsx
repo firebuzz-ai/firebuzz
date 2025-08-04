@@ -1,5 +1,6 @@
 "use client";
 
+import { useFormContext } from "../form-provider";
 import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -20,6 +21,7 @@ export const SchemaList = ({
   onScreenChange,
   onFieldSelect,
 }: SchemaListProps) => {
+  const { setSaveStatus } = useFormContext();
   const updateFormMutation = useMutation(
     api.collections.forms.mutations.update
   );
@@ -52,34 +54,38 @@ export const SchemaList = ({
   const saveFormFields = async (newFields: FormField[]) => {
     if (!form || !form._id) return;
 
-    try {
-      const dbSchema = newFields.map((field) => ({
-        id: field.id,
-        title: field.title,
-        placeholder: field.placeholder,
-        description: field.description,
-        visible: field.visible,
-        type: field.type,
-        inputType: field.inputType,
-        required: field.required,
-        unique: field.unique,
-        default: field.default,
-        options: field.options,
-      }));
+    const dbSchema = newFields.map((field) => ({
+      id: field.id,
+      title: field.title,
+      placeholder: field.placeholder,
+      description: field.description,
+      visible: field.visible,
+      type: field.type,
+      inputType: field.inputType,
+      required: field.required,
+      unique: field.unique,
+      default: field.default,
+      options: field.options,
+    }));
 
-      await updateFormMutation({
-        id: form._id,
-        schema: dbSchema,
-      });
-    } catch {
-      toast.error("Failed to save form", {
-        description: "Please try again",
-      });
-    }
+    await updateFormMutation({
+      id: form._id,
+      schema: dbSchema,
+    });
   };
 
   const handleReorder = async (newOrder: FormField[]) => {
-    await saveFormFields(newOrder);
+    setSaveStatus("saving");
+    
+    try {
+      await saveFormFields(newOrder);
+      setSaveStatus("saved");
+    } catch (error) {
+      setSaveStatus("error");
+      toast.error("Failed to reorder fields", {
+        description: "Please try again",
+      });
+    }
   };
 
   const handleFieldClick = (fieldId: string) => {

@@ -5,6 +5,10 @@ import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
+import { useRef, useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import type { SaveStatus } from "@/hooks/ui/use-auto-save";
+import { FormProvider } from "./form-provider";
 import { Panel } from "./panel/panel";
 import { Preview } from "./preview/preview";
 
@@ -14,6 +18,35 @@ interface FormCampaignProps {
 }
 
 export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const globalSaveRef = useRef<(() => void) | null>(null);
+
+  const registerGlobalSave = (saveFunction: () => void) => {
+    globalSaveRef.current = saveFunction;
+  };
+
+  const unregisterGlobalSave = () => {
+    globalSaveRef.current = null;
+  };
+
+  const handleGlobalSave = () => {
+    if (globalSaveRef.current) {
+      globalSaveRef.current();
+    }
+  };
+
+  // Global CMD+S hotkey
+  useHotkeys(
+    "cmd+s,ctrl+s",
+    () => {
+      handleGlobalSave();
+    },
+    {
+      preventDefault: true,
+      enabled: saveStatus !== "saving",
+    }
+  );
+  
   const {
     data: campaign,
     isPending: isLoading,
@@ -49,17 +82,27 @@ export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
   }
 
   return (
-    <TwoPanelsProvider
-      rightPanelSizeFromCookie={rightPanelSize}
-      id="campaign-form"
-      isRightPanelClosable={false}
+    <FormProvider 
+      value={{ 
+        saveStatus, 
+        setSaveStatus, 
+        globalSave: handleGlobalSave,
+        registerGlobalSave,
+        unregisterGlobalSave,
+      }}
     >
-      <FlowLayout>
-        <Preview campaignId={campaign._id} />
-      </FlowLayout>
-      <PanelLayout>
-        <Panel campaignId={campaign._id} />
-      </PanelLayout>
-    </TwoPanelsProvider>
+      <TwoPanelsProvider
+        rightPanelSizeFromCookie={rightPanelSize}
+        id="campaign-form"
+        isRightPanelClosable={false}
+      >
+        <FlowLayout>
+          <Preview campaignId={campaign._id} />
+        </FlowLayout>
+        <PanelLayout>
+          <Panel campaignId={campaign._id} />
+        </PanelLayout>
+      </TwoPanelsProvider>
+    </FormProvider>
   );
 }
