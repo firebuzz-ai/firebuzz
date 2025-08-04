@@ -1,8 +1,6 @@
 "use client";
 
-import { useFormAutoSave } from "@/hooks/ui/use-form-auto-save";
-import { useFormContext } from "../form-provider";
-import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
   Form,
@@ -22,10 +20,11 @@ import {
 } from "@firebuzz/ui/components/ui/select";
 import { Switch } from "@firebuzz/ui/components/ui/switch";
 import { ArrowLeft } from "@firebuzz/ui/icons/lucide";
-import { useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { useEffect, useMemo, useState } from "react";
+import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
+import { useEffect, useState } from "react";
 import { z } from "zod";
-import type { FormField, PanelScreen } from "../form-types";
+import { useFormFields, useFormState, useFormUI } from "../../_store/hooks";
+import type { PanelScreen } from "../form-types";
 import { OptionEditView } from "./option-edit-view";
 import { OptionsManager } from "./options-management";
 
@@ -65,46 +64,18 @@ export const FieldSettingsView = ({
   onFieldDeleted,
   currentScreen,
 }: FieldSettingsViewProps) => {
-  const { setSaveStatus, registerGlobalSave, unregisterGlobalSave } = useFormContext();
-  const [selectedOption, setSelectedOption] = useState<{
-    label: string;
-    value: string;
-  } | null>(null);
+  const { formData } = useFormState(campaignId);
+  const { formFields, updateField, deleteField } = useFormFields();
+  const { selectedOption, setSelectedOption } = useFormUI();
+
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
 
-  const updateFormMutation = useMutation(
-    api.collections.forms.mutations.update
-  );
+  const isCampaignPublished = formData?.campaign?.publishedAt !== undefined;
 
-  // Get form data directly from Convex
-  const form = useCachedQuery(api.collections.forms.queries.getByCampaignId, {
-    campaignId,
-  });
-
-  const isCampaignPublished = form?.campaign?.publishedAt !== undefined;
-
-  // Convert DB schema to client format
-  const formFields: FormField[] = useMemo(() => {
-    if (!form?.schema) return [];
-
-    return form.schema.map((field) => ({
-      id: field.id,
-      title: field.title,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      unique: field.unique,
-      visible: field.visible ?? true,
-      default: field.default,
-      options: field.options,
-      placeholder: field.placeholder,
-      description: field.description,
-    }));
-  }, [form?.schema]);
-
+  // Get the selected field based on selectedFieldId
   const selectedField =
     formFields.find((field) => field.id === selectedFieldId) || null;
 
@@ -122,61 +93,12 @@ export const FieldSettingsView = ({
     },
   });
 
-  // Auto-save hook
-  const { status, resetWithoutAutoSave, saveNow } = useFormAutoSave({
-    form: fieldSettingsForm,
-    onSave: async (data) => {
-      if (!selectedField || !form) return;
-
-      // Helper function to convert "no-default" back to undefined
-      const convertDefault = (
-        value: string | number | boolean | "no-default" | undefined
-      ) => {
-        return value === "no-default" ? undefined : value;
-      };
-
-      const updatedFields = formFields.map((field) =>
-        field.id === selectedField.id
-          ? {
-              ...field,
-              title: data.title,
-              placeholder: data.placeholder || "",
-              description: data.description || "",
-              required: data.required,
-              unique: data.unique || false,
-              visible: data.visible ?? true,
-              // Convert "no-default" back to undefined when saving
-              default: convertDefault(data.default),
-              options: data.options?.length ? data.options : undefined,
-            }
-          : field
-      );
-
-      await saveFormFields(updatedFields);
-    },
-    delay: 5000, // 5 seconds for field updates
-    enabled: !!selectedField && !!form,
-  });
-
-  // Update global save status
-  useEffect(() => {
-    setSaveStatus(status);
-  }, [status, setSaveStatus]);
-
-  // Register/unregister global save function
-  useEffect(() => {
-    if (selectedField) {
-      registerGlobalSave(saveNow);
-      return () => unregisterGlobalSave();
-    }
-  }, [selectedField, saveNow, registerGlobalSave, unregisterGlobalSave]);
-
   // Update form when selected field changes
   useEffect(() => {
     if (selectedField) {
       setTitle(selectedField.title);
       setDescription(selectedField.description || "");
-      resetWithoutAutoSave({
+      fieldSettingsForm.reset({
         title: selectedField.title,
         placeholder: selectedField.placeholder || "",
         description: selectedField.description || "",
@@ -187,67 +109,56 @@ export const FieldSettingsView = ({
         options: selectedField.options || [],
       });
     }
-  }, [selectedField, resetWithoutAutoSave]);
+  }, [selectedField, fieldSettingsForm]);
 
-  const handleTitleSave = async () => {
+  // Manual save function for immediate updates (like title/description editing)
+  const saveFieldChanges = () => {
+    const data = fieldSettingsForm.getValues();
     if (!selectedField) return;
-    
-    const updatedFields = formFields.map((field) =>
-      field.id === selectedField.id
-        ? { ...field, title: title.trim() || "Untitled Field" }
-        : field
-    );
-    
-    await saveFormFields(updatedFields);
-    fieldSettingsForm.setValue("title", title.trim() || "Untitled Field");
+
+    // Helper function to convert "no-default" back to undefined
+    const convertDefault = (
+      value: string | number | boolean | "no-default" | undefined
+    ) => {
+      return value === "no-default" ? undefined : value;
+    };
+
+    updateField(selectedField.id, {
+      title: data.title || selectedField.title,
+      placeholder: data.placeholder || "",
+      description: data.description || "",
+      required: data.required ?? selectedField.required,
+      unique: data.unique ?? selectedField.unique,
+      visible: data.visible !== undefined ? data.visible : true,
+      default: convertDefault(data.default),
+      options: data.options?.length
+        ? data.options.filter(
+            (opt): opt is { label: string; value: string } =>
+              !!opt && !!opt.label && !!opt.value
+          )
+        : undefined,
+    });
+  };
+
+  const handleTitleSave = () => {
+    if (!selectedField) return;
+
+    const trimmedTitle = title.trim() || "Untitled Field";
+    updateField(selectedField.id, { title: trimmedTitle });
+    fieldSettingsForm.setValue("title", trimmedTitle);
     setIsEditingTitle(false);
   };
 
-  const handleDescriptionSave = async () => {
+  const handleDescriptionSave = () => {
     if (!selectedField) return;
-    
-    const updatedFields = formFields.map((field) =>
-      field.id === selectedField.id
-        ? { ...field, description: description.trim() }
-        : field
-    );
-    
-    await saveFormFields(updatedFields);
-    fieldSettingsForm.setValue("description", description.trim());
+
+    const trimmedDescription = description.trim();
+    updateField(selectedField.id, { description: trimmedDescription });
+    fieldSettingsForm.setValue("description", trimmedDescription);
     setIsEditingDescription(false);
   };
 
-  const saveFormFields = async (newFields: FormField[]) => {
-    if (!form || !form._id) return;
-
-    try {
-      const dbSchema = newFields.map((field) => ({
-        id: field.id,
-        title: field.title,
-        placeholder: field.placeholder || undefined,
-        description: field.description || undefined,
-        type: field.type,
-        inputType: field.inputType,
-        required: field.required,
-        unique: field.unique,
-        visible: field.visible,
-        default: field.default,
-        options: field.options,
-      }));
-
-      await updateFormMutation({
-        id: form._id,
-        schema: dbSchema,
-      });
-    } catch {
-      toast.error("Failed to save form", {
-        description: "Please try again",
-      });
-    }
-  };
-
-
-  const handleDeleteField = async () => {
+  const handleDeleteField = () => {
     if (!selectedField) return;
 
     if (isCampaignPublished) {
@@ -255,16 +166,13 @@ export const FieldSettingsView = ({
       return;
     }
 
-    const updatedFields = formFields.filter(
-      (field) => field.id !== selectedField.id
-    );
-    await saveFormFields(updatedFields);
+    deleteField(selectedField.id);
     onFieldDeleted?.();
     onScreenChange("form-settings");
     toast.success("Field deleted successfully");
   };
 
-  const handleOptionSave = async (
+  const handleOptionSave = (
     updatedOption: { label: string; value: string },
     originalValue: string
   ) => {
@@ -275,19 +183,11 @@ export const FieldSettingsView = ({
       option.value === originalValue ? updatedOption : option
     );
 
-    const updatedFields = formFields.map((field) =>
-      field.id === selectedField.id
-        ? { ...field, options: updatedOptions }
-        : field
-    );
-
-    await saveFormFields(updatedFields);
-
-    // Update form state
+    updateField(selectedField.id, { options: updatedOptions });
     fieldSettingsForm.setValue("options", updatedOptions);
   };
 
-  const handleOptionDelete = async (value: string) => {
+  const handleOptionDelete = (value: string) => {
     if (!selectedField) return;
 
     const currentOptions = selectedField.options || [];
@@ -295,15 +195,7 @@ export const FieldSettingsView = ({
       (option) => option.value !== value
     );
 
-    const updatedFields = formFields.map((field) =>
-      field.id === selectedField.id
-        ? { ...field, options: updatedOptions }
-        : field
-    );
-
-    await saveFormFields(updatedFields);
-
-    // Update form state
+    updateField(selectedField.id, { options: updatedOptions });
     fieldSettingsForm.setValue("options", updatedOptions);
   };
 
@@ -377,7 +269,10 @@ export const FieldSettingsView = ({
               <FormLabel>Default Value</FormLabel>
               <FormControl>
                 <Select
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setTimeout(saveFieldChanges, 0);
+                  }}
                   value={(field.value as string) || "no-default"}
                 >
                   <SelectTrigger className="w-full h-8">
@@ -422,6 +317,7 @@ export const FieldSettingsView = ({
                   }
                   onCheckedChange={(checked) => {
                     field.onChange(checked ? true : "no-default");
+                    setTimeout(saveFieldChanges, 0);
                   }}
                 />
               </FormControl>
@@ -453,6 +349,7 @@ export const FieldSettingsView = ({
                     const value = e.target.value;
                     field.onChange(value ? Number(value) : "no-default");
                   }}
+                  onBlur={saveFieldChanges}
                 />
               </FormControl>
               <FormMessage />
@@ -483,6 +380,7 @@ export const FieldSettingsView = ({
                   const value = e.target.value;
                   field.onChange(value || "no-default");
                 }}
+                onBlur={saveFieldChanges}
               />
             </FormControl>
             <FormMessage />
@@ -552,7 +450,8 @@ export const FieldSettingsView = ({
                 className="text-sm leading-tight transition-colors cursor-pointer text-muted-foreground hover:text-foreground"
                 onClick={() => setIsEditingDescription(true)}
               >
-                {description || `Configure ${selectedField.inputType} field settings`}
+                {description ||
+                  `Configure ${selectedField.inputType} field settings`}
               </div>
             )}
           </div>
@@ -573,6 +472,7 @@ export const FieldSettingsView = ({
                       className="h-8"
                       placeholder="Enter placeholder text"
                       {...field}
+                      onBlur={saveFieldChanges}
                     />
                   </FormControl>
                   <FormMessage />
@@ -594,7 +494,11 @@ export const FieldSettingsView = ({
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        // Save changes immediately for switches
+                        setTimeout(saveFieldChanges, 0);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -615,7 +519,10 @@ export const FieldSettingsView = ({
                   <FormControl>
                     <Switch
                       checked={field.value || false}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        setTimeout(saveFieldChanges, 0);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -636,7 +543,10 @@ export const FieldSettingsView = ({
                   <FormControl>
                     <Switch
                       checked={field.value ?? true}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        setTimeout(saveFieldChanges, 0);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -655,7 +565,11 @@ export const FieldSettingsView = ({
                   <FormItem>
                     <OptionsManager
                       options={field.value || []}
-                      onChange={field.onChange}
+                      onChange={(newOptions) => {
+                        field.onChange(newOptions);
+                        // Save immediately when options change (reorder, add, etc.)
+                        setTimeout(saveFieldChanges, 0);
+                      }}
                       onScreenChange={handleScreenChange}
                       onOptionSelect={handleOptionSelect}
                     />

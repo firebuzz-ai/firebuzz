@@ -5,10 +5,8 @@ import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
-import { useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import type { SaveStatus } from "@/hooks/ui/use-auto-save";
-import { FormProvider } from "./form-provider";
+import { useFormAutoSave } from "../_store/hooks";
+import { FormStoreProvider } from "../_store/provider";
 import { Panel } from "./panel/panel";
 import { Preview } from "./preview/preview";
 
@@ -17,36 +15,34 @@ interface FormCampaignProps {
   rightPanelSize: number;
 }
 
-export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const globalSaveRef = useRef<(() => void) | null>(null);
+// Inner component that uses the form hooks (needs to be inside the provider)
+function FormCampaignInner({
+  campaign,
+  rightPanelSize,
+}: {
+  campaign: { _id: Id<"campaigns">; type: string };
+  rightPanelSize: number;
+}) {
+  // Initialize auto-save for the entire form
+  useFormAutoSave();
 
-  const registerGlobalSave = (saveFunction: () => void) => {
-    globalSaveRef.current = saveFunction;
-  };
-
-  const unregisterGlobalSave = () => {
-    globalSaveRef.current = null;
-  };
-
-  const handleGlobalSave = () => {
-    if (globalSaveRef.current) {
-      globalSaveRef.current();
-    }
-  };
-
-  // Global CMD+S hotkey
-  useHotkeys(
-    "cmd+s,ctrl+s",
-    () => {
-      handleGlobalSave();
-    },
-    {
-      preventDefault: true,
-      enabled: saveStatus !== "saving",
-    }
+  return (
+    <TwoPanelsProvider
+      rightPanelSizeFromCookie={rightPanelSize}
+      id="campaign-form"
+      isRightPanelClosable={false}
+    >
+      <FlowLayout>
+        <Preview campaignId={campaign._id} />
+      </FlowLayout>
+      <PanelLayout>
+        <Panel campaignId={campaign._id} />
+      </PanelLayout>
+    </TwoPanelsProvider>
   );
-  
+}
+
+export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
   const {
     data: campaign,
     isPending: isLoading,
@@ -82,27 +78,8 @@ export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
   }
 
   return (
-    <FormProvider 
-      value={{ 
-        saveStatus, 
-        setSaveStatus, 
-        globalSave: handleGlobalSave,
-        registerGlobalSave,
-        unregisterGlobalSave,
-      }}
-    >
-      <TwoPanelsProvider
-        rightPanelSizeFromCookie={rightPanelSize}
-        id="campaign-form"
-        isRightPanelClosable={false}
-      >
-        <FlowLayout>
-          <Preview campaignId={campaign._id} />
-        </FlowLayout>
-        <PanelLayout>
-          <Panel campaignId={campaign._id} />
-        </PanelLayout>
-      </TwoPanelsProvider>
-    </FormProvider>
+    <FormStoreProvider>
+      <FormCampaignInner campaign={campaign} rightPanelSize={rightPanelSize} />
+    </FormStoreProvider>
   );
 }

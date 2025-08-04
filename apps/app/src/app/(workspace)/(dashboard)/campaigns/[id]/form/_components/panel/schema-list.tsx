@@ -1,13 +1,12 @@
 "use client";
 
-import { useFormContext } from "../form-provider";
-import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import { useFormState, useFormFields } from "../../_store/hooks";
+import { type Id } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ArrowRight, GripVertical } from "@firebuzz/ui/icons/lucide";
-import { toast } from "@firebuzz/ui/lib/utils";
 import { Reorder } from "motion/react";
-import { useMemo, useRef } from "react";
+import { useRef } from "react";
 import type { FormField, PanelScreen } from "../form-types";
 
 interface SchemaListProps {
@@ -21,71 +20,13 @@ export const SchemaList = ({
   onScreenChange,
   onFieldSelect,
 }: SchemaListProps) => {
-  const { setSaveStatus } = useFormContext();
-  const updateFormMutation = useMutation(
-    api.collections.forms.mutations.update
-  );
+  const { formData } = useFormState(campaignId);
+  const { formFields, reorderFields } = useFormFields();
   const isDraggingRef = useRef(false);
 
-  // Get form data directly from Convex
-  const form = useCachedQuery(api.collections.forms.queries.getByCampaignId, {
-    campaignId,
-  });
-
-  // Convert DB schema to client format
-  const formFields: FormField[] = useMemo(() => {
-    if (!form?.schema) return [];
-
-    return form.schema.map((field) => ({
-      id: field.id,
-      title: field.title,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      visible: field.visible,
-      unique: field.unique,
-      default: field.default,
-      options: field.options,
-      placeholder: field.placeholder,
-      description: field.description,
-    }));
-  }, [form?.schema]);
-
-  const saveFormFields = async (newFields: FormField[]) => {
-    if (!form || !form._id) return;
-
-    const dbSchema = newFields.map((field) => ({
-      id: field.id,
-      title: field.title,
-      placeholder: field.placeholder,
-      description: field.description,
-      visible: field.visible,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      unique: field.unique,
-      default: field.default,
-      options: field.options,
-    }));
-
-    await updateFormMutation({
-      id: form._id,
-      schema: dbSchema,
-    });
-  };
-
-  const handleReorder = async (newOrder: FormField[]) => {
-    setSaveStatus("saving");
-    
-    try {
-      await saveFormFields(newOrder);
-      setSaveStatus("saved");
-    } catch (error) {
-      setSaveStatus("error");
-      toast.error("Failed to reorder fields", {
-        description: "Please try again",
-      });
-    }
+  const handleReorder = (newOrder: FormField[]) => {
+    // Update the state directly - auto-save will handle persistence
+    reorderFields(newOrder);
   };
 
   const handleFieldClick = (fieldId: string) => {
@@ -108,7 +49,7 @@ export const SchemaList = ({
     }, 100);
   };
 
-  if (!form) {
+  if (!formData) {
     return (
       <div className="flex justify-center items-center h-32">
         <p className="text-sm text-muted-foreground">Loading...</p>

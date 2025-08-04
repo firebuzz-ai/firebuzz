@@ -1,9 +1,7 @@
 "use client";
 
 import { SaveStatusBadge } from "@/components/ui/save-status";
-import { useFormContext } from "../form-provider";
 import type { Id } from "@firebuzz/convex";
-import { api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -39,8 +37,11 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { Eye } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { z } from "zod";
+import { useFormState } from "../../_store/hooks";
+import { useAtom } from "jotai";
+import { formDataAtom } from "../../_store/atoms";
 import type { FormField } from "../form-types";
 import { AIFormGenerator } from "./ai-form-generator";
 
@@ -49,77 +50,40 @@ interface FormRendererProps {
 }
 
 export const FormRenderer = ({ campaignId }: FormRendererProps) => {
-  const { saveStatus } = useFormContext();
-  const updateFormMutation = useMutation(
-    api.collections.forms.mutations.update
-  );
+  const { formData, saveStatus } = useFormState(campaignId);
+  const [, setFormData] = useAtom(formDataAtom);
 
-  // Get form data directly from Convex
-  const form = useCachedQuery(api.collections.forms.queries.getByCampaignId, {
-    campaignId,
-  });
-
-  // Convert DB schema to client format
-  const formFields: FormField[] = useMemo(() => {
-    if (!form?.schema) return [];
-
-    return form.schema.map((field) => ({
-      id: field.id,
-      title: field.title,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      unique: field.unique,
-      visible: field.visible,
-      default: field.default,
-      options: field.options,
-      placeholder: field.placeholder || "", // Use actual database value
-      description: field.description || "", // Use actual database value
-    }));
-  }, [form?.schema]);
+  // Use form fields from Jotai store
+  const formFields: FormField[] = formData?.schema || [];
 
   // Handle AI-generated schema updates
   const handleSchemaUpdate = useCallback(
-    async (
+    (
       newSchema: FormField[],
       submitButtonText?: string,
       successMessage?: string
     ) => {
-      if (!form?._id) return;
+      if (!formData) return;
 
-      try {
-        const dbSchema = newSchema.map((field) => ({
-          id: field.id,
-          title: field.title,
-          placeholder: field.placeholder || undefined,
-          description: field.description || undefined,
-          type: field.type,
-          inputType: field.inputType,
-          required: field.required,
-          unique: field.unique,
-          visible: field.visible,
-          default: field.default,
-          options: field.options,
-        }));
-
-        await updateFormMutation({
-          id: form._id,
-          schema: dbSchema,
-          submitButtonText,
-          successMessage,
-        });
-
-        toast.success("Form updated successfully!", {
-          description: "Your AI-generated form has been applied.",
-        });
-      } catch (error) {
-        console.error("Failed to update form:", error);
-        toast.error("Failed to update form", {
-          description: "Please try again.",
-        });
-      }
+      // Update local state immediately - auto-save will handle persistence
+      const updatedFormData = {
+        ...formData,
+        schema: newSchema.map(field => ({
+          ...field,
+          placeholder: field.placeholder || "",
+          description: field.description || "",
+        })),
+        submitButtonText: submitButtonText || formData.submitButtonText,
+        successMessage: successMessage || formData.successMessage,
+      };
+      
+      setFormData(updatedFormData);
+      
+      toast.success("Form updated successfully!", {
+        description: "Your AI-generated form has been applied. Changes will be saved automatically.",
+      });
     },
-    [form?._id, updateFormMutation]
+    [formData, setFormData]
   );
 
   // Create dynamic schema based on form fields
@@ -197,16 +161,11 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
     return defaults;
   }, [formFields]);
 
-  // Initialize form with dynamic schema and default values
+  // Initialize form with dynamic schema and use values for controlled updates
   const formInstance = useForm({
     resolver: zodResolver(formSchema),
-    defaultValues,
+    values: defaultValues, // Use values instead of defaultValues for better control
   });
-
-  // Reset form when default values change
-  useEffect(() => {
-    formInstance.reset(defaultValues);
-  }, [defaultValues, formInstance]);
 
   const onSubmit = (data: z.infer<typeof formSchema>) => {
     console.log("Form submitted:", data);
@@ -386,7 +345,7 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
     );
   };
 
-  if (!form) {
+  if (!formData) {
     return (
       <div className="flex relative justify-center items-center w-full h-full">
         <Spinner size="sm" />
@@ -426,13 +385,12 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
     <div className="relative w-full h-full">
       <DottedGridBackground />
       <div className="flex absolute top-4 left-4 gap-2">
-        <Badge
-          variant="outline"
-          className="flex gap-1 bg-muted"
-        >
+        <Badge variant="outline" className="flex gap-1 bg-muted">
           <Eye className="size-3.5" />
           Preview
         </Badge>
+      </div>
+      <div className="absolute bottom-4 right-4">
         <SaveStatusBadge status={saveStatus} />
       </div>
       {/* Preview */}
@@ -440,7 +398,7 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
         <Card className="w-full max-w-md shadow-lg backdrop-blur-sm bg-card/90">
           <CardHeader className="text-center sr-only">
             <CardTitle className="text-xl font-bold text-foreground">
-              {form.campaign?.title || "Lead Generation Form"}
+              {formData.campaign?.title || "Lead Generation Form"}
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">
@@ -453,7 +411,7 @@ export const FormRenderer = ({ campaignId }: FormRendererProps) => {
                   .filter((field) => field.visible !== false)
                   .map(renderFormField)}
                 <Button size="sm" type="submit" className="mt-6 w-full">
-                  {form.submitButtonText || "Submit"}
+                  {formData.submitButtonText || "Submit"}
                 </Button>
               </form>
             </Form>

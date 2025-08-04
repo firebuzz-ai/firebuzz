@@ -1,8 +1,8 @@
 "use client";
 
 import { PanelHeader } from "@/components/ui/panel-header";
-import { useFormContext } from "../form-provider";
-import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import { useFormState, useFormFields } from "../../_store/hooks";
+import { type Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
 import {
@@ -21,9 +21,7 @@ import {
   Plus,
   Type,
 } from "@firebuzz/ui/icons/lucide";
-import { toast } from "@firebuzz/ui/lib/utils";
 import { nanoid } from "nanoid";
-import { useMemo } from "react";
 import {
   type FormField,
   INPUT_TYPES,
@@ -58,91 +56,33 @@ export const InputTypesView = ({
   onScreenChange,
   onFieldSelect,
 }: InputTypesViewProps) => {
-  const { setSaveStatus } = useFormContext();
-  const updateFormMutation = useMutation(
-    api.collections.forms.mutations.update
-  );
+  const { formData } = useFormState(campaignId);
+  const { addField } = useFormFields();
 
-  // Get form data directly from Convex
-  const form = useCachedQuery(api.collections.forms.queries.getByCampaignId, {
-    campaignId,
-  });
-
-  // Convert DB schema to client format
-  const formFields: FormField[] = useMemo(() => {
-    if (!form?.schema) return [];
-
-    return form.schema.map((field) => ({
-      id: field.id,
-      title: field.title,
-      visible: field.visible,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      unique: field.unique,
-      default: field.default,
-      options: field.options,
-      placeholder: field.placeholder,
-      description: field.description,
-    }));
-  }, [form?.schema]);
-
-  const saveFormFields = async (newFields: FormField[]) => {
-    if (!form || !form._id) return;
-
-    const dbSchema = newFields.map((field) => ({
-      id: field.id,
-      title: field.title,
-      placeholder: field.placeholder || undefined,
-      description: field.description || undefined,
-      type: field.type,
-      inputType: field.inputType,
-      required: field.required,
-      unique: field.unique,
-      visible: field.visible,
-      default: field.default,
-      options: field.options,
-    }));
-
-    await updateFormMutation({
-      id: form._id,
-      schema: dbSchema,
-    });
-  };
-
-  const handleAddField = async (inputType: FormField["inputType"]) => {
+  const handleAddField = (inputType: FormField["inputType"]) => {
     const inputTypeOption = INPUT_TYPES.find((type) => type.type === inputType);
     if (!inputTypeOption) return;
 
-    setSaveStatus("saving");
+    const newField: FormField = {
+      id: `fd-${nanoid(6)}`,
+      title: `${inputTypeOption.label} Field`,
+      placeholder: inputTypeOption.defaultSettings.placeholder || "",
+      description: "",
+      inputType,
+      type: inputTypeOption.defaultSettings.type || "string",
+      required: inputTypeOption.defaultSettings.required || false,
+      unique: false,
+      visible: true,
+      default: inputTypeOption.defaultSettings.default,
+      options: inputTypeOption.defaultSettings.options,
+    };
 
-    try {
-      const newField: FormField = {
-        id: `fd-${nanoid(6)}`,
-        title: `${inputTypeOption.label} Field`,
-        placeholder: inputTypeOption.defaultSettings.placeholder || "",
-        description: "",
-        inputType,
-        type: inputTypeOption.defaultSettings.type || "string",
-        required: inputTypeOption.defaultSettings.required || false,
-        unique: false,
-        visible: true,
-        default: inputTypeOption.defaultSettings.default,
-        options: inputTypeOption.defaultSettings.options,
-      };
+    // Add to state - auto-save will handle persistence
+    addField(newField);
 
-      const updatedFields = [...formFields, newField];
-      await saveFormFields(updatedFields);
-
-      setSaveStatus("saved");
-
-      // Select the newly created field and navigate to field settings
-      onFieldSelect(newField.id);
-      onScreenChange("field-settings");
-    } catch (error) {
-      setSaveStatus("error");
-      throw error;
-    }
+    // Select the newly created field and navigate to field settings
+    onFieldSelect(newField.id);
+    onScreenChange("field-settings");
   };
 
   return (
