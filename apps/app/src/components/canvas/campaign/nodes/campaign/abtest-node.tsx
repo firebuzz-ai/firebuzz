@@ -13,7 +13,7 @@ import {
 	useReactFlow,
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { memo, useCallback, useMemo, useState, useEffect } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CampaignNodeIcons } from "./icons";
 import type { ABTestNode as ABTestNodeType, VariantNode } from "./types";
 
@@ -35,7 +35,7 @@ export const ABTestNode = memo(
 	({ selected, data, id }: NodeProps<ABTestNodeType>) => {
 		const { title, description } = data;
 		const [isHovered, setIsHovered] = useState(false);
-		
+
 		// Check for external hover state from panel
 		const isExternallyHovered = data.isHovered || false;
 
@@ -108,8 +108,11 @@ export const ABTestNode = memo(
 					getNode(child.target),
 				);
 
-				// Calculate new node position based on grid layout
+				// Check variant limit
 				const variantCount = allChilds.length;
+				if (variantCount >= 5) return;
+
+				// Calculate new node position based on grid layout
 				const newNodeIndex = variantCount;
 				const rowIndex = Math.floor(newNodeIndex / gridConfig.columns);
 				const colIndex = newNodeIndex % gridConfig.columns;
@@ -146,6 +149,8 @@ export const ABTestNode = memo(
 						trafficPercentage:
 							equalPercentage + (newNodeIndex === 0 ? remainder : 0),
 						translations: [],
+						isControl: newNodeIndex === 0, // First variant is control
+						variantIndex: newNodeIndex, // Add required variantIndex field
 					},
 				};
 
@@ -224,13 +229,17 @@ export const ABTestNode = memo(
 							data: {
 								...node.data,
 								isHovered: false, // Clear external hover state for all nodes
-							}
+							},
 						};
 					}),
 				);
 			},
 			[id, addNodes, addEdges, setNodes, getNode, childConnections, setEdges],
 		);
+
+		// Check if we've reached the variant limit
+		const variantCount = childConnections.length;
+		const hasReachedVariantLimit = variantCount >= 5;
 
 		return (
 			<BaseNodeComponent
@@ -257,11 +266,13 @@ export const ABTestNode = memo(
 				/>
 
 				{/* Updated Plus Button with onClick handler */}
-				{isConnectableAsSource && (
+				{isConnectableAsSource && !hasReachedVariantLimit && (
 					<div
 						className={cn(
 							"absolute -bottom-16 left-0 right-0 h-16 transition-all duration-300 ease-in-out flex gap-2 items-center justify-end flex-col z-10",
-							(selected || isHovered) ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
+							selected || isHovered
+								? "opacity-100 translate-y-0 pointer-events-auto"
+								: "opacity-0 translate-y-2 pointer-events-none",
 						)}
 					>
 						<div className="h-2 w-px bg-brand/50" />
@@ -289,9 +300,7 @@ export const ABTestNode = memo(
 
 					<div className="ml-auto">
 						<Badge variant="outline">
-							{childConnections.length > 0
-								? `${childConnections.length} Variants`
-								: "A/B Test"}
+							{data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : "Draft"}
 						</Badge>
 					</div>
 				</div>

@@ -10,16 +10,41 @@ import {
 	useNodeConnections,
 	useReactFlow,
 } from "@xyflow/react";
-import { memo, useCallback, useMemo, useState, useEffect } from "react";
-import { CampaignNodeIcons } from "./icons";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import type { VariantNode as VariantNodeType } from "./types";
+
+// Helper functions for letter-based variant system
+const getVariantLetter = (index: number) => {
+	return String.fromCharCode(65 + index); // A, B, C, etc.
+};
+
+const getVariantColor = (index: number, isControl: boolean) => {
+	if (isControl) {
+		return "bg-blue-500 text-white"; // Blue for control (A)
+	}
+	
+	const colors = [
+		"bg-blue-500 text-white",    // A (control) - blue
+		"bg-emerald-600 text-white", // B - emerald
+		"bg-purple-500 text-white",  // C - purple
+		"bg-orange-500 text-white",  // D - orange
+		"bg-pink-500 text-white",    // E - pink
+		"bg-indigo-500 text-white",  // F - indigo
+		"bg-red-500 text-white",     // G - red
+		"bg-teal-500 text-white",    // H - teal
+		"bg-yellow-500 text-black",  // I - yellow (black text for contrast)
+		"bg-cyan-500 text-white",    // J - cyan
+	];
+	
+	return colors[index] || "bg-gray-500 text-white"; // Fallback for beyond J
+};
 
 // Use NodeProps with the complete node type
 export const VariantNode = memo(
 	({ selected, data, id }: NodeProps<VariantNodeType>) => {
-		const { title, description } = data;
+		const { title, description, variantIndex = 0, isControl = false } = data;
 		const [isHovered, setIsHovered] = useState(false);
-		
+
 		// Check for external hover state from panel
 		const isExternallyHovered = data.isHovered || false;
 
@@ -72,13 +97,21 @@ export const VariantNode = memo(
 						"flex items-center gap-2 px-3 py-2 border-b bg-background-subtle rounded-t-md",
 					)}
 				>
-					<div className="p-1 rounded-lg bg-brand/10 border border-brand text-brand">
-						{CampaignNodeIcons.variant}
+					{/* Letter-based colored icon */}
+					<div className={cn(
+						"flex justify-center items-center w-6 h-6 text-xs font-bold rounded-md",
+						getVariantColor(variantIndex, isControl)
+					)}>
+						{getVariantLetter(variantIndex)}
 					</div>
 					<span className="text-lg font-medium">{title}</span>
 
 					<div className="ml-auto">
-						<Badge variant="outline">Variant</Badge>
+						{isControl ? (
+							<Badge variant="outline">Control</Badge>
+						) : (
+							<Badge variant="outline">Variant</Badge>
+						)}
 					</div>
 				</div>
 

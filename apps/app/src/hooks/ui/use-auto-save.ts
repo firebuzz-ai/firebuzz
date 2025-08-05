@@ -48,7 +48,7 @@ export const useAutoSave = <T>({
 			save();
 		},
 		delay,
-		{ maxWait: delay * 2 } // Max wait time before forcing save
+		{ maxWait: delay * 2 }, // Max wait time before forcing save
 	);
 
 	// Manual save function

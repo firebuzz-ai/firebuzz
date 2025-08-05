@@ -56,16 +56,13 @@ export const RangeInputValue = ({
 		value: string | number,
 		onValueChange: (value: string | number) => void,
 		placeholderText?: string,
-		inputLabel?: string
+		inputLabel?: string,
 	) => {
 		if (type === "select" && options.length > 0) {
 			return (
 				<div className="space-y-2">
 					{inputLabel && <Label className="text-xs">{inputLabel}</Label>}
-					<Select
-						value={String(value)}
-						onValueChange={onValueChange}
-					>
+					<Select value={String(value)} onValueChange={onValueChange}>
 						<SelectTrigger>
 							<SelectValue placeholder={placeholderText} />
 						</SelectTrigger>

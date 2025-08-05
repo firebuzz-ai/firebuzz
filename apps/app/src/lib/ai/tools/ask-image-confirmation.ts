@@ -23,7 +23,9 @@ export const askImageConfirmation = tool({
 						.describe("Preferred aspect ratio for this placement"),
 				}),
 			)
-			.describe("List of image placements with details about where and how images will be used"),
+			.describe(
+				"List of image placements with details about where and how images will be used",
+			),
 	}),
 	// No execute function - this tool waits for user interaction through the UI
 });

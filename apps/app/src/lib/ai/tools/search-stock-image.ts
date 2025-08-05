@@ -26,7 +26,8 @@ interface UnsplashResult {
 }
 
 export const searchStockImage = tool({
-	description: "Search for stock images on Unsplash with support for refresh and custom queries",
+	description:
+		"Search for stock images on Unsplash with support for refresh and custom queries",
 	parameters: z.object({
 		query: z.string().describe("The search term for the image"),
 		orientation: z

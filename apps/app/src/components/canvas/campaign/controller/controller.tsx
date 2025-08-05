@@ -26,9 +26,13 @@ import { cn } from "@firebuzz/ui/lib/utils";
 import { useEffect } from "react";
 import { useCanvasController } from "./provider";
 
-type ControllerProps = Omit<PanelProps, "children">;
+type ControllerProps = Omit<PanelProps, "children"> & {};
 
-export function Controller({ className, ...props }: ControllerProps) {
+export function Controller({
+  className,
+
+  ...props
+}: ControllerProps) {
   const { zoom } = useViewport();
   const { zoomTo, zoomIn, zoomOut, fitView } = useReactFlow();
   const { mode, setMode, isAddingNote, setIsAddingNote } =

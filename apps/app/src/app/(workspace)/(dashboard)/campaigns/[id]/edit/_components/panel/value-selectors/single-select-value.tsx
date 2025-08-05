@@ -1,6 +1,9 @@
 "use client";
 
-import { ComboboxSelectValue, type ComboboxSelectOption } from "./combobox-select-value";
+import {
+	type ComboboxSelectOption,
+	ComboboxSelectValue,
+} from "./combobox-select-value";
 
 export interface SingleSelectOption {
 	value: string;
@@ -29,11 +32,13 @@ export const SingleSelectValue = ({
 	required = false,
 }: SingleSelectValueProps) => {
 	// Convert SingleSelectOption to ComboboxSelectOption (they're compatible except for description)
-	const comboboxOptions: ComboboxSelectOption[] = options.map(({ value, label, icon }) => ({
-		value,
-		label,
-		icon,
-	}));
+	const comboboxOptions: ComboboxSelectOption[] = options.map(
+		({ value, label, icon }) => ({
+			value,
+			label,
+			icon,
+		}),
+	);
 
 	return (
 		<ComboboxSelectValue
@@ -44,7 +49,7 @@ export const SingleSelectValue = ({
 			placeholder={placeholder}
 			description={description}
 			required={required}
-			searchPlaceholder={`Search ${label?.toLowerCase() || 'options'}...`}
+			searchPlaceholder={`Search ${label?.toLowerCase() || "options"}...`}
 		/>
 	);
 };

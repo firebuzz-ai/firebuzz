@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@firebuzz/ui/lib/utils";
 import type { LucideIcon } from "@firebuzz/ui/icons/lucide";
+import { cn } from "@firebuzz/ui/lib/utils";
 
 interface PanelHeaderProps {
 	icon: LucideIcon;
@@ -24,13 +24,13 @@ export const PanelHeader = ({
 		<div
 			className={cn(
 				"flex flex-shrink-0 gap-3 items-center p-4 border-b bg-muted",
-				className
+				className,
 			)}
 		>
 			<div
 				className={cn(
 					"p-2 rounded-lg border bg-brand/10 border-brand text-brand",
-					iconClassName
+					iconClassName,
 				)}
 			>
 				<Icon className="size-4" />

@@ -5,7 +5,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
   CheckCheck,
   Circle,
-  MailWarning,
+  ClockAlert,
   XCircle,
 } from "@firebuzz/ui/icons/lucide";
 import { Panel } from "@xyflow/react";
@@ -31,7 +31,7 @@ export const SaveStatusComponent = ({ status }: SaveStatusProps) => {
           text: "Pending Changes",
 
           show: true,
-          icon: <MailWarning className="text-yellow-600 size-3" />,
+          icon: <ClockAlert className="text-yellow-600 size-3" />,
         };
       case "saving":
         return {

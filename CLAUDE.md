@@ -152,6 +152,11 @@ Firebuzz is a monorepo-based SaaS platform for AI-powered marketing campaign and
    - Use specific types, interfaces, or generics instead of `any`
    - If type is unknown, use `unknown` and type guard it properly
 
+11. **Tooltip Usage**:
+   - **IMPORTANT**: TooltipProvider is already configured at the layout level in the app
+   - DO NOT wrap components with TooltipProvider - just use Tooltip, TooltipTrigger, and TooltipContent directly
+   - The provider exists globally, so individual components should never include `<TooltipProvider>`
+
 ### Testing Strategy
 
 - Use Vitest for unit tests

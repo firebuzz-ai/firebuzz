@@ -7,7 +7,7 @@ export function BaseNode({
 	selected,
 	externallyHovered,
 	...props
-}: HTMLAttributes<HTMLDivElement> & { 
+}: HTMLAttributes<HTMLDivElement> & {
 	selected?: boolean;
 	externallyHovered?: boolean;
 }) {
@@ -17,11 +17,11 @@ export function BaseNode({
 			className={cn(
 				"relative rounded-md shadow-sm focus:outline-none",
 				"border transition-colors duration-200", // Smooth border color transition
-				selected 
-					? "border-brand bg-muted" 
+				selected
+					? "border-brand bg-muted"
 					: externallyHovered
-					? "border-brand/50 bg-muted" // Lighter brand color for external hover
-					: "border-border bg-muted",
+						? "border-brand/50 bg-muted" // Lighter brand color for external hover
+						: "border-border bg-muted",
 				className,
 			)}
 			// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>

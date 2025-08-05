@@ -1,9 +1,11 @@
 "use client";
 
-import type { ABTestNode } from "@/components/canvas/campaign/nodes/campaign/types";
+import type {
+  ABTestNode,
+  VariantNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
-import { Card } from "@firebuzz/ui/components/ui/card";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import {
@@ -14,36 +16,223 @@ import {
   SelectValue,
 } from "@firebuzz/ui/components/ui/select";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@firebuzz/ui/components/ui/tabs";
+import { Slider } from "@firebuzz/ui/components/ui/slider";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
+import {
   AlertCircle,
+  ArrowRight,
   Crown,
+  Pause,
+  Play,
   Plus,
+  Square,
   TestTube,
   Trash2,
-  Users,
 } from "@firebuzz/ui/icons/lucide";
-import { useReactFlow } from "@xyflow/react";
+import { cn } from "@firebuzz/ui/lib/utils";
+import { useNodes, useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 
 interface ABTestPanelProps {
   node: ABTestNode;
 }
 
+interface TestStatusControlProps {
+  status: "draft" | "running" | "completed" | "paused";
+  onStatusChange: (action: string) => void;
+}
+
+const TestStatusControl = ({
+  status,
+  onStatusChange,
+}: TestStatusControlProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicatorStyle, setIndicatorStyle] = useState<React.CSSProperties>({
+    width: 0,
+    left: 0,
+    opacity: 0,
+  });
+
+  const controls = [
+    {
+      id: "draft",
+      label: "Draft",
+      icon: TestTube,
+      action: "draft",
+      color: "bg-primary",
+      disabled: status === "draft",
+    },
+    {
+      id: "running",
+      label: "Running",
+      icon: Play,
+      action: "start",
+      color: "bg-blue-500",
+      disabled: status === "running",
+    },
+    {
+      id: "paused",
+      label: "Paused",
+      icon: Pause,
+      action: "pause",
+      color: "bg-gray-600",
+      disabled: status === "paused",
+    },
+    {
+      id: "completed",
+      label: "Completed",
+      icon: Square,
+      action: "finish",
+      color: "bg-emerald-600",
+      disabled: status === "completed",
+    },
+  ];
+
+  const activeIndex = controls.findIndex((control) => control.id === status);
+
+  useLayoutEffect(() => {
+    const updateIndicatorPosition = () => {
+      if (
+        activeIndex >= 0 &&
+        buttonsRef.current[activeIndex] &&
+        containerRef.current
+      ) {
+        const activeButton = buttonsRef.current[activeIndex];
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const buttonRect = activeButton.getBoundingClientRect();
+
+        if (buttonRect.width > 0 && containerRect.width > 0) {
+          // Add padding for spacing
+          const horizontalPadding = 4;
+          
+          // Get container computed styles
+          const containerStyles = window.getComputedStyle(containerRef.current);
+          const containerPaddingTop = Number.parseFloat(containerStyles.paddingTop);
+          const containerPaddingBottom = Number.parseFloat(containerStyles.paddingBottom);
+          
+          // Since the visual appears unequal, let's use the container's inner area
+          // and add equal padding to create a perfectly centered indicator
+          const innerHeight = containerRect.height - containerPaddingTop - containerPaddingBottom;
+          const indicatorPadding = 3; // Small padding from the inner edges
+          
+          setIndicatorStyle({
+            width: buttonRect.width - horizontalPadding * 2,
+            left: buttonRect.left - containerRect.left + horizontalPadding,
+            top: containerPaddingTop + indicatorPadding,
+            height: innerHeight - (indicatorPadding * 2),
+            opacity: 1,
+            transform: "translateX(0)",
+          });
+        }
+      }
+    };
+
+    // Handle resize events
+    const handleResize = () => {
+      updateIndicatorPosition();
+    };
+
+    // Try positioning multiple times for animation timing
+    const timeouts: ReturnType<typeof setTimeout>[] = [];
+    updateIndicatorPosition();
+
+    for (const delay of [0, 50, 100]) {
+      const timeout = setTimeout(updateIndicatorPosition, delay);
+      timeouts.push(timeout);
+    }
+
+    // Add resize observer
+    const resizeObserver = new ResizeObserver(handleResize);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Add window resize listener as fallback
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      for (const timeout of timeouts) {
+        clearTimeout(timeout);
+      }
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [activeIndex]);
+
+  const getIndicatorColor = () => {
+    const activeControl = controls[activeIndex];
+    return activeControl ? activeControl.color : "bg-gray-500";
+  };
+
+  return (
+    <div className="relative w-full">
+      <div
+        ref={containerRef}
+        className="flex relative overflow-hidden w-full p-1.5 rounded-lg border bg-muted/50"
+      >
+        {controls.map((control, index) => (
+          <button
+            type="button"
+            key={control.id}
+            ref={(el) => {
+              buttonsRef.current[index] = el;
+            }}
+            onClick={() => !control.disabled && onStatusChange(control.action)}
+            disabled={control.disabled}
+            className={cn(
+              "relative z-10 flex flex-1 justify-center items-center px-2.5 py-1.5 text-xs font-medium transition-colors rounded",
+              status === control.id
+                ? control.id === "draft" 
+                  ? "text-primary-foreground"
+                  : "text-white"
+                : "text-muted-foreground hover:text-foreground",
+              control.disabled &&
+                status !== control.id &&
+                "opacity-50 cursor-not-allowed"
+            )}
+          >
+            <span>{control.label}</span>
+          </button>
+        ))}
+        {/* Animated indicator */}
+        <div
+          className={cn(
+            "absolute rounded-md transition-all duration-300 ease-out",
+            getIndicatorColor()
+          )}
+          style={indicatorStyle}
+        />
+      </div>
+    </div>
+  );
+};
+
 export const ABTestPanel = ({ node }: ABTestPanelProps) => {
-  const { updateNodeData } = useReactFlow();
-  const [activeTab, setActiveTab] = useState("settings");
+  const { updateNodeData, addNodes, addEdges, setNodes, setEdges } =
+    useReactFlow();
+  const nodes = useNodes();
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [title, setTitle] = useState(node.data.title);
   const [description, setDescription] = useState(node.data.description || "");
+
+  // Get variant nodes that are connected to this A/B test node, sorted by variantIndex
+  const variantNodes = useMemo(() => {
+    return nodes
+      .filter((n) => n.type === "variant" && n.parentId === node.id)
+      .sort((a, b) => {
+        const aIndex = (a.data as VariantNode["data"]).variantIndex || 0;
+        const bIndex = (b.data as VariantNode["data"]).variantIndex || 0;
+        return aIndex - bIndex;
+      }) as VariantNode[];
+  }, [nodes, node.id]);
 
   const updateABTestData = (updates: Partial<typeof node.data>) => {
     updateNodeData(node.id, updates);
@@ -77,81 +266,581 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
   };
 
   const addVariant = () => {
-    const isControl = node.data.variants.length === 0;
-    const newVariant = {
-      id: nanoid(8),
-      isControl,
-      name: isControl ? "Control" : `Variant ${node.data.variants.length}`,
-      landingPageId: "",
-      trafficAllocation: 0,
+    const variantCount = variantNodes.length;
+    
+    // Check variant limit
+    if (variantCount >= 5) return;
+    
+    const newNodeId = `variant-${nanoid(8)}`;
+
+    // Grid configuration (same as in abtest-node.tsx)
+    const gridConfig = {
+      columns: 2,
+      spacing: { horizontal: 550, vertical: 250 },
+      initialOffset: { x: -275, y: 250 },
     };
-    updateABTestData({
-      variants: [...node.data.variants, newVariant],
-    });
+
+    const newNodeIndex = variantCount;
+    const rowIndex = Math.floor(newNodeIndex / gridConfig.columns);
+    const colIndex = newNodeIndex % gridConfig.columns;
+
+    // Calculate equal traffic percentage
+    const equalPercentage = Math.floor(100 / (variantCount + 1));
+    const remainder = 100 - equalPercentage * (variantCount + 1);
+
+    const newVariantNode = {
+      id: newNodeId,
+      type: "variant" as const,
+      parentId: node.id,
+      position: {
+        x:
+          node.position.x +
+          gridConfig.initialOffset.x +
+          colIndex * gridConfig.spacing.horizontal,
+        y:
+          node.position.y +
+          gridConfig.initialOffset.y +
+          rowIndex * gridConfig.spacing.vertical,
+      },
+      data: {
+        title: variantCount === 0 ? "Control" : `Variant ${variantCount}`,
+        description: variantCount === 0 ? "Original version" : "Test variant",
+        validations: [
+          { isValid: false, message: "Variant requires configuration" },
+        ],
+        variantId: null,
+        trafficPercentage:
+          equalPercentage + (newNodeIndex === 0 ? remainder : 0),
+        translations: [],
+        isControl: variantCount === 0, // First variant is control
+        variantIndex: variantCount, // Add required variantIndex field
+      },
+    };
+
+    // Add the new variant node
+    addNodes(newVariantNode);
+
+    // Create edge connecting A/B test to variant
+    const newEdge = {
+      id: `${node.id}-${newNodeId}`,
+      source: node.id,
+      target: newNodeId,
+      type: "traffic-weight",
+      animated: true,
+      data: {
+        trafficPercentage:
+          equalPercentage + (newNodeIndex === 0 ? remainder : 0),
+      },
+    };
+
+    addEdges(newEdge);
+
+    // Update existing variants with new traffic percentages
+    setNodes((nodes) =>
+      nodes.map((n) => {
+        // Update existing variant nodes
+        if (n.type === "variant" && n.parentId === node.id && n.id !== newNodeId) {
+          const variantIdx = variantNodes.findIndex((v) => v.id === n.id);
+          if (variantIdx !== -1) {
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                trafficPercentage: equalPercentage + (variantIdx === 0 ? remainder : 0),
+              },
+            };
+          }
+        }
+        // Select only the new node
+        return {
+          ...n,
+          selected: n.id === newNodeId,
+          data: { ...n.data, isHovered: false },
+        };
+      })
+    );
+
+    // Update existing edges with new traffic percentages
+    setEdges((edges) =>
+      edges.map((edge) => {
+        if (edge.source === node.id && edge.target !== newNodeId) {
+          const targetVariant = variantNodes.find((v) => v.id === edge.target);
+          if (targetVariant) {
+            const variantIdx = variantNodes.findIndex((v) => v.id === edge.target);
+            return {
+              ...edge,
+              data: {
+                ...edge.data,
+                trafficPercentage: equalPercentage + (variantIdx === 0 ? remainder : 0),
+              },
+            };
+          }
+        }
+        return edge;
+      })
+    );
   };
 
   const updateVariant = (
     variantId: string,
-    updates: Partial<(typeof node.data.variants)[0]>
+    updates: Partial<VariantNode["data"]>
   ) => {
-    updateABTestData({
-      variants: node.data.variants.map((v) =>
-        v.id === variantId ? { ...v, ...updates } : v
-      ),
-    });
+    setNodes((nodes) =>
+      nodes.map((n) =>
+        n.id === variantId && n.type === "variant"
+          ? { ...n, data: { ...n.data, ...updates } }
+          : n
+      )
+    );
   };
 
   const removeVariant = (variantId: string) => {
-    const variantToRemove = node.data.variants.find((v) => v.id === variantId);
-    const remainingVariants = node.data.variants.filter(
-      (v) => v.id !== variantId
-    );
+    // Get remaining variants before removal
+    const remainingVariants = variantNodes.filter((v) => v.id !== variantId);
 
-    // If removing control variant, make the first remaining variant the control
-    if (variantToRemove?.isControl && remainingVariants.length > 0) {
-      remainingVariants[0].isControl = true;
-    }
+    if (remainingVariants.length === 0) return;
 
-    updateABTestData({
-      variants: remainingVariants,
+    // Calculate new weights for remaining variants
+    const equalPercentage = Math.floor(100 / remainingVariants.length);
+    const remainder = 100 - equalPercentage * remainingVariants.length;
+
+    // Remove the variant node and its edges, then redistribute weights
+    setNodes((nodes) => {
+      const filteredNodes = nodes.filter((n) => n.id !== variantId);
+      return filteredNodes.map((n) => {
+        const remainingIndex = remainingVariants.findIndex(
+          (rv) => rv.id === n.id
+        );
+        if (
+          remainingIndex !== -1 &&
+          n.type === "variant" &&
+          n.parentId === node.id
+        ) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              trafficPercentage:
+                equalPercentage + (remainingIndex === 0 ? remainder : 0),
+            },
+          };
+        }
+        return n;
+      });
     });
-  };
 
-  const setAsControl = (variantId: string) => {
-    updateABTestData({
-      variants: node.data.variants.map((v) => ({
-        ...v,
-        isControl: v.id === variantId,
-      })),
+    // Update corresponding edges
+    setEdges((edges) => {
+      const filteredEdges = edges.filter((e) => e.target !== variantId);
+      return filteredEdges.map((edge) => {
+        const remainingIndex = remainingVariants.findIndex(
+          (rv) => rv.id === edge.target
+        );
+        if (remainingIndex !== -1 && edge.source === node.id) {
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              trafficPercentage:
+                equalPercentage + (remainingIndex === 0 ? remainder : 0),
+            },
+          };
+        }
+        return edge;
+      });
     });
   };
 
   const autoDistributeTraffic = () => {
-    const variantCount = node.data.variants.length;
+    const variantCount = variantNodes.length;
     if (variantCount === 0) return;
 
+    const minWeight = 1;
     const equalAllocation = Math.floor(100 / variantCount);
     const remainder = 100 % variantCount;
 
-    updateABTestData({
-      variants: node.data.variants.map((v, i) => ({
-        ...v,
-        trafficAllocation: equalAllocation + (i < remainder ? 1 : 0),
-      })),
-    });
+    const weightUpdates: Array<{ variantId: string; weight: number }> = [];
+
+    for (let index = 0; index < variantNodes.length; index++) {
+      const variant = variantNodes[index];
+      let weight = equalAllocation + (index < remainder ? 1 : 0);
+      // Ensure minimum weight constraint
+      weight = Math.max(minWeight, weight);
+      weightUpdates.push({ variantId: variant.id, weight });
+    }
+
+    // Ensure total is exactly 100
+    const totalWeight = weightUpdates.reduce(
+      (sum, update) => sum + update.weight,
+      0
+    );
+    if (totalWeight !== 100) {
+      const adjustment = 100 - totalWeight;
+      // Apply adjustment to first variant
+      if (weightUpdates[0]) {
+        weightUpdates[0].weight += adjustment;
+      }
+    }
+
+    // Update nodes
+    setNodes((nodes) =>
+      nodes.map((n) => {
+        const update = weightUpdates.find((u) => u.variantId === n.id);
+        if (update && n.type === "variant" && n.parentId === node.id) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              trafficPercentage: update.weight,
+            },
+          };
+        }
+        return n;
+      })
+    );
+
+    // Update corresponding edges
+    setEdges((edges) =>
+      edges.map((edge) => {
+        const update = weightUpdates.find((u) => u.variantId === edge.target);
+        if (update && edge.source === node.id) {
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              trafficPercentage: update.weight,
+            },
+          };
+        }
+        return edge;
+      })
+    );
   };
 
-  const totalTrafficAllocation = node.data.variants.reduce(
-    (sum, v) => sum + v.trafficAllocation,
+  const totalTrafficAllocation = variantNodes.reduce(
+    (sum, v) => sum + (v.data.trafficPercentage || 0),
     0
   );
 
-  const controlVariant = node.data.variants.find((v) => v.isControl);
+  // Helper functions for letter-based variant system
+  const getVariantLetter = (index: number) => {
+    return String.fromCharCode(65 + index); // A, B, C, etc.
+  };
+
+  const getVariantColor = (index: number, isControl: boolean) => {
+    if (isControl) {
+      return "bg-blue-500 text-white"; // Blue for control (A)
+    }
+
+    const colors = [
+      "bg-blue-500 text-white", // A (control) - blue
+      "bg-emerald-600 text-white", // B - emerald
+      "bg-purple-500 text-white", // C - purple
+      "bg-orange-500 text-white", // D - orange
+      "bg-pink-500 text-white", // E - pink
+      "bg-indigo-500 text-white", // F - indigo
+      "bg-red-500 text-white", // G - red
+      "bg-teal-500 text-white", // H - teal
+      "bg-yellow-500 text-black", // I - yellow (black text for contrast)
+      "bg-cyan-500 text-white", // J - cyan
+    ];
+
+    return colors[index] || "bg-gray-500 text-white"; // Fallback for beyond J
+  };
+
+  const redistributeWeights = (changedVariantId: string, newWeight: number) => {
+    const remainingVariants = variantNodes.filter(
+      (v) => v.id !== changedVariantId
+    );
+    if (remainingVariants.length === 0) return;
+
+    // Enforce constraints: no variant can be 0 or 100
+    const minWeight = 1;
+    const maxWeight = Math.min(99, 100 - remainingVariants.length); // Ensure others can have at least 1%
+
+    // Clamp the new weight to valid range
+    const clampedNewWeight = Math.max(
+      minWeight,
+      Math.min(maxWeight, newWeight)
+    );
+
+    const remainingWeight = 100 - clampedNewWeight;
+    if (remainingWeight < remainingVariants.length) return; // Not enough weight for others
+
+    const totalCurrentWeight = remainingVariants.reduce(
+      (sum, v) => sum + (v.data.trafficPercentage || 0),
+      0
+    );
+
+    const weightUpdates: Array<{ variantId: string; weight: number }> = [];
+
+    if (totalCurrentWeight === 0) {
+      // Distribute equally among remaining variants
+      const equalWeight = Math.floor(
+        remainingWeight / remainingVariants.length
+      );
+      const remainder = remainingWeight % remainingVariants.length;
+      for (let index = 0; index < remainingVariants.length; index++) {
+        const variant = remainingVariants[index];
+        let weight = equalWeight + (index < remainder ? 1 : 0);
+        // Ensure no variant gets 0
+        weight = Math.max(minWeight, weight);
+        weightUpdates.push({ variantId: variant.id, weight });
+      }
+    } else {
+      // Redistribute proportionally
+      let distributedWeight = 0;
+      const proportionalWeights: Array<{ variantId: string; weight: number }> =
+        [];
+
+      for (const variant of remainingVariants) {
+        const proportion =
+          (variant.data.trafficPercentage || 0) / totalCurrentWeight;
+        let weight = Math.round(remainingWeight * proportion);
+        // Ensure minimum weight
+        weight = Math.max(minWeight, weight);
+        proportionalWeights.push({ variantId: variant.id, weight });
+        distributedWeight += weight;
+      }
+
+      // Adjust for rounding errors and ensure total is exactly 100
+      const excess = distributedWeight - remainingWeight;
+      if (excess > 0) {
+        // Remove excess from largest weights first
+        const sortedByWeight = [...proportionalWeights].sort(
+          (a, b) => b.weight - a.weight
+        );
+        let remaining = excess;
+
+        for (const item of sortedByWeight) {
+          if (remaining <= 0) break;
+          const canReduce = item.weight - minWeight;
+          const reduction = Math.min(remaining, canReduce);
+          item.weight -= reduction;
+          remaining -= reduction;
+        }
+      } else if (excess < 0) {
+        // Add missing weight to smallest weights first
+        const sortedByWeight = [...proportionalWeights].sort(
+          (a, b) => a.weight - b.weight
+        );
+        let remaining = Math.abs(excess);
+
+        for (const item of sortedByWeight) {
+          if (remaining <= 0) break;
+          item.weight += 1;
+          remaining -= 1;
+        }
+      }
+
+      weightUpdates.push(...proportionalWeights);
+    }
+
+    // Add the changed variant to updates
+    weightUpdates.push({
+      variantId: changedVariantId,
+      weight: clampedNewWeight,
+    });
+
+    // Final validation: ensure total is exactly 100
+    const totalWeight = weightUpdates.reduce(
+      (sum, update) => sum + update.weight,
+      0
+    );
+    if (totalWeight !== 100) {
+      const adjustment = 100 - totalWeight;
+      // Apply adjustment to the changed variant if possible
+      const changedUpdate = weightUpdates.find(
+        (u) => u.variantId === changedVariantId
+      );
+      if (
+        changedUpdate &&
+        changedUpdate.weight + adjustment >= minWeight &&
+        changedUpdate.weight + adjustment <= maxWeight
+      ) {
+        changedUpdate.weight += adjustment;
+      } else {
+        // Find any variant that can absorb the adjustment
+        for (const update of weightUpdates) {
+          if (update.variantId === changedVariantId) continue;
+          const newWeight = update.weight + adjustment;
+          if (newWeight >= minWeight && newWeight < 100) {
+            update.weight = newWeight;
+            break;
+          }
+        }
+      }
+    }
+
+    // Update all variants and their corresponding edges
+    setNodes((nodes) =>
+      nodes.map((n) => {
+        const update = weightUpdates.find((u) => u.variantId === n.id);
+        if (update && n.type === "variant" && n.parentId === node.id) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              trafficPercentage: update.weight,
+            },
+          };
+        }
+        return n;
+      })
+    );
+
+    // Update corresponding edges
+    setEdges((edges) =>
+      edges.map((edge) => {
+        const update = weightUpdates.find((u) => u.variantId === edge.target);
+        if (update && edge.source === node.id) {
+          return {
+            ...edge,
+            data: {
+              ...edge.data,
+              trafficPercentage: update.weight,
+            },
+          };
+        }
+        return edge;
+      })
+    );
+  };
+
+  const handleVariantHover = (variantId: string | null) => {
+    // Apply hover effect to the actual canvas node
+    setNodes((nodes) =>
+      nodes.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          isHovered: node.id === variantId,
+        },
+      }))
+    );
+  };
+
+  const handleVariantClick = (variantId: string) => {
+    // Select the variant node and clear all external hover states
+    setNodes((nodes) =>
+      nodes.map((n) => ({
+        ...n,
+        selected: n.id === variantId,
+        data: {
+          ...n.data,
+          isHovered: false, // Clear external hover state for all nodes
+        },
+      }))
+    );
+  };
+
+  const promoteVariant = (variantId: string) => {
+    const currentVariant = variantNodes.find((v) => v.id === variantId);
+    if (!currentVariant || currentVariant.data.variantIndex === 0) return;
+
+    const currentIndex = currentVariant.data.variantIndex;
+    const targetIndex = currentIndex - 1;
+    const targetVariant = variantNodes.find(
+      (v) => v.data.variantIndex === targetIndex
+    );
+
+    if (targetVariant) {
+      // Swap indices
+      updateVariant(currentVariant.id, { variantIndex: targetIndex });
+      updateVariant(targetVariant.id, { variantIndex: currentIndex });
+    }
+  };
+
+  const makeControl = (variantId: string) => {
+    const currentVariant = variantNodes.find((v) => v.id === variantId);
+    if (!currentVariant || currentVariant.data.isControl) return;
+
+    const currentControlVariant = variantNodes.find((v) => v.data.isControl);
+
+    // Create a reordering plan
+    const reorderedVariants = [...variantNodes].sort((a, b) => {
+      const aIndex = a.data.variantIndex || 0;
+      const bIndex = b.data.variantIndex || 0;
+      return aIndex - bIndex;
+    });
+
+    // Build the new indices mapping
+    const indexUpdates: Array<{
+      variantId: string;
+      newIndex: number;
+      isControl: boolean;
+    }> = [];
+
+    // The new control gets index 0
+    indexUpdates.push({ variantId, newIndex: 0, isControl: true });
+
+    // All other variants shift up by 1 index
+    let nextIndex = 1;
+    for (const variant of reorderedVariants) {
+      if (variant.id === variantId) continue; // Skip the new control
+
+      if (variant.data.isControl && currentControlVariant) {
+        // Old control becomes a regular variant
+        indexUpdates.push({
+          variantId: variant.id,
+          newIndex: nextIndex,
+          isControl: false,
+        });
+      } else {
+        // Regular variants maintain their relative order but shift indices
+        indexUpdates.push({
+          variantId: variant.id,
+          newIndex: nextIndex,
+          isControl: false,
+        });
+      }
+      nextIndex++;
+    }
+
+    // Apply all updates at once
+    setNodes((nodes) =>
+      nodes.map((n) => {
+        const update = indexUpdates.find((u) => u.variantId === n.id);
+        if (update && n.type === "variant" && n.parentId === node.id) {
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              isControl: update.isControl,
+              variantIndex: update.newIndex,
+            },
+          };
+        }
+        return n;
+      })
+    );
+  };
+
+  const handleTestAction = (action: string) => {
+    switch (action) {
+      case "draft":
+        updateABTestData({ status: "draft" });
+        break;
+      case "start":
+        updateABTestData({ status: "running" });
+        break;
+      case "pause":
+        updateABTestData({ status: "paused" });
+        break;
+      case "finish":
+        updateABTestData({ status: "completed", isCompleted: true });
+        break;
+    }
+  };
+
+  const updateVariantWeight = (variantId: string, weight: number) => {
+    redistributeWeights(variantId, weight);
+  };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex relative flex-col h-full">
       {/* Header - Fixed */}
-      <div className="flex gap-3 items-center p-4 border-b bg-muted flex-shrink-0">
+      <div className="flex flex-shrink-0 gap-3 items-center p-4 border-b bg-muted">
         <div className="p-2 rounded-lg border bg-brand/10 border-brand text-brand">
           <TestTube className="size-4" />
         </div>
@@ -187,7 +876,7 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
                 onChange={(e) => setDescription(e.target.value)}
                 onBlur={handleDescriptionSave}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                  if (e.key === "Enter") {
                     handleDescriptionSave();
                   } else if (e.key === "Escape") {
                     setDescription(node.data.description || "");
@@ -212,32 +901,368 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
       </div>
 
       {/* Content - Scrollable */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid grid-cols-4 w-full">
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="variants">Variants</TabsTrigger>
-              <TabsTrigger value="completion">Test Settings</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
-            </TabsList>
+      <div className="overflow-y-auto flex-1">
+        <div className="p-4 space-y-4">
+          {/* Test Controls */}
+          <div className="space-y-3">
+            <Label>Test Controls</Label>
+            <TestStatusControl
+              status={node.data.status || "draft"}
+              onStatusChange={handleTestAction}
+            />
+          </div>
 
-            <TabsContent value="settings" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="hypothesis">Hypothesis</Label>
-                <Textarea
-                  id="hypothesis"
-                  value={node.data.hypothesis}
-                  onChange={(e) =>
-                    updateABTestData({ hypothesis: e.target.value })
-                  }
-                  placeholder="Describe what you expect to happen and why"
-                  rows={3}
-                />
+          <Separator />
+
+          {/* Variants Section */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2 items-center">
+                <Label>Variants</Label>
+                <Badge variant="outline" className="text-xs bg-muted">
+                  {variantNodes.length} variants
+                </Badge>
               </div>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={addVariant}
+                      disabled={variantNodes.length >= 5}
+                      className="h-7 text-xs"
+                    >
+                      <Plus className="mr-1 size-3" />
+                      Add Variant
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {variantNodes.length >= 5 && (
+                  <TooltipContent>
+                    <p>Maximum 5 variants allowed</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </div>
 
+            {variantNodes.length > 0 ? (
+              <div className="space-y-2">
+                {variantNodes.map((variant, index) => {
+                  const variantLetter = getVariantLetter(
+                    variant.data.variantIndex || index
+                  );
+                  return (
+                    <div
+                      key={variant.id}
+                      onClick={() => handleVariantClick(variant.id)}
+                      onMouseEnter={() => handleVariantHover(variant.id)}
+                      onMouseLeave={() => handleVariantHover(null)}
+                      className="flex justify-between items-center px-2 py-1.5 rounded-lg border cursor-pointer group hover:bg-muted/50 hover:border-muted-foreground/10"
+                    >
+                      <div className="flex flex-1 gap-3 items-center">
+                        <div className="flex gap-2 items-center">
+                          {/* Letter-based icon */}
+                          <div
+                            className={cn(
+                              "flex justify-center items-center w-6 h-6 text-xs font-bold rounded-md",
+                              getVariantColor(
+                                variant.data.variantIndex || index,
+                                variant.data.isControl || false
+                              )
+                            )}
+                          >
+                            {variantLetter}
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex gap-2 items-center">
+                              <span className="text-sm font-medium leading-tight">
+                                {variant.data.title}
+                              </span>
+                              {variant.data.isControl && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Control
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-xs leading-tight text-muted-foreground">
+                              {variant.data.variantId
+                                ? "Landing page assigned"
+                                : "No landing page"}{" "}
+                              • {variant.data.trafficPercentage || 0}% traffic
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className="flex flex-shrink-0 gap-1 items-center"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }}
+                        onMouseUp={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }}
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          return false;
+                        }}
+                      >
+                        {/* Promote button */}
+                        {variant.data.variantIndex > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="iconSm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  promoteVariant(variant.id);
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="opacity-0 group-hover:opacity-100 !px-1 !py-1 !h-auto"
+                              >
+                                <ArrowRight className="size-3 text-muted-foreground rotate-[-90deg]" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Promote</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        {/* Make control button */}
+                        {!variant.data.isControl && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="iconSm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  makeControl(variant.id);
+                                }}
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                className="opacity-0 group-hover:opacity-100 !px-1 !py-1 !h-auto"
+                              >
+                                <Crown className="size-3 text-muted-foreground hover:text-yellow-500" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Make Control</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+
+                        {/* Delete button */}
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="iconSm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                removeVariant(variant.id);
+                              }}
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                              }}
+                              disabled={
+                                variantNodes.length <= 2 ||
+                                variant.data.isControl
+                              }
+                              className="opacity-0 group-hover:opacity-100 !px-1 !py-1 !h-auto"
+                            >
+                              <Trash2 className="size-3 text-muted-foreground" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>
+                              {variant.data.isControl
+                                ? "Cannot delete control variant"
+                                : variantNodes.length <= 2
+                                  ? "Minimum 2 variants required"
+                                  : "Delete"}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        {/* Arrow icon */}
+                        <ArrowRight className="w-0 h-0 text-muted-foreground opacity-0 transition-all duration-200 ease-out group-hover:w-3.5 group-hover:h-3.5 group-hover:opacity-100 group-hover:translate-x-1 group-hover:text-foreground" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col justify-center items-center h-24 rounded-lg border bg-muted">
+                <p className="text-sm text-muted-foreground">
+                  No variants added yet
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={addVariant}
+                  className="mt-2"
+                >
+                  Add your first variant
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Weight Management */}
+          {variantNodes.length > 0 && (
+            <>
               <Separator />
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <Label>Traffic Allocation</Label>
+                  <div className="flex gap-2 items-center">
+                    <span className="text-xs text-muted-foreground">
+                      Total: {totalTrafficAllocation}%
+                      {totalTrafficAllocation !== 100 && (
+                        <span className="ml-1 text-destructive">
+                          (Must equal 100%)
+                        </span>
+                      )}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={autoDistributeTraffic}
+                      className="h-6 text-xs"
+                    >
+                      Auto-distribute
+                    </Button>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  {variantNodes.map((variant, index) => {
+                    const variantLetter = getVariantLetter(
+                      variant.data.variantIndex || index
+                    );
+                    return (
+                      <div key={variant.id} className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <div className="flex gap-2 items-center">
+                            <div
+                              className={cn(
+                                "flex justify-center items-center w-5 h-5 text-xs font-bold rounded-md",
+                                getVariantColor(
+                                  variant.data.variantIndex || index,
+                                  variant.data.isControl || false
+                                )
+                              )}
+                            >
+                              {variantLetter}
+                            </div>
+                            <span className="text-sm">
+                              {variant.data.title}
+                            </span>
+                            {variant.data.isControl && (
+                              <Badge variant="outline" className="text-xs">
+                                Control
+                              </Badge>
+                            )}
+                          </div>
+                          <span className="text-sm font-medium">
+                            {variant.data.trafficPercentage || 0}%
+                          </span>
+                        </div>
+                        <Slider
+                          value={[variant.data.trafficPercentage || 0]}
+                          onValueChange={(values) =>
+                            updateVariantWeight(variant.id, values[0])
+                          }
+                          min={1}
+                          max={Math.min(99, 100 - (variantNodes.length - 1))}
+                          step={1}
+                          className="w-full"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
 
+          <Separator />
+
+          {/* Test Settings */}
+          <div className="space-y-4">
+            <Label>Test Settings</Label>
+
+            {/* Pooling Percentage Slider */}
+            <div className="p-4 space-y-3 rounded-lg bg-muted">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Traffic Allocation</span>
+                <Badge variant="outline">
+                  {node.data.poolingPercent || 20}%
+                </Badge>
+              </div>
+              <Slider
+                variant="brand"
+                value={[node.data.poolingPercent || 20]}
+                onValueChange={(values) => {
+                  const clampedValue = Math.max(1, Math.min(100, values[0]));
+                  updateABTestData({ poolingPercent: clampedValue });
+
+                  // Update the incoming edge data
+                  setEdges((edges) =>
+                    edges.map((edge) => {
+                      if (
+                        edge.target === node.id &&
+                        edge.type === "traffic-weight"
+                      ) {
+                        return {
+                          ...edge,
+                          data: {
+                            ...edge.data,
+                            trafficPercentage: clampedValue,
+                          },
+                        };
+                      }
+                      return edge;
+                    })
+                  );
+                }}
+                min={1}
+                max={100}
+                step={1}
+                className="h-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                This test receives {node.data.poolingPercent || 20}% of the
+                segment traffic
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="primary-metric">Primary Metric</Label>
                 <Select
@@ -246,7 +1271,7 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
                     updateABTestData({ primaryMetric: value })
                   }
                 >
-                  <SelectTrigger id="primary-metric">
+                  <SelectTrigger id="primary-metric" className="h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -268,7 +1293,7 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
                     })
                   }
                 >
-                  <SelectTrigger id="confidence-level">
+                  <SelectTrigger id="confidence-level" className="h-8">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -277,300 +1302,91 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
                     <SelectItem value="99">99%</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
-                  Higher confidence levels require larger sample sizes
-                </p>
               </div>
+            </div>
 
-              <Separator />
-
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={node.data.status || "draft"}
-                  onValueChange={(value) =>
-                    updateABTestData({
-                      status: value as
-                        | "draft"
-                        | "running"
-                        | "completed"
-                        | "cancelled",
-                      isCompleted:
-                        value === "completed" || value === "cancelled",
+                <Label htmlFor="sample-size">Sample Size per Variant</Label>
+                <Input
+                  id="sample-size"
+                  type="number"
+                  value={
+                    node.data.completionCriteria?.sampleSizePerVariant || ""
+                  }
+                  onChange={(e) =>
+                    updateCompletionCriteria({
+                      sampleSizePerVariant:
+                        Number.parseInt(e.target.value) || undefined,
                     })
                   }
-                >
-                  <SelectTrigger id="status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="running">Running</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Current test status:{" "}
-                  {(node.data.isCompleted ?? false) ? "Completed" : "Active"}
-                </p>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="variants" className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h4 className="text-sm font-medium">Test Variants</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Traffic allocation: {totalTrafficAllocation}%
-                    {totalTrafficAllocation !== 100 && (
-                      <span className="ml-1 text-destructive">
-                        (Must equal 100%)
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={autoDistributeTraffic}
-                  >
-                    Auto-distribute
-                  </Button>
-                  <Button size="sm" onClick={addVariant}>
-                    <Plus className="mr-1 w-4 h-4" />
-                    Add Variant
-                  </Button>
-                </div>
+                  placeholder="e.g. 1000"
+                  className="h-8"
+                />
               </div>
 
-              <div className="space-y-3">
-                {node.data.variants.map((variant) => (
-                  <Card key={variant.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center space-x-2">
-                          {variant.isControl && (
-                            <Crown className="w-4 h-4 text-yellow-500" />
-                          )}
-                          <Badge
-                            variant={
-                              variant.isControl ? "default" : "secondary"
-                            }
-                          >
-                            {variant.isControl ? "Control" : "Variant"}
-                          </Badge>
-                        </div>
-                        <div className="flex space-x-1">
-                          {!variant.isControl && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setAsControl(variant.id)}
-                            >
-                              Set as Control
-                            </Button>
-                          )}
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => removeVariant(variant.id)}
-                            disabled={node.data.variants.length === 1}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Input
-                          value={variant.name}
-                          onChange={(e) =>
-                            updateVariant(variant.id, { name: e.target.value })
-                          }
-                          placeholder="Variant name"
-                        />
-
-                        <Select
-                          value={variant.landingPageId}
-                          onValueChange={(value) =>
-                            updateVariant(variant.id, { landingPageId: value })
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select landing page" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="page1">
-                              Homepage Variant A
-                            </SelectItem>
-                            <SelectItem value="page2">
-                              Homepage Variant B
-                            </SelectItem>
-                            <SelectItem value="page3">Product Page</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <Label className="text-xs">Traffic Allocation</Label>
-                          <span className="text-xs font-medium">
-                            {variant.trafficAllocation}%
-                          </span>
-                        </div>
-                        <Input
-                          type="range"
-                          min={0}
-                          max={100}
-                          value={variant.trafficAllocation}
-                          onChange={(e) =>
-                            updateVariant(variant.id, {
-                              trafficAllocation: Number.parseInt(
-                                e.target.value
-                              ),
-                            })
-                          }
-                          className="h-2"
-                        />
-                      </div>
-                    </div>
-                  </Card>
-                ))}
+              <div className="space-y-2">
+                <Label htmlFor="test-duration">Duration (days)</Label>
+                <Input
+                  id="test-duration"
+                  type="number"
+                  value={node.data.completionCriteria?.testDuration || ""}
+                  onChange={(e) =>
+                    updateCompletionCriteria({
+                      testDuration:
+                        Number.parseInt(e.target.value) || undefined,
+                    })
+                  }
+                  placeholder="e.g. 14"
+                  className="h-8"
+                />
               </div>
+            </div>
 
-              {node.data.variants.length === 0 && (
-                <div className="py-8 text-center text-muted-foreground">
-                  <Users className="mx-auto mb-2 w-12 h-12 opacity-50" />
-                  <p className="text-sm">No variants added yet</p>
-                  <p className="text-xs">
-                    Add at least 2 variants to run an A/B test
-                  </p>
-                </div>
-              )}
-            </TabsContent>
+            <div className="space-y-2">
+              <Label htmlFor="winning-strategy">Winning Strategy</Label>
+              <Select
+                value={node.data.rules.winningStrategy}
+                onValueChange={(value) =>
+                  updateRules({
+                    winningStrategy: value as "winner" | "winnerOrControl",
+                  })
+                }
+              >
+                <SelectTrigger id="winning-strategy" className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="winner">Winner only</SelectItem>
+                  <SelectItem value="winnerOrControl">
+                    Winner or Control
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {node.data.rules.winningStrategy === "winner"
+                  ? "Only declare a winner if it significantly beats all other variants"
+                  : "Declare a winner if it beats control, even if other variants perform similarly"}
+              </p>
+            </div>
 
-            <TabsContent value="completion" className="space-y-4">
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium">
-                  Test Completion Criteria
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  Set at least one completion criteria. The test will complete
-                  when any criteria is met.
-                </p>
+            <div className="space-y-2">
+              <Label htmlFor="hypothesis">Hypothesis</Label>
+              <Textarea
+                id="hypothesis"
+                value={node.data.hypothesis}
+                onChange={(e) =>
+                  updateABTestData({ hypothesis: e.target.value })
+                }
+                placeholder="Describe what you expect to happen and why"
+                rows={3}
+              />
+            </div>
+          </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="sample-size">Sample Size per Variant</Label>
-                  <Input
-                    id="sample-size"
-                    type="number"
-                    value={
-                      node.data.completionCriteria?.sampleSizePerVariant || ""
-                    }
-                    onChange={(e) =>
-                      updateCompletionCriteria({
-                        sampleSizePerVariant:
-                          Number.parseInt(e.target.value) || undefined,
-                      })
-                    }
-                    placeholder="e.g. 1000"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Test completes when each variant reaches this sample size
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="test-duration">Test Duration (days)</Label>
-                  <Input
-                    id="test-duration"
-                    type="number"
-                    value={node.data.completionCriteria?.testDuration || ""}
-                    onChange={(e) =>
-                      updateCompletionCriteria({
-                        testDuration:
-                          Number.parseInt(e.target.value) || undefined,
-                      })
-                    }
-                    placeholder="e.g. 14"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Test completes after this many days
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg bg-primary/5">
-                  <h5 className="mb-2 text-sm font-medium">
-                    Fixed-Horizon Testing
-                  </h5>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    This test uses Fixed-Horizon methodology for reliable
-                    results:
-                  </p>
-                  <ul className="space-y-1 text-xs text-muted-foreground">
-                    <li>• Pre-determined sample size or duration</li>
-                    <li>• No peeking at results during test</li>
-                    <li>• Statistical significance maintained</li>
-                    <li>• Reduces false positive rate</li>
-                  </ul>
-                </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="advanced" className="space-y-4">
-              <div className="space-y-4">
-                <h4 className="text-sm font-medium">Advanced Settings</h4>
-
-                <div className="space-y-2">
-                  <Label htmlFor="winning-strategy">Winning Strategy</Label>
-                  <Select
-                    value={node.data.rules.winningStrategy}
-                    onValueChange={(value) =>
-                      updateRules({
-                        winningStrategy: value as "winner" | "winnerOrControl",
-                      })
-                    }
-                  >
-                    <SelectTrigger id="winning-strategy">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="winner">Winner only</SelectItem>
-                      <SelectItem value="winnerOrControl">
-                        Winner or Control
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    {node.data.rules.winningStrategy === "winner"
-                      ? "Only declare a winner if it significantly beats all other variants"
-                      : "Declare a winner if it beats control, even if other variants perform similarly"}
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-lg bg-muted">
-                  <h5 className="mb-2 text-sm font-medium">
-                    Current Configuration
-                  </h5>
-                  <div className="space-y-1 text-xs text-muted-foreground">
-                    <div>Confidence Level: {node.data.confidenceLevel}%</div>
-                    <div>
-                      Control Variant: {controlVariant?.name || "Not set"}
-                    </div>
-                    <div>Total Variants: {node.data.variants.length}</div>
-                    <div>
-                      Winning Strategy: {node.data.rules.winningStrategy}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-
+          {/* Validation Errors */}
           {node.data.validations.some((v) => !v.isValid) && (
-            <div className="p-3 mt-4 rounded-lg bg-destructive/10">
+            <div className="p-3 rounded-lg bg-destructive/10">
               <div className="flex items-start space-x-2">
                 <AlertCircle className="w-4 h-4 text-destructive mt-0.5" />
                 <div className="space-y-1">

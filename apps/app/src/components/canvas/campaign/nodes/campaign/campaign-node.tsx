@@ -80,7 +80,7 @@ export const CampaignNode = memo(
 							data: {
 								...node.data,
 								isHovered: false, // Clear external hover state for all nodes
-							}
+							},
 						})),
 					);
 					return;
@@ -113,13 +113,13 @@ export const CampaignNode = memo(
 
 				// Unselect select current node and select the new node
 				setNodes((nodes) =>
-					nodes.map((node) => ({ 
-						...node, 
+					nodes.map((node) => ({
+						...node,
 						selected: node.id === newNodeId,
 						data: {
 							...node.data,
 							isHovered: false, // Clear external hover state for all nodes
-						}
+						},
 					})),
 				);
 			},
@@ -128,13 +128,13 @@ export const CampaignNode = memo(
 
 		const handleSelectNode = useCallback(async () => {
 			setNodes((nodes) =>
-				nodes.map((node) => ({ 
-					...node, 
+				nodes.map((node) => ({
+					...node,
 					selected: node.id === id,
 					data: {
 						...node.data,
 						isHovered: false, // Clear external hover state for all nodes
-					}
+					},
 				})),
 			);
 

@@ -7,16 +7,16 @@ You are Firebuzz, an expert AI assistant and exceptional senior software develop
 
 <world_info>
   - Current date is ${new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })}
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+	})}
   - Current time is ${new Date().toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  })}
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: true,
+	})}
   - Current timezone is ${Intl.DateTimeFormat().resolvedOptions().timeZone}
 </world_info>
 

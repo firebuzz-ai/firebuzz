@@ -50,12 +50,10 @@ const edgeTypes: EdgeTypes = {
 
 export const Canvas = ({
   campaignId,
-  projectId,
   initialData,
   nodeTypes,
 }: {
   campaignId: Id<"campaigns">;
-  projectId: Id<"projects">;
   initialData: {
     nodes: Node[];
     edges: Edge[];
@@ -63,11 +61,14 @@ export const Canvas = ({
   };
   nodeTypes: NodeTypes;
 }) => {
-  const { mode, isAddingNote, setIsAddingNote } = useCanvasController();
   const { theme } = useTheme();
+
+  const { deleteElements, addNodes, getViewport, setViewport } = useReactFlow();
+
   const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialData.edges);
-  const { deleteElements, addNodes, getViewport, setViewport } = useReactFlow();
+
+  const { mode, isAddingNote, setIsAddingNote } = useCanvasController();
 
   // Mutation for saving campaign
   const updateCampaign = useMutation(
@@ -95,7 +96,6 @@ export const Canvas = ({
       try {
         await updateCampaign({
           id: campaignId,
-          projectId,
           config: data,
         });
       } catch (error) {
@@ -111,24 +111,29 @@ export const Canvas = ({
     enabled: true,
   });
 
-  // Wrapped handlers to trigger auto-save
+  // Wrapped handlers to trigger auto-save and capture history
   const handleNodesChange = useCallback(
     (changes: Parameters<typeof onNodesChange>[0]) => {
       onNodesChange(changes);
-      triggerAutoSave();
+
+      if (changes.filter((c) => c.type !== "select").length > 0) {
+        triggerAutoSave();
+      }
     },
-    [onNodesChange, triggerAutoSave]
+    [triggerAutoSave, onNodesChange]
   );
 
   const handleEdgesChange = useCallback(
     (changes: Parameters<typeof onEdgesChange>[0]) => {
       onEdgesChange(changes);
-      triggerAutoSave();
+      if (changes.filter((c) => c.type !== "select").length > 0) {
+        triggerAutoSave();
+      }
     },
-    [onEdgesChange, triggerAutoSave]
+    [triggerAutoSave, onEdgesChange]
   );
 
-  // Keyboard shortcut for manual save (Cmd+S / Ctrl+S)
+  // Keyboard shortcuts
   useHotkeys(
     "s+meta",
     () => {
@@ -280,10 +285,10 @@ export const Canvas = ({
   );
 
   const onEdgesDelete = useCallback(
-    (edges: Edge[]) => {
+    (edgesToDelete: Edge[]) => {
       triggerAutoSave();
       // Process each deleted edge
-      for (const edge of edges) {
+      for (const edge of edgesToDelete) {
         if (edge.target.includes("placeholder")) continue;
 
         const targetNodeId = edge.target;
@@ -548,6 +553,116 @@ export const Canvas = ({
           nodes: [], // Don't delete any nodes
           edges: [], // Don't delete any edges
         };
+      }
+
+      // Check for variant deletion restrictions (applies regardless of A/B test status)
+      const variantNodesToDelete = nodesToDelete.filter((node) => node.type === "variant");
+      
+      if (variantNodesToDelete.length > 0) {
+        // For each AB test, check if we're violating the minimum variant rules
+        const abTestIds = new Set(variantNodesToDelete.map(node => node.parentId).filter(Boolean));
+        
+        for (const abTestId of abTestIds) {
+          // Check if the parent A/B test is also being deleted
+          const abTestBeingDeleted = nodesToDelete.some(
+            (node) => node.type === "ab-test" && node.id === abTestId
+          );
+          
+          // If the A/B test is being deleted, allow variant deletion
+          if (abTestBeingDeleted) continue;
+          
+          // Get all variants for this AB test
+          const allVariantsForTest = nodes.filter(
+            (node) => node.type === "variant" && node.parentId === abTestId
+          );
+          
+          // Get variants that will remain after deletion
+          const remainingVariants = allVariantsForTest.filter(
+            (variant) => !variantNodesToDelete.some(toDelete => toDelete.id === variant.id)
+          );
+          
+          // Check if we're trying to delete a control variant
+          const controlVariantToDelete = variantNodesToDelete.find(
+            (variant) => variant.parentId === abTestId && variant.data?.isControl
+          );
+          
+          // Prevent deletion if:
+          // 1. Trying to delete control variant (unless A/B test is being deleted)
+          // 2. Would leave less than 2 variants (unless A/B test is being deleted)
+          if (controlVariantToDelete) {
+            toast.error("Cannot delete control variant", {
+              id: "delete-control-variant",
+              description: "Control variants cannot be deleted. Make another variant the control first, or delete the entire A/B test.",
+            });
+            return {
+              nodes: [], // Don't delete any nodes
+              edges: [], // Don't delete any edges
+            };
+          }
+          
+          if (remainingVariants.length < 2) {
+            toast.error("Minimum 2 variants required", {
+              id: "delete-minimum-variants",
+              description: "A/B tests require at least 2 variants. Delete the entire A/B test instead, or add more variants first.",
+            });
+            return {
+              nodes: [], // Don't delete any nodes
+              edges: [], // Don't delete any edges
+            };
+          }
+        }
+      }
+
+      // Check for A/B test deletion restrictions based on state
+      const abTestNodesToDelete = nodesToDelete.filter((node) => node.type === "ab-test");
+      const segmentNodesToDelete = nodesToDelete.filter((node) => node.type === "segment");
+      
+      // Prevent deletion of A/B tests in protected states
+      for (const abTestNode of abTestNodesToDelete) {
+        const status = abTestNode.data?.status;
+        if (status === "running" || status === "completed" || status === "paused") {
+          const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+          toast.error(`Cannot delete ${statusText.toLowerCase()} A/B test`, {
+            id: "delete-protected-abtest",
+            description: `${statusText} A/B tests cannot be deleted. Change the test status to draft first.`,
+          });
+          return {
+            nodes: [], // Don't delete any nodes
+            edges: [], // Don't delete any edges
+          };
+        }
+      }
+      
+      // Prevent deletion of segments that have A/B tests in protected states
+      for (const segmentNode of segmentNodesToDelete) {
+        // Check if the segment contains A/B tests that are also being deleted
+        const childAbTests = nodes.filter(
+          (node) => node.type === "ab-test" && node.parentId === segmentNode.id
+        );
+        
+        // Filter out A/B tests that are being deleted along with the segment
+        const remainingAbTests = childAbTests.filter(
+          (abTest) => !abTestNodesToDelete.some(toDelete => toDelete.id === abTest.id)
+        );
+        
+        // Check if any remaining child A/B test is in a protected state
+        const protectedAbTest = remainingAbTests.find((abTest) => {
+          const status = abTest.data?.status;
+          return status === "running" || status === "completed" || status === "paused";
+        });
+        
+        if (protectedAbTest) {
+          const status = protectedAbTest.data?.status as string;
+          const statusText = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Active";
+          toast.error("Cannot delete segment with active tests", {
+            id: "delete-protected-segment",
+            description: `This segment contains ${statusText.toLowerCase()} A/B tests. Delete or change the status of all A/B tests first.`,
+          });
+          return {
+            nodes: [], // Don't delete any nodes
+            edges: [], // Don't delete any edges
+          };
+        }
       }
 
       // Find all nodes and edges that should be deleted
