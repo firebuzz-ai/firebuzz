@@ -1,5 +1,48 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { edgeDataSchema, nodeDataSchema } from "./nodeSchemas";
+
+export const edgeSchema = v.object({
+  id: v.string(),
+  source: v.string(),
+  target: v.string(),
+  type: v.optional(v.string()),
+  animated: v.optional(v.boolean()),
+  selected: v.optional(v.boolean()),
+  data: v.optional(edgeDataSchema),
+});
+
+export const viewportSchema = v.object({
+  x: v.number(),
+  y: v.number(),
+  zoom: v.number(),
+});
+
+export const nodeSchema = v.object({
+  id: v.string(),
+  type: v.optional(v.string()),
+  position: v.object({
+    x: v.number(),
+    y: v.number(),
+  }),
+  dragging: v.optional(v.boolean()),
+  selected: v.optional(v.boolean()),
+  parentId: v.optional(v.string()),
+  measured: v.optional(
+    v.object({
+      width: v.optional(v.number()),
+      height: v.optional(v.number()),
+    })
+  ),
+  data: nodeDataSchema,
+  dragHandle: v.optional(v.string()),
+  width: v.optional(v.number()),
+  height: v.optional(v.number()),
+  initialWidth: v.optional(v.number()),
+  initialHeight: v.optional(v.number()),
+  zIndex: v.optional(v.number()),
+  handles: v.optional(v.array(v.any())),
+});
 
 export const campaignSchema = defineTable(
   v.object({
@@ -15,7 +58,11 @@ export const campaignSchema = defineTable(
       v.literal("published"),
       v.literal("finished")
     ),
-    config: v.optional(v.any()),
+    config: v.object({
+      nodes: v.array(nodeSchema),
+      edges: v.array(edgeSchema),
+      viewport: viewportSchema,
+    }),
     // Timestamps
     updatedAt: v.optional(v.string()),
     startedAt: v.optional(v.string()),

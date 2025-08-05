@@ -201,12 +201,14 @@ export const Canvas = ({
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, [isAddingNote, getViewport, setNodes]);
 
-  // Set initial viewport
+  // Set initial data (nodes, edges, viewport)
   useEffect(() => {
-    if (initialData.viewport) {
+    if (initialData) {
       setViewport(initialData.viewport);
+      setNodes(initialData.nodes);
+      setEdges(initialData.edges);
     }
-  }, [initialData.viewport, setViewport]);
+  }, [initialData, setViewport, setNodes, setEdges]);
 
   const onConnect = useCallback(
     (params: Connection) => {

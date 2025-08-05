@@ -1,0 +1,197 @@
+import { type Infer, v } from "convex/values";
+
+export const campaignNodeTypes = v.union(
+  v.literal("traffic"),
+  v.literal("ab-test"),
+  v.literal("segment"),
+  v.literal("advanced-targeting"),
+  v.literal("variant")
+);
+
+export const filterOperator = v.union(
+  v.literal("equals"),
+  v.literal("not_equals"),
+  v.literal("greater_than"),
+  v.literal("less_than"),
+  v.literal("between"),
+  v.literal("in"),
+  v.literal("not_in"),
+  v.literal("contains"),
+  v.literal("not_contains"),
+  v.literal("starts_with"),
+  v.literal("ends_with")
+);
+
+export const ruleValueType = v.union(
+  v.literal("string"),
+  v.literal("number"),
+  v.literal("boolean"),
+  v.literal("array"),
+  v.literal("date")
+);
+
+export const ruleTypeId = v.union(
+  v.literal("visitorType"),
+  v.literal("country"),
+  v.literal("language"),
+  v.literal("deviceType"),
+  v.literal("browser"),
+  v.literal("operatingSystem"),
+  v.literal("utmSource"),
+  v.literal("utmMedium"),
+  v.literal("referrer"),
+  v.literal("customParameter"),
+  v.literal("timeZone"),
+  v.literal("hourOfDay"),
+  v.literal("dayOfWeek")
+);
+
+export const validation = v.object({
+  isValid: v.boolean(),
+  message: v.string(),
+});
+
+
+export const trafficNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  isHovered: v.optional(v.boolean()),
+  validations: v.array(validation),
+  defaultVariantId: v.union(v.string(), v.null()),
+});
+
+export const segmentRule = v.object({
+  id: v.string(),
+  ruleType: ruleTypeId,
+  operator: filterOperator,
+  value: v.union(
+    v.string(),
+    v.number(),
+    v.boolean(),
+    v.array(v.string()),
+    v.array(v.number())
+  ),
+  label: v.string(),
+  isRequired: v.optional(v.boolean()),
+});
+
+export const segmentNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  isHovered: v.optional(v.boolean()),
+  validations: v.array(validation),
+  priority: v.number(),
+  primaryLandingPageId: v.string(),
+  rules: v.array(segmentRule),
+});
+
+export const abTestVariant = v.object({
+  id: v.string(),
+  isControl: v.boolean(),
+  name: v.string(),
+  landingPageId: v.string(),
+  trafficAllocation: v.number(),
+});
+
+export const abTestNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  isHovered: v.optional(v.boolean()),
+  validations: v.array(validation),
+  hypothesis: v.string(),
+  status: v.union(
+    v.literal("draft"),
+    v.literal("running"),
+    v.literal("completed"),
+    v.literal("cancelled")
+  ),
+  isCompleted: v.boolean(),
+  primaryMetric: v.string(),
+  completionCriteria: v.object({
+    sampleSizePerVariant: v.optional(v.number()),
+    testDuration: v.optional(v.number()),
+  }),
+  confidenceLevel: v.union(v.literal(90), v.literal(95), v.literal(99)),
+  variants: v.array(abTestVariant),
+  rules: v.object({
+    winningStrategy: v.union(v.literal("winner"), v.literal("winnerOrControl")),
+  }),
+});
+
+export const variantTranslation = v.object({
+  id: v.string(),
+  language: v.string(),
+  title: v.string(),
+});
+
+export const variantNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  isHovered: v.optional(v.boolean()),
+  validations: v.array(validation),
+  variantId: v.union(v.string(), v.null()),
+  trafficPercentage: v.number(),
+  translations: v.array(variantTranslation),
+});
+
+export const noteNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  isHovered: v.optional(v.boolean()),
+  validations: v.array(validation),
+  content: v.string(),
+  author: v.string(),
+});
+
+export const campaignNodeData = v.object({
+  title: v.string(),
+  description: v.string(),
+  nodeType: campaignNodeTypes,
+  isDeletable: v.boolean(),
+  tag: v.object({
+    label: v.string(),
+    icon: v.optional(v.string()),
+  }),
+  badge: v.optional(
+    v.object({
+      label: v.string(),
+      icon: v.string(),
+    })
+  ),
+});
+
+export const nodeDataSchema = v.union(
+  trafficNodeData,
+  segmentNodeData,
+  abTestNodeData,
+  variantNodeData,
+  noteNodeData,
+  campaignNodeData
+);
+
+// Edge data schemas
+export const trafficWeightEdgeData = v.object({
+  trafficPercentage: v.optional(v.number()),
+});
+
+export const edgeDataSchema = v.union(
+  trafficWeightEdgeData,
+  v.object({}) // For edges with no data
+);
+
+// Export type helpers for easy access
+export type CampaignNodeData = Infer<typeof campaignNodeData>;
+export type TrafficNodeData = Infer<typeof trafficNodeData>;
+export type SegmentNodeData = Infer<typeof segmentNodeData>;
+export type ABTestNodeData = Infer<typeof abTestNodeData>;
+export type VariantNodeData = Infer<typeof variantNodeData>;
+export type NoteNodeData = Infer<typeof noteNodeData>;
+export type EdgeData = Infer<typeof edgeDataSchema>;
+
+// Export additional types
+export type Validation = Infer<typeof validation>;
+export type FilterOperator = Infer<typeof filterOperator>;
+export type RuleValueType = Infer<typeof ruleValueType>;
+export type RuleTypeId = Infer<typeof ruleTypeId>;
+export type SegmentRule = Infer<typeof segmentRule>;
+export type CampaignNodeTypes = Infer<typeof campaignNodeTypes>;
