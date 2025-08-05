@@ -1,5 +1,6 @@
 "use client";
 
+import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
 import type {
   ABTestNode,
   VariantNode,
@@ -111,22 +112,27 @@ const TestStatusControl = ({
         if (buttonRect.width > 0 && containerRect.width > 0) {
           // Add padding for spacing
           const horizontalPadding = 4;
-          
+
           // Get container computed styles
           const containerStyles = window.getComputedStyle(containerRef.current);
-          const containerPaddingTop = Number.parseFloat(containerStyles.paddingTop);
-          const containerPaddingBottom = Number.parseFloat(containerStyles.paddingBottom);
-          
+          const containerPaddingTop = Number.parseFloat(
+            containerStyles.paddingTop
+          );
+          const containerPaddingBottom = Number.parseFloat(
+            containerStyles.paddingBottom
+          );
+
           // Since the visual appears unequal, let's use the container's inner area
           // and add equal padding to create a perfectly centered indicator
-          const innerHeight = containerRect.height - containerPaddingTop - containerPaddingBottom;
+          const innerHeight =
+            containerRect.height - containerPaddingTop - containerPaddingBottom;
           const indicatorPadding = 3; // Small padding from the inner edges
-          
+
           setIndicatorStyle({
             width: buttonRect.width - horizontalPadding * 2,
             left: buttonRect.left - containerRect.left + horizontalPadding,
             top: containerPaddingTop + indicatorPadding,
-            height: innerHeight - (indicatorPadding * 2),
+            height: innerHeight - indicatorPadding * 2,
             opacity: 1,
             transform: "translateX(0)",
           });
@@ -189,7 +195,7 @@ const TestStatusControl = ({
             className={cn(
               "relative z-10 flex flex-1 justify-center items-center px-2.5 py-1.5 text-xs font-medium transition-colors rounded",
               status === control.id
-                ? control.id === "draft" 
+                ? control.id === "draft"
                   ? "text-primary-foreground"
                   : "text-white"
                 : "text-muted-foreground hover:text-foreground",
@@ -267,10 +273,10 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
 
   const addVariant = () => {
     const variantCount = variantNodes.length;
-    
+
     // Check variant limit
     if (variantCount >= 5) return;
-    
+
     const newNodeId = `variant-${nanoid(8)}`;
 
     // Grid configuration (same as in abtest-node.tsx)
@@ -339,14 +345,19 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
     setNodes((nodes) =>
       nodes.map((n) => {
         // Update existing variant nodes
-        if (n.type === "variant" && n.parentId === node.id && n.id !== newNodeId) {
+        if (
+          n.type === "variant" &&
+          n.parentId === node.id &&
+          n.id !== newNodeId
+        ) {
           const variantIdx = variantNodes.findIndex((v) => v.id === n.id);
           if (variantIdx !== -1) {
             return {
               ...n,
               data: {
                 ...n.data,
-                trafficPercentage: equalPercentage + (variantIdx === 0 ? remainder : 0),
+                trafficPercentage:
+                  equalPercentage + (variantIdx === 0 ? remainder : 0),
               },
             };
           }
@@ -366,12 +377,15 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
         if (edge.source === node.id && edge.target !== newNodeId) {
           const targetVariant = variantNodes.find((v) => v.id === edge.target);
           if (targetVariant) {
-            const variantIdx = variantNodes.findIndex((v) => v.id === edge.target);
+            const variantIdx = variantNodes.findIndex(
+              (v) => v.id === edge.target
+            );
             return {
               ...edge,
               data: {
                 ...edge.data,
-                trafficPercentage: equalPercentage + (variantIdx === 0 ? remainder : 0),
+                trafficPercentage:
+                  equalPercentage + (variantIdx === 0 ? remainder : 0),
               },
             };
           }
@@ -451,72 +465,6 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
     });
   };
 
-  const autoDistributeTraffic = () => {
-    const variantCount = variantNodes.length;
-    if (variantCount === 0) return;
-
-    const minWeight = 1;
-    const equalAllocation = Math.floor(100 / variantCount);
-    const remainder = 100 % variantCount;
-
-    const weightUpdates: Array<{ variantId: string; weight: number }> = [];
-
-    for (let index = 0; index < variantNodes.length; index++) {
-      const variant = variantNodes[index];
-      let weight = equalAllocation + (index < remainder ? 1 : 0);
-      // Ensure minimum weight constraint
-      weight = Math.max(minWeight, weight);
-      weightUpdates.push({ variantId: variant.id, weight });
-    }
-
-    // Ensure total is exactly 100
-    const totalWeight = weightUpdates.reduce(
-      (sum, update) => sum + update.weight,
-      0
-    );
-    if (totalWeight !== 100) {
-      const adjustment = 100 - totalWeight;
-      // Apply adjustment to first variant
-      if (weightUpdates[0]) {
-        weightUpdates[0].weight += adjustment;
-      }
-    }
-
-    // Update nodes
-    setNodes((nodes) =>
-      nodes.map((n) => {
-        const update = weightUpdates.find((u) => u.variantId === n.id);
-        if (update && n.type === "variant" && n.parentId === node.id) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              trafficPercentage: update.weight,
-            },
-          };
-        }
-        return n;
-      })
-    );
-
-    // Update corresponding edges
-    setEdges((edges) =>
-      edges.map((edge) => {
-        const update = weightUpdates.find((u) => u.variantId === edge.target);
-        if (update && edge.source === node.id) {
-          return {
-            ...edge,
-            data: {
-              ...edge.data,
-              trafficPercentage: update.weight,
-            },
-          };
-        }
-        return edge;
-      })
-    );
-  };
-
   const totalTrafficAllocation = variantNodes.reduce(
     (sum, v) => sum + (v.data.trafficPercentage || 0),
     0
@@ -546,165 +494,6 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
     ];
 
     return colors[index] || "bg-gray-500 text-white"; // Fallback for beyond J
-  };
-
-  const redistributeWeights = (changedVariantId: string, newWeight: number) => {
-    const remainingVariants = variantNodes.filter(
-      (v) => v.id !== changedVariantId
-    );
-    if (remainingVariants.length === 0) return;
-
-    // Enforce constraints: no variant can be 0 or 100
-    const minWeight = 1;
-    const maxWeight = Math.min(99, 100 - remainingVariants.length); // Ensure others can have at least 1%
-
-    // Clamp the new weight to valid range
-    const clampedNewWeight = Math.max(
-      minWeight,
-      Math.min(maxWeight, newWeight)
-    );
-
-    const remainingWeight = 100 - clampedNewWeight;
-    if (remainingWeight < remainingVariants.length) return; // Not enough weight for others
-
-    const totalCurrentWeight = remainingVariants.reduce(
-      (sum, v) => sum + (v.data.trafficPercentage || 0),
-      0
-    );
-
-    const weightUpdates: Array<{ variantId: string; weight: number }> = [];
-
-    if (totalCurrentWeight === 0) {
-      // Distribute equally among remaining variants
-      const equalWeight = Math.floor(
-        remainingWeight / remainingVariants.length
-      );
-      const remainder = remainingWeight % remainingVariants.length;
-      for (let index = 0; index < remainingVariants.length; index++) {
-        const variant = remainingVariants[index];
-        let weight = equalWeight + (index < remainder ? 1 : 0);
-        // Ensure no variant gets 0
-        weight = Math.max(minWeight, weight);
-        weightUpdates.push({ variantId: variant.id, weight });
-      }
-    } else {
-      // Redistribute proportionally
-      let distributedWeight = 0;
-      const proportionalWeights: Array<{ variantId: string; weight: number }> =
-        [];
-
-      for (const variant of remainingVariants) {
-        const proportion =
-          (variant.data.trafficPercentage || 0) / totalCurrentWeight;
-        let weight = Math.round(remainingWeight * proportion);
-        // Ensure minimum weight
-        weight = Math.max(minWeight, weight);
-        proportionalWeights.push({ variantId: variant.id, weight });
-        distributedWeight += weight;
-      }
-
-      // Adjust for rounding errors and ensure total is exactly 100
-      const excess = distributedWeight - remainingWeight;
-      if (excess > 0) {
-        // Remove excess from largest weights first
-        const sortedByWeight = [...proportionalWeights].sort(
-          (a, b) => b.weight - a.weight
-        );
-        let remaining = excess;
-
-        for (const item of sortedByWeight) {
-          if (remaining <= 0) break;
-          const canReduce = item.weight - minWeight;
-          const reduction = Math.min(remaining, canReduce);
-          item.weight -= reduction;
-          remaining -= reduction;
-        }
-      } else if (excess < 0) {
-        // Add missing weight to smallest weights first
-        const sortedByWeight = [...proportionalWeights].sort(
-          (a, b) => a.weight - b.weight
-        );
-        let remaining = Math.abs(excess);
-
-        for (const item of sortedByWeight) {
-          if (remaining <= 0) break;
-          item.weight += 1;
-          remaining -= 1;
-        }
-      }
-
-      weightUpdates.push(...proportionalWeights);
-    }
-
-    // Add the changed variant to updates
-    weightUpdates.push({
-      variantId: changedVariantId,
-      weight: clampedNewWeight,
-    });
-
-    // Final validation: ensure total is exactly 100
-    const totalWeight = weightUpdates.reduce(
-      (sum, update) => sum + update.weight,
-      0
-    );
-    if (totalWeight !== 100) {
-      const adjustment = 100 - totalWeight;
-      // Apply adjustment to the changed variant if possible
-      const changedUpdate = weightUpdates.find(
-        (u) => u.variantId === changedVariantId
-      );
-      if (
-        changedUpdate &&
-        changedUpdate.weight + adjustment >= minWeight &&
-        changedUpdate.weight + adjustment <= maxWeight
-      ) {
-        changedUpdate.weight += adjustment;
-      } else {
-        // Find any variant that can absorb the adjustment
-        for (const update of weightUpdates) {
-          if (update.variantId === changedVariantId) continue;
-          const newWeight = update.weight + adjustment;
-          if (newWeight >= minWeight && newWeight < 100) {
-            update.weight = newWeight;
-            break;
-          }
-        }
-      }
-    }
-
-    // Update all variants and their corresponding edges
-    setNodes((nodes) =>
-      nodes.map((n) => {
-        const update = weightUpdates.find((u) => u.variantId === n.id);
-        if (update && n.type === "variant" && n.parentId === node.id) {
-          return {
-            ...n,
-            data: {
-              ...n.data,
-              trafficPercentage: update.weight,
-            },
-          };
-        }
-        return n;
-      })
-    );
-
-    // Update corresponding edges
-    setEdges((edges) =>
-      edges.map((edge) => {
-        const update = weightUpdates.find((u) => u.variantId === edge.target);
-        if (update && edge.source === node.id) {
-          return {
-            ...edge,
-            data: {
-              ...edge.data,
-              trafficPercentage: update.weight,
-            },
-          };
-        }
-        return edge;
-      })
-    );
   };
 
   const handleVariantHover = (variantId: string | null) => {
@@ -831,10 +620,6 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
         updateABTestData({ status: "completed", isCompleted: true });
         break;
     }
-  };
-
-  const updateVariantWeight = (variantId: string, weight: number) => {
-    redistributeWeights(variantId, weight);
   };
 
   return (
@@ -1134,79 +919,70 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
             )}
           </div>
 
-          {/* Weight Management */}
+          {/* Traffic Distribution */}
           {variantNodes.length > 0 && (
             <>
-              <Separator />
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <Label>Traffic Allocation</Label>
-                  <div className="flex gap-2 items-center">
-                    <span className="text-xs text-muted-foreground">
-                      Total: {totalTrafficAllocation}%
-                      {totalTrafficAllocation !== 100 && (
-                        <span className="ml-1 text-destructive">
-                          (Must equal 100%)
-                        </span>
-                      )}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={autoDistributeTraffic}
-                      className="h-6 text-xs"
-                    >
-                      Auto-distribute
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  {variantNodes.map((variant, index) => {
-                    const variantLetter = getVariantLetter(
-                      variant.data.variantIndex || index
+              {/*   <Separator /> */}
+              <div className="pt-4 space-y-4">
+                {/*  <div className="flex justify-between items-center">
+                  <Label>Traffic Distribution</Label>
+                </div> */}
+                <TrafficDistributionSlider
+                  variants={variantNodes.map((variant, index) => ({
+                    id: variant.id,
+                    title: variant.data.title,
+                    percentage: variant.data.trafficPercentage || 0,
+                    color: getVariantColor(
+                      variant.data.variantIndex || index,
+                      variant.data.isControl || false
+                    ),
+                    isControl: variant.data.isControl,
+                    variantIndex: variant.data.variantIndex || index,
+                  }))}
+                  onDistributionChange={(distributions) => {
+                    // Update nodes
+                    setNodes((nodes) =>
+                      nodes.map((n) => {
+                        const distribution = distributions.find(
+                          (d) => d.variantId === n.id
+                        );
+                        if (
+                          distribution &&
+                          n.type === "variant" &&
+                          n.parentId === node.id
+                        ) {
+                          return {
+                            ...n,
+                            data: {
+                              ...n.data,
+                              trafficPercentage: distribution.percentage,
+                            },
+                          };
+                        }
+                        return n;
+                      })
                     );
-                    return (
-                      <div key={variant.id} className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <div className="flex gap-2 items-center">
-                            <div
-                              className={cn(
-                                "flex justify-center items-center w-5 h-5 text-xs font-bold rounded-md",
-                                getVariantColor(
-                                  variant.data.variantIndex || index,
-                                  variant.data.isControl || false
-                                )
-                              )}
-                            >
-                              {variantLetter}
-                            </div>
-                            <span className="text-sm">
-                              {variant.data.title}
-                            </span>
-                            {variant.data.isControl && (
-                              <Badge variant="outline" className="text-xs">
-                                Control
-                              </Badge>
-                            )}
-                          </div>
-                          <span className="text-sm font-medium">
-                            {variant.data.trafficPercentage || 0}%
-                          </span>
-                        </div>
-                        <Slider
-                          value={[variant.data.trafficPercentage || 0]}
-                          onValueChange={(values) =>
-                            updateVariantWeight(variant.id, values[0])
-                          }
-                          min={1}
-                          max={Math.min(99, 100 - (variantNodes.length - 1))}
-                          step={1}
-                          className="w-full"
-                        />
-                      </div>
+
+                    // Update corresponding edges
+                    setEdges((edges) =>
+                      edges.map((edge) => {
+                        const distribution = distributions.find(
+                          (d) => d.variantId === edge.target
+                        );
+                        if (distribution && edge.source === node.id) {
+                          return {
+                            ...edge,
+                            data: {
+                              ...edge.data,
+                              trafficPercentage: distribution.percentage,
+                            },
+                          };
+                        }
+                        return edge;
+                      })
                     );
-                  })}
-                </div>
+                  }}
+                />
               </div>
             </>
           )}
@@ -1226,7 +1002,6 @@ export const ABTestPanel = ({ node }: ABTestPanelProps) => {
                 </Badge>
               </div>
               <Slider
-                variant="brand"
                 value={[node.data.poolingPercent || 20]}
                 onValueChange={(values) => {
                   const clampedValue = Math.max(1, Math.min(100, values[0]));

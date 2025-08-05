@@ -294,7 +294,7 @@ export const Canvas = ({
   );
 
   // Simple node click handler for debugging
-  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+  const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     console.log("Node clicked:", node.type, node.id);
     // Don't prevent default - let React Flow handle selection
   }, []);
