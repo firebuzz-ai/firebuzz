@@ -129,3 +129,101 @@ export const getByLandingPageId = query({
 		return campaign;
 	},
 });
+
+// Canvas-specific queries
+export const getNodes = query({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		return campaign.nodes;
+	},
+});
+
+export const getEdges = query({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		return campaign.edges;
+	},
+});
+
+export const getViewport = query({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		return campaign.viewport;
+	},
+});
+
+export const getCanvasData = query({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Return all canvas data at once
+		return {
+			nodes: campaign.nodes,
+			edges: campaign.edges,
+			viewport: campaign.viewport,
+		};
+	},
+});

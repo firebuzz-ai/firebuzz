@@ -28,6 +28,7 @@ import type * as collections_brands_themes_utils from "../collections/brands/the
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_nodeSchemas from "../collections/campaigns/nodeSchemas.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
+import type * as collections_campaigns_types from "../collections/campaigns/types.js";
 import type * as collections_campaigns_utils from "../collections/campaigns/utils.js";
 import type * as collections_domains_actions from "../collections/domains/actions.js";
 import type * as collections_domains_mutations from "../collections/domains/mutations.js";
@@ -183,6 +184,7 @@ declare const fullApi: ApiFromModules<{
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/nodeSchemas": typeof collections_campaigns_nodeSchemas;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
+  "collections/campaigns/types": typeof collections_campaigns_types;
   "collections/campaigns/utils": typeof collections_campaigns_utils;
   "collections/domains/actions": typeof collections_domains_actions;
   "collections/domains/mutations": typeof collections_domains_mutations;

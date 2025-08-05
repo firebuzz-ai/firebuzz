@@ -25,11 +25,7 @@ export const CampaignCanvas = ({
 }) => {
   return (
     <div className="flex flex-1 h-full">
-      <Canvas
-        campaignId={campaign._id}
-        initialData={campaign.config}
-        nodeTypes={nodeTypes}
-      />
+      <Canvas campaignId={campaign._id} nodeTypes={nodeTypes} />
     </div>
   );
 };

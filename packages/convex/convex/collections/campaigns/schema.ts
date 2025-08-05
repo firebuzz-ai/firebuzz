@@ -58,11 +58,10 @@ export const campaignSchema = defineTable(
 			v.literal("published"),
 			v.literal("finished"),
 		),
-		config: v.object({
-			nodes: v.array(nodeSchema),
-			edges: v.array(edgeSchema),
-			viewport: viewportSchema,
-		}),
+		// Canvas data as separate columns (replacing config object)
+		nodes: v.array(nodeSchema),
+		edges: v.array(edgeSchema),
+		viewport: viewportSchema,
 		// Timestamps
 		updatedAt: v.optional(v.string()),
 		startedAt: v.optional(v.string()),

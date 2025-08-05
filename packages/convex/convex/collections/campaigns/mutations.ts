@@ -1,4 +1,5 @@
 import { ConvexError, v } from "convex/values";
+import { applyNodeChanges, applyEdgeChanges, addEdge } from "@xyflow/react";
 import { internal } from "../../_generated/api";
 import type { Doc } from "../../_generated/dataModel";
 import { retrier } from "../../components/actionRetrier";
@@ -8,6 +9,7 @@ import {
 } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
+import { nodeChangeValidator, edgeChangeValidator, connectionValidator, viewportChangeValidator } from "./types";
 
 export const create = mutationWithTrigger({
 	args: {
@@ -32,7 +34,7 @@ export const create = mutationWithTrigger({
 			throw new ConvexError("Campaign slug must be unique");
 		}
 
-		// Create campaign with default config only
+		// Create campaign with default canvas data in separate columns
 		const campaignId = await ctx.db.insert("campaigns", {
 			title: args.title,
 			status: "draft",
@@ -44,28 +46,27 @@ export const create = mutationWithTrigger({
 			isPublished: false,
 			isArchived: false,
 			isFinished: false,
-			config: {
-				nodes: [
-					{
-						id: "initial-traffic-node",
-						type: "traffic",
-						position: { x: 0, y: 0 },
-						data: {
-							title: "Incoming Traffic",
-							description: "Start of the campaign",
-							defaultVariantId: null,
-							validations: [
-								{ isValid: false, message: "No default landing page selected" },
-							],
-						},
+			// Canvas data as separate columns
+			nodes: [
+				{
+					id: "initial-traffic-node",
+					type: "traffic",
+					position: { x: 0, y: 0 },
+					data: {
+						title: "Incoming Traffic",
+						description: "Start of the campaign",
+						defaultVariantId: null,
+						validations: [
+							{ isValid: false, message: "No default landing page selected" },
+						],
 					},
-				],
-				edges: [],
-				viewport: {
-					x: 0,
-					y: 0,
-					zoom: 1,
 				},
+			],
+			edges: [],
+			viewport: {
+				x: 0,
+				y: 0,
+				zoom: 1,
 			},
 		});
 
@@ -226,7 +227,12 @@ export const update = mutationWithTrigger({
 		type: v.optional(
 			v.union(v.literal("lead-generation"), v.literal("click-through")),
 		),
-		config: v.optional(v.any()), // We'll validate this against campaignConfigValidator in the handler
+		// Canvas data fields (new schema)
+		nodes: v.optional(v.any()),
+		edges: v.optional(v.any()),
+		viewport: v.optional(v.any()),
+		// Backward compatibility for migration
+		config: v.optional(v.any()),
 	},
 	handler: async (ctx, args) => {
 		// Check if user is authenticated
@@ -274,10 +280,187 @@ export const update = mutationWithTrigger({
 			updateFields.description = args.description;
 		if (args.slug !== undefined) updateFields.slug = args.slug;
 		if (args.type !== undefined) updateFields.type = args.type;
-		if (args.config !== undefined) updateFields.config = args.config;
 		if (args.projectId !== undefined) updateFields.projectId = args.projectId;
+		
+		// Handle canvas data (new schema)
+		if (args.nodes !== undefined) updateFields.nodes = args.nodes;
+		if (args.edges !== undefined) updateFields.edges = args.edges;
+		if (args.viewport !== undefined) updateFields.viewport = args.viewport;
+		
+		// Handle config for backward compatibility during migration
+		if (args.config !== undefined) {
+			// If config is provided, extract to separate columns
+			updateFields.nodes = args.config.nodes;
+			updateFields.edges = args.config.edges;
+			updateFields.viewport = args.config.viewport;
+		}
 
 		// Update campaign with all fields
 		await ctx.db.patch(args.id, updateFields);
+	},
+});
+
+// Canvas-specific mutations
+export const updateNodes = mutationWithTrigger({
+	args: {
+		campaignId: v.id("campaigns"),
+		changes: v.array(nodeChangeValidator),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Filter out changes to pending nodes (optimistic updates)
+		const validChanges = args.changes.filter((change) => {
+			if ("id" in change && change.id.startsWith("pending-")) {
+				console.warn("ignoring pending node change", { change });
+				return false;
+			}
+			return true;
+		});
+
+		// Apply changes to current nodes
+		const updatedNodes = applyNodeChanges(validChanges as any, campaign.nodes);
+
+		// Update campaign with new nodes
+		await ctx.db.patch(args.campaignId, {
+			nodes: updatedNodes,
+			updatedAt: new Date().toISOString(),
+			lastSaved: new Date().toISOString(),
+		});
+
+		return updatedNodes;
+	},
+});
+
+export const updateEdges = mutationWithTrigger({
+	args: {
+		campaignId: v.id("campaigns"),
+		changes: v.array(edgeChangeValidator),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Filter out changes to pending edges (optimistic updates)
+		const validChanges = args.changes.filter((change) => {
+			if ("id" in change && change.id.startsWith("pending-")) {
+				console.warn("ignoring pending edge change", { change });
+				return false;
+			}
+			return true;
+		});
+
+		// Apply changes to current edges
+		const updatedEdges = applyEdgeChanges(validChanges as any, campaign.edges);
+
+		// Update campaign with new edges
+		await ctx.db.patch(args.campaignId, {
+			edges: updatedEdges,
+			updatedAt: new Date().toISOString(),
+			lastSaved: new Date().toISOString(),
+		});
+
+		return updatedEdges;
+	},
+});
+
+export const updateViewport = mutationWithTrigger({
+	args: {
+		campaignId: v.id("campaigns"),
+		viewport: viewportChangeValidator,
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Update campaign viewport
+		await ctx.db.patch(args.campaignId, {
+			viewport: args.viewport,
+			updatedAt: new Date().toISOString(),
+			lastSaved: new Date().toISOString(),
+		});
+
+		return args.viewport;
+	},
+});
+
+export const connectEdge = mutationWithTrigger({
+	args: {
+		campaignId: v.id("campaigns"),
+		connection: connectionValidator,
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Check for pending nodes in connection
+		if (
+			args.connection.source?.startsWith("pending-") ||
+			args.connection.target?.startsWith("pending-")
+		) {
+			console.warn("ignoring pending connection", { connection: args.connection });
+			return campaign.edges;
+		}
+
+		// Add new edge to existing edges
+		const edgeToAdd = {
+			id: `edge-${Date.now()}`,
+			...args.connection,
+		};
+		const updatedEdges = addEdge(edgeToAdd, campaign.edges);
+
+		// Update campaign with new edges
+		await ctx.db.patch(args.campaignId, {
+			edges: updatedEdges,
+			updatedAt: new Date().toISOString(),
+			lastSaved: new Date().toISOString(),
+		});
+
+		return updatedEdges;
 	},
 });

@@ -6,26 +6,28 @@ import {
   type Node,
   type NodeTypes,
   ReactFlow,
-  type Viewport,
   addEdge,
-  useEdgesState,
-  useNodesState,
+  applyEdgeChanges,
+  applyNodeChanges,
   useReactFlow,
 } from "@xyflow/react";
 
-import { type Id, api, useMutation } from "@firebuzz/convex";
+import {
+  ABTestNodeData,
+  type Id,
+  api,
+  useCachedQuery,
+  useMutation,
+} from "@firebuzz/convex";
 import { toast } from "@firebuzz/ui/lib/utils";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
-import { useAutoSave } from "../../../hooks/ui/use-auto-save";
+import { useCallback, useEffect, useState } from "react";
 import { Background } from "./background";
 import { Controller } from "./controller/controller";
 import { useCanvasController } from "./controller/provider";
 import { TrafficWeightEdge } from "./edges/traffic-weight-edge";
-import { SaveStatusComponent } from "./save-status";
 
 // Add this at the top of your file or in a global.d.ts file
 declare global {
@@ -37,8 +39,8 @@ declare global {
 
 // Custom styles for React Flow Canvas
 const customSelectionStyles = {
-  "--xy-selection-background-color": "hsla(var(--brand) / 0.1)", // Light blue background
-  "--xy-selection-border-default": "2px solid hsl(var(--brand))", // Blue border
+  "--xy-selection-background-color": "hsla(var(--brand) / 0.1)",
+  "--xy-selection-border-default": "2px solid hsl(var(--brand))",
   "--xy-background-color-default": "hsl(var(--background))",
   "--xy-edge-stroke-default": "hsl(var(--primary))",
 };
@@ -50,421 +52,184 @@ const edgeTypes: EdgeTypes = {
 
 export const Canvas = ({
   campaignId,
-  initialData,
   nodeTypes,
 }: {
   campaignId: Id<"campaigns">;
-  initialData: {
-    nodes: Node[];
-    edges: Edge[];
-    viewport: Viewport;
-  };
   nodeTypes: NodeTypes;
 }) => {
   const { theme } = useTheme();
-
   const { deleteElements, addNodes, getViewport, setViewport } = useReactFlow();
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialData.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialData.edges);
-
   const { mode, isAddingNote, setIsAddingNote } = useCanvasController();
 
-  // Mutation for saving campaign
-  const updateCampaign = useMutation(
-    api.collections.campaigns.mutations.update
+  // Get canvas data from Convex
+  const canvasData = useCachedQuery(
+    api.collections.campaigns.queries.getCanvasData,
+    {
+      campaignId,
+    }
   );
 
-  // Function to get current canvas data
-  const getCurrentCanvasData = useCallback(
-    () => ({
-      nodes,
-      edges,
-      viewport: getViewport(),
-    }),
-    [nodes, edges, getViewport]
-  );
-
-  // Auto-save hook
-  const { status, hasChanges, saveNow, triggerAutoSave } = useAutoSave({
-    getData: getCurrentCanvasData,
-    onSave: async (data: {
-      nodes: Node[];
-      edges: Edge[];
-      viewport: Viewport;
-    }) => {
-      try {
-        await updateCampaign({
-          id: campaignId,
-          config: data,
-        });
-      } catch (error) {
-        console.error("❌ Auto-save failed:", error);
-        toast.error("Auto-save failed", {
-          id: "canvas-auto-save-error",
-          description: error instanceof Error ? error.message : "Unknown error",
-        });
-        throw error;
-      }
-    },
-    delay: 5000, // 5 seconds
-    enabled: true,
+  // Mutations with optimistic updates
+  const updateNodes = useMutation(
+    api.collections.campaigns.mutations.updateNodes
+  ).withOptimisticUpdate((store, args) => {
+    const canvasData = store.getQuery(
+      api.collections.campaigns.queries.getCanvasData,
+      { campaignId: args.campaignId }
+    );
+    if (canvasData) {
+      const updatedNodes = applyNodeChanges(args.changes, canvasData.nodes);
+      store.setQuery(
+        api.collections.campaigns.queries.getCanvasData,
+        { campaignId: args.campaignId },
+        {
+          ...canvasData,
+          nodes: updatedNodes,
+        }
+      );
+    }
   });
 
-  // Wrapped handlers to trigger auto-save and capture history
-  const handleNodesChange = useCallback(
-    (changes: Parameters<typeof onNodesChange>[0]) => {
-      onNodesChange(changes);
+  const updateEdges = useMutation(
+    api.collections.campaigns.mutations.updateEdges
+  ).withOptimisticUpdate((store, args) => {
+    const canvasData = store.getQuery(
+      api.collections.campaigns.queries.getCanvasData,
+      { campaignId: args.campaignId }
+    );
+    if (canvasData) {
+      const updatedEdges = applyEdgeChanges(args.changes, canvasData.edges);
+      store.setQuery(
+        api.collections.campaigns.queries.getCanvasData,
+        { campaignId: args.campaignId },
+        {
+          ...canvasData,
+          edges: updatedEdges,
+        }
+      );
+    }
+  });
 
-      if (changes.filter((c) => c.type !== "select").length > 0) {
-        triggerAutoSave();
+  const connectEdge = useMutation(
+    api.collections.campaigns.mutations.connectEdge
+  ).withOptimisticUpdate((store, args) => {
+    const canvasData = store.getQuery(
+      api.collections.campaigns.queries.getCanvasData,
+      { campaignId: args.campaignId }
+    );
+    if (canvasData) {
+      const newEdge = {
+        id: `${args.connection.source}-${args.connection.target}`,
+        ...args.connection,
+      };
+      const updatedEdges = addEdge(newEdge, canvasData.edges);
+      store.setQuery(
+        api.collections.campaigns.queries.getCanvasData,
+        { campaignId: args.campaignId },
+        {
+          ...canvasData,
+          edges: updatedEdges,
+        }
+      );
+    }
+  });
+
+  // Get base nodes and edges from canvas data
+  const serverNodes = canvasData?.nodes || [];
+  const serverEdges = canvasData?.edges || [];
+
+  // Local state for nodes with selection handling
+  const [localNodes, setLocalNodes] = useState<Node[]>(serverNodes);
+  const [localEdges, setLocalEdges] = useState<Edge[]>(serverEdges);
+
+  // Simple approach: only update when canvasData changes (Convex query result)
+  useEffect(() => {
+    if (!canvasData) return;
+
+    setLocalNodes((prev) => {
+      // Merge server data with local selections
+      return serverNodes.map((serverNode) => {
+        const existingLocal = prev.find((n) => n.id === serverNode.id);
+        return {
+          ...serverNode,
+          selected: existingLocal?.selected || false, // Preserve selection state
+        };
+      });
+    });
+
+    setLocalEdges((prev) => {
+      // Merge server data with local selections
+      return serverEdges.map((serverEdge) => {
+        const existingLocal = prev.find((e) => e.id === serverEdge.id);
+        return {
+          ...serverEdge,
+          selected: existingLocal?.selected || false, // Preserve selection state
+        };
+      });
+    });
+  }, [canvasData]); // Only depend on the canvasData object itself
+
+  // Use local state for rendering
+  const nodes = localNodes;
+  const edges = localEdges;
+
+  // Handlers
+  const handleNodesChange = useCallback(
+    (changes: any[]) => {
+      console.log("Node changes:", changes);
+
+      // Apply all changes locally first
+      setLocalNodes((prev) => applyNodeChanges(changes, prev));
+
+      // Only send non-selection changes to server
+      const nonSelectionChanges = changes.filter((c) => c.type !== "select");
+      if (nonSelectionChanges.length > 0) {
+        updateNodes({ campaignId, changes: nonSelectionChanges });
       }
     },
-    [triggerAutoSave, onNodesChange]
+    [updateNodes, campaignId]
   );
 
   const handleEdgesChange = useCallback(
-    (changes: Parameters<typeof onEdgesChange>[0]) => {
-      onEdgesChange(changes);
-      if (changes.filter((c) => c.type !== "select").length > 0) {
-        triggerAutoSave();
+    (changes: any[]) => {
+      // Apply all changes locally first
+      setLocalEdges((prev) => applyEdgeChanges(changes, prev));
+
+      // Only send non-selection changes to server
+      const nonSelectionChanges = changes.filter((c) => c.type !== "select");
+      if (nonSelectionChanges.length > 0) {
+        updateEdges({ campaignId, changes: nonSelectionChanges });
       }
     },
-    [triggerAutoSave, onEdgesChange]
+    [updateEdges, campaignId]
   );
-
-  // Keyboard shortcuts
-  useHotkeys(
-    "s+meta",
-    () => {
-      saveNow();
-    },
-    {
-      preventDefault: true,
-      enabled: status !== "saving",
-    }
-  );
-
-  // Show placeholder note while adding
-  useEffect(() => {
-    if (isAddingNote) {
-      const viewport = getViewport();
-      const flowElement = document.querySelector(".react-flow") as HTMLElement;
-      if (!flowElement) return;
-
-      const bounds = flowElement.getBoundingClientRect();
-
-      const placeholderNode = {
-        id: "note-placeholder",
-        type: "note",
-        position: {
-          x: (window.mouseX - bounds.left - viewport.x) / viewport.zoom + 20,
-          y: (window.mouseY - bounds.top - viewport.y) / viewport.zoom + 20,
-        },
-        style: { opacity: 0.5 },
-        selectable: false,
-        draggable: false,
-        data: {
-          title: "New Note",
-          content: "Click to place note",
-        },
-      };
-
-      setNodes((nds) => [...nds, placeholderNode]);
-
-      return () => {
-        setNodes((nds) => nds.filter((n) => n.id !== "note-placeholder"));
-      };
-    }
-  }, [isAddingNote, setNodes, getViewport]);
 
   // Track mouse position when adding note
   useEffect(() => {
     if (!isAddingNote) return;
 
     const handleMouseMove = (event: MouseEvent) => {
-      const flowElement = document.querySelector(".react-flow") as HTMLElement;
-      if (!flowElement) return;
-
-      const bounds = flowElement.getBoundingClientRect();
-      const viewport = getViewport();
-
-      const position = {
-        x: (event.clientX - bounds.left - viewport.x) / viewport.zoom + 20,
-        y: (event.clientY - bounds.top - viewport.y) / viewport.zoom + 20,
-      };
-
-      // Update only the placeholder node's position, not the overlay
-      setNodes((nds) =>
-        nds.map((node) =>
-          node.id === "note-placeholder" ? { ...node, position } : node
-        )
-      );
+      window.mouseX = event.clientX;
+      window.mouseY = event.clientY;
     };
 
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [isAddingNote, getViewport, setNodes]);
-
-  // Set initial data (nodes, edges, viewport)
-  useEffect(() => {
-    if (initialData) {
-      setViewport(initialData.viewport);
-      setNodes(initialData.nodes);
-      setEdges(initialData.edges);
-    }
-  }, [initialData, setViewport, setNodes, setEdges]);
+  }, [isAddingNote]);
 
   const onConnect = useCallback(
     (params: Connection) => {
-      setEdges((eds) => addEdge(params, eds));
-      triggerAutoSave();
-
-      const childId = params.target;
-      const parentId = params.source;
-
-      setNodes((nds) => {
-        // Find the child and potential parent nodes
-        const childNode = nds.find((n) => n.id === childId);
-        const parentNode = nds.find((n) => n.id === parentId);
-
-        if (!childNode || !parentNode) return nds;
-
-        // Calculate the current absolute position of the child node
-        let childAbsoluteX = childNode.position.x;
-        let childAbsoluteY = childNode.position.y;
-
-        // If the child already has a parent, add its parent's position to get the absolute position
-        if (childNode.parentId) {
-          let currentParentId: string | undefined = childNode.parentId;
-          while (currentParentId) {
-            const currentParent = nds.find((n) => n.id === currentParentId);
-            if (!currentParent) break;
-
-            childAbsoluteX += currentParent.position.x;
-            childAbsoluteY += currentParent.position.y;
-            currentParentId = currentParent.parentId;
-          }
-        }
-
-        // Calculate what the relative position should be to maintain the same absolute position
-        // when connected to the new parent
-        let parentAbsoluteX = parentNode.position.x;
-        let parentAbsoluteY = parentNode.position.y;
-
-        // If the new parent has a parent, add its parent's position
-        if (parentNode.parentId) {
-          let currentParentId: string | undefined = parentNode.parentId;
-          while (currentParentId) {
-            const currentParent = nds.find((n) => n.id === currentParentId);
-            if (!currentParent) break;
-
-            parentAbsoluteX += currentParent.position.x;
-            parentAbsoluteY += currentParent.position.y;
-            currentParentId = currentParent.parentId;
-          }
-        }
-
-        // Calculate the new relative position
-        const newRelativeX = childAbsoluteX - parentAbsoluteX;
-        const newRelativeY = childAbsoluteY - parentAbsoluteY;
-
-        return nds.map((node) => {
-          if (node.id === childId) {
-            return {
-              ...node,
-              parentId,
-              position: { x: newRelativeX, y: newRelativeY },
-            };
-          }
-          return node;
-        });
+      connectEdge({
+        campaignId,
+        connection: {
+          source: params.source!,
+          target: params.target!,
+          sourceHandle: params.sourceHandle || undefined,
+          targetHandle: params.targetHandle || undefined,
+        },
       });
     },
-    [setEdges, setNodes, triggerAutoSave]
-  );
-
-  const onEdgesDelete = useCallback(
-    (edgesToDelete: Edge[]) => {
-      triggerAutoSave();
-      // Process each deleted edge
-      for (const edge of edgesToDelete) {
-        if (edge.target.includes("placeholder")) continue;
-
-        const targetNodeId = edge.target;
-        const sourceNodeId = edge.source;
-
-        setNodes((nds) => {
-          // 1. Get the target node that will be disconnected from its parent
-          const targetNode = nds.find((n) => n.id === targetNodeId);
-          const sourceNode = nds.find((n) => n.id === sourceNodeId);
-
-          if (!targetNode || targetNode.parentId !== sourceNodeId) return nds;
-
-          // Handle variant weight redistribution for AB Test nodes
-          if (sourceNode?.type === "ab-test") {
-            // Find all remaining variants connected to this AB test
-            const remainingVariants = nds.filter(
-              (n) => n.parentId === sourceNodeId && n.id !== targetNodeId
-            );
-
-            if (remainingVariants.length > 0) {
-              // Calculate equal percentage for remaining variants
-              const equalPercentage = Math.floor(
-                100 / remainingVariants.length
-              );
-              const remainder =
-                100 - equalPercentage * remainingVariants.length;
-
-              // Update edges with new percentages
-              setEdges((eds) =>
-                eds.map((ed) => {
-                  if (ed.source === sourceNodeId) {
-                    const variantIndex = remainingVariants.findIndex(
-                      (v) => v.id === ed.target
-                    );
-                    if (variantIndex !== -1) {
-                      return {
-                        ...ed,
-                        data: {
-                          ...ed.data,
-                          trafficPercentage:
-                            equalPercentage +
-                            (variantIndex === 0 ? remainder : 0),
-                        },
-                      };
-                    }
-                  }
-                  return ed;
-                })
-              );
-
-              // Update variant nodes with new percentages
-              return nds.map((node) => {
-                const variantIndex = remainingVariants.findIndex(
-                  (v) => v.id === node.id
-                );
-                if (variantIndex !== -1) {
-                  return {
-                    ...node,
-                    data: {
-                      ...node.data,
-                      trafficPercentage:
-                        equalPercentage + (variantIndex === 0 ? remainder : 0),
-                    },
-                  };
-                }
-                if (node.id === targetNodeId) {
-                  return {
-                    ...node,
-                    parentId: undefined,
-                    position: {
-                      x: node.position.x + (sourceNode?.position.x || 0),
-                      y: node.position.y + (sourceNode?.position.y || 0),
-                    },
-                  };
-                }
-                return node;
-              });
-            }
-          }
-
-          // 2. Calculate absolute positions for the target node
-          let absoluteX = targetNode.position.x;
-          let absoluteY = targetNode.position.y;
-          const currentNode = targetNode;
-          let currentParentId: string | undefined = currentNode.parentId;
-
-          while (currentParentId) {
-            const parentNode = nds.find((n) => n.id === currentParentId);
-            if (!parentNode) break;
-
-            absoluteX += parentNode.position.x;
-            absoluteY += parentNode.position.y;
-            currentParentId = parentNode.parentId;
-          }
-
-          // 3. Get all descendants of the target node (recursive)
-          const findAllDescendants = (nodeId: string): string[] => {
-            const directChildren = nds
-              .filter((n) => n.parentId === nodeId)
-              .map((n) => n.id);
-
-            const allDescendants = [...directChildren];
-
-            for (const childId of directChildren) {
-              allDescendants.push(...findAllDescendants(childId));
-            }
-
-            return allDescendants;
-          };
-
-          const descendants = findAllDescendants(targetNodeId);
-
-          // 4. Update the target node and all its descendants
-          return nds.map((node) => {
-            // If this is the target node that was directly connected to the deleted edge
-            if (node.id === targetNodeId) {
-              return {
-                ...node,
-                parentId: undefined, // Remove parent reference
-                position: { x: absoluteX, y: absoluteY }, // Use absolute position
-              };
-            }
-
-            // For descendants, maintain their positions relative to their parents
-            if (descendants.includes(node.id)) {
-              return node; // Keep the same relative positions for descendants
-            }
-
-            return node;
-          });
-        });
-      }
-    },
-    [setNodes, setEdges, triggerAutoSave]
-  );
-
-  // Handle node selection and cleanup
-  const onNodeClick = useCallback(
-    (_: React.MouseEvent, clickedNode: Node) => {
-      if (isAddingNote) return;
-
-      setNodes((nds) => {
-        // Find placeholder nodes that need to be deleted
-        const placeholderNodesToDelete = nds.filter(
-          (n) => n.type === "placeholder" && n.id !== clickedNode.id
-        );
-
-        if (placeholderNodesToDelete.length > 0) {
-          // Find edges connected to placeholder nodes
-          const placeholderEdges = edges.filter((edge) =>
-            placeholderNodesToDelete.some((node) => edge.target === node.id)
-          );
-
-          // Delete placeholder nodes and their edges
-          deleteElements({
-            nodes: placeholderNodesToDelete,
-            edges: placeholderEdges,
-          });
-
-          // Return nodes with updated selection state, excluding deleted placeholders
-          return nds
-            .filter((n) => !placeholderNodesToDelete.some((p) => p.id === n.id))
-            .map((n) => ({
-              ...n,
-              selected: n.id === clickedNode.id,
-            }));
-        }
-
-        // If no placeholders to delete, just update selection
-        return nds.map((n) => ({
-          ...n,
-          selected: n.id === clickedNode.id,
-        }));
-      });
-    },
-    [edges, deleteElements, setNodes, isAddingNote]
+    [connectEdge, campaignId]
   );
 
   // Handle clicking on the pane (background)
@@ -501,42 +266,38 @@ export const Canvas = ({
         return;
       }
 
-      setNodes((nds) => {
-        // Find all placeholder nodes
-        const placeholderNodes = nds.filter((n) => n.type === "placeholder");
+      // Find all placeholder nodes
+      const placeholderNodes = nodes.filter((n) => n.type === "placeholder");
 
-        if (placeholderNodes.length > 0) {
-          // Find edges connected to placeholder nodes
-          const placeholderEdges = edges.filter((edge) =>
-            placeholderNodes.some((node) => edge.target === node.id)
-          );
+      if (placeholderNodes.length > 0) {
+        // Find edges connected to placeholder nodes
+        const placeholderEdges = edges.filter((edge) =>
+          placeholderNodes.some((node) => edge.target === node.id)
+        );
 
-          // Delete placeholder nodes and their edges
-          deleteElements({
-            nodes: placeholderNodes,
-            edges: placeholderEdges,
-          });
-
-          // Return remaining nodes with selection cleared
-          return nds
-            .filter((n) => !placeholderNodes.some((p) => p.id === n.id))
-            .map((n) => ({ ...n, selected: false }));
-        }
-
-        // If no placeholders to delete, just clear selection
-        return nds.map((n) => ({ ...n, selected: false }));
-      });
+        // Delete placeholder nodes and their edges
+        deleteElements({
+          nodes: placeholderNodes,
+          edges: placeholderEdges,
+        });
+      }
     },
     [
       isAddingNote,
       deleteElements,
-      setNodes,
       addNodes,
       setIsAddingNote,
       edges,
+      nodes,
       getViewport,
     ]
   );
+
+  // Simple node click handler for debugging
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    console.log("Node clicked:", node.type, node.id);
+    // Don't prevent default - let React Flow handle selection
+  }, []);
 
   // Prevent deletion of traffic nodes and handle cleanup
   const onBeforeDelete = useCallback(
@@ -555,112 +316,136 @@ export const Canvas = ({
         };
       }
 
-      // Check for variant deletion restrictions (applies regardless of A/B test status)
-      const variantNodesToDelete = nodesToDelete.filter((node) => node.type === "variant");
-      
+      // Check for variant deletion restrictions
+      const variantNodesToDelete = nodesToDelete.filter(
+        (node) => node.type === "variant"
+      );
+
       if (variantNodesToDelete.length > 0) {
         // For each AB test, check if we're violating the minimum variant rules
-        const abTestIds = new Set(variantNodesToDelete.map(node => node.parentId).filter(Boolean));
-        
+        const abTestIds = [
+          ...new Set(
+            variantNodesToDelete.map((node) => node.parentId).filter(Boolean)
+          ),
+        ];
+
         for (const abTestId of abTestIds) {
           // Check if the parent A/B test is also being deleted
           const abTestBeingDeleted = nodesToDelete.some(
             (node) => node.type === "ab-test" && node.id === abTestId
           );
-          
+
           // If the A/B test is being deleted, allow variant deletion
           if (abTestBeingDeleted) continue;
-          
+
           // Get all variants for this AB test
           const allVariantsForTest = nodes.filter(
             (node) => node.type === "variant" && node.parentId === abTestId
           );
-          
+
           // Get variants that will remain after deletion
           const remainingVariants = allVariantsForTest.filter(
-            (variant) => !variantNodesToDelete.some(toDelete => toDelete.id === variant.id)
+            (variant) =>
+              !variantNodesToDelete.some(
+                (toDelete) => toDelete.id === variant.id
+              )
           );
-          
+
           // Check if we're trying to delete a control variant
           const controlVariantToDelete = variantNodesToDelete.find(
-            (variant) => variant.parentId === abTestId && variant.data?.isControl
+            (variant) =>
+              variant.parentId === abTestId && variant.data?.isControl
           );
-          
-          // Prevent deletion if:
-          // 1. Trying to delete control variant (unless A/B test is being deleted)
-          // 2. Would leave less than 2 variants (unless A/B test is being deleted)
+
           if (controlVariantToDelete) {
             toast.error("Cannot delete control variant", {
               id: "delete-control-variant",
-              description: "Control variants cannot be deleted. Make another variant the control first, or delete the entire A/B test.",
+              description:
+                "Control variants cannot be deleted. Make another variant the control first, or delete the entire A/B test.",
             });
             return {
-              nodes: [], // Don't delete any nodes
-              edges: [], // Don't delete any edges
+              nodes: [],
+              edges: [],
             };
           }
-          
+
           if (remainingVariants.length < 2) {
             toast.error("Minimum 2 variants required", {
               id: "delete-minimum-variants",
-              description: "A/B tests require at least 2 variants. Delete the entire A/B test instead, or add more variants first.",
+              description:
+                "A/B tests require at least 2 variants. Delete the entire A/B test instead, or add more variants first.",
             });
             return {
-              nodes: [], // Don't delete any nodes
-              edges: [], // Don't delete any edges
+              nodes: [],
+              edges: [],
             };
           }
         }
       }
 
       // Check for A/B test deletion restrictions based on state
-      const abTestNodesToDelete = nodesToDelete.filter((node) => node.type === "ab-test");
-      const segmentNodesToDelete = nodesToDelete.filter((node) => node.type === "segment");
-      
+      const abTestNodesToDelete = nodesToDelete.filter(
+        (node) => node.type === "ab-test"
+      );
+      const segmentNodesToDelete = nodesToDelete.filter(
+        (node) => node.type === "segment"
+      );
+
       // Prevent deletion of A/B tests in protected states
       for (const abTestNode of abTestNodesToDelete) {
-        const status = abTestNode.data?.status;
-        if (status === "running" || status === "completed" || status === "paused") {
+        const status = (abTestNode.data as any)?.status;
+        if (
+          status === "running" ||
+          status === "completed" ||
+          status === "paused"
+        ) {
           const statusText = status.charAt(0).toUpperCase() + status.slice(1);
           toast.error(`Cannot delete ${statusText.toLowerCase()} A/B test`, {
             id: "delete-protected-abtest",
             description: `${statusText} A/B tests cannot be deleted. Change the test status to draft first.`,
           });
           return {
-            nodes: [], // Don't delete any nodes
-            edges: [], // Don't delete any edges
+            nodes: [],
+            edges: [],
           };
         }
       }
-      
+
       // Prevent deletion of segments that have A/B tests in protected states
       for (const segmentNode of segmentNodesToDelete) {
         // Check if the segment contains A/B tests that are also being deleted
         const childAbTests = nodes.filter(
           (node) => node.type === "ab-test" && node.parentId === segmentNode.id
         );
-        
+
         // Filter out A/B tests that are being deleted along with the segment
         const remainingAbTests = childAbTests.filter(
-          (abTest) => !abTestNodesToDelete.some(toDelete => toDelete.id === abTest.id)
+          (abTest) =>
+            !abTestNodesToDelete.some((toDelete) => toDelete.id === abTest.id)
         );
-        
+
         // Check if any remaining child A/B test is in a protected state
         const protectedAbTest = remainingAbTests.find((abTest) => {
-          const status = abTest.data?.status;
-          return status === "running" || status === "completed" || status === "paused";
+          const status = (abTest.data as ABTestNodeData)?.status;
+          return (
+            status === "running" ||
+            status === "completed" ||
+            status === "paused"
+          );
         });
-        
+
         if (protectedAbTest) {
-          const status = protectedAbTest.data?.status as string;
-          const statusText = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Active";
+          const status = (protectedAbTest.data as any)?.status as string;
+          const statusText = status
+            ? status.charAt(0).toUpperCase() + status.slice(1)
+            : "Active";
           toast.error("Cannot delete segment with active tests", {
             id: "delete-protected-segment",
             description: `This segment contains ${statusText.toLowerCase()} A/B tests. Delete or change the status of all A/B tests first.`,
           });
           return {
-            nodes: [], // Don't delete any nodes
-            edges: [], // Don't delete any edges
+            nodes: [],
+            edges: [],
           };
         }
       }
@@ -705,6 +490,133 @@ export const Canvas = ({
     [nodes]
   );
 
+  // Handle edge deletion with weight redistribution
+  const onEdgesDelete = useCallback(
+    (edgesToDelete: Edge[]) => {
+      // Process each deleted edge for complex logic
+      for (const edge of edgesToDelete) {
+        if (edge.target.includes("placeholder")) continue;
+
+        const targetNodeId = edge.target;
+        const sourceNodeId = edge.source;
+
+        // Find target and source nodes
+        const targetNode = nodes.find((n) => n.id === targetNodeId);
+        const sourceNode = nodes.find((n) => n.id === sourceNodeId);
+
+        if (!targetNode || targetNode.parentId !== sourceNodeId) continue;
+
+        // Handle variant weight redistribution for AB Test nodes
+        if (sourceNode?.type === "ab-test") {
+          // Find all remaining variants connected to this AB test
+          const remainingVariants = nodes.filter(
+            (n) => n.parentId === sourceNodeId && n.id !== targetNodeId
+          );
+
+          if (remainingVariants.length > 0) {
+            // Calculate equal percentage for remaining variants
+            const equalPercentage = Math.floor(100 / remainingVariants.length);
+            const remainder = 100 - equalPercentage * remainingVariants.length;
+
+            // Need to update both edges and nodes with new percentages
+            // This will be handled by the edge and node change mutations
+            const edgeChanges = edges
+              .filter(
+                (ed) => ed.source === sourceNodeId && ed.target !== targetNodeId
+              )
+              .map((ed, index) => ({
+                type: "replace" as const,
+                id: ed.id,
+                item: {
+                  ...ed,
+                  data: {
+                    ...ed.data,
+                    trafficPercentage:
+                      equalPercentage + (index === 0 ? remainder : 0),
+                  },
+                },
+              }));
+
+            const nodeChanges = remainingVariants.map((node, index) => ({
+              type: "replace" as const,
+              id: node.id,
+              item: {
+                ...node,
+                data: {
+                  ...node.data,
+                  trafficPercentage:
+                    equalPercentage + (index === 0 ? remainder : 0),
+                },
+              },
+            }));
+
+            // Update edges with new percentages
+            if (edgeChanges.length > 0) {
+              updateEdges({ campaignId, changes: edgeChanges });
+            }
+
+            // Update nodes with new percentages and position the disconnected node
+            const targetNodeChange = {
+              type: "replace" as const,
+              id: targetNodeId,
+              item: {
+                ...targetNode,
+                parentId: undefined,
+                position: {
+                  x: targetNode.position.x + (sourceNode?.position.x || 0),
+                  y: targetNode.position.y + (sourceNode?.position.y || 0),
+                },
+              },
+            };
+
+            updateNodes({
+              campaignId,
+              changes: [...nodeChanges, targetNodeChange],
+            });
+          }
+        } else {
+          // For non-AB test nodes, just update the target node position
+          let absoluteX = targetNode.position.x;
+          let absoluteY = targetNode.position.y;
+          let currentParentId: string | undefined = targetNode.parentId;
+
+          // Calculate absolute positions
+          while (currentParentId) {
+            const parentNode = nodes.find((n) => n.id === currentParentId);
+            if (!parentNode) break;
+
+            absoluteX += parentNode.position.x;
+            absoluteY += parentNode.position.y;
+            currentParentId = parentNode.parentId;
+          }
+
+          // Update the target node to remove parent and use absolute position
+          const nodeChange = {
+            type: "replace" as const,
+            id: targetNodeId,
+            item: {
+              ...targetNode,
+              parentId: undefined,
+              position: { x: absoluteX, y: absoluteY },
+            },
+          };
+
+          updateNodes({ campaignId, changes: [nodeChange] });
+        }
+      }
+    },
+    [nodes, edges, updateEdges, updateNodes, campaignId]
+  );
+
+  // Loading state
+  if (!canvasData) {
+    return (
+      <div className="flex justify-center items-center w-full h-full">
+        <p>Loading canvas...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full h-full">
       <ReactFlow
@@ -721,11 +633,12 @@ export const Canvas = ({
           padding: 0.4,
         }}
         maxZoom={3}
+        fitView={true}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
+        onConnect={onConnect}
         onBeforeDelete={onBeforeDelete}
         onEdgesDelete={onEdgesDelete}
-        onConnect={onConnect}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
         nodeTypes={nodeTypes}
@@ -738,11 +651,11 @@ export const Canvas = ({
         elementsSelectable={!isAddingNote}
         snapToGrid={true}
         snapGrid={[10, 10]}
-        selectionOnDrag={!isAddingNote && mode === "select"}
+        selectionOnDrag={mode === "select"}
+        selectNodesOnDrag={mode === "select"}
       >
         <Background />
         <Controller />
-        <SaveStatusComponent status={status} hasChanges={hasChanges} />
       </ReactFlow>
 
       {isAddingNote && (
@@ -768,7 +681,7 @@ export const Canvas = ({
               position: clickPosition,
               selected: true,
               data: {
-                author: "Batuhan Bilgin",
+                author: "User",
                 content: "",
               },
             };
