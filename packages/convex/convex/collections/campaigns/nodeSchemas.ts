@@ -46,16 +46,10 @@ export const ruleTypeId = v.union(
 	v.literal("dayOfWeek"),
 );
 
-export const validation = v.object({
-	isValid: v.boolean(),
-	message: v.string(),
-});
-
 export const trafficNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	validations: v.array(validation),
 	defaultVariantId: v.union(v.string(), v.null()),
 });
 
@@ -78,7 +72,6 @@ export const segmentNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	validations: v.array(validation),
 	priority: v.number(),
 	primaryLandingPageId: v.string(),
 	rules: v.array(segmentRule),
@@ -96,7 +89,6 @@ export const abTestNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	validations: v.array(validation),
 	hypothesis: v.string(),
 	status: v.union(
 		v.literal("draft"),
@@ -128,7 +120,6 @@ export const variantNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	validations: v.array(validation),
 	variantId: v.union(v.string(), v.null()),
 	trafficPercentage: v.number(),
 	translations: v.array(variantTranslation),
@@ -140,7 +131,6 @@ export const noteNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	validations: v.array(validation),
 	content: v.string(),
 	author: v.string(),
 });
@@ -191,9 +181,46 @@ export type NoteNodeData = Infer<typeof noteNodeData>;
 export type EdgeData = Infer<typeof edgeDataSchema>;
 
 // Export additional types
-export type Validation = Infer<typeof validation>;
 export type FilterOperator = Infer<typeof filterOperator>;
 export type RuleValueType = Infer<typeof ruleValueType>;
 export type RuleTypeId = Infer<typeof ruleTypeId>;
 export type SegmentRule = Infer<typeof segmentRule>;
 export type CampaignNodeTypes = Infer<typeof campaignNodeTypes>;
+
+// Validation types
+export type ValidationSeverity = "error" | "warning" | "info";
+
+export interface ValidationItem {
+	id: string;
+	isValid: boolean;
+	message: string;
+	severity: ValidationSeverity;
+	field?: string;
+	priority?: number;
+}
+
+export interface ValidationResult {
+	nodeId: string;
+	nodeType: string;
+	nodeTitle: string;
+	validations: ValidationItem[];
+}
+
+// React Flow validators - moved from types.ts
+export const nodeChangeValidator = v.any();
+export const edgeChangeValidator = v.any();
+
+// Connection validator for new edge connections
+export const connectionValidator = v.object({
+	source: v.string(),
+	target: v.string(),
+	sourceHandle: v.optional(v.string()),
+	targetHandle: v.optional(v.string()),
+});
+
+// Viewport change validator
+export const viewportChangeValidator = v.object({
+	x: v.number(),
+	y: v.number(),
+	zoom: v.number(),
+});

@@ -5,6 +5,7 @@ import type {
 	SegmentNode,
 	SegmentRule,
 } from "@/components/canvas/campaign/nodes/campaign/types";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { type Doc, api, useCachedQuery } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -45,6 +46,7 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 	const [description, setDescription] = useState(node.data.description || "");
 	const [showAddRules, setShowAddRules] = useState(false);
 	const [editingRule, setEditingRule] = useState<SegmentRule | null>(null);
+	const [_state, { openModal }] = useNewLandingPageModal();
 
 	// Fetch landing pages for the campaign
 	const landingPages = useCachedQuery(
@@ -78,13 +80,13 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 	};
 
 	const updatePrimaryLandingPage = (landingPageId: string) => {
+		// Prevent unselecting once a landing page is selected
+		if (!landingPageId && node.data.primaryLandingPageId) {
+			return;
+		}
+
 		updateSegmentData({
 			primaryLandingPageId: landingPageId,
-			validations: node.data.validations.map((v) =>
-				v.message.includes("default landing page")
-					? { ...v, isValid: !!landingPageId }
-					: v,
-			),
 		});
 	};
 
@@ -229,7 +231,12 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 								<p className="text-sm text-muted-foreground">
 									No landing pages found
 								</p>
-								<Button size="sm" variant="outline" className="mt-2">
+								<Button
+									size="sm"
+									variant="outline"
+									className="mt-2"
+									onClick={() => campaign && openModal(campaign._id)}
+								>
 									Create your first landing page
 								</Button>
 							</div>

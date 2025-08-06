@@ -44,6 +44,18 @@ export const nodeSchema = v.object({
 	handles: v.optional(v.array(v.any())),
 });
 
+const goalSchema = v.object({
+	id: v.string(),
+	title: v.string(),
+	description: v.optional(v.string()),
+	direction: v.union(v.literal("up"), v.literal("down")),
+	placement: v.union(v.literal("internal"), v.literal("external")),
+	value: v.number(),
+	currency: v.optional(v.string()),
+	type: v.union(v.literal("conversion"), v.literal("engagement")),
+	isCustom: v.boolean(),
+});
+
 export const campaignSchema = defineTable(
 	v.object({
 		title: v.string(),
@@ -58,10 +70,17 @@ export const campaignSchema = defineTable(
 			v.literal("published"),
 			v.literal("finished"),
 		),
-		// Canvas data as separate columns (replacing config object)
+		// Canvas data as separate columns
 		nodes: v.array(nodeSchema),
 		edges: v.array(edgeSchema),
 		viewport: viewportSchema,
+		// Campaign Settings
+		campaignSettings: v.object({
+			primaryGoal: goalSchema,
+			customGoals: v.optional(v.array(goalSchema)),
+			sessionDuration: v.number(),
+			attributionPeriod: v.number(),
+		}),
 		// Timestamps
 		updatedAt: v.optional(v.string()),
 		startedAt: v.optional(v.string()),
@@ -79,7 +98,6 @@ export const campaignSchema = defineTable(
 		workspaceId: v.id("workspaces"),
 		projectId: v.id("projects"),
 		createdBy: v.id("users"),
-		defaultLandingPageId: v.optional(v.id("landingPages")),
 	}),
 )
 	.index("by_workspace_id", ["workspaceId"])

@@ -22,20 +22,20 @@ const getVariantColor = (index: number, isControl: boolean) => {
 	if (isControl) {
 		return "bg-blue-500 text-white"; // Blue for control (A)
 	}
-	
+
 	const colors = [
-		"bg-blue-500 text-white",    // A (control) - blue
+		"bg-blue-500 text-white", // A (control) - blue
 		"bg-emerald-600 text-white", // B - emerald
-		"bg-purple-500 text-white",  // C - purple
-		"bg-orange-500 text-white",  // D - orange
-		"bg-pink-500 text-white",    // E - pink
-		"bg-indigo-500 text-white",  // F - indigo
-		"bg-red-500 text-white",     // G - red
-		"bg-teal-500 text-white",    // H - teal
-		"bg-yellow-500 text-black",  // I - yellow (black text for contrast)
-		"bg-cyan-500 text-white",    // J - cyan
+		"bg-purple-500 text-white", // C - purple
+		"bg-orange-500 text-white", // D - orange
+		"bg-pink-500 text-white", // E - pink
+		"bg-indigo-500 text-white", // F - indigo
+		"bg-red-500 text-white", // G - red
+		"bg-teal-500 text-white", // H - teal
+		"bg-yellow-500 text-black", // I - yellow (black text for contrast)
+		"bg-cyan-500 text-white", // J - cyan
 	];
-	
+
 	return colors[index] || "bg-gray-500 text-white"; // Fallback for beyond J
 };
 
@@ -43,7 +43,7 @@ const getVariantColor = (index: number, isControl: boolean) => {
 export const VariantNode = memo(
 	({ selected, data, id }: NodeProps<VariantNodeType>) => {
 		const { title, description, variantIndex = 0, isControl = false } = data;
-		const [isHovered, setIsHovered] = useState(false);
+		const [_isHovered, setIsHovered] = useState(false);
 
 		// Check for external hover state from panel
 		const isExternallyHovered = data.isHovered || false;
@@ -94,14 +94,16 @@ export const VariantNode = memo(
 				{/* Header */}
 				<div
 					className={cn(
-						"flex items-center gap-2 px-3 py-2 border-b bg-background-subtle rounded-t-md",
+						"flex gap-2 items-center px-3 py-2 rounded-t-md border-b bg-background-subtle",
 					)}
 				>
 					{/* Letter-based colored icon */}
-					<div className={cn(
-						"flex justify-center items-center w-6 h-6 text-xs font-bold rounded-md",
-						getVariantColor(variantIndex, isControl)
-					)}>
+					<div
+						className={cn(
+							"flex justify-center items-center w-6 h-6 text-xs font-bold rounded-md",
+							getVariantColor(variantIndex, isControl),
+						)}
+					>
 						{getVariantLetter(variantIndex)}
 					</div>
 					<span className="text-lg font-medium">{title}</span>

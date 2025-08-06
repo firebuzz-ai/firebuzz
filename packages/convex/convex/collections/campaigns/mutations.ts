@@ -1,5 +1,12 @@
+import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import {
+	type EdgeChange,
+	type NodeChange,
+	addEdge,
+	applyEdgeChanges,
+	applyNodeChanges,
+} from "@xyflow/react";
 import { ConvexError, v } from "convex/values";
-import { applyNodeChanges, applyEdgeChanges, addEdge } from "@xyflow/react";
 import { internal } from "../../_generated/api";
 import type { Doc } from "../../_generated/dataModel";
 import { retrier } from "../../components/actionRetrier";
@@ -9,7 +16,12 @@ import {
 } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
-import { nodeChangeValidator, edgeChangeValidator, connectionValidator, viewportChangeValidator } from "./types";
+import {
+	connectionValidator,
+	edgeChangeValidator,
+	nodeChangeValidator,
+	viewportChangeValidator,
+} from "./nodeSchemas";
 
 export const create = mutationWithTrigger({
 	args: {
@@ -34,6 +46,12 @@ export const create = mutationWithTrigger({
 			throw new ConvexError("Campaign slug must be unique");
 		}
 
+		const primaryGoal = (
+			args.type === "lead-generation"
+				? CAMPAIGN_GOALS.find((goal) => goal.id === "form-submission")
+				: CAMPAIGN_GOALS.find((goal) => goal.id === "click-through-rate")
+		) as (typeof CAMPAIGN_GOALS)[number];
+
 		// Create campaign with default canvas data in separate columns
 		const campaignId = await ctx.db.insert("campaigns", {
 			title: args.title,
@@ -41,6 +59,12 @@ export const create = mutationWithTrigger({
 			slug: args.slug,
 			type: args.type,
 			projectId: args.projectId,
+			campaignSettings: {
+				primaryGoal,
+				customGoals: [],
+				sessionDuration: 30,
+				attributionPeriod: 30,
+			},
 			createdBy: user._id,
 			workspaceId: user.currentWorkspaceId,
 			isPublished: false,
@@ -56,9 +80,6 @@ export const create = mutationWithTrigger({
 						title: "Incoming Traffic",
 						description: "Start of the campaign",
 						defaultVariantId: null,
-						validations: [
-							{ isValid: false, message: "No default landing page selected" },
-						],
 					},
 				},
 			],
@@ -281,12 +302,12 @@ export const update = mutationWithTrigger({
 		if (args.slug !== undefined) updateFields.slug = args.slug;
 		if (args.type !== undefined) updateFields.type = args.type;
 		if (args.projectId !== undefined) updateFields.projectId = args.projectId;
-		
+
 		// Handle canvas data (new schema)
 		if (args.nodes !== undefined) updateFields.nodes = args.nodes;
 		if (args.edges !== undefined) updateFields.edges = args.edges;
 		if (args.viewport !== undefined) updateFields.viewport = args.viewport;
-		
+
 		// Handle config for backward compatibility during migration
 		if (args.config !== undefined) {
 			// If config is provided, extract to separate columns
@@ -331,7 +352,10 @@ export const updateNodes = mutationWithTrigger({
 		});
 
 		// Apply changes to current nodes
-		const updatedNodes = applyNodeChanges(validChanges as any, campaign.nodes);
+		const updatedNodes = applyNodeChanges(
+			validChanges as NodeChange<(typeof campaign.nodes)[number]>[],
+			campaign.nodes,
+		);
 
 		// Update campaign with new nodes
 		await ctx.db.patch(args.campaignId, {
@@ -374,7 +398,10 @@ export const updateEdges = mutationWithTrigger({
 		});
 
 		// Apply changes to current edges
-		const updatedEdges = applyEdgeChanges(validChanges as any, campaign.edges);
+		const updatedEdges = applyEdgeChanges(
+			validChanges as EdgeChange<(typeof campaign.edges)[number]>[],
+			campaign.edges,
+		);
 
 		// Update campaign with new edges
 		await ctx.db.patch(args.campaignId, {
@@ -443,7 +470,9 @@ export const connectEdge = mutationWithTrigger({
 			args.connection.source?.startsWith("pending-") ||
 			args.connection.target?.startsWith("pending-")
 		) {
-			console.warn("ignoring pending connection", { connection: args.connection });
+			console.warn("ignoring pending connection", {
+				connection: args.connection,
+			});
 			return campaign.edges;
 		}
 
@@ -462,5 +491,83 @@ export const connectEdge = mutationWithTrigger({
 		});
 
 		return updatedEdges;
+	},
+});
+
+const goalSchemaValidator = v.object({
+	id: v.string(),
+	title: v.string(),
+	description: v.optional(v.string()),
+	direction: v.union(v.literal("up"), v.literal("down")),
+	placement: v.union(v.literal("internal"), v.literal("external")),
+	value: v.number(),
+	currency: v.optional(v.string()),
+	type: v.union(v.literal("conversion"), v.literal("engagement")),
+	isCustom: v.boolean(),
+});
+
+export const updateCampaignSettings = mutationWithTrigger({
+	args: {
+		campaignId: v.id("campaigns"),
+		campaignSettings: v.object({
+			primaryGoal: v.optional(goalSchemaValidator),
+			customGoals: v.optional(v.array(goalSchemaValidator)),
+			sessionDuration: v.optional(v.number()),
+			attributionPeriod: v.optional(v.number()),
+		}),
+	},
+	handler: async (ctx, args) => {
+		// Check if user is authenticated
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get campaign
+		const campaign = await ctx.db.get(args.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError("Campaign not found");
+		}
+
+		if (campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Validate session duration (5-30 minutes)
+		if (args.campaignSettings.sessionDuration !== undefined) {
+			if (
+				args.campaignSettings.sessionDuration < 5 ||
+				args.campaignSettings.sessionDuration > 30
+			) {
+				throw new ConvexError(
+					"Session duration must be between 5 and 30 minutes",
+				);
+			}
+		}
+
+		// Validate attribution period (1-30 days)
+		if (args.campaignSettings.attributionPeriod !== undefined) {
+			if (
+				args.campaignSettings.attributionPeriod < 1 ||
+				args.campaignSettings.attributionPeriod > 30
+			) {
+				throw new ConvexError(
+					"Attribution period must be between 1 and 30 days",
+				);
+			}
+		}
+
+		// Merge with existing campaign settings
+		const updatedSettings = {
+			...campaign.campaignSettings,
+			...args.campaignSettings,
+		};
+
+		// Update campaign with new settings
+		await ctx.db.patch(args.campaignId, {
+			campaignSettings: updatedSettings,
+			updatedAt: new Date().toISOString(),
+			lastSaved: new Date().toISOString(),
+		});
+
+		return updatedSettings;
 	},
 });

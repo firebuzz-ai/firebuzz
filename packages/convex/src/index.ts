@@ -18,7 +18,6 @@ export type {
 	SegmentNodeData,
 	SegmentRule,
 	TrafficNodeData,
-	Validation,
 	VariantNodeData,
 } from "../convex/collections/campaigns/nodeSchemas";
 export * from "./hooks";

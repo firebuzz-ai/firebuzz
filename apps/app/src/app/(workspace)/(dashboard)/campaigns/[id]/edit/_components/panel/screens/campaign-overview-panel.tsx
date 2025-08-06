@@ -1,33 +1,33 @@
 "use client";
 
 import { CampaignNodeIcons } from "@/components/canvas/campaign/nodes/campaign/icons";
-import type {
-	AllCampaignNodes,
-	Validation,
-} from "@/components/canvas/campaign/nodes/campaign/types";
-import { type Doc, api, useMutation } from "@firebuzz/convex";
+import { type Doc, api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Input } from "@firebuzz/ui/components/ui/input";
+import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
+	AlertCircle,
 	AlertTriangle,
 	CheckCircle2,
-	Circle,
 	FileText,
-	Link,
+	Info,
 	Workflow,
 } from "@firebuzz/ui/icons/lucide";
-import { formatToCalendarDateTime } from "@firebuzz/utils";
-import { useNodes, useReactFlow } from "@xyflow/react";
-import { useMemo, useState } from "react";
+import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import { useReactFlow } from "@xyflow/react";
+import { useState } from "react";
+import { DurationSlider } from "../value-selectors/duration-slider";
+import { GoalSelector } from "../value-selectors/goal-selector";
 
 interface CampaignOverviewPanelProps {
 	campaign: Doc<"campaigns">;
+	onNavigateToCustomGoals?: (editGoalId?: string) => void;
 }
 
 export const CampaignOverviewPanel = ({
 	campaign,
+	onNavigateToCustomGoals,
 }: CampaignOverviewPanelProps) => {
-	const nodes = useNodes<AllCampaignNodes>();
 	const { setNodes } = useReactFlow();
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -35,27 +35,54 @@ export const CampaignOverviewPanel = ({
 	const [description, setDescription] = useState(campaign.description || "");
 	const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 
+	// Get validation data from server
+	const validation = useCachedQuery(
+		api.collections.campaigns.validation.getCampaignValidation,
+		{ campaignId: campaign._id },
+	);
+
+	// Provide defaults while loading
+	const issuesBySeverity = validation?.issuesBySeverity || {
+		errors: [],
+		warnings: [],
+		info: [],
+	};
+
+	const canPublish = validation?.canPublish || false;
+
 	const updateCampaign = useMutation(
 		api.collections.campaigns.mutations.update,
 	);
+	const updateCampaignSettings = useMutation(
+		api.collections.campaigns.mutations.updateCampaignSettings,
+	).withOptimisticUpdate((localStore, args) => {
+		// Get the current campaign data
+		const existingCampaign = localStore.getQuery(
+			api.collections.campaigns.queries.getById,
+			{ id: campaign._id },
+		);
 
-	// Filter out placeholder nodes and get only invalid nodes
-	const invalidNodes = useMemo(() => {
-		return nodes
-			.map((node) => {
-				const validations: Validation[] = node.data.validations || [];
-				const hasErrors = validations.some((v) => !v.isValid);
+		if (existingCampaign) {
+			// Update the campaign settings optimistically
+			localStore.setQuery(
+				api.collections.campaigns.queries.getById,
+				{ id: campaign._id },
+				{
+					...existingCampaign,
+					campaignSettings: {
+						...existingCampaign.campaignSettings,
+						...args.campaignSettings,
+					},
+				},
+			);
+		}
+	});
 
-				return {
-					id: node.id,
-					type: node.type || "unknown",
-					title: node.data.title || "Untitled",
-					hasErrors,
-					validations,
-				};
-			})
-			.filter((node) => node.hasErrors);
-	}, [nodes]);
+	// Combine default goals with custom goals
+	const availableGoals = [
+		...CAMPAIGN_GOALS.map((goal) => ({ ...goal, isCustom: false })),
+		...(campaign.campaignSettings?.customGoals || []),
+	];
 
 	const handleTitleSave = async () => {
 		try {
@@ -140,26 +167,69 @@ export const CampaignOverviewPanel = ({
 		}
 	};
 
-	const getStatusCircleColor = (status: string) => {
-		switch (status) {
-			case "draft":
-				return "fill-gray-500 stroke-gray-500";
-			case "published":
-				return "fill-emerald-500 stroke-emerald-500";
-			case "cancelled":
-				return "fill-red-500 stroke-red-500";
-			case "finished":
-				return "fill-blue-500 stroke-blue-500";
-			default:
-				return "fill-gray-500 stroke-gray-500";
+	// Campaign Settings Handlers
+	const handleGoalChange = async (goal: (typeof availableGoals)[0]) => {
+		try {
+			await updateCampaignSettings({
+				campaignId: campaign._id,
+				campaignSettings: { primaryGoal: goal },
+			});
+		} catch (error) {
+			console.error("Failed to update primary goal:", error);
 		}
 	};
 
-	const formatText = (text: string) => {
-		return text
-			.split("-")
-			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-			.join(" ");
+	const handleGoalValueChange = async (value: number) => {
+		if (campaign.campaignSettings?.primaryGoal) {
+			try {
+				const updatedGoal = { ...campaign.campaignSettings.primaryGoal, value };
+				await updateCampaignSettings({
+					campaignId: campaign._id,
+					campaignSettings: { primaryGoal: updatedGoal },
+				});
+			} catch (error) {
+				console.error("Failed to update goal value:", error);
+			}
+		}
+	};
+
+	const handleCurrencyChange = async (currency: string) => {
+		if (campaign.campaignSettings?.primaryGoal) {
+			try {
+				const updatedGoal = {
+					...campaign.campaignSettings.primaryGoal,
+					currency,
+				};
+				await updateCampaignSettings({
+					campaignId: campaign._id,
+					campaignSettings: { primaryGoal: updatedGoal },
+				});
+			} catch (error) {
+				console.error("Failed to update currency:", error);
+			}
+		}
+	};
+
+	const handleSessionDurationChange = async (duration: number) => {
+		try {
+			await updateCampaignSettings({
+				campaignId: campaign._id,
+				campaignSettings: { sessionDuration: duration },
+			});
+		} catch (error) {
+			console.error("Failed to update session duration:", error);
+		}
+	};
+
+	const handleAttributionPeriodChange = async (period: number) => {
+		try {
+			await updateCampaignSettings({
+				campaignId: campaign._id,
+				campaignSettings: { attributionPeriod: period },
+			});
+		} catch (error) {
+			console.error("Failed to update attribution period:", error);
+		}
 	};
 
 	return (
@@ -226,113 +296,217 @@ export const CampaignOverviewPanel = ({
 
 			{/* Content - Scrollable */}
 			<div className="overflow-y-auto flex-1">
-				{/* Campaign Information */}
-				<div className="p-4 space-y-3 border-b">
+				{/* Campaign Settings */}
+				<div className="p-4 space-y-4 border-b">
 					<div>
-						<h3 className="text-sm font-medium">Campaign Information</h3>
+						<h3 className="text-sm font-medium">Campaign Settings</h3>
 						<p className="text-xs text-muted-foreground">
-							Basic campaign details and settings
-						</p>
-					</div>
-
-					<div className="space-y-3">
-						{/* Type */}
-						<div className="flex justify-between items-center">
-							<span className="text-sm text-muted-foreground">Type</span>
-							<Badge className="bg-muted" variant="outline">
-								{formatText(campaign.type)}
-							</Badge>
-						</div>
-
-						{/* Created At */}
-						<div className="flex justify-between items-center">
-							<span className="text-sm text-muted-foreground">Created At</span>
-							<Badge
-								variant="outline"
-								className="flex items-center gap-1.5 bg-muted"
-							>
-								{formatToCalendarDateTime(campaign._creationTime)}
-							</Badge>
-						</div>
-
-						{/* Status */}
-						<div className="flex justify-between items-center">
-							<span className="text-sm text-muted-foreground">Status</span>
-							<Badge
-								variant="outline"
-								className="flex items-center gap-1.5 bg-muted"
-							>
-								<Circle
-									className={`size-2 ${getStatusCircleColor(campaign.status)}`}
-								/>
-								{formatText(campaign.status)}
-							</Badge>
-						</div>
-
-						{/* Slug */}
-						<div className="flex justify-between items-center">
-							<span className="text-sm text-muted-foreground">Slug</span>
-							<Badge
-								variant="outline"
-								className="flex items-center gap-1.5 bg-muted"
-							>
-								<Link className="size-2" />
-								{campaign.slug}
-							</Badge>
-						</div>
-					</div>
-				</div>
-
-				{/* Nodes Checklist */}
-				<div className="p-4 space-y-3">
-					<div>
-						<h3 className="text-sm font-medium">Checklist</h3>
-						<p className="text-xs text-muted-foreground">
-							Make sure all issues are resolved before publishing
+							Configure goals, tracking, and measurement settings
 						</p>
 					</div>
 
 					<div className="space-y-4">
-						{invalidNodes.length > 0 ? (
-							invalidNodes.map((node) => (
-								<div
-									key={node.id}
-									className="relative z-20 w-full rounded-lg border transition-all duration-200 cursor-pointer group bg-card hover:shadow-sm"
-									onClick={() => handleNodeClick(node.id)}
-									onMouseEnter={() => handleNodeHover(node.id)}
-									onMouseLeave={() => handleNodeHover(null)}
-								>
-									{/* Header */}
-									<div className="flex gap-2 items-center px-3 py-2 rounded-t-lg border-b bg-background-subtle">
-										<div className="p-1 rounded-lg border bg-muted text-muted-foreground">
-											{getNodeIcon(node.type)}
-										</div>
-										<span className="flex-1 text-sm font-medium">
-											{node.title}
-										</span>
-										<Badge variant="outline">
-											{getNodeTypeLabel(node.type)}
-										</Badge>
-									</div>
+						{/* Primary Goal Selection */}
+						<GoalSelector
+							selectedGoal={campaign.campaignSettings?.primaryGoal}
+							availableGoals={availableGoals}
+							onGoalChange={handleGoalChange}
+							onValueChange={handleGoalValueChange}
+							onCurrencyChange={handleCurrencyChange}
+							label="Primary Goal"
+							onNavigateToCustomGoals={onNavigateToCustomGoals}
+						/>
 
-									{/* Content */}
-									<div className="flex gap-2 items-center px-3 py-2">
-										<AlertTriangle className="flex-shrink-0 text-amber-500 size-4" />
-										<span className="text-sm text-muted-foreground">
-											You need to configure this node
-										</span>
+						<Separator />
+
+						{/* Duration Settings */}
+						<div className="space-y-4">
+							<DurationSlider
+								label="Session Duration"
+								value={campaign.campaignSettings?.sessionDuration || 30}
+								min={5}
+								max={30}
+								unit="minutes"
+								description="How long a user session lasts for tracking purposes"
+								onChange={handleSessionDurationChange}
+							/>
+
+							<DurationSlider
+								label="Attribution Period"
+								value={campaign.campaignSettings?.attributionPeriod || 30}
+								min={1}
+								max={30}
+								unit="days"
+								description="How long to track conversions after initial interaction"
+								onChange={handleAttributionPeriodChange}
+							/>
+						</div>
+					</div>
+				</div>
+
+				{/* Campaign Validation Checklist */}
+				<div className="p-4 space-y-3">
+					<div>
+						<div className="flex justify-between items-center mb-1">
+							<h3 className="text-sm font-medium">Node Validation</h3>
+						</div>
+						<p className="text-xs text-muted-foreground">
+							{canPublish
+								? "Your campaign is ready to publish!"
+								: "Resolve all errors before publishing"}
+						</p>
+					</div>
+
+					<div className="space-y-3">
+						{/* Errors */}
+						{issuesBySeverity.errors.length > 0 && (
+							<div className="space-y-3">
+								{issuesBySeverity.errors.map((result) => (
+									<div
+										key={result.nodeId}
+										className="relative z-20 w-full rounded-lg border transition-all duration-200 cursor-pointer group hover:bg-muted"
+										onClick={() => handleNodeClick(result.nodeId)}
+										onMouseEnter={() => handleNodeHover(result.nodeId)}
+										onMouseLeave={() => handleNodeHover(null)}
+									>
+										{/* Header */}
+										<div className="flex gap-2 items-center px-3 py-2 rounded-t-lg border-b bg-background-subtle">
+											<div className="p-1 rounded-lg border bg-muted">
+												{getNodeIcon(result.nodeType)}
+											</div>
+											<span className="flex-1 text-sm font-medium">
+												{result.nodeTitle}
+											</span>
+											<Badge variant="outline" className="text-xs">
+												{getNodeTypeLabel(result.nodeType)}
+											</Badge>
+										</div>
+
+										{/* Validation Messages */}
+										<div className="px-3 py-2 space-y-1">
+											{result.validations.map((validation) => (
+												<div
+													key={validation.id}
+													className="flex gap-2 items-start"
+												>
+													<AlertCircle className="flex-shrink-0 text-destructive size-3 mt-0.5" />
+													<span className="text-xs text-muted-foreground">
+														{validation.message}
+													</span>
+												</div>
+											))}
+										</div>
 									</div>
-								</div>
-							))
-						) : (
-							<div className="py-8 text-center text-muted-foreground">
-								<CheckCircle2 className="mx-auto mb-2 text-green-500 opacity-50 size-12" />
-								<p className="text-sm font-medium text-green-700">
-									All nodes configured!
-								</p>
-								<p className="text-xs">Your campaign is ready to publish</p>
+								))}
 							</div>
 						)}
+
+						{/* Warnings */}
+						{issuesBySeverity.warnings.length > 0 && (
+							<div className="space-y-3">
+								{issuesBySeverity.warnings.map((result) => (
+									<div
+										key={result.nodeId}
+										className="relative z-20 w-full rounded-lg border transition-all duration-200 cursor-pointer group hover:bg-muted"
+										onClick={() => handleNodeClick(result.nodeId)}
+										onMouseEnter={() => handleNodeHover(result.nodeId)}
+										onMouseLeave={() => handleNodeHover(null)}
+									>
+										{/* Header */}
+										<div className="flex gap-2 items-center px-3 py-2 rounded-t-lg border-b">
+											<div className="p-1 rounded-lg border bg-muted">
+												{getNodeIcon(result.nodeType)}
+											</div>
+											<span className="flex-1 text-sm font-medium">
+												{result.nodeTitle}
+											</span>
+											<Badge variant="outline" className="text-xs">
+												{getNodeTypeLabel(result.nodeType)}
+											</Badge>
+										</div>
+
+										{/* Validation Messages */}
+										<div className="px-3 py-2 space-y-1">
+											{result.validations.map((validation) => (
+												<div
+													key={validation.id}
+													className="flex gap-2 items-start"
+												>
+													<AlertTriangle className="flex-shrink-0 text-amber-600 size-3 mt-0.5" />
+													<span className="text-xs text-muted-foreground">
+														{validation.message}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+
+						{/* Info/Tips */}
+						{issuesBySeverity.info.length > 0 && (
+							<div className="space-y-3">
+								{issuesBySeverity.info.map((result) => (
+									<div
+										key={result.nodeId}
+										className="relative z-20 w-full rounded-lg border transition-all duration-200 cursor-pointer group hover:bg-muted"
+										onClick={() => handleNodeClick(result.nodeId)}
+										onMouseEnter={() => handleNodeHover(result.nodeId)}
+										onMouseLeave={() => handleNodeHover(null)}
+									>
+										{/* Header */}
+										<div className="flex gap-2 items-center px-3 py-2 rounded-t-lg border-b">
+											<div className="p-1 rounded-lg border bg-muted">
+												{getNodeIcon(result.nodeType)}
+											</div>
+											<span className="flex-1 text-sm font-medium">
+												{result.nodeTitle}
+											</span>
+											<Badge variant="outline" className="text-xs">
+												{getNodeTypeLabel(result.nodeType)}
+											</Badge>
+										</div>
+
+										{/* Validation Messages */}
+										<div className="px-3 py-2 space-y-1">
+											{result.validations.map((validation) => (
+												<div
+													key={validation.id}
+													className="flex gap-2 items-start"
+												>
+													<Info className="flex-shrink-0 text-blue-600 size-3 mt-0.5" />
+													<span className="text-xs text-muted-foreground">
+														{validation.message}
+													</span>
+												</div>
+											))}
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+
+						{/* All Good State */}
+						{issuesBySeverity.errors.length === 0 &&
+							issuesBySeverity.warnings.length === 0 &&
+							issuesBySeverity.info.length === 0 && (
+								<div className="flex flex-col gap-3 items-center py-8 text-center rounded-md border text-muted-foreground bg-muted">
+									<div className="p-2 text-emerald-600 rounded-md border bg-muted">
+										<CheckCircle2 className="size-6" />
+									</div>
+
+									<div>
+										{" "}
+										<p className="text-sm font-medium text-primary">
+											All validations passed!
+										</p>
+										<p className="text-xs text-muted-foreground">
+											Your campaign is ready to publish
+										</p>
+									</div>
+								</div>
+							)}
 					</div>
 				</div>
 			</div>

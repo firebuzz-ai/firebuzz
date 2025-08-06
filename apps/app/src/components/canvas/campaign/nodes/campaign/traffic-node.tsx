@@ -103,12 +103,6 @@ export const TrafficNode = memo(
 					data: {
 						title: "New Segment",
 						description: "Split traffic for different audiences",
-						validations: [
-							{
-								isValid: false,
-								message: "No default landing page selected",
-							},
-						],
 						primaryLandingPageId: "",
 						priority,
 						rules: getDefaultSegmentRules(),

@@ -1,8 +1,5 @@
-import {
-	Button,
-	ButtonShortcut,
-	buttonVariants,
-} from "@firebuzz/ui/components/ui/button";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
+import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
@@ -12,7 +9,6 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { Filter, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
-import Link from "next/link";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
 
@@ -34,6 +30,7 @@ export const Controls = ({
 	setIsArchived,
 }: ControlsProps) => {
 	const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
+	const [, { openModal }] = useNewLandingPageModal();
 
 	return (
 		<div className="flex flex-col gap-2 max-h-min px-4 py-3 border-b border-border">
@@ -87,16 +84,14 @@ export const Controls = ({
 						</Tooltip>
 					</div>
 					<Separator orientation="vertical" className="h-5" />
-					<Link
-						href="/assets/landing-pages/new"
-						className={buttonVariants({
-							variant: "outline",
-							className: "!h-8",
-						})}
+					<Button
+						variant="outline"
+						className="!h-8"
+						onClick={() => openModal()}
 					>
 						New Landing Page
 						<ButtonShortcut>⌘N</ButtonShortcut>
-					</Link>
+					</Button>
 				</div>
 			</div>
 		</div>

@@ -131,7 +131,8 @@ export const SegmentNode = memo(
 						title: "New A/B Test",
 						description: "Compare variants to improve performance",
 						status: "draft",
-						hypothesis: "We believe that changing [element] will result in [outcome] because [reasoning].",
+						hypothesis:
+							"We believe that changing [element] will result in [outcome] because [reasoning].",
 						isCompleted: false,
 						primaryMetric: "conversions",
 						completionCriteria: {
@@ -143,7 +144,6 @@ export const SegmentNode = memo(
 						rules: {
 							winningStrategy: "winner",
 						},
-						validations: [],
 						poolingPercent: 20, // Default 20% of traffic goes to A/B test
 					},
 				};
@@ -201,15 +201,17 @@ export const SegmentNode = memo(
 						type: "variant" as const,
 						parentId: newNodeId,
 						position: {
-							x: gridConfig.initialOffset.x + colIndex * gridConfig.spacing.horizontal,
-							y: 150 + gridConfig.initialOffset.y + rowIndex * gridConfig.spacing.vertical,
+							x:
+								gridConfig.initialOffset.x +
+								colIndex * gridConfig.spacing.horizontal,
+							y:
+								150 +
+								gridConfig.initialOffset.y +
+								rowIndex * gridConfig.spacing.vertical,
 						},
 						data: {
 							title: variantData.title,
 							description: variantData.description,
-							validations: [
-								{ isValid: false, message: "Variant requires configuration" },
-							],
 							variantId: null,
 							trafficPercentage: 50, // Equal 50/50 split
 							translations: [],

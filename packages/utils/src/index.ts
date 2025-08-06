@@ -9,7 +9,12 @@ import {
 	isToday,
 } from "date-fns";
 import { countriesAndLanguages } from "./constants";
-export { AVATARS, countriesAndLanguages, TIMEZONES } from "./constants";
+export {
+	AVATARS,
+	CAMPAIGN_GOALS,
+	countriesAndLanguages,
+	TIMEZONES,
+} from "./constants";
 
 export const camelCase = (str: string) => {
 	return str

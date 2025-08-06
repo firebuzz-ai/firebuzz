@@ -9,7 +9,6 @@ import type {
 	SegmentNodeData,
 	SegmentRule,
 	TrafficNodeData,
-	Validation,
 	VariantNodeData,
 } from "@firebuzz/convex";
 import type { Node } from "@xyflow/react";
@@ -23,7 +22,6 @@ export type {
 	NoteNodeData,
 	CampaignNodeData,
 	CampaignNodeTypes,
-	Validation,
 	FilterOperator,
 	RuleTypeId,
 	RuleValueType,

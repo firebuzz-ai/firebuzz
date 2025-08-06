@@ -138,12 +138,6 @@ export const ABTestNode = memo(
 					data: {
 						title: "Variant",
 						description: "New Variant Description",
-						validations: [
-							{
-								isValid: false,
-								message: "Variant is required",
-							},
-						],
 						variantId: null,
 						// First variant gets any remainder to equal exactly 100%
 						trafficPercentage:
@@ -300,7 +294,9 @@ export const ABTestNode = memo(
 
 					<div className="ml-auto">
 						<Badge variant="outline">
-							{data.status ? data.status.charAt(0).toUpperCase() + data.status.slice(1) : "Draft"}
+							{data.status
+								? data.status.charAt(0).toUpperCase() + data.status.slice(1)
+								: "Draft"}
 						</Badge>
 					</div>
 				</div>

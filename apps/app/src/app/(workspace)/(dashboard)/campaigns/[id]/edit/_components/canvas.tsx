@@ -10,22 +10,26 @@ import { NoteNode } from "@/components/canvas/campaign/nodes/notes-node";
 import type { Doc } from "@firebuzz/convex";
 
 const nodeTypes = {
-  base: BaseNode,
-  note: NoteNode,
-  traffic: TrafficNode,
-  segment: SegmentNode,
-  "ab-test": ABTestNode,
-  variant: VariantNode,
+	base: BaseNode,
+	note: NoteNode,
+	traffic: TrafficNode,
+	segment: SegmentNode,
+	"ab-test": ABTestNode,
+	variant: VariantNode,
 };
 
 export const CampaignCanvas = ({
-  campaign,
+	campaign,
 }: {
-  campaign: Doc<"campaigns">;
+	campaign: Doc<"campaigns">;
 }) => {
-  return (
-    <div className="flex flex-1 h-full">
-      <Canvas campaignId={campaign._id} nodeTypes={nodeTypes} />
-    </div>
-  );
+	return (
+		<div className="flex flex-1 h-full">
+			<Canvas
+				campaignId={campaign._id}
+				nodeTypes={nodeTypes}
+				campaign={campaign}
+			/>
+		</div>
+	);
 };

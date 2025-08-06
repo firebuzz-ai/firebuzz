@@ -18,7 +18,7 @@ import {
 	Type,
 } from "@firebuzz/ui/icons/lucide";
 import { nanoid } from "nanoid";
-import { useFormFields, useFormState } from "../../_store/hooks";
+import { useFormFields } from "../../_store/hooks";
 import {
 	type FormField,
 	INPUT_TYPES,
@@ -49,11 +49,9 @@ interface InputTypesViewProps {
 }
 
 export const InputTypesView = ({
-	campaignId,
 	onScreenChange,
 	onFieldSelect,
 }: InputTypesViewProps) => {
-	const { formData } = useFormState(campaignId);
 	const { addField } = useFormFields();
 
 	const handleAddField = (inputType: FormField["inputType"]) => {

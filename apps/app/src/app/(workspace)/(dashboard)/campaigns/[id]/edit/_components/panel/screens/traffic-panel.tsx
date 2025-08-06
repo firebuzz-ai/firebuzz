@@ -5,6 +5,7 @@ import type {
 	TrafficNode,
 } from "@/components/canvas/campaign/nodes/campaign/types";
 import { PanelHeader } from "@/components/ui/panel-header";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { type Doc, api, useCachedQuery } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -40,6 +41,7 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 	const nodes = useNodes();
 	const isDraggingRef = useRef(false);
 	const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+	const [_state, { openModal }] = useNewLandingPageModal();
 
 	// Fetch landing pages for the campaign
 	const landingPages = useCachedQuery(
@@ -63,13 +65,13 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 	}, [nodes, node.id]);
 
 	const updateDefaultVariant = (variantId: string) => {
+		// Prevent unselecting once a landing page is selected
+		if (!variantId && node.data.defaultVariantId) {
+			return;
+		}
+
 		updateNodeData(node.id, {
 			defaultVariantId: variantId,
-			validations: node.data.validations.map((v) =>
-				v.message.includes("Default variant")
-					? { ...v, isValid: !!variantId }
-					: v,
-			),
 		});
 	};
 
@@ -100,12 +102,6 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 			data: {
 				title: `New Segment ${priority}`,
 				description: "Split traffic for different audiences",
-				validations: [
-					{
-						isValid: false,
-						message: "No default landing page selected",
-					},
-				],
 				primaryLandingPageId: "",
 				priority,
 				rules: getDefaultSegmentRules(),
@@ -253,7 +249,12 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 								<p className="text-sm text-muted-foreground">
 									No landing pages found
 								</p>
-								<Button size="sm" variant="outline" className="mt-2">
+								<Button
+									size="sm"
+									variant="outline"
+									className="mt-2"
+									onClick={() => campaign && openModal(campaign._id)}
+								>
 									Create your first landing page
 								</Button>
 							</div>
