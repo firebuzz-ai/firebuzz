@@ -101,7 +101,6 @@ export const create = mutationWithTrigger({
           workspaceId: user.currentWorkspaceId,
           projectId: args.projectId,
           campaignId: campaignId,
-          schema: [],
           createdBy: user._id,
           updatedAt: new Date().toISOString(),
         }

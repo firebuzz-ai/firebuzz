@@ -8,6 +8,10 @@ export const campaignNodeTypes = v.union(
   v.literal("variant")
 );
 
+export const formNodeTypes = v.union(
+  v.literal("form")
+);
+
 export const filterOperator = v.union(
   v.literal("equals"),
   v.literal("not_equals"),
@@ -141,12 +145,62 @@ export const noteNodeData = v.object({
   author: v.string(),
 });
 
+// Form field schema for form nodes
+export const formFieldNodeSchema = v.object({
+  id: v.string(),
+  title: v.string(),
+  placeholder: v.optional(v.string()),
+  description: v.optional(v.string()),
+  type: v.union(
+    v.literal("string"),
+    v.literal("number"),
+    v.literal("boolean"),
+  ),
+  inputType: v.union(
+    v.literal("text"),
+    v.literal("number"),
+    v.literal("checkbox"),
+    v.literal("radio"),
+    v.literal("select"),
+    v.literal("textarea"),
+    v.literal("date"),
+    v.literal("time"),
+    v.literal("email"),
+    v.literal("url"),
+    v.literal("tel"),
+    v.literal("password"),
+  ),
+  required: v.boolean(),
+  unique: v.boolean(),
+  visible: v.boolean(),
+  default: v.optional(v.union(v.string(), v.number(), v.boolean())),
+  options: v.optional(
+    v.array(
+      v.object({
+        label: v.string(),
+        value: v.string(),
+      }),
+    ),
+  ),
+});
+
+export const formNodeData = v.object({
+  title: v.string(),
+  description: v.optional(v.string()),
+  isHovered: v.optional(v.boolean()),
+  schema: v.array(formFieldNodeSchema),
+  submitButtonText: v.string(),
+  successMessage: v.string(),
+  successRedirectUrl: v.optional(v.string()),
+});
+
 export const nodeDataSchema = v.union(
   trafficNodeData,
   segmentNodeData,
   abTestNodeData,
   variantNodeData,
-  noteNodeData
+  noteNodeData,
+  formNodeData
 );
 
 // Edge data schemas
@@ -165,6 +219,8 @@ export type SegmentNodeData = Infer<typeof segmentNodeData>;
 export type ABTestNodeData = Infer<typeof abTestNodeData>;
 export type VariantNodeData = Infer<typeof variantNodeData>;
 export type NoteNodeData = Infer<typeof noteNodeData>;
+export type FormNodeData = Infer<typeof formNodeData>;
+export type FormField = Infer<typeof formFieldNodeSchema>;
 export type EdgeData = Infer<typeof edgeDataSchema>;
 
 // Export additional types

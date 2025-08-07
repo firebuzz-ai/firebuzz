@@ -18,9 +18,13 @@ export const publishForm = internalAction({
 			throw new ConvexError(ERRORS.NOT_FOUND);
 		}
 
+		// Get schema from canvas nodes
+		const formNode = form.nodes?.find(node => node.type === "form" && node.data);
+		const schema = formNode?.data?.schema || [];
+
 		const config = {
 			campaignId: form.campaignId,
-			schema: form.schema,
+			schema: schema,
 		};
 
 		try {

@@ -14,11 +14,15 @@ export function applyCampaignToTemplate(
 	const fileSystem = new FileSystem(files);
 	const campaignConfigPath = "src/configuration/campaign.ts";
 
+	// Get schema from canvas nodes
+	const formNode = form?.nodes?.find(node => node.type === "form" && node.data);
+	const schema = formNode?.data?.schema || [];
+
 	const campaignConfig = {
 		campaignType: campaign.type,
 		formId: form?._id,
 		apiUrl: `${process.env.ENGINE_URL}/client-api/v1`,
-		schema: form?.schema ?? [],
+		schema: schema,
 	};
 
 	const configString = `

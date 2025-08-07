@@ -79,3 +79,52 @@ export const getByCampaignId = query({
 		return { ...form, campaign };
 	},
 });
+
+// Canvas-specific query (following campaign pattern)
+export const getFormCanvasData = query({
+	args: {
+		formId: v.id("forms"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		const form = await ctx.db.get(args.formId);
+		if (!form) {
+			throw new ConvexError("Form not found");
+		}
+
+		if (form.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Initialize canvas data if not present (return default without saving)
+		if (!form.nodes || form.nodes.length === 0) {
+			// Create initial empty canvas node
+			const initialNode = {
+				id: "form-node-main",
+				type: "form",
+				position: { x: 0, y: 0 },
+				data: {
+					title: "Form",
+					schema: [], // Start with empty schema
+					submitButtonText: "Submit",
+					successMessage: "Thank you!",
+					successRedirectUrl: "",
+				},
+			};
+
+			// Return default canvas state without saving (saving will happen through mutations)
+			return {
+				nodes: [initialNode],
+				edges: [],
+				viewport: { x: 0, y: 0, zoom: 1 },
+			};
+		}
+
+		return {
+			nodes: form.nodes,
+			edges: form.edges || [],
+			viewport: form.viewport || { x: 0, y: 0, zoom: 1 },
+		};
+	},
+});

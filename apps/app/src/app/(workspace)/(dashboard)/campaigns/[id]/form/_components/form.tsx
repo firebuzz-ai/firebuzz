@@ -2,13 +2,12 @@
 import { FlowLayout } from "@/components/layouts/two-panels/panels/campaign/flow";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/campaign/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
+import { FormCanvasProvider, Canvas } from "@/components/canvas/forms";
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
-import { useFormAutoSave } from "../_store/hooks";
-import { FormStoreProvider } from "../_store/provider";
+// Removed Jotai dependencies - using canvas-only approach with optimistic updates
 import { Panel } from "./panel/panel";
-import { Preview } from "./preview/preview";
 
 interface FormCampaignProps {
 	id: string;
@@ -23,22 +22,51 @@ function FormCampaignInner({
 	campaign: { _id: Id<"campaigns">; type: string };
 	rightPanelSize: number;
 }) {
-	// Initialize auto-save for the entire form
-	useFormAutoSave();
+	// Canvas mode uses optimistic updates - no need for separate auto-save
 
+	// Get form data for the canvas
+	const {
+		data: formData,
+		isPending: isFormLoading,
+	} = useRichQuery(
+		api.collections.forms.queries.getByCampaignId,
+		{ campaignId: campaign._id }
+	);
+
+	// Canvas-only approach - removed traditional mode
+
+	if (isFormLoading) {
+		return (
+			<div className="flex justify-center items-center w-full h-full">
+				<Spinner size="sm" />
+			</div>
+		);
+	}
+
+	if (!formData) {
+		return (
+			<div className="flex justify-center items-center w-full h-full">
+				<div>Form data not found</div>
+			</div>
+		);
+	}
+
+	// Canvas-only mode with optimistic updates
 	return (
-		<TwoPanelsProvider
-			rightPanelSizeFromCookie={rightPanelSize}
-			id="campaign-form"
-			isRightPanelClosable={false}
-		>
-			<FlowLayout>
-				<Preview campaignId={campaign._id} />
-			</FlowLayout>
-			<PanelLayout>
-				<Panel campaignId={campaign._id} />
-			</PanelLayout>
-		</TwoPanelsProvider>
+		<FormCanvasProvider>
+			<TwoPanelsProvider
+				rightPanelSizeFromCookie={rightPanelSize}
+				id="campaign-form-canvas"
+				isRightPanelClosable={false}
+			>
+				<FlowLayout>
+					<Canvas formId={formData._id} form={formData} />
+				</FlowLayout>
+				<PanelLayout>
+					<Panel campaignId={campaign._id} formId={formData._id} />
+				</PanelLayout>
+			</TwoPanelsProvider>
+		</FormCanvasProvider>
 	);
 }
 
@@ -77,9 +105,8 @@ export function FormCampaign({ id, rightPanelSize }: FormCampaignProps) {
 		return <div>Not a lead generation campaign</div>;
 	}
 
+	// No longer need FormStoreProvider - using canvas-only approach
 	return (
-		<FormStoreProvider>
-			<FormCampaignInner campaign={campaign} rightPanelSize={rightPanelSize} />
-		</FormStoreProvider>
+		<FormCampaignInner campaign={campaign} rightPanelSize={rightPanelSize} />
 	);
 }
