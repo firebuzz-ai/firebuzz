@@ -1,6 +1,7 @@
 "use client";
 import { TableFooter } from "@/components/tables/paginated-footer";
 import { useProject } from "@/hooks/auth/use-project";
+import { NewCampaignModal } from "@/components/modals/campaigns/campaign-modal";
 import {
 	type Doc,
 	api,
@@ -79,6 +80,7 @@ export const Campaigns = () => {
 
 	return (
 		<div className="flex overflow-hidden flex-col flex-1 max-w-full max-h-full">
+			<NewCampaignModal />
 			<Controls
 				searchQuery={searchQuery}
 				setSearchQuery={setSearchQuery}

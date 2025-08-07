@@ -16,6 +16,7 @@ interface ValidationContext {
 	edges: Doc<"campaigns">["edges"];
 	campaign: Doc<"campaigns">;
 	landingPages: Doc<"landingPages">[];
+	hasValidFormSchema?: boolean;
 }
 
 // Traffic Node Validation Rules
@@ -37,10 +38,14 @@ const validateTrafficNode = (
 				field: "defaultVariantId",
 			});
 		} else {
+			// Check if it's a lead-generation campaign without form schema first
+			const message = context.campaign.type === "lead-generation" && !context.hasValidFormSchema
+				? "Campaign must have a valid form schema"
+				: "Create a landing page first";
 			validations.push({
 				id: "traffic-no-landing-pages",
 				isValid: false,
-				message: "Create a landing page first",
+				message,
 				severity: "error",
 				field: "defaultVariantId",
 			});
@@ -69,10 +74,14 @@ const validateSegmentNode = (
 				field: "primaryLandingPageId",
 			});
 		} else {
+			// Check if it's a lead-generation campaign without form schema first
+			const message = context.campaign.type === "lead-generation" && !context.hasValidFormSchema
+				? "Campaign must have a valid form schema"
+				: "Create a landing page first";
 			validations.push({
 				id: "segment-no-landing-pages",
 				isValid: false,
-				message: "Create a landing page first",
+				message,
 				severity: "error",
 				field: "primaryLandingPageId",
 			});
@@ -197,10 +206,14 @@ const validateVariantNode = (
 				field: "variantId",
 			});
 		} else {
+			// Check if it's a lead-generation campaign without form schema first
+			const message = context.campaign.type === "lead-generation" && !context.hasValidFormSchema
+				? "Campaign must have a valid form schema"
+				: "Create a landing page first";
 			validations.push({
 				id: "variant-no-landing-pages",
 				isValid: false,
-				message: "Create a landing page first",
+				message,
 				severity: "error",
 				field: "variantId",
 			});
@@ -332,7 +345,10 @@ export const getCampaignValidation = query({
 		// Initialize critical errors array
 		const criticalErrors: ValidationItem[] = [];
 
-		// Critical Error 2: For lead-generation campaigns, check form requirements (Priority 1)
+		// Check form schema status for lead-generation campaigns
+		let hasValidFormSchema = true; // Default to true for non-lead-generation campaigns
+		
+		// Critical Error 1: For lead-generation campaigns, check form requirements (Priority 1)
 		if (campaign.type === "lead-generation") {
 			// Get the form for this campaign
 			const form = await ctx.db
@@ -341,6 +357,7 @@ export const getCampaignValidation = query({
 				.first();
 
 			if (!form) {
+				hasValidFormSchema = false;
 				criticalErrors.push({
 					id: "campaign-no-form",
 					isValid: false,
@@ -352,6 +369,7 @@ export const getCampaignValidation = query({
 			} else {
 				// Check if form has at least one field in schema
 				if (!form.schema || form.schema.length === 0) {
+					hasValidFormSchema = false;
 					criticalErrors.push({
 						id: "campaign-form-no-fields",
 						isValid: false,
@@ -364,12 +382,13 @@ export const getCampaignValidation = query({
 			}
 		}
 
-		// Critical Error 1: Check if campaign has at least one landing page (Priority 2)
-		if (landingPages.length === 0) {
+		// Critical Error 2: Check if campaign has at least one landing page (Priority 2)
+		// Only show this error if form schema is valid (or not required)
+		if (landingPages.length === 0 && hasValidFormSchema) {
 			criticalErrors.push({
 				id: "campaign-no-landing-pages",
 				isValid: false,
-				message: "Campaign must have at least one landing page",
+				message: "Create a landing page first",
 				severity: "error",
 				field: "landingPages",
 				priority: 2,
@@ -382,6 +401,7 @@ export const getCampaignValidation = query({
 			edges: campaign.edges,
 			campaign,
 			landingPages,
+			hasValidFormSchema,
 		};
 
 		// Get all validation results

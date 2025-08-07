@@ -72,6 +72,7 @@ export const campaignSchema = defineTable(
       v.literal("published"),
       v.literal("finished")
     ),
+    primaryLanguage: v.string(),
     // Canvas data as separate columns
     nodes: v.array(nodeSchema),
     edges: v.array(edgeSchema),

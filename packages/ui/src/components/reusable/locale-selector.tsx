@@ -46,7 +46,7 @@ export const LocaleSelector = ({
 	const selectedLocale = locales.find((locale) => locale.value === value);
 
 	return (
-		<Popover open={open} onOpenChange={setOpen}>
+		<Popover open={open} onOpenChange={setOpen} modal={true}>
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
@@ -75,9 +75,9 @@ export const LocaleSelector = ({
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-				<Command>
+				<Command className="max-h-80">
 					<CommandInput placeholder="Search locale..." />
-					<CommandList>
+					<CommandList className="max-h-60 overflow-y-auto">
 						<CommandEmpty>No locale found.</CommandEmpty>
 						<CommandGroup>
 							{locales.map((locale) => (

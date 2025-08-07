@@ -1,3 +1,4 @@
+import { useNewCampaignModal } from "@/hooks/ui/use-new-campaign-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -16,7 +17,6 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { Filter, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
-import { useRouter } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
 interface ControlsProps {
@@ -37,7 +37,7 @@ export const Controls = ({
 	setSortOrder,
 }: ControlsProps) => {
 	const [debouncedSearchQuery] = useDebounce(searchQuery, 500);
-	const router = useRouter();
+	const [, { openModal }] = useNewCampaignModal();
 
 	return (
 		<div className="flex flex-col gap-2 max-h-min px-4 py-3 border-b border-border">
@@ -106,7 +106,7 @@ export const Controls = ({
 					<Separator orientation="vertical" className="h-5" />
 					<Button
 						onClick={() => {
-							router.push("/campaigns/new");
+							openModal();
 						}}
 						variant="outline"
 						className="h-8"

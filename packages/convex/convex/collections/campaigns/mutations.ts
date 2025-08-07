@@ -29,6 +29,7 @@ export const create = mutationWithTrigger({
     type: v.union(v.literal("lead-generation"), v.literal("click-through")),
     projectId: v.id("projects"),
     slug: v.string(),
+    primaryLanguage: v.string(),
   },
   handler: async (ctx, args) => {
     // Check if user is authenticated
@@ -59,6 +60,7 @@ export const create = mutationWithTrigger({
       slug: args.slug,
       type: args.type,
       projectId: args.projectId,
+      primaryLanguage: args.primaryLanguage,
       campaignSettings: {
         primaryGoal,
         customGoals: [],
@@ -248,6 +250,7 @@ export const update = mutationWithTrigger({
     type: v.optional(
       v.union(v.literal("lead-generation"), v.literal("click-through"))
     ),
+    primaryLanguage: v.optional(v.string()),
     // Canvas data fields (new schema)
     nodes: v.optional(v.any()),
     edges: v.optional(v.any()),
@@ -302,6 +305,8 @@ export const update = mutationWithTrigger({
     if (args.slug !== undefined) updateFields.slug = args.slug;
     if (args.type !== undefined) updateFields.type = args.type;
     if (args.projectId !== undefined) updateFields.projectId = args.projectId;
+    if (args.primaryLanguage !== undefined)
+      updateFields.primaryLanguage = args.primaryLanguage;
 
     // Handle canvas data (new schema)
     if (args.nodes !== undefined) updateFields.nodes = args.nodes;
