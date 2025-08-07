@@ -21,12 +21,14 @@ interface TrafficDistributionSliderProps {
 		distributions: { variantId: string; percentage: number }[],
 	) => void;
 	className?: string;
+	disabled?: boolean;
 }
 
 export const TrafficDistributionSlider = ({
 	variants,
 	onDistributionChange,
 	className,
+	disabled = false,
 }: TrafficDistributionSliderProps) => {
 	const sliderRef = useRef<HTMLDivElement>(null);
 	const [isDragging, setIsDragging] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export const TrafficDistributionSlider = ({
 	}, [distributions]);
 
 	const handleMouseDown = (variantId: string, event: React.MouseEvent) => {
+		if (disabled) return;
 		event.preventDefault();
 		setIsDragging(variantId);
 	};
@@ -161,6 +164,7 @@ export const TrafficDistributionSlider = ({
 	const cumulativePositions = calculateCumulativePositions();
 
 	const autoDistribute = () => {
+		if (disabled) return;
 		const equalPercentage = Math.floor(100 / distributions.length);
 		const remainder = 100 % distributions.length;
 
@@ -295,6 +299,7 @@ export const TrafficDistributionSlider = ({
 						variant="outline"
 						onClick={autoDistribute}
 						className="gap-2 w-full h-8 text-sm"
+						disabled={disabled}
 					>
 						<Split className="size-3" />
 						Auto-distribute

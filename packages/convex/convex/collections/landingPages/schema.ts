@@ -31,6 +31,7 @@ export const landingPagesSchema = defineTable(
 	.index("by_workspace_id", ["workspaceId"])
 	.index("by_project_id", ["projectId"])
 	.index("by_campaign_id", ["campaignId"])
+	.index("by_parent_id", ["parentId"])
 	.index("by_deleted_at", ["deletedAt"])
 	.searchIndex("by_title", { searchField: "title" });
 

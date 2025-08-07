@@ -103,7 +103,7 @@ export const TrafficNode = memo(
 					data: {
 						title: "New Segment",
 						description: "Split traffic for different audiences",
-						primaryLandingPageId: "",
+						primaryLandingPageId: undefined,
 						priority,
 						rules: getDefaultSegmentRules(),
 					},

@@ -124,3 +124,33 @@ export const getByCampaignId = query({
 		return landingPages;
 	},
 });
+
+export const getByParentId = query({
+	args: {
+		parentId: v.id("landingPages"),
+	},
+	handler: async (ctx, { parentId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get the parent landing page to verify workspace access
+		const parentLandingPage = await ctx.db.get(parentId);
+		if (
+			!parentLandingPage ||
+			parentLandingPage.workspaceId !== user.currentWorkspaceId
+		) {
+			throw new ConvexError("Parent landing page not found or unauthorized");
+		}
+
+		// Get all variant landing pages for this parent
+		const variants = await ctx.db
+			.query("landingPages")
+			.withIndex("by_parent_id", (q) => q.eq("parentId", parentId))
+			.filter((q) => q.eq(q.field("workspaceId"), user.currentWorkspaceId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
+			.filter((q) => q.eq(q.field("isArchived"), false))
+			.order("desc")
+			.collect();
+
+		return variants;
+	},
+});

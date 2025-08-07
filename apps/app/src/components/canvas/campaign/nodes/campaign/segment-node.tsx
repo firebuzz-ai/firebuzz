@@ -96,10 +96,15 @@ export const SegmentNode = memo(
 			return children;
 		}, [id, getNodeConnections]);
 
-		const hasExistingABTest = useMemo(() => {
+		const hasActiveABTest = useMemo(() => {
 			return childConnections.some((child) => {
 				const childNode = getNode(child.target);
-				return childNode?.type === "ab-test";
+				if (childNode?.type === "ab-test") {
+					const status = (childNode as ABTestNode).data.status;
+					// Consider draft, running, and paused as "active" (can't create another)
+					return status === "draft" || status === "running" || status === "paused";
+				}
+				return false;
 			});
 		}, [childConnections, getNode]);
 
@@ -108,13 +113,20 @@ export const SegmentNode = memo(
 				e.stopPropagation();
 				const allChildren = getAllChildren();
 
-				// Check if it already has an A/B test
-				const existingTest = allChildren.find(
-					(child) => getNode(child.target)?.type === "ab-test",
-				);
+				// Check if it already has an active A/B test (draft, running, or paused)
+				const existingActiveTest = allChildren.find((child) => {
+					const childNode = getNode(child.target);
+					if (childNode?.type === "ab-test") {
+						const status = (childNode as ABTestNode).data.status;
+						return status === "draft" || status === "running" || status === "paused";
+					}
+					return false;
+				});
 
-				if (existingTest) {
-					toast.error("You can only have one test per segment");
+				if (existingActiveTest) {
+					toast.error("You can only have one active test per segment", {
+						description: "Complete or archive the existing test to create a new one.",
+					});
 					return;
 				}
 
@@ -134,6 +146,11 @@ export const SegmentNode = memo(
 						hypothesis:
 							"We believe that changing [element] will result in [outcome] because [reasoning].",
 						isCompleted: false,
+						startedAt: undefined,
+						completedAt: undefined,
+						pausedAt: undefined,
+						resumedAt: undefined,
+						endDate: undefined,
 						primaryMetric: "conversions",
 						completionCriteria: {
 							sampleSizePerVariant: 1000,
@@ -144,6 +161,7 @@ export const SegmentNode = memo(
 						rules: {
 							winningStrategy: "winner",
 						},
+						winner: undefined, // No winner until test is completed
 						poolingPercent: 20, // Default 20% of traffic goes to A/B test
 					},
 				};
@@ -212,7 +230,10 @@ export const SegmentNode = memo(
 						data: {
 							title: variantData.title,
 							description: variantData.description,
-							variantId: null,
+							// Assign segment's primary landing page to control variant
+							variantId: variantData.isControl && data.primaryLandingPageId 
+								? data.primaryLandingPageId 
+								: undefined,
 							trafficPercentage: 50, // Equal 50/50 split
 							translations: [],
 							isControl: variantData.isControl,
@@ -306,8 +327,8 @@ export const SegmentNode = memo(
 					isValidConnection={isValidTargetConnection}
 				/>
 
-				{/* Updated Plus Button with onClick handler - Hidden if A/B test exists */}
-				{isConnectableAsSource && !hasExistingABTest && (
+				{/* Updated Plus Button with onClick handler - Hidden if active A/B test exists */}
+				{isConnectableAsSource && !hasActiveABTest && (
 					<div
 						className={cn(
 							"flex absolute right-0 left-0 -bottom-16 z-10 flex-col gap-2 justify-end items-center h-16 transition-all duration-300 ease-in-out",
