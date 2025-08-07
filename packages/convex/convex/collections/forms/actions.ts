@@ -19,7 +19,9 @@ export const publishForm = internalAction({
 		}
 
 		// Get schema from canvas nodes
-		const formNode = form.nodes?.find(node => node.type === "form" && node.data);
+		const formNode = form.nodes?.find(
+			(node) => node.type === "form" && node.data,
+		);
 		const schema = formNode?.data?.schema || [];
 
 		const config = {

@@ -1,7 +1,7 @@
 "use client";
+import { NewCampaignModal } from "@/components/modals/campaigns/campaign-modal";
 import { TableFooter } from "@/components/tables/paginated-footer";
 import { useProject } from "@/hooks/auth/use-project";
-import { NewCampaignModal } from "@/components/modals/campaigns/campaign-modal";
 import {
 	type Doc,
 	api,

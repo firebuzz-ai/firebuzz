@@ -15,7 +15,9 @@ export function applyCampaignToTemplate(
 	const campaignConfigPath = "src/configuration/campaign.ts";
 
 	// Get schema from canvas nodes
-	const formNode = form?.nodes?.find(node => node.type === "form" && node.data);
+	const formNode = form?.nodes?.find(
+		(node) => node.type === "form" && node.data,
+	);
 	const schema = formNode?.data?.schema || [];
 
 	const campaignConfig = {
@@ -23,6 +25,9 @@ export function applyCampaignToTemplate(
 		formId: form?._id,
 		apiUrl: `${process.env.ENGINE_URL}/client-api/v1`,
 		schema: schema,
+		submitButtonText: formNode?.data?.submitButtonText,
+		successMessage: formNode?.data?.successMessage,
+		successRedirectUrl: formNode?.data?.successRedirectUrl,
 	};
 
 	const configString = `

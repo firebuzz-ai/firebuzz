@@ -1,9 +1,12 @@
 "use client";
 
-import { Input } from "@firebuzz/ui/components/ui/input";
-import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { Checkbox } from "@firebuzz/ui/components/ui/checkbox";
-import { Button } from "@firebuzz/ui/components/ui/button";
+import { DatePicker } from "@firebuzz/ui/components/ui/date-picker";
+import { Input } from "@firebuzz/ui/components/ui/input";
+import {
+	RadioGroup,
+	RadioGroupItem,
+} from "@firebuzz/ui/components/ui/radio-group";
 import {
 	Select,
 	SelectContent,
@@ -11,11 +14,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@firebuzz/ui/components/ui/select";
-import {
-	RadioGroup,
-	RadioGroupItem,
-} from "@firebuzz/ui/components/ui/radio-group";
-import { DatePicker } from "@firebuzz/ui/components/ui/date-picker";
+import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import type { FormField } from "../../../../app/(workspace)/(dashboard)/campaigns/[id]/form/_components/form-types";
 
 interface FormFieldsRendererProps {
@@ -71,11 +70,7 @@ export const FormFieldsRenderer = ({ fields }: FormFieldsRendererProps) => {
 				case "checkbox": {
 					return (
 						<div className="flex items-center space-x-2">
-							<Checkbox
-								id={field.id}
-								disabled
-								checked={false}
-							/>
+							<Checkbox id={field.id} disabled checked={false} />
 							<label htmlFor={field.id} className="text-sm">
 								{field.placeholder || field.title}
 							</label>
@@ -86,10 +81,7 @@ export const FormFieldsRenderer = ({ fields }: FormFieldsRendererProps) => {
 					return (
 						<RadioGroup disabled value="">
 							{field.options?.map((option) => (
-								<div
-									key={option.value}
-									className="flex items-center space-x-2"
-								>
+								<div key={option.value} className="flex items-center space-x-2">
 									<RadioGroupItem
 										value={option.value}
 										id={`${field.id}-${option.value}`}
@@ -136,14 +128,7 @@ export const FormFieldsRenderer = ({ fields }: FormFieldsRendererProps) => {
 					);
 				}
 				case "time": {
-					return (
-						<Input
-							className="h-8"
-							type="time"
-							disabled
-							value=""
-						/>
-					);
+					return <Input className="h-8" type="time" disabled value="" />;
 				}
 				default:
 					return (
@@ -159,17 +144,16 @@ export const FormFieldsRenderer = ({ fields }: FormFieldsRendererProps) => {
 
 		return (
 			<div key={field.id} className="space-y-2">
-				<label className="text-sm font-medium text-foreground">
+				<label
+					htmlFor={field.id}
+					className="text-sm font-medium text-foreground"
+				>
 					{field.title}
-					{field.required && (
-						<span className="ml-1 text-destructive">*</span>
-					)}
+					{field.required && <span className="ml-1 text-destructive">*</span>}
 				</label>
 				{fieldContent}
 				{field.description && (
-					<p className="text-xs text-muted-foreground">
-						{field.description}
-					</p>
+					<p className="text-xs text-muted-foreground">{field.description}</p>
 				)}
 			</div>
 		);
@@ -177,9 +161,7 @@ export const FormFieldsRenderer = ({ fields }: FormFieldsRendererProps) => {
 
 	return (
 		<div className="space-y-4">
-			{fields
-				.filter((field) => field.visible !== false)
-				.map(renderFormField)}
+			{fields.filter((field) => field.visible !== false).map(renderFormField)}
 		</div>
 	);
 };

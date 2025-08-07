@@ -1,5 +1,6 @@
 "use client";
 
+import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { Id } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -8,18 +9,14 @@ import { useNodes, useReactFlow } from "@xyflow/react";
 import { Reorder } from "motion/react";
 import { useMemo, useRef } from "react";
 import type { FormField, PanelScreen } from "../form-types";
-import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
-
 
 interface SchemaListProps {
-	campaignId: Id<"campaigns">;
 	formId: Id<"forms">;
 	onScreenChange: (screen: PanelScreen) => void;
 	onFieldSelect: (fieldId: string) => void;
 }
 
 export const SchemaList = ({
-	campaignId,
 	formId,
 	onScreenChange,
 	onFieldSelect,
@@ -27,10 +24,10 @@ export const SchemaList = ({
 	// Canvas-only approach - modify node data through React Flow
 	const nodes = useNodes();
 	const { updateNodeData } = useReactFlow();
-	
+
 	const formNode = useMemo(
 		() => nodes?.find((n) => n.type === "form"),
-		[nodes]
+		[nodes],
 	);
 
 	const isDraggingRef = useRef(false);
@@ -38,7 +35,7 @@ export const SchemaList = ({
 	// Update React Flow state - canvas will detect and sync to server
 	const updateFormData = (updatedNodeData: FormNodeData) => {
 		if (!formNode) return;
-		
+
 		// Use updateNodeData like campaigns do - this triggers onNodesChange
 		updateNodeData(formNode.id, updatedNodeData);
 	};
@@ -54,17 +51,20 @@ export const SchemaList = ({
 
 	const handleReorder = (newOrder: FormField[]) => {
 		if (!formNode || !formId) return;
-		
+
 		// Ensure we have different order before updating
-		const currentOrder = currentFormFields.map(f => f.id).join(',');
-		const newOrderIds = newOrder.map(f => f.id).join(',');
-		
+		const currentOrder = currentFormFields.map((f) => f.id).join(",");
+		const newOrderIds = newOrder.map((f) => f.id).join(",");
+
 		if (currentOrder === newOrderIds) return; // No change
-		
-		console.log('Reordering fields:', newOrder.map(f => f.title));
-		
+
+		console.log(
+			"Reordering fields:",
+			newOrder.map((f) => f.title),
+		);
+
 		const nodeData = formNode.data as unknown as FormNodeData;
-		
+
 		// Update React Flow state directly - canvas will sync to server
 		updateFormData({
 			...nodeData,
@@ -95,7 +95,9 @@ export const SchemaList = ({
 	if (!formNode) {
 		return (
 			<div className="flex justify-center items-center h-32">
-				<p className="text-sm text-muted-foreground">Select form node to manage fields</p>
+				<p className="text-sm text-muted-foreground">
+					Select form node to manage fields
+				</p>
 			</div>
 		);
 	}

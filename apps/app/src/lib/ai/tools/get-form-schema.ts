@@ -21,13 +21,19 @@ export const getFormSchema = tool({
 				return { success: false, message: "Unauthorized" };
 			}
 
-			const formData = await fetchQuery(
+			const form = await fetchQuery(
 				api.collections.forms.queries.getByCampaignId,
 				{
 					campaignId: campaignId as Id<"campaigns">,
 				},
 				{ token },
 			);
+
+			const formData = form.nodes?.find((node) => node.type === "form")?.data;
+
+			if (!formData) {
+				return { success: false, message: "Form schema is not available." };
+			}
 
 			return {
 				success: true,

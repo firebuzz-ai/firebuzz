@@ -1,10 +1,13 @@
 import { applyNodeChanges } from "@xyflow/react";
 import { ConvexError, v } from "convex/values";
-import type { Doc } from "../../_generated/dataModel";
 import { internalMutation } from "../../_generated/server";
 import { mutationWithTrigger } from "../../triggers";
 import { getCurrentUserWithWorkspace } from "../users/utils";
-import { formSchema, formNodeChangeValidator, formViewportChangeValidator } from "./schema";
+import {
+	formNodeChangeValidator,
+	formSchema,
+	formViewportChangeValidator,
+} from "./schema";
 
 export const createInternal = internalMutation({
 	args: formSchema.validator,
@@ -48,10 +51,7 @@ export const updateFormNodes = mutationWithTrigger({
 
 		// Apply changes to current nodes
 		const currentNodes = form.nodes || [];
-		const updatedNodes = applyNodeChanges(
-			validChanges,
-			currentNodes
-		);
+		const updatedNodes = applyNodeChanges(validChanges, currentNodes);
 
 		// Update form with new nodes (canvas is now the single source of truth)
 		await ctx.db.patch(args.formId, {

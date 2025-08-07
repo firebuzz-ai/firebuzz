@@ -102,7 +102,9 @@ export const SegmentNode = memo(
 				if (childNode?.type === "ab-test") {
 					const status = (childNode as ABTestNode).data.status;
 					// Consider draft, running, and paused as "active" (can't create another)
-					return status === "draft" || status === "running" || status === "paused";
+					return (
+						status === "draft" || status === "running" || status === "paused"
+					);
 				}
 				return false;
 			});
@@ -118,14 +120,17 @@ export const SegmentNode = memo(
 					const childNode = getNode(child.target);
 					if (childNode?.type === "ab-test") {
 						const status = (childNode as ABTestNode).data.status;
-						return status === "draft" || status === "running" || status === "paused";
+						return (
+							status === "draft" || status === "running" || status === "paused"
+						);
 					}
 					return false;
 				});
 
 				if (existingActiveTest) {
 					toast.error("You can only have one active test per segment", {
-						description: "Complete or archive the existing test to create a new one.",
+						description:
+							"Complete or archive the existing test to create a new one.",
 					});
 					return;
 				}
@@ -231,9 +236,10 @@ export const SegmentNode = memo(
 							title: variantData.title,
 							description: variantData.description,
 							// Assign segment's primary landing page to control variant
-							variantId: variantData.isControl && data.primaryLandingPageId 
-								? data.primaryLandingPageId 
-								: undefined,
+							variantId:
+								variantData.isControl && data.primaryLandingPageId
+									? data.primaryLandingPageId
+									: undefined,
 							trafficPercentage: 50, // Equal 50/50 split
 							translations: [],
 							isControl: variantData.isControl,
@@ -273,7 +279,15 @@ export const SegmentNode = memo(
 					})),
 				);
 			},
-			[id, addNodes, addEdges, getAllChildren, setNodes, getNode],
+			[
+				id,
+				addNodes,
+				addEdges,
+				getAllChildren,
+				setNodes,
+				getNode,
+				data.primaryLandingPageId,
+			],
 		);
 
 		const handleSelectNode = useCallback(async () => {
@@ -341,7 +355,7 @@ export const SegmentNode = memo(
 						<Button
 							size="iconSm"
 							variant="brand"
-							className="rounded-full transform transition-transform duration-200 hover:scale-110"
+							className="rounded-full transition-transform duration-200 transform hover:scale-110"
 							onClick={handleAddNode}
 						>
 							<Plus className="size-3" />

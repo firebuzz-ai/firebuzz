@@ -46,15 +46,17 @@ export default function FormDataPage({ params }: PageProps) {
 
 	// Transform form schema for the table
 	const formSchema = useMemo(() => {
-		if (!form?.schema) return [];
-		return form.schema.map((field) => ({
+		const schema = form?.nodes?.find((node) => node.type === "form")?.data
+			.schema;
+		if (!schema) return [];
+		return schema.map((field) => ({
 			id: field.id,
 			title: field.title,
 			type: field.type,
 			inputType: field.inputType,
 			required: field.required,
 		}));
-	}, [form?.schema]);
+	}, [form?.nodes]);
 
 	const loadMoreHandler = async () => {
 		if (status === "CanLoadMore") {

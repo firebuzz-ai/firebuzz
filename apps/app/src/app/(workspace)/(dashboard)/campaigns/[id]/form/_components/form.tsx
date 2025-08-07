@@ -1,8 +1,8 @@
 "use client";
+import { Canvas, FormCanvasProvider } from "@/components/canvas/forms";
 import { FlowLayout } from "@/components/layouts/two-panels/panels/campaign/flow";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/campaign/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
-import { FormCanvasProvider, Canvas } from "@/components/canvas/forms";
 import { type Id, api, useRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
@@ -25,12 +25,9 @@ function FormCampaignInner({
 	// Canvas mode uses optimistic updates - no need for separate auto-save
 
 	// Get form data for the canvas
-	const {
-		data: formData,
-		isPending: isFormLoading,
-	} = useRichQuery(
+	const { data: formData, isPending: isFormLoading } = useRichQuery(
 		api.collections.forms.queries.getByCampaignId,
-		{ campaignId: campaign._id }
+		{ campaignId: campaign._id },
 	);
 
 	// Canvas-only approach - removed traditional mode
