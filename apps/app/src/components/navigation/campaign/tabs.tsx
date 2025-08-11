@@ -13,6 +13,7 @@ import {
   type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
+import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
   ChartBar,
   Database,
@@ -128,6 +129,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
       {/* Buttons */}
       <div className="flex gap-4 items-center">
         {roomId && <Presence roomId={roomId} />}
+        <Separator orientation="vertical" className="h-4" />
         <Button
           variant="outline"
           size="sm"

@@ -1,3 +1,4 @@
+import { useUser } from "@/hooks/auth/use-user";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { BaseNode as BaseNodeComponent } from "@firebuzz/ui/components/ui/base-node";
 import { ArrowDownRight } from "@firebuzz/ui/icons/lucide";
@@ -13,10 +14,12 @@ export const NoteNode = memo(
     const { content, author } = data;
     const [note, setNote] = useState(content);
     const { updateNodeData } = useReactFlow();
+    const { user } = useUser();
 
     const handleSave = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       updateNodeData(id, {
         content: e.target.value,
+        author: user?.fullName ?? data.author,
       });
     };
 
