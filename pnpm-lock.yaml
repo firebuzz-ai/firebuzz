@@ -441,6 +441,9 @@ importers:
       '@convex-dev/migrations':
         specifier: ^0.2.5
         version: 0.2.5(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))
+      '@convex-dev/presence':
+        specifier: ^0.1.5
+        version: 0.1.5(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       '@convex-dev/r2':
         specifier: ^0.5.1
         version: 0.5.1(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(hono@4.7.5)(react@19.0.0)(zod@3.24.4)
@@ -1557,6 +1560,13 @@ packages:
     resolution: {integrity: sha512-qxIVTaIatOt4WbKygUZ1Wuu3e0EJ/hSxZVl5jrGCiLPlUjIQ9MpfstQquQmbcHtJOGkzt+CcVoJsISGXPciS/g==}
     peerDependencies:
       convex: ~1.16.5 || >=1.17.0 <1.25.0
+
+  '@convex-dev/presence@0.1.5':
+    resolution: {integrity: sha512-tHD03dLnP0bB4lHuXMVx64NkQqn/SR4dJakwkcOEsXZXFJsvoai/O0FcAnrd5KBYzbbt8GFZ7vxPdBO0l1CSUw==}
+    peerDependencies:
+      convex: '>=1.24.8 <1.35.0'
+      react: ~18.3.1 || ^19.0.0
+      react-dom: ~18.3.1 || ^19.0.0
 
   '@convex-dev/r2@0.5.1':
     resolution: {integrity: sha512-tfq52YV2vGcvl9oJXhLE1VB20E2Hp4kemLo1eG8incvCd0DfU1HKMqjmK05JrE1dsQtQFWxgN7EcXOGzMZ7C8g==}
@@ -12148,6 +12158,12 @@ snapshots:
   '@convex-dev/migrations@0.2.5(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))':
     dependencies:
       convex: 1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+
+  '@convex-dev/presence@0.1.5(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)':
+    dependencies:
+      convex: 1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+      react: 19.0.0
+      react-dom: 19.0.0(react@19.0.0)
 
   '@convex-dev/r2@0.5.1(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(hono@4.7.5)(react@19.0.0)(zod@3.24.4)':
     dependencies:

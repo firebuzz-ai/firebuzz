@@ -128,6 +128,7 @@ import type * as collections_workspaces_utils from "../collections/workspaces/ut
 import type * as components_actionRetrier from "../components/actionRetrier.js";
 import type * as components_aggregates from "../components/aggregates.js";
 import type * as components_migrations from "../components/migrations.js";
+import type * as components_presence from "../components/presence.js";
 import type * as components_r2 from "../components/r2.js";
 import type * as components_ratelimits from "../components/ratelimits.js";
 import type * as components_resend from "../components/resend.js";
@@ -284,6 +285,7 @@ declare const fullApi: ApiFromModules<{
   "components/actionRetrier": typeof components_actionRetrier;
   "components/aggregates": typeof components_aggregates;
   "components/migrations": typeof components_migrations;
+  "components/presence": typeof components_presence;
   "components/r2": typeof components_r2;
   "components/ratelimits": typeof components_ratelimits;
   "components/resend": typeof components_resend;
@@ -2905,6 +2907,57 @@ export declare const components: {
           to: string;
         },
         string
+      >;
+    };
+  };
+  presence: {
+    public: {
+      disconnect: FunctionReference<
+        "mutation",
+        "internal",
+        { sessionToken: string },
+        null
+      >;
+      heartbeat: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          interval?: number;
+          roomId: string;
+          sessionId: string;
+          userId: string;
+        },
+        { roomToken: string; sessionToken: string }
+      >;
+      list: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; roomToken: string },
+        Array<{ lastDisconnected: number; online: boolean; userId: string }>
+      >;
+      listRoom: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; roomId: string },
+        Array<{ lastDisconnected: number; online: boolean; userId: string }>
+      >;
+      listUser: FunctionReference<
+        "query",
+        "internal",
+        { limit?: number; onlineOnly?: boolean; userId: string },
+        Array<{ lastDisconnected: number; online: boolean; roomId: string }>
+      >;
+      removeRoom: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string },
+        null
+      >;
+      removeRoomUser: FunctionReference<
+        "mutation",
+        "internal",
+        { roomId: string; userId: string },
+        null
       >;
     };
   };

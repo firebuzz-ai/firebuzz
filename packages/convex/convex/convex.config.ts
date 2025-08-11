@@ -2,12 +2,12 @@ import cache from "@convex-dev/action-cache/convex.config";
 import actionRetrier from "@convex-dev/action-retrier/convex.config";
 import aggregate from "@convex-dev/aggregate/convex.config";
 import migrations from "@convex-dev/migrations/convex.config";
+import presence from "@convex-dev/presence/convex.config";
 import r2 from "@convex-dev/r2/convex.config";
 import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 import resend from "@convex-dev/resend/convex.config";
 import workflow from "@convex-dev/workflow/convex.config";
 import workpool from "@convex-dev/workpool/convex.config";
-
 import { defineApp } from "convex/server";
 
 const app = defineApp();
@@ -51,5 +51,8 @@ app.use(workflow);
 
 // Resend
 app.use(resend);
+
+// Presence
+app.use(presence);
 
 export default app;
