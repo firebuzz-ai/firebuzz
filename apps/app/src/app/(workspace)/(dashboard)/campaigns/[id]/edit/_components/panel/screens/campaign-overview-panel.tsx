@@ -1,20 +1,27 @@
 "use client";
 
 import { CampaignNodeIcons } from "@/components/canvas/campaign/nodes/campaign/icons";
-import { type Doc, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import { ConvexError, type Doc, api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Input } from "@firebuzz/ui/components/ui/input";
+import { Label } from "@firebuzz/ui/components/ui/label";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
 	AlertCircle,
 	AlertTriangle,
+	Check,
 	CheckCircle2,
 	FileText,
 	Info,
+	Link,
+	Loader2,
+	X,
 	Workflow,
 } from "@firebuzz/ui/icons/lucide";
 import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import { cn } from "@firebuzz/ui/lib/utils";
 import { useReactFlow } from "@xyflow/react";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { DurationSlider } from "../value-selectors/duration-slider";
 import { GoalSelector } from "../value-selectors/goal-selector";
@@ -34,6 +41,9 @@ export const CampaignOverviewPanel = ({
 	const [title, setTitle] = useState(campaign.title);
 	const [description, setDescription] = useState(campaign.description || "");
 	const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+	const [slug, setSlug] = useState(campaign.slug);
+	const [slugState, setSlugState] = useState<"idle" | "validating" | "updating" | "success" | "error">("idle");
+	const [slugError, setSlugError] = useState<string | null>(null);
 
 	// Get validation data from server
 	const validation = useCachedQuery(
@@ -53,6 +63,7 @@ export const CampaignOverviewPanel = ({
 	const updateCampaign = useMutation(
 		api.collections.campaigns.mutations.update,
 	);
+
 	const updateCampaignSettings = useMutation(
 		api.collections.campaigns.mutations.updateCampaignSettings,
 	).withOptimisticUpdate((localStore, args) => {
@@ -83,6 +94,83 @@ export const CampaignOverviewPanel = ({
 		...CAMPAIGN_GOALS.map((goal) => ({ ...goal, isCustom: false })),
 		...(campaign.campaignSettings?.customGoals || []),
 	];
+
+	const validateSlug = (slugValue: string): string | null => {
+		const trimmedSlug = slugValue.trim().toLowerCase();
+		
+		if (trimmedSlug.length < 3) {
+			return "Slug must be at least 3 characters long";
+		}
+		
+		// Basic slug validation - alphanumeric and hyphens only
+		if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
+			return "Slug can only contain lowercase letters, numbers, and hyphens";
+		}
+		
+		// Cannot start or end with hyphens
+		if (trimmedSlug.startsWith("-") || trimmedSlug.endsWith("-")) {
+			return "Slug cannot start or end with hyphens";
+		}
+		
+		return null;
+	};
+
+	const handleSlugChange = (newSlug: string) => {
+		setSlug(newSlug);
+		setSlugError(null);
+		
+		// Reset to idle when typing - we'll validate on blur
+		setSlugState("idle");
+	};
+
+	const handleSlugBlur = async () => {
+		const trimmedSlug = slug.trim().toLowerCase();
+		const validationError = validateSlug(trimmedSlug);
+		
+		// If there's a validation error, don't attempt to update
+		if (validationError) {
+			setSlugState("error");
+			setSlugError(validationError);
+			return;
+		}
+
+		// Update the input to show the lowercase version
+		setSlug(trimmedSlug);
+
+		// If slug hasn't changed, do nothing
+		if (trimmedSlug === campaign.slug) {
+			setSlugState("idle");
+			return;
+		}
+
+		try {
+			setSlugState("updating");
+			
+			// Add a minimum delay to make the updating state more visible
+			await Promise.all([
+				updateCampaign({
+					id: campaign._id,
+					projectId: campaign.projectId,
+					slug: trimmedSlug,
+				}),
+				new Promise(resolve => setTimeout(resolve, 800)) // Minimum 800ms delay
+			]);
+			
+			setSlugState("success");
+			
+			// Show success state briefly, then return to idle
+			setTimeout(() => {
+				setSlugState("idle");
+			}, 2000);
+		} catch (error) {
+			const errorMessage = error instanceof ConvexError ? error.data : "Failed to update campaign slug";
+			setSlugState("error");
+			setSlugError(errorMessage);
+			
+			// Reset to original slug on error
+			setSlug(campaign.slug);
+		}
+	};
 
 	const handleTitleSave = async () => {
 		try {
@@ -298,14 +386,104 @@ export const CampaignOverviewPanel = ({
 			<div className="overflow-y-auto flex-1">
 				{/* Campaign Settings */}
 				<div className="p-4 space-y-4 border-b">
-					<div>
-						<h3 className="text-sm font-medium">Campaign Settings</h3>
-						<p className="text-xs text-muted-foreground">
-							Configure goals, tracking, and measurement settings
-						</p>
-					</div>
-
 					<div className="space-y-4">
+						{/* Campaign Slug */}
+						<div className="space-y-2">
+							<Label htmlFor="campaign-slug">Campaign Slug</Label>
+							<div className="relative">
+								<Input
+									id="campaign-slug"
+									value={slug}
+									onChange={(e) => handleSlugChange(e.target.value)}
+									onBlur={handleSlugBlur}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											e.currentTarget.blur(); // Trigger blur to start update process
+										}
+									}}
+									placeholder="Enter campaign slug..."
+									className={cn(
+										"pr-10 h-8",
+										slugState === "error" && "border-destructive focus-visible:ring-destructive"
+									)}
+								/>
+								<div className="absolute inset-y-0 right-0 flex items-center px-2.5 bg-accent/50 border-l border-l-border rounded-r-md">
+									<AnimatePresence mode="wait">
+										{slugState === "idle" && (
+											<motion.div
+												key="idle"
+												className="flex items-center justify-center"
+												initial={{ opacity: 0, scale: 0.8 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.8 }}
+											>
+												<Link className="w-3 h-3 text-muted-foreground" />
+											</motion.div>
+										)}
+										{slugState === "validating" && (
+											<motion.div
+												key="validating"
+												className="flex items-center justify-center"
+												initial={{ opacity: 0, scale: 0.8 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.8 }}
+											>
+												<Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+											</motion.div>
+										)}
+										{slugState === "updating" && (
+											<motion.div
+												key="updating"
+												className="flex items-center justify-center"
+												initial={{ opacity: 0, scale: 0.8 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.8 }}
+											>
+												<Loader2 className="w-3 h-3 animate-spin text-brand" />
+											</motion.div>
+										)}
+										{slugState === "success" && (
+											<motion.div
+												key="success"
+												className="flex items-center justify-center"
+												initial={{ opacity: 0, scale: 0.8 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.8 }}
+											>
+												<Check className="w-3 h-3 text-green-600" />
+											</motion.div>
+										)}
+										{slugState === "error" && (
+											<motion.div
+												key="error"
+												className="flex items-center justify-center"
+												initial={{ opacity: 0, scale: 0.8 }}
+												animate={{ opacity: 1, scale: 1 }}
+												exit={{ opacity: 0, scale: 0.8 }}
+											>
+												<X className="w-3 h-3 text-destructive" />
+											</motion.div>
+										)}
+									</AnimatePresence>
+								</div>
+							</div>
+							{slugError && (
+								<motion.p
+									initial={{ opacity: 0, y: -5 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -5 }}
+									className="text-xs text-destructive"
+								>
+									{slugError}
+								</motion.p>
+							)}
+							<p className="text-xs text-muted-foreground">
+								Used in the campaign URL. Must be unique and at least 3 characters.
+							</p>
+						</div>
+
+						<Separator />
+
 						{/* Primary Goal Selection */}
 						<GoalSelector
 							selectedGoal={campaign.campaignSettings?.primaryGoal}
@@ -343,6 +521,7 @@ export const CampaignOverviewPanel = ({
 						</div>
 					</div>
 				</div>
+
 
 				{/* Campaign Validation Checklist */}
 				<div className="p-4 space-y-3">

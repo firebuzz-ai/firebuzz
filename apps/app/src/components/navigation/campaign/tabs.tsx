@@ -14,13 +14,7 @@ import {
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
-import {
-  ChartBar,
-  Database,
-  Settings,
-  Table,
-  Workflow,
-} from "@firebuzz/ui/icons/lucide";
+import { ChartBar, Database, Table, Workflow } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -54,12 +48,6 @@ const TABS: TabItem[] = [
     href: "/analytics",
     icon: ChartBar,
     label: "Analytics",
-  },
-  {
-    value: "settings",
-    href: "/settings",
-    icon: Settings,
-    label: "Settings",
   },
 ];
 
