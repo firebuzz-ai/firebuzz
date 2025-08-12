@@ -214,7 +214,6 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 		setIsEditingDescription(false);
 	};
 
-
 	const handleEditRule = (rule: SegmentRule) => {
 		setEditingRule(rule);
 	};

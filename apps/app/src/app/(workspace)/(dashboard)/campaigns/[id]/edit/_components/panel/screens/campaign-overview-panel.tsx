@@ -1,7 +1,13 @@
 "use client";
 
 import { CampaignNodeIcons } from "@/components/canvas/campaign/nodes/campaign/icons";
-import { ConvexError, type Doc, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import {
+	ConvexError,
+	type Doc,
+	api,
+	useCachedQuery,
+	useMutation,
+} from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Label } from "@firebuzz/ui/components/ui/label";
@@ -15,11 +21,11 @@ import {
 	Info,
 	Link,
 	Loader2,
-	X,
 	Workflow,
+	X,
 } from "@firebuzz/ui/icons/lucide";
-import { CAMPAIGN_GOALS } from "@firebuzz/utils";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { CAMPAIGN_GOALS } from "@firebuzz/utils";
 import { useReactFlow } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -42,7 +48,9 @@ export const CampaignOverviewPanel = ({
 	const [description, setDescription] = useState(campaign.description || "");
 	const [_hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
 	const [slug, setSlug] = useState(campaign.slug);
-	const [slugState, setSlugState] = useState<"idle" | "validating" | "updating" | "success" | "error">("idle");
+	const [slugState, setSlugState] = useState<
+		"idle" | "validating" | "updating" | "success" | "error"
+	>("idle");
 	const [slugError, setSlugError] = useState<string | null>(null);
 
 	// Get validation data from server
@@ -97,28 +105,28 @@ export const CampaignOverviewPanel = ({
 
 	const validateSlug = (slugValue: string): string | null => {
 		const trimmedSlug = slugValue.trim().toLowerCase();
-		
+
 		if (trimmedSlug.length < 3) {
 			return "Slug must be at least 3 characters long";
 		}
-		
+
 		// Basic slug validation - alphanumeric and hyphens only
 		if (!/^[a-z0-9-]+$/.test(trimmedSlug)) {
 			return "Slug can only contain lowercase letters, numbers, and hyphens";
 		}
-		
+
 		// Cannot start or end with hyphens
 		if (trimmedSlug.startsWith("-") || trimmedSlug.endsWith("-")) {
 			return "Slug cannot start or end with hyphens";
 		}
-		
+
 		return null;
 	};
 
 	const handleSlugChange = (newSlug: string) => {
 		setSlug(newSlug);
 		setSlugError(null);
-		
+
 		// Reset to idle when typing - we'll validate on blur
 		setSlugState("idle");
 	};
@@ -126,7 +134,7 @@ export const CampaignOverviewPanel = ({
 	const handleSlugBlur = async () => {
 		const trimmedSlug = slug.trim().toLowerCase();
 		const validationError = validateSlug(trimmedSlug);
-		
+
 		// If there's a validation error, don't attempt to update
 		if (validationError) {
 			setSlugState("error");
@@ -145,7 +153,7 @@ export const CampaignOverviewPanel = ({
 
 		try {
 			setSlugState("updating");
-			
+
 			// Add a minimum delay to make the updating state more visible
 			await Promise.all([
 				updateCampaign({
@@ -153,20 +161,23 @@ export const CampaignOverviewPanel = ({
 					projectId: campaign.projectId,
 					slug: trimmedSlug,
 				}),
-				new Promise(resolve => setTimeout(resolve, 800)) // Minimum 800ms delay
+				new Promise((resolve) => setTimeout(resolve, 800)), // Minimum 800ms delay
 			]);
-			
+
 			setSlugState("success");
-			
+
 			// Show success state briefly, then return to idle
 			setTimeout(() => {
 				setSlugState("idle");
 			}, 2000);
 		} catch (error) {
-			const errorMessage = error instanceof ConvexError ? error.data : "Failed to update campaign slug";
+			const errorMessage =
+				error instanceof ConvexError
+					? error.data
+					: "Failed to update campaign slug";
 			setSlugState("error");
 			setSlugError(errorMessage);
-			
+
 			// Reset to original slug on error
 			setSlug(campaign.slug);
 		}
@@ -404,7 +415,8 @@ export const CampaignOverviewPanel = ({
 									placeholder="Enter campaign slug..."
 									className={cn(
 										"pr-10 h-8",
-										slugState === "error" && "border-destructive focus-visible:ring-destructive"
+										slugState === "error" &&
+											"border-destructive focus-visible:ring-destructive",
 									)}
 								/>
 								<div className="absolute inset-y-0 right-0 flex items-center px-2.5 bg-accent/50 border-l border-l-border rounded-r-md">
@@ -478,7 +490,8 @@ export const CampaignOverviewPanel = ({
 								</motion.p>
 							)}
 							<p className="text-xs text-muted-foreground">
-								Used in the campaign URL. Must be unique and at least 3 characters.
+								Used in the campaign URL. Must be unique and at least 3
+								characters.
 							</p>
 						</div>
 
@@ -521,7 +534,6 @@ export const CampaignOverviewPanel = ({
 						</div>
 					</div>
 				</div>
-
 
 				{/* Campaign Validation Checklist */}
 				<div className="p-4 space-y-3">
