@@ -66,8 +66,6 @@ const TABS: TabItem[] = [
 export const CampaignTabs = ({ id }: CampaignTabsProps) => {
   const pathname = usePathname();
 
-  console.log({ pathname });
-
   const publishCampaign = useMutation(
     api.collections.campaigns.mutations.publish
   );
@@ -104,13 +102,8 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
   const isLoading = campaign === undefined;
   const isDisabled = isLoading || !campaign;
   const roomId = useMemo(() => {
-    const currentTab = tabsWithFullPaths.find((tab) =>
-      pathname.startsWith(tab.href ?? "")
-    );
-    if (!currentTab || !["edit", "form"].includes(currentTab.value))
-      return null;
-    return `campaign-${id}-${currentTab.value}`;
-  }, [pathname, tabsWithFullPaths, id]);
+    return `campaign-room-${id}`;
+  }, [id]);
 
   return (
     <div className="flex relative justify-between items-center px-2 border-b">
@@ -128,7 +121,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
 
       {/* Buttons */}
       <div className="flex gap-4 items-center">
-        {roomId && <Presence roomId={roomId} />}
+        <Presence roomId={roomId} />
         <Separator orientation="vertical" className="h-4" />
         <Button
           variant="outline"
