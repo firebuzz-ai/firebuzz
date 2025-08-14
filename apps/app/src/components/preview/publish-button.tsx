@@ -1,23 +1,27 @@
 import { useMutation, useQuery } from "@firebuzz/convex";
 import { type Id, api } from "@firebuzz/convex/nextjs";
 import { Button } from "@firebuzz/ui/components/ui/button";
-import { Checkbox } from "@firebuzz/ui/components/ui/checkbox";
 
 import { useWorkbenchHelpers } from "@/lib/workbench/hooks/use-workbench-helpers";
+import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
+import { ReadonlyInputWithClipboard } from "@firebuzz/ui/components/reusable/readonly-input-with-clipboard";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from "@firebuzz/ui/components/ui/dropdown-menu";
+import { Label } from "@firebuzz/ui/components/ui/label";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
 	ChevronDown,
+	Cloud,
+	CornerDownRight,
 	ExternalLink,
-	GitPullRequest,
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
+import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 
 export const PublishButton = ({
@@ -27,58 +31,16 @@ export const PublishButton = ({
 }) => {
 	const [open, setOpen] = useState(false);
 	const [isPublishing, setIsPublishing] = useState(false);
-	const [selectedDomains, setSelectedDomains] = useState({
-		preview: true,
-		custom: false,
-	});
+
 	const { buildProject, getBuildFiles } = useWorkbenchHelpers();
 
 	const landingPage = useQuery(api.collections.landingPages.queries.getById, {
 		id: landingPageId,
 	});
 
-	// Get available custom domains for this project
-	const customDomains = useQuery(
-		api.collections.domains.queries.getActiveByProject,
-		landingPage?.projectId ? { projectId: landingPage.projectId } : "skip",
-	);
-
-	// Get campaign data to access the slug
-	const campaign = useQuery(
-		api.collections.campaigns.queries.getById,
-		landingPage?.campaignId ? { id: landingPage.campaignId } : "skip",
-	);
-
 	const publishPreviewMutation = useMutation(
 		api.collections.landingPages.mutations.publishPreview,
 	);
-
-	const publishToCustomDomainMutation = useMutation(
-		api.collections.landingPages.mutations.publishToCustomDomain,
-	);
-
-	const unpublishFromCustomDomainMutation = useMutation(
-		api.collections.landingPages.mutations.unpublishFromCustomDomain,
-	);
-
-	const unpublishFromCustomDomain = async () => {
-		try {
-			await unpublishFromCustomDomainMutation({
-				id: landingPageId,
-			});
-
-			toast.success("Unpublished from Custom Domain", {
-				description: "Landing page unpublished successfully",
-				id: "unpublish-custom-domain-process",
-			});
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to unpublish from custom domain", {
-				description: "Please try again",
-				id: "unpublish-custom-domain-process",
-			});
-		}
-	};
 
 	const publishPreview = async () => {
 		try {
@@ -94,7 +56,7 @@ export const PublishButton = ({
 			}
 
 			// Get build files
-			const files = await getBuildFiles(landingPageId, "preview");
+			const files = await getBuildFiles(landingPageId);
 
 			await publishPreviewMutation({
 				id: landingPageId,
@@ -116,79 +78,11 @@ export const PublishButton = ({
 		}
 	};
 
-	const publishToCustomDomain = async () => {
-		// Get the first (and only) custom domain
-		const customDomain = customDomains?.[0];
-
-		if (!customDomain) {
-			toast.error("No custom domain available", {
-				description: "Please set up a custom domain first",
-				id: "custom-domain-process",
-			});
-			return;
-		}
-
-		if (!campaign?.slug) {
-			toast.error("Campaign slug not found", {
-				description: "Unable to get campaign information",
-				id: "custom-domain-process",
-			});
-			return;
-		}
-
-		try {
-			// Build project
-			const isBuildFinished = await buildProject(landingPageId);
-
-			if (!isBuildFinished) {
-				toast.error("Failed to build", {
-					description: "Please try again",
-					id: "build-process",
-				});
-				return;
-			}
-
-			// Get build files with campaign slug for custom domain
-			const files = await getBuildFiles(
-				landingPageId,
-				"production",
-				campaign.slug,
-			);
-
-			await publishToCustomDomainMutation({
-				id: landingPageId,
-				domainId: customDomain._id,
-				html: files.indexHTML,
-				js: files.indexJS,
-				css: files.indexCSS,
-			});
-
-			toast.success("Published to Custom Domain", {
-				description: "Landing page published successfully",
-				id: "custom-domain-process",
-			});
-		} catch (error) {
-			console.error(error);
-			toast.error("Failed to publish to custom domain", {
-				description: "Please try again",
-				id: "custom-domain-process",
-			});
-		}
-	};
-
 	const handlePublish = async () => {
 		try {
 			setIsPublishing(true);
 
-			if (selectedDomains.preview) {
-				// Publish to preview
-				await publishPreview();
-			}
-
-			if (selectedDomains.custom) {
-				// Publish to custom domain
-				await publishToCustomDomain();
-			}
+			await publishPreview();
 
 			setIsPublishing(false);
 		} catch (error) {
@@ -210,17 +104,11 @@ export const PublishButton = ({
 	// Check if preview was published
 	const isPreviewPublished = !!landingPage?.previewPublishedAt;
 
-	// Check if custom domain was published
-	const isCustomDomainPublished = !!landingPage?.customDomainUrl;
-
-	// Get the first custom domain (since there's only one per project)
-	const firstCustomDomain = customDomains?.[0];
-
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger asChild>
 				<Button className="!py-0 !pr-2" size="sm" variant="outline">
-					{isPublishing ? <Spinner size="xs" /> : "Publish"}
+					{isPublishing ? <Spinner size="xs" className="mb-0.5" /> : "Publish"}
 					<div className="flex justify-center items-center pl-2 ml-1 h-full border-l">
 						<ChevronDown className="size-3" />
 					</div>
@@ -231,136 +119,91 @@ export const PublishButton = ({
 				align="end"
 				className="w-[350px] !p-0"
 			>
+				{/* Header */}
 				<div className="flex gap-2 items-center p-2 text-sm font-medium border-b bg-muted">
-					<GitPullRequest className="!size-3" />
-					Choose Domains
+					<Cloud className="size-3.5" /> Publish to Preview
 				</div>
 
-				<div className="flex gap-3 items-center px-2 py-2">
-					<Checkbox
-						id="preview"
-						checked={selectedDomains.preview}
-						onCheckedChange={(checked) =>
-							setSelectedDomains((prev) => ({
-								...prev,
-								preview: checked === true,
-							}))
-						}
-					/>
-					<div className="flex-1">
-						<div className="flex gap-2 items-center">
-							{!landingPage?.previewUrl && (
-								<div className="text-sm font-medium">Preview Domain</div>
-							)}
-							<span className="text-xs font-medium">
-								{landingPage?.previewUrl?.split("/").pop()}
-							</span>
-							{landingPage?.previewUrl && (
-								<a
-									href={landingPage.previewUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-blue-500 hover:text-blue-700"
-								>
-									<ExternalLink className="size-3" />
-								</a>
-							)}
-						</div>
-						<div className="flex gap-1 items-center text-xs text-muted-foreground">
-							{isPreviewPublished ? (
-								<>
-									<span className="text-green-500">Published</span>
-									<span>{getTimeSincePublished()}</span>
-									<Button variant="link" className="p-0 h-auto text-xs">
-										Unpublish
-									</Button>
-								</>
-							) : (
-								<span>Not published yet</span>
-							)}
-						</div>
-					</div>
-				</div>
-
-				<div className="flex gap-3 items-center px-2 py-2">
-					<Checkbox
-						id="custom"
-						checked={selectedDomains.custom}
-						onCheckedChange={(checked) =>
-							setSelectedDomains((prev) => ({
-								...prev,
-								custom: checked === true,
-							}))
-						}
-						disabled={!firstCustomDomain}
-					/>
-					<div className="flex-1">
-						<div className="flex gap-2 items-center">
-							<div className="text-sm font-medium">
-								{firstCustomDomain
-									? firstCustomDomain.hostname
-									: "Custom Domain"}
+				<AnimatePresence initial={false} mode="wait">
+					{/* Not published */}
+					{!isPreviewPublished && (
+						<motion.div
+							className="px-3 py-2 text-sm text-muted-foreground"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+						>
+							Preview will be available once you publish.
+						</motion.div>
+					)}
+					{/* Published */}
+					{isPreviewPublished && (
+						<motion.div
+							className="px-3 py-2 text-sm text-muted-foreground"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+						>
+							{/* URL */}
+							<div className="space-y-1">
+								<Label>Preview URL</Label>
+								<ReadonlyInputWithClipboard
+									value={landingPage?.previewUrl || ""}
+									className="w-full"
+								/>
 							</div>
-							{landingPage?.customDomainUrl && (
-								<a
-									href={landingPage.customDomainUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="text-blue-500 hover:text-blue-700"
-								>
-									<ExternalLink className="size-3" />
-								</a>
-							)}
-						</div>
-						<div className="flex gap-1 items-center text-xs text-muted-foreground">
-							{isCustomDomainPublished ? (
-								<>
-									<span className="text-green-500">Published</span>
-									<span>
-										{
-											landingPage?.customDomainUrl
-												?.replace("https://", "")
-												.split("/")[0]
-										}
+							<div className="flex gap-2 items-center mt-1">
+								<CornerDownRight className="size-3" />
+								<div className="flex gap-1 items-center">
+									<span className="text-xs font-medium text-emerald-600">
+										Published
 									</span>
-									<Button
-										variant="link"
-										className="p-0 h-auto text-xs"
-										onClick={unpublishFromCustomDomain}
-									>
-										Unpublish
-									</Button>
-								</>
-							) : firstCustomDomain ? (
-								<span>Ready to publish</span>
-							) : (
-								<span>No custom domain available</span>
-							)}
-						</div>
-					</div>
+									<span className="text-xs font-medium">
+										{getTimeSincePublished()} ago.
+									</span>
+								</div>
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
+
+				{/* Info Box */}
+				<div className="px-3 py-2">
+					<InfoBox variant="info" className="text-xs" iconPlacement="top">
+						Publishing landing page will build your landing page and provide you
+						a Preview URL but this doesn't change the landing page that is used
+						by Campaign. You must publish the Campaign too.
+					</InfoBox>
 				</div>
 
 				<DropdownMenuSeparator />
 
-				<div className="flex justify-between p-2">
+				<div className="flex gap-4 items-center px-3 py-2">
 					<Button
+						variant="outline"
+						className="w-full h-8"
 						size="sm"
 						onClick={handlePublish}
-						disabled={
-							isPublishing ||
-							(!selectedDomains.preview && !selectedDomains.custom) ||
-							(selectedDomains.custom && !firstCustomDomain)
-						}
+						disabled={isPublishing}
 					>
 						{isPublishing ? (
-							<Spinner size="xs" />
+							<Spinner size="xs" className="mb-0.5" />
 						) : (
-							"Publish to Selected Domains"
+							"Publish"
 						)}
 					</Button>
-					<Button onClick={() => setOpen(false)} variant="outline" size="sm">
-						Cancel
-					</Button>
+					{isPreviewPublished && (
+						<Button
+							variant="ghost"
+							className="w-full h-8"
+							size="sm"
+							onClick={() => {
+								window.open(landingPage?.previewUrl, "_blank");
+							}}
+						>
+							Preview <ExternalLink className="size-3" />
+						</Button>
+					)}
 				</div>
 			</DropdownMenuContent>
 		</DropdownMenu>

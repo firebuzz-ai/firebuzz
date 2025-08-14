@@ -43,6 +43,7 @@ export const createWorkspace = mutation({
 		// Create Project
 		const projectId = await ctx.db.insert("projects", {
 			title: "Untitled Project",
+			slug: slugify(`project-${new Date().getTime().toString()}`),
 			color: "indigo",
 			icon: "rocket",
 			workspaceId: workspaceId,

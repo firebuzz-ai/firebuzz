@@ -25,6 +25,9 @@ import type * as collections_brands_testimonials_utils from "../collections/bran
 import type * as collections_brands_themes_mutations from "../collections/brands/themes/mutations.js";
 import type * as collections_brands_themes_queries from "../collections/brands/themes/queries.js";
 import type * as collections_brands_themes_utils from "../collections/brands/themes/utils.js";
+import type * as collections_campaigns_actions from "../collections/campaigns/actions.js";
+import type * as collections_campaigns_helpers_configBuilder from "../collections/campaigns/helpers/configBuilder.js";
+import type * as collections_campaigns_helpers_index from "../collections/campaigns/helpers/index.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_nodeSchemas from "../collections/campaigns/nodeSchemas.js";
 import type * as collections_campaigns_queries from "../collections/campaigns/queries.js";
@@ -68,6 +71,7 @@ import type * as collections_onboarding_queries from "../collections/onboarding/
 import type * as collections_onboarding_utils from "../collections/onboarding/utils.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
 import type * as collections_projects_queries from "../collections/projects/queries.js";
+import type * as collections_projects_utils from "../collections/projects/utils.js";
 import type * as collections_storage_documents_actions from "../collections/storage/documents/actions.js";
 import type * as collections_storage_documents_chunks_actions from "../collections/storage/documents/chunks/actions.js";
 import type * as collections_storage_documents_chunks_mutations from "../collections/storage/documents/chunks/mutations.js";
@@ -182,6 +186,9 @@ declare const fullApi: ApiFromModules<{
   "collections/brands/themes/mutations": typeof collections_brands_themes_mutations;
   "collections/brands/themes/queries": typeof collections_brands_themes_queries;
   "collections/brands/themes/utils": typeof collections_brands_themes_utils;
+  "collections/campaigns/actions": typeof collections_campaigns_actions;
+  "collections/campaigns/helpers/configBuilder": typeof collections_campaigns_helpers_configBuilder;
+  "collections/campaigns/helpers/index": typeof collections_campaigns_helpers_index;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/nodeSchemas": typeof collections_campaigns_nodeSchemas;
   "collections/campaigns/queries": typeof collections_campaigns_queries;
@@ -225,6 +232,7 @@ declare const fullApi: ApiFromModules<{
   "collections/onboarding/utils": typeof collections_onboarding_utils;
   "collections/projects/mutations": typeof collections_projects_mutations;
   "collections/projects/queries": typeof collections_projects_queries;
+  "collections/projects/utils": typeof collections_projects_utils;
   "collections/storage/documents/actions": typeof collections_storage_documents_actions;
   "collections/storage/documents/chunks/actions": typeof collections_storage_documents_chunks_actions;
   "collections/storage/documents/chunks/mutations": typeof collections_storage_documents_chunks_mutations;

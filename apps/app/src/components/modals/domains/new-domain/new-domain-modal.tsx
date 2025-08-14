@@ -31,7 +31,7 @@ export const NewDomainModal = () => {
 		>
 			<DialogContent
 				onOpenAutoFocus={(e) => e.preventDefault()}
-				className="sm:max-w-2xl w-full flex flex-col !gap-0 !p-0"
+				className="sm:max-w-lg w-full flex flex-col !gap-0 !p-0"
 			>
 				<DialogHeader className="px-4 py-4 border-b">
 					<div className="w-full">

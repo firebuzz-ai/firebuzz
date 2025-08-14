@@ -112,6 +112,27 @@ export const getActiveByProject = query({
 	},
 });
 
+export const getByProject = query({
+	args: {
+		projectId: v.id("projects"),
+	},
+	handler: async (ctx, { projectId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError("User not found");
+		}
+
+		return await ctx.db
+			.query("domains")
+			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
+			.filter((q) => q.neq(q.field("isArchived"), true))
+			.order("desc")
+			.collect();
+	},
+});
+
 export const getByProjectIdInternal = internalQuery({
 	args: {
 		projectId: v.id("projects"),

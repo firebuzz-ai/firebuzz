@@ -4,7 +4,7 @@ import { internalAction } from "../../_generated/server";
 import { engineAPIClient } from "../../lib/engine";
 import { ERRORS } from "../../utils/errors";
 
-export const publishForm = internalAction({
+export const storeFormConfigInKV = internalAction({
 	args: {
 		id: v.id("forms"),
 	},

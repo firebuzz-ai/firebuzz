@@ -1,6 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import type { Doc } from "../../_generated/dataModel";
-import { query } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 import type {
 	ABTestNodeData,
@@ -325,7 +325,6 @@ export const canPublishCampaign = (
 	};
 };
 
-// Public query for client-side reactive validation
 export const getCampaignValidation = query({
 	args: {
 		campaignId: v.id("campaigns"),
@@ -340,6 +339,181 @@ export const getCampaignValidation = query({
 
 		if (campaign.workspaceId !== user.currentWorkspaceId) {
 			throw new ConvexError("Unauthorized");
+		}
+
+		// Get landing pages for the campaign
+		const landingPages = await ctx.db
+			.query("landingPages")
+			.withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
+			.collect();
+
+		// Initialize critical errors array
+		const criticalErrors: ValidationItem[] = [];
+
+		// Check form schema status for lead-generation campaigns
+		let hasValidFormSchema = true; // Default to true for non-lead-generation campaigns
+
+		// Critical Error 1: For lead-generation campaigns, check form requirements (Priority 1)
+		if (campaign.type === "lead-generation") {
+			// Get the form for this campaign
+			const form = await ctx.db
+				.query("forms")
+				.withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
+				.first();
+
+			if (!form) {
+				hasValidFormSchema = false;
+				criticalErrors.push({
+					id: "campaign-no-form",
+					isValid: false,
+					message: "Campaign must have a valid form schema",
+					severity: "error",
+					field: "form",
+					priority: 1,
+				});
+			} else {
+				// Check if form has at least one field in canvas nodes
+				const formNode = form.nodes?.find(
+					(node) => node.type === "form" && node.data,
+				);
+				const hasFields =
+					formNode?.data.schema?.length && formNode.data.schema.length > 0;
+
+				if (!hasFields) {
+					hasValidFormSchema = false;
+					criticalErrors.push({
+						id: "campaign-form-no-fields",
+						isValid: false,
+						message: "Campaign must have a valid form schema",
+						severity: "error",
+						field: "formSchema",
+						priority: 1,
+					});
+				}
+			}
+		}
+
+		// Critical Error 2: Check if campaign has at least one landing page (Priority 2)
+		// Only show this error if form schema is valid (or not required)
+		if (landingPages.length === 0 && hasValidFormSchema) {
+			criticalErrors.push({
+				id: "campaign-no-landing-pages",
+				isValid: false,
+				message: "Create a landing page first",
+				severity: "error",
+				field: "landingPages",
+				priority: 2,
+			});
+		}
+
+		// Create validation context
+		const context: ValidationContext = {
+			nodes: campaign.nodes,
+			edges: campaign.edges,
+			campaign,
+			landingPages,
+			hasValidFormSchema,
+		};
+
+		// Get all validation results
+		const allResults = validateCampaignNodes(context);
+
+		// Check if campaign can be published
+		const { canPublish, errors } = canPublishCampaign(context);
+
+		// Calculate summary
+		let totalErrors = 0;
+		let totalWarnings = 0;
+		let totalInfo = 0;
+
+		for (const result of allResults) {
+			for (const validation of result.validations) {
+				if (!validation.isValid) {
+					switch (validation.severity) {
+						case "error":
+							totalErrors++;
+							break;
+						case "warning":
+							totalWarnings++;
+							break;
+						case "info":
+							totalInfo++;
+							break;
+					}
+				}
+			}
+		}
+
+		// Group issues by severity
+		const errors_ = allResults
+			.map((result) => ({
+				...result,
+				validations: result.validations.filter(
+					(v) => !v.isValid && v.severity === "error",
+				),
+			}))
+			.filter((result) => result.validations.length > 0);
+
+		const warnings = allResults
+			.map((result) => ({
+				...result,
+				validations: result.validations.filter(
+					(v) => !v.isValid && v.severity === "warning",
+				),
+			}))
+			.filter((result) => result.validations.length > 0);
+
+		const info = allResults
+			.map((result) => ({
+				...result,
+				validations: result.validations.filter(
+					(v) => !v.isValid && v.severity === "info",
+				),
+			}))
+			.filter((result) => result.validations.length > 0);
+
+		// Sort critical errors by priority (lower number = higher priority)
+		const sortedCriticalErrors = criticalErrors.sort(
+			(a, b) => (a.priority || 999) - (b.priority || 999),
+		);
+
+		// Include critical errors in totals and publish check
+		const totalCriticalErrors = sortedCriticalErrors.length;
+		const canPublishWithCritical = canPublish && totalCriticalErrors === 0;
+
+		return {
+			validationResults: allResults,
+			criticalErrors: sortedCriticalErrors, // Campaign-level critical errors sorted by priority
+			canPublish: canPublishWithCritical,
+			publishErrors: errors,
+			summary: {
+				totalErrors: totalErrors + totalCriticalErrors,
+				totalWarnings,
+				totalInfo,
+				totalCriticalErrors,
+				hasErrors: totalErrors > 0 || totalCriticalErrors > 0,
+				hasIssues:
+					totalErrors > 0 || totalWarnings > 0 || totalCriticalErrors > 0,
+				hasCriticalErrors: totalCriticalErrors > 0,
+			},
+			issuesBySeverity: {
+				critical: criticalErrors, // Add critical errors as separate category
+				errors: errors_,
+				warnings,
+				info,
+			},
+		};
+	},
+});
+
+export const getCampaignValidationInternal = internalQuery({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		const campaign = await ctx.db.get(args.campaignId);
+		if (!campaign) {
+			return null;
 		}
 
 		// Get landing pages for the campaign

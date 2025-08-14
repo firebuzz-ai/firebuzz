@@ -47,11 +47,7 @@ export const useWorkbenchHelpers = () => {
 		return true;
 	};
 
-	const getBuildFiles = async (
-		id: string,
-		type: "preview" | "production",
-		campaignSlug?: string,
-	) => {
+	const getBuildFiles = async (id: string) => {
 		const webcontainerInstance = await getWebcontainerInstance();
 
 		const indexHTML = await webcontainerInstance.fs.readFile(
@@ -74,12 +70,9 @@ export const useWorkbenchHelpers = () => {
 		const indexJS = assets.find((asset) => asset.name.includes(".js"));
 		const indexCSS = assets.find((asset) => asset.name.includes(".css"));
 
-		// Use campaign slug for production custom domains, otherwise use the existing logic
-		const slug = type === "preview" ? `preview-${id}` : campaignSlug || id;
-
 		const updatedHTML = indexHTML
-			.replace(`/assets/${indexJS?.name}`, `/${slug}/assets/script`)
-			.replace(`/assets/${indexCSS?.name}`, `/${slug}/assets/styles`);
+			.replace(`/assets/${indexJS?.name}`, `/landing/${id}/assets/script`)
+			.replace(`/assets/${indexCSS?.name}`, `/landing/${id}/assets/styles`);
 
 		return {
 			indexHTML: updatedHTML,

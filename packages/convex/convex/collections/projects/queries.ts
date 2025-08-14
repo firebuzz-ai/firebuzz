@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 
 export const getAllByWorkspace = query({
@@ -31,5 +31,14 @@ export const getById = query({
 		// Get the project
 		const project = await ctx.db.get(id);
 		return project;
+	},
+});
+
+export const getByIdInternal = internalQuery({
+	args: {
+		id: v.id("projects"),
+	},
+	handler: async (ctx, { id }) => {
+		return await ctx.db.get(id);
 	},
 });

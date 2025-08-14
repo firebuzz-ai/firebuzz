@@ -1,6 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
-import { query } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 import { aggregateCampaigns } from "../../components/aggregates";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
@@ -100,6 +100,15 @@ export const getById = query({
 		}
 
 		return campaign;
+	},
+});
+
+export const getByIdInternal = internalQuery({
+	args: {
+		id: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db.get(args.id);
 	},
 });
 

@@ -105,7 +105,7 @@ export const LandingPageForm = ({
 
 	const { results: campaigns } = usePaginatedQuery(
 		api.collections.campaigns.queries.getPaginated,
-		currentProject
+		currentProject && !defaultCampaignId
 			? {
 					projectId: currentProject._id,
 					sortOrder: "desc",
@@ -240,37 +240,39 @@ export const LandingPageForm = ({
 										)}
 									/>
 
-									{/* Campaign */}
-									<FormField
-										control={form.control}
-										name="campaignId"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Campaign</FormLabel>
-												<Select
-													onValueChange={field.onChange}
-													value={field.value}
-												>
-													<FormControl>
-														<SelectTrigger className="h-8">
-															<SelectValue placeholder="Select a campaign" />
-														</SelectTrigger>
-													</FormControl>
-													<SelectContent>
-														{campaigns?.map((campaign) => (
-															<SelectItem
-																key={campaign._id}
-																value={campaign._id}
-															>
-																{campaign.title}
-															</SelectItem>
-														))}
-													</SelectContent>
-												</Select>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
+									{/* Campaign - Only show if not prefilled */}
+									{!defaultCampaignId && (
+										<FormField
+											control={form.control}
+											name="campaignId"
+											render={({ field }) => (
+												<FormItem>
+													<FormLabel>Campaign</FormLabel>
+													<Select
+														onValueChange={field.onChange}
+														value={field.value}
+													>
+														<FormControl>
+															<SelectTrigger className="h-8">
+																<SelectValue placeholder="Select a campaign" />
+															</SelectTrigger>
+														</FormControl>
+														<SelectContent>
+															{campaigns?.map((campaign) => (
+																<SelectItem
+																	key={campaign._id}
+																	value={campaign._id}
+																>
+																	{campaign.title}
+																</SelectItem>
+															))}
+														</SelectContent>
+													</Select>
+													<FormMessage />
+												</FormItem>
+											)}
+										/>
+									)}
 
 									{/* Template */}
 									<FormField

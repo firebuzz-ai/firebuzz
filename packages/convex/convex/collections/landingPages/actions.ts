@@ -17,13 +17,7 @@ export const storeInKV = internalAction({
 					key: key,
 					value: html,
 					options: {
-						metadata: {
-							contentType: "html",
-							projectId: "1",
-							landingId: "1",
-							variantId: "1",
-							language: "en",
-						},
+						metadata: {},
 					},
 				},
 			},
@@ -37,16 +31,10 @@ export const storeInKV = internalAction({
 		const jsPromise = engineAPIClient.kv.assets.$post(
 			{
 				json: {
-					key: `${key}/assets/script`,
+					key: `${key}:assets:script`,
 					value: js,
 					options: {
-						metadata: {
-							contentType: "js",
-							projectId: "1",
-							landingId: "1",
-							variantId: "1",
-							language: "en",
-						},
+						metadata: {},
 					},
 				},
 			},
@@ -60,16 +48,10 @@ export const storeInKV = internalAction({
 		const cssPromise = engineAPIClient.kv.assets.$post(
 			{
 				json: {
-					key: `${key}/assets/styles`,
+					key: `${key}:assets:styles`,
 					value: css,
 					options: {
-						metadata: {
-							contentType: "css",
-							projectId: "1",
-							landingId: "1",
-							variantId: "1",
-							language: "en",
-						},
+						metadata: {},
 					},
 				},
 			},

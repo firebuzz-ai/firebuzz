@@ -74,6 +74,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
 		try {
 			await publishCampaign({
 				id: id as Id<"campaigns">,
+				type: "preview",
 			});
 			toast.success("Campaign published successfully");
 		} catch (err) {

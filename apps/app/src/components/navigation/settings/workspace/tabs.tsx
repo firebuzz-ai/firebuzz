@@ -2,7 +2,6 @@
 
 import { useWorkspaceGeneralForm } from "@/app/(workspace)/(dashboard)/settings/workspace/general/_components/form-context";
 import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
-import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
 import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import {
 	AnimatedTabs,
@@ -10,7 +9,7 @@ import {
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { Building, FolderOpen, Globe, Users } from "@firebuzz/ui/icons/lucide";
+import { Building, FolderOpen, Users } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
@@ -34,17 +33,10 @@ const TABS: TabItem[] = [
 		icon: FolderOpen,
 		label: "Projects",
 	},
-	{
-		value: "domains",
-		href: "/settings/workspace/domains",
-		icon: Globe,
-		label: "Domains",
-	},
 ];
 
 export const WorkspaceSettingsTabs = () => {
 	const pathname = usePathname();
-	const [, setNewDomainModal] = useNewDomainModal();
 	const [, setProjectModal] = useProjectModal();
 	const [, setInviteMemberModal] = useInviteMemberModal();
 
@@ -52,7 +44,6 @@ export const WorkspaceSettingsTabs = () => {
 	const generalFormContext = useWorkspaceGeneralForm();
 
 	const currentTab = useMemo(() => {
-		if (pathname.includes("/domains")) return "domains";
 		if (pathname.includes("/team")) return "team";
 		if (pathname.includes("/projects")) return "projects";
 		return "general";
@@ -81,13 +72,6 @@ export const WorkspaceSettingsTabs = () => {
 					disabled: false,
 					loading: false,
 				};
-			case "domains":
-				return {
-					title: "Add Domain",
-					show: true,
-					disabled: false,
-					loading: false,
-				};
 			default:
 				return {
 					title: "",
@@ -105,16 +89,8 @@ export const WorkspaceSettingsTabs = () => {
 			setInviteMemberModal({ create: true });
 		} else if (currentTab === "projects") {
 			setProjectModal({ create: true });
-		} else if (currentTab === "domains") {
-			setNewDomainModal({ create: true });
 		}
-	}, [
-		currentTab,
-		generalFormContext,
-		setProjectModal,
-		setNewDomainModal,
-		setInviteMemberModal,
-	]);
+	}, [currentTab, generalFormContext, setProjectModal, setInviteMemberModal]);
 
 	// Handle keyboard shortcuts
 	useEffect(() => {
@@ -129,9 +105,7 @@ export const WorkspaceSettingsTabs = () => {
 					handleButtonClick();
 				} else if (
 					e.key === "n" &&
-					(currentTab === "domains" ||
-						currentTab === "projects" ||
-						currentTab === "team")
+					(currentTab === "projects" || currentTab === "team")
 				) {
 					e.preventDefault();
 					handleButtonClick();

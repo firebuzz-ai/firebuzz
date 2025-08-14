@@ -1,7 +1,7 @@
 "use client";
 
 import { useConfigureDomainModal } from "@/hooks/ui/use-configure-domain-modal";
-import { type Doc, api, useAction, useCachedQuery } from "@firebuzz/convex";
+import { type Doc, api, useAction } from "@firebuzz/convex";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -12,7 +12,6 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@firebuzz/ui/components/ui/alert-dialog";
-import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
 import {
@@ -61,11 +60,6 @@ export const DomainItem = ({ domain }: DomainItemProps) => {
 	const syncWithCloudflare = useAction(
 		api.collections.domains.actions.syncWithCloudflare,
 	);
-
-	// Fetch project information
-	const projectData = useCachedQuery(api.collections.projects.queries.getById, {
-		id: domain.projectId,
-	});
 
 	const statusIcon = useMemo(() => {
 		const getIconComponent = () => {
@@ -182,42 +176,37 @@ export const DomainItem = ({ domain }: DomainItemProps) => {
 							</div>
 
 							{/* Right Part */}
-							<div className="flex gap-2 items-center">
-								<Badge variant="outline" className="text-xs bg-muted">
-									{projectData?.title}
-								</Badge>
-								<DropdownMenu>
-									<DropdownMenuTrigger asChild>
-										<Button
-											variant="ghost"
-											size="iconXs"
-											onClick={(e) => {
-												e.stopPropagation();
-											}}
-										>
-											<MoreHorizontal className="size-3.5" />
-										</Button>
-									</DropdownMenuTrigger>
-									<DropdownMenuContent side="bottom" align="end">
-										<DropdownMenuItem onClick={handleConfigure}>
-											<Settings className="size-3.5" />
-											Configure
-										</DropdownMenuItem>
-										<DropdownMenuItem onClick={handleRefresh}>
-											<RefreshCw className="size-3.5" />
-											Verify
-										</DropdownMenuItem>
-										<DropdownMenuSeparator />
-										<DropdownMenuItem
-											onClick={() => setShowDeleteDialog(true)}
-											className="text-destructive focus:text-destructive"
-										>
-											<Trash className="size-3.5" />
-											Delete
-										</DropdownMenuItem>
-									</DropdownMenuContent>
-								</DropdownMenu>
-							</div>
+							<DropdownMenu>
+								<DropdownMenuTrigger asChild>
+									<Button
+										variant="ghost"
+										size="iconXs"
+										onClick={(e) => {
+											e.stopPropagation();
+										}}
+									>
+										<MoreHorizontal className="size-3.5" />
+									</Button>
+								</DropdownMenuTrigger>
+								<DropdownMenuContent side="bottom" align="end">
+									<DropdownMenuItem onClick={handleConfigure}>
+										<Settings className="size-3.5" />
+										Configure
+									</DropdownMenuItem>
+									<DropdownMenuItem onClick={handleRefresh}>
+										<RefreshCw className="size-3.5" />
+										Verify
+									</DropdownMenuItem>
+									<DropdownMenuSeparator />
+									<DropdownMenuItem
+										onClick={() => setShowDeleteDialog(true)}
+										className="text-destructive focus:text-destructive"
+									>
+										<Trash className="size-3.5" />
+										Delete
+									</DropdownMenuItem>
+								</DropdownMenuContent>
+							</DropdownMenu>
 						</div>
 						<Separator className="w-full" />
 						{/* Bottom */}

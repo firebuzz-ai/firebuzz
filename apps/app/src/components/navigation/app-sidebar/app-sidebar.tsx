@@ -100,6 +100,10 @@ const navLinks = [
 				title: "SEO",
 				url: "/brand/seo",
 			},
+			{
+				title: "Domains",
+				url: "/brand/domains",
+			},
 		],
 	},
 	{

@@ -1,42 +1,15 @@
 import { Hono } from "hono";
 import type { Env } from "../env";
+import { previewCampaignApp } from "./campaign";
+import { previewLandingApp } from "./landing";
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Index Route
-app.get("/:slug", async (c) => {
-	const slug = c.req.param("slug");
+// Preview [Landing Page]
+app.route("/landing", previewLandingApp);
 
-	const html = await c.env.ASSETS.get(`preview-${slug}`);
-
-	if (!html) {
-		return c.text("Not found", 404);
-	}
-
-	return c.html(html);
-});
-
-// Assets Route
-app.get("/:slug/assets/:asset", async (c) => {
-	const slug = c.req.param("slug");
-	const assetP = c.req.param("asset");
-
-	const asset = await c.env.ASSETS.get(`${slug}/assets/${assetP}`);
-
-	if (!asset) {
-		return c.text("Not found", 404);
-	}
-
-	if (assetP === "styles") {
-		c.header("Content-Type", "text/css");
-	}
-
-	if (assetP === "script") {
-		c.header("Content-Type", "text/javascript");
-	}
-
-	return c.body(asset);
-});
+// Preview [Campaign]
+app.route("/campaign", previewCampaignApp);
 
 // Root route - handles both subdomain root and redirect
 app.get("/", async (c) => {
