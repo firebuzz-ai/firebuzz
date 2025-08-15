@@ -7,19 +7,19 @@ app.all("*", async (c) => {
 	const hostname = c.req.header("host") ?? "";
 
 	const start = performance.now();
-	const configString = await c.env.CONFIG.get(hostname, {
-		cacheTtl: 60 * 60 * 24 * 30,
-	});
-	const end = performance.now() - start;
-	if (!configString) {
-		return c.json({ error: "Config not found" }, 404);
-	}
-
-	const config = JSON.parse(configString) as {
+	const config = await c.env.CONFIG.get<{
 		w: string;
 		p: string;
 		e: string;
-	};
+	}>(hostname, {
+		cacheTtl: 60 * 60 * 24 * 30,
+		type: "json",
+	});
+	const end = performance.now() - start;
+
+	if (!config) {
+		return c.json({ error: "Config not found" }, 404);
+	}
 
 	console.log(`Latency: ${end}ms`);
 
@@ -35,7 +35,7 @@ app.all("*", async (c) => {
 
 	// Create new headers with the original request headers plus custom ones
 	const newHeaders = new Headers(c.req.header());
-	newHeaders.set("X-Landing-Page", "true");
+	newHeaders.set("X-Firebuzz-Campaign", "true");
 	newHeaders.set("X-User-Hostname", hostname);
 	newHeaders.set("X-Project-Id", config.p);
 	newHeaders.set("X-Workspace-Id", config.w);

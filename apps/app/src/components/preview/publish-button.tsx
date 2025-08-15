@@ -14,12 +14,14 @@ import {
 import { Label } from "@firebuzz/ui/components/ui/label";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
+	CheckCircle,
 	ChevronDown,
 	Cloud,
 	CornerDownRight,
 	ExternalLink,
+	FileText,
 } from "@firebuzz/ui/icons/lucide";
-import { toast } from "@firebuzz/ui/lib/utils";
+import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -104,11 +106,37 @@ export const PublishButton = ({
 	// Check if preview was published
 	const isPreviewPublished = !!landingPage?.previewPublishedAt;
 
+	// Status configuration
+	const statusConfig = {
+		draft: {
+			color: "bg-gray-500",
+			label: "Draft",
+			icon: FileText,
+		},
+		published: {
+			color: "bg-emerald-500",
+			label: "Published",
+			icon: CheckCircle,
+		},
+	} as const;
+
+	const currentStatus = landingPage?.status || "draft";
+	const config = statusConfig[currentStatus];
+
 	return (
 		<DropdownMenu open={open} onOpenChange={setOpen}>
 			<DropdownMenuTrigger asChild>
 				<Button className="!py-0 !pr-2" size="sm" variant="outline">
-					{isPublishing ? <Spinner size="xs" className="mb-0.5" /> : "Publish"}
+					<div className="flex items-center space-x-2">
+						<div className={cn("w-2 h-2 rounded-full", config?.color)} />
+						<span>
+							{isPublishing ? (
+								<Spinner size="xs" className="mb-0.5" />
+							) : (
+								config?.label
+							)}
+						</span>
+					</div>
 					<div className="flex justify-center items-center pl-2 ml-1 h-full border-l">
 						<ChevronDown className="size-3" />
 					</div>
@@ -121,7 +149,7 @@ export const PublishButton = ({
 			>
 				{/* Header */}
 				<div className="flex gap-2 items-center p-2 text-sm font-medium border-b bg-muted">
-					<Cloud className="size-3.5" /> Publish to Preview
+					Publish to Preview
 				</div>
 
 				<AnimatePresence initial={false} mode="wait">
@@ -168,7 +196,7 @@ export const PublishButton = ({
 				</AnimatePresence>
 
 				{/* Info Box */}
-				<div className="px-3 py-2">
+				<div className="px-3 py-1">
 					<InfoBox variant="info" className="text-xs" iconPlacement="top">
 						Publishing landing page will build your landing page and provide you
 						a Preview URL but this doesn't change the landing page that is used
@@ -189,7 +217,10 @@ export const PublishButton = ({
 						{isPublishing ? (
 							<Spinner size="xs" className="mb-0.5" />
 						) : (
-							"Publish"
+							<>
+								<Cloud className="size-3.5" />
+								{currentStatus === "draft" ? "Publish" : "Republish"}
+							</>
 						)}
 					</Button>
 					{isPreviewPublished && (
@@ -201,7 +232,7 @@ export const PublishButton = ({
 								window.open(landingPage?.previewUrl, "_blank");
 							}}
 						>
-							Preview <ExternalLink className="size-3" />
+							<ExternalLink className="size-3.5" /> Preview
 						</Button>
 					)}
 				</div>

@@ -1,24 +1,17 @@
 "use client";
 
 import { Presence } from "@/components/presence/presence";
-import {
-	ConvexError,
-	type Id,
-	api,
-	useMutation,
-	useQuery,
-} from "@firebuzz/convex";
+import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
 	type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
-import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { ChartBar, Database, Table, Workflow } from "@firebuzz/ui/icons/lucide";
-import { toast } from "@firebuzz/ui/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { CampaignStatusButton } from "./campaign-status-button";
 
 interface CampaignTabsProps {
 	id: string;
@@ -54,42 +47,12 @@ const TABS: TabItem[] = [
 export const CampaignTabs = ({ id }: CampaignTabsProps) => {
 	const pathname = usePathname();
 
-	const publishCampaign = useMutation(
-		api.collections.campaigns.mutations.publish,
-	);
-
-	// Get current campaign
-	const campaign = useQuery(api.collections.campaigns.queries.getById, {
-		id: id as Id<"campaigns">,
-	});
-
 	// Update tabs with complete hrefs
 	const tabsWithFullPaths: TabItem[] = TABS.map((tab) => ({
 		...tab,
 		href: `/campaigns/${id}${tab.href}`,
 	}));
 
-	// Handle publish
-	const handlePublish = async () => {
-		try {
-			await publishCampaign({
-				id: id as Id<"campaigns">,
-				type: "preview",
-			});
-			toast.success("Campaign published successfully");
-		} catch (err) {
-			const error = err as Error;
-			if (error instanceof ConvexError) {
-				toast.error(error.data);
-			} else {
-				toast.error("Failed to publish campaign");
-				console.error("Publish error:", error.message);
-			}
-		}
-	};
-
-	const isLoading = campaign === undefined;
-	const isDisabled = isLoading || !campaign;
 	const roomId = useMemo(() => {
 		return `campaign-room-${id}`;
 	}, [id]);
@@ -112,15 +75,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
 			<div className="flex gap-4 items-center">
 				<Presence roomId={roomId} />
 				<Separator orientation="vertical" className="h-4" />
-				<Button
-					variant="outline"
-					size="sm"
-					onClick={handlePublish}
-					disabled={isDisabled}
-				>
-					Publish
-					<ButtonShortcut>⌘↵</ButtonShortcut>
-				</Button>
+				<CampaignStatusButton campaignId={id as Id<"campaigns">} />
 			</div>
 		</div>
 	);

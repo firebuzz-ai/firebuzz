@@ -52,6 +52,30 @@ const validateTrafficNode = (
 				field: "defaultVariantId",
 			});
 		}
+	} else {
+		// Check if selected landing page exists and is published
+		const selectedLandingPage = context.landingPages.find(
+			(lp) => lp._id === data.defaultVariantId,
+		);
+		if (!selectedLandingPage) {
+			// Landing page was deleted
+			validations.push({
+				id: "traffic-landing-page-deleted",
+				isValid: false,
+				message: "Selected landing page has been deleted",
+				severity: "error",
+				field: "defaultVariantId",
+			});
+		} else if (selectedLandingPage.status !== "published") {
+			// Landing page exists but is not published
+			validations.push({
+				id: "traffic-landing-page-not-published",
+				isValid: false,
+				message: "Selected landing page must be published",
+				severity: "error",
+				field: "defaultVariantId",
+			});
+		}
 	}
 
 	return validations;
@@ -86,6 +110,30 @@ const validateSegmentNode = (
 				id: "segment-no-landing-pages",
 				isValid: false,
 				message,
+				severity: "error",
+				field: "primaryLandingPageId",
+			});
+		}
+	} else {
+		// Check if selected landing page exists and is published
+		const selectedLandingPage = context.landingPages.find(
+			(lp) => lp._id === data.primaryLandingPageId,
+		);
+		if (!selectedLandingPage) {
+			// Landing page was deleted
+			validations.push({
+				id: "segment-landing-page-deleted",
+				isValid: false,
+				message: "Selected landing page has been deleted",
+				severity: "error",
+				field: "primaryLandingPageId",
+			});
+		} else if (selectedLandingPage.status !== "published") {
+			// Landing page exists but is not published
+			validations.push({
+				id: "segment-landing-page-not-published",
+				isValid: false,
+				message: "Selected landing page must be published",
 				severity: "error",
 				field: "primaryLandingPageId",
 			});
@@ -224,6 +272,30 @@ const validateVariantNode = (
 				field: "variantId",
 			});
 		}
+	} else {
+		// Check if selected landing page exists and is published
+		const selectedLandingPage = context.landingPages.find(
+			(lp) => lp._id === data.variantId,
+		);
+		if (!selectedLandingPage) {
+			// Landing page was deleted
+			validations.push({
+				id: "variant-landing-page-deleted",
+				isValid: false,
+				message: "Selected landing page has been deleted",
+				severity: "error",
+				field: "variantId",
+			});
+		} else if (selectedLandingPage.status !== "published") {
+			// Landing page exists but is not published
+			validations.push({
+				id: "variant-landing-page-not-published",
+				isValid: false,
+				message: "Selected landing page must be published",
+				severity: "error",
+				field: "variantId",
+			});
+		}
 	}
 
 	// Traffic percentage validation
@@ -341,10 +413,11 @@ export const getCampaignValidation = query({
 			throw new ConvexError("Unauthorized");
 		}
 
-		// Get landing pages for the campaign
+		// Get landing pages for the campaign (excluding deleted ones)
 		const landingPages = await ctx.db
 			.query("landingPages")
 			.withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
 			.collect();
 
 		// Initialize critical errors array
@@ -516,10 +589,11 @@ export const getCampaignValidationInternal = internalQuery({
 			return null;
 		}
 
-		// Get landing pages for the campaign
+		// Get landing pages for the campaign (excluding deleted ones)
 		const landingPages = await ctx.db
 			.query("landingPages")
 			.withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
 			.collect();
 
 		// Initialize critical errors array

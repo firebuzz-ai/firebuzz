@@ -106,6 +106,7 @@ export const TrafficNode = memo(
 						primaryLandingPageId: undefined,
 						priority,
 						translationMode: "disabled",
+						translations: [],
 						rules: getDefaultSegmentRules(),
 					},
 				};

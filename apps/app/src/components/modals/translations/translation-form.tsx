@@ -1,11 +1,8 @@
 "use client";
 
 import type { Id } from "@firebuzz/convex";
-import {
-	ConvexError,
-	api,
-	useMutation,
-} from "@firebuzz/convex";
+import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { LocaleSelector } from "@firebuzz/ui/components/reusable/locale-selector";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
 import {
@@ -20,7 +17,6 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { Info } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { LocaleSelector } from "@firebuzz/ui/components/reusable/locale-selector";
 import { sleep } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -153,7 +149,8 @@ export const TranslationForm = ({
 							<Info className="w-3.5 h-3.5" />
 						</div>
 						<div className="text-sm text-muted-foreground">
-							This will create a translation copy with the same template and theme as the original.
+							This will create a translation copy with the same template and
+							theme as the original.
 						</div>
 					</div>
 				</div>

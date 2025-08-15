@@ -105,6 +105,10 @@ export const formSchema = defineTable(
 		edges: v.optional(v.array(formEdgeSchema)),
 		viewport: v.optional(formViewportSchema),
 
+		// Schemas
+		previewSchema: v.optional(v.array(formFieldSchema)),
+		productionSchema: v.optional(v.array(formFieldSchema)),
+
 		// Relations
 		workspaceId: v.id("workspaces"),
 		projectId: v.id("projects"),

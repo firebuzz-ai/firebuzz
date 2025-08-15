@@ -29,7 +29,7 @@ export const ReadonlyInputWithClipboard = ({
 	};
 
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex gap-2 items-center">
 			<div className="relative w-full">
 				<Input
 					readOnly
@@ -45,11 +45,11 @@ export const ReadonlyInputWithClipboard = ({
 								type="button"
 								className="absolute inset-y-0 right-0 flex items-center px-2.5  bg-accent/50 border-l border-l-border rounded-r-md"
 							>
-								<AnimatePresence mode="wait">
+								<AnimatePresence initial={false} mode="wait">
 									{state === "copied" && (
 										<motion.div
 											key="copied"
-											className="flex items-center justify-center"
+											className="flex justify-center items-center"
 											initial={{ opacity: 0, y: 10 }}
 											animate={{ opacity: 1, y: 0 }}
 											exit={{ opacity: 0, y: -10 }}
@@ -60,7 +60,7 @@ export const ReadonlyInputWithClipboard = ({
 									{state === "idle" && (
 										<motion.div
 											key="idle"
-											className="flex items-center justify-center"
+											className="flex justify-center items-center"
 											initial={{ opacity: 0, y: 10 }}
 											animate={{ opacity: 1, y: 0 }}
 											exit={{ opacity: 0, y: -10 }}
@@ -72,7 +72,7 @@ export const ReadonlyInputWithClipboard = ({
 							</button>
 						</TooltipTrigger>
 						<TooltipContent side="top" align="center">
-							<p>Copy to clipboard</p>
+							<p>Copy</p>
 						</TooltipContent>
 					</Tooltip>
 				</TooltipProvider>

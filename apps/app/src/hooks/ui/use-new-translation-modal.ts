@@ -18,7 +18,9 @@ export const useNewTranslationModal = () => {
 	// Sync state with URL params
 	useEffect(() => {
 		const createTranslation = searchParams.get("createTranslation") === "true";
-		const originalLandingPageId = searchParams.get("originalLandingPageId") as Id<"landingPages"> | null;
+		const originalLandingPageId = searchParams.get(
+			"originalLandingPageId",
+		) as Id<"landingPages"> | null;
 
 		if (createTranslation) {
 			setState({

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser } from "@/hooks/auth/use-user";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
@@ -35,6 +36,7 @@ export const PresenceAvatar: React.FC<PresenceAvatarProps> = ({
 	showTooltip = true,
 }) => {
 	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
+	const { user } = useUser();
 
 	const imageSrc = React.useMemo(() => {
 		if (presence.imageKey && /^https?:\/\//.test(presence.imageKey))
@@ -81,7 +83,9 @@ export const PresenceAvatar: React.FC<PresenceAvatarProps> = ({
 			<TooltipContent side="top" align="center">
 				<div className="flex flex-col">
 					<span className="text-sm font-medium">
-						{presence.fullName || presence.userId}
+						{presence.userId === user?._id
+							? "You"
+							: presence.fullName || presence.userId}
 					</span>
 					<span className="text-xs text-muted-foreground">
 						{presence.online

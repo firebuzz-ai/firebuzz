@@ -2,7 +2,7 @@ import { bearerAuth } from "hono/bearer-auth";
 import { createMiddleware } from "hono/factory";
 import type { Env } from "./env";
 import { previewApp } from "./preview";
-import { productionApp } from "./production";
+import { productionCustomDomainApp } from "./production/custom-domain";
 
 export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 	const auth = bearerAuth({
@@ -27,10 +27,10 @@ export const cors = createMiddleware<{ Bindings: Env }>((c, next) => {
 export const domainRouting = createMiddleware<{ Bindings: Env }>(
 	async (c, next) => {
 		const hostname = c.req.header("host") || "";
-		const landingPage = c.req.header("X-Landing-Page") || "";
+		const campaign = c.req.header("X-Firebuzz-Campaign") || "";
 
-		if (landingPage) {
-			return productionApp.fetch(c.req.raw, c.env);
+		if (campaign) {
+			return productionCustomDomainApp.fetch(c.req.raw, c.env);
 		}
 
 		// If request is coming from preview.getfirebuzz.com,

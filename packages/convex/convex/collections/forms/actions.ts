@@ -7,8 +7,9 @@ import { ERRORS } from "../../utils/errors";
 export const storeFormConfigInKV = internalAction({
 	args: {
 		id: v.id("forms"),
+		type: v.union(v.literal("preview"), v.literal("production")),
 	},
-	handler: async (ctx, { id }) => {
+	handler: async (ctx, { id, type }) => {
 		const form = await ctx.runQuery(
 			internal.collections.forms.queries.getByIdInternal,
 			{ id },
@@ -33,13 +34,23 @@ export const storeFormConfigInKV = internalAction({
 			// Store the Config in KV
 			await engineAPIClient.kv.config.$post({
 				json: {
-					key: `form:${form._id}`,
+					key: `form:${type}:${form._id}`,
 					value: JSON.stringify(config),
 					options: {
 						metadata: {},
 					},
 				},
 			});
+
+			// Update the schema in the database
+			await ctx.runMutation(
+				internal.collections.forms.mutations.updateSchemaInternal,
+				{
+					formId: form._id,
+					schema: schema,
+					type,
+				},
+			);
 		} catch (error) {
 			console.error(error);
 			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);

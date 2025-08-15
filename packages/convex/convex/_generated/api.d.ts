@@ -27,6 +27,7 @@ import type * as collections_brands_themes_queries from "../collections/brands/t
 import type * as collections_brands_themes_utils from "../collections/brands/themes/utils.js";
 import type * as collections_campaigns_actions from "../collections/campaigns/actions.js";
 import type * as collections_campaigns_helpers_configBuilder from "../collections/campaigns/helpers/configBuilder.js";
+import type * as collections_campaigns_helpers_getLandingPagesFromConfig from "../collections/campaigns/helpers/getLandingPagesFromConfig.js";
 import type * as collections_campaigns_helpers_index from "../collections/campaigns/helpers/index.js";
 import type * as collections_campaigns_mutations from "../collections/campaigns/mutations.js";
 import type * as collections_campaigns_nodeSchemas from "../collections/campaigns/nodeSchemas.js";
@@ -188,6 +189,7 @@ declare const fullApi: ApiFromModules<{
   "collections/brands/themes/utils": typeof collections_brands_themes_utils;
   "collections/campaigns/actions": typeof collections_campaigns_actions;
   "collections/campaigns/helpers/configBuilder": typeof collections_campaigns_helpers_configBuilder;
+  "collections/campaigns/helpers/getLandingPagesFromConfig": typeof collections_campaigns_helpers_getLandingPagesFromConfig;
   "collections/campaigns/helpers/index": typeof collections_campaigns_helpers_index;
   "collections/campaigns/mutations": typeof collections_campaigns_mutations;
   "collections/campaigns/nodeSchemas": typeof collections_campaigns_nodeSchemas;

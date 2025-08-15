@@ -39,7 +39,11 @@ export const storeCampaignConfigInKV = internalAction({
 		}
 
 		// Build and validate config
-		const config = buildCampaignConfig(campaign.nodes, campaign.edges);
+		const config = buildCampaignConfig(
+			campaign.nodes,
+			campaign.edges,
+			campaign.campaignSettings,
+		);
 
 		const validationResult = await ctx.runQuery(
 			internal.collections.campaigns.validation.getCampaignValidationInternal,

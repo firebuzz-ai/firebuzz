@@ -15,7 +15,11 @@ import {
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { CampaignNodeIcons } from "./icons";
-import type { ABTestNode, SegmentNode as SegmentNodeType } from "./types";
+import type {
+	ABTestNode,
+	SegmentNode as SegmentNodeType,
+	VariantNode,
+} from "./types";
 
 // Use NodeProps with the complete node type
 export const SegmentNode = memo(
@@ -219,7 +223,7 @@ export const SegmentNode = memo(
 					const rowIndex = Math.floor(i / gridConfig.columns);
 					const colIndex = i % gridConfig.columns;
 
-					const variantNode = {
+					const variantNode: VariantNode = {
 						id: variantId,
 						type: "variant" as const,
 						parentId: newNodeId,
@@ -241,7 +245,6 @@ export const SegmentNode = memo(
 									? data.primaryLandingPageId
 									: undefined,
 							trafficPercentage: 50, // Equal 50/50 split
-							translations: [],
 							isControl: variantData.isControl,
 							variantIndex: variantData.variantIndex,
 						},

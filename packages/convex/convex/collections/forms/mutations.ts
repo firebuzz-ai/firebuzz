@@ -1,9 +1,11 @@
 import { applyNodeChanges } from "@xyflow/react";
 import { ConvexError, v } from "convex/values";
+import type { Doc } from "../../_generated/dataModel";
 import { internalMutation } from "../../_generated/server";
 import { mutationWithTrigger } from "../../triggers";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 import {
+	formFieldSchema,
 	formNodeChangeValidator,
 	formSchema,
 	formViewportChangeValidator,
@@ -89,5 +91,24 @@ export const updateFormViewport = mutationWithTrigger({
 		});
 
 		return args.viewport;
+	},
+});
+
+export const updateSchemaInternal = internalMutation({
+	args: {
+		formId: v.id("forms"),
+		schema: v.array(formFieldSchema),
+		type: v.union(v.literal("preview"), v.literal("production")),
+	},
+	handler: async (ctx, args) => {
+		const updateObject: Partial<Doc<"forms">> = {};
+
+		if (args.type === "preview") {
+			updateObject.previewSchema = args.schema;
+		} else if (args.type === "production") {
+			updateObject.productionSchema = args.schema;
+		}
+
+		return await ctx.db.patch(args.formId, updateObject);
 	},
 });

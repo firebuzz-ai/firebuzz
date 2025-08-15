@@ -25,6 +25,7 @@ import {
 	SelectValue,
 } from "@firebuzz/ui/components/ui/select";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
 	AlertCircle,
 	ArrowUpRight,
@@ -74,6 +75,7 @@ export const VariantPanel = ({ node, campaign }: VariantPanelProps) => {
 	const [isEditingDescription, setIsEditingDescription] = useState(false);
 	const [title, setTitle] = useState(node.data.title);
 	const [description, setDescription] = useState(node.data.description || "");
+	const [isCreatingVariant, setIsCreatingVariant] = useState(false);
 	const [_state, { openModal }] = useNewLandingPageModal();
 
 	// Get mutation for creating variants
@@ -214,14 +216,29 @@ export const VariantPanel = ({ node, campaign }: VariantPanelProps) => {
 	};
 
 	const handleCreateVariant = async () => {
-		if (isEditingDisabled) return;
+		if (isEditingDisabled || isCreatingVariant) return;
 		if (controlVariant?.data.variantId) {
+			setIsCreatingVariant(true);
 			try {
-				await createVariant({
+				const newVariant = await createVariant({
 					parentId: controlVariant.data.variantId,
 				});
+
+				// Auto-select the newly created variant
+				if (newVariant) {
+					updateVariantData({
+						variantId: newVariant as Id<"landingPages">,
+					});
+				}
 			} catch (error) {
 				console.error("Failed to create variant:", error);
+				toast.error("Failed to create variant", {
+					id: "create-variant-error",
+					description:
+						"There was an error creating the variant. Please try again.",
+				});
+			} finally {
+				setIsCreatingVariant(false);
 			}
 		}
 	};
@@ -559,9 +576,16 @@ export const VariantPanel = ({ node, campaign }: VariantPanelProps) => {
 									variant="outline"
 									className="mt-2"
 									onClick={handleCreateVariant}
-									disabled={isEditingDisabled}
+									disabled={isEditingDisabled || isCreatingVariant}
 								>
-									Create Variant
+									{isCreatingVariant ? (
+										<>
+											<Spinner size="xs" className="mr-2" />
+											Creating...
+										</>
+									) : (
+										"Create Variant"
+									)}
 								</Button>
 							</div>
 						)}

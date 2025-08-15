@@ -7,11 +7,12 @@ const infoBoxVariants = cva(
 	{
 		variants: {
 			variant: {
-				default: "[&>div>svg]:text-muted-foreground",
-				info: "[&>div>svg]:text-blue-500",
-				warning: "[&>div>svg]:text-amber-500",
-				destructive: "[&>div>svg]:text-red-500",
-				success: "[&>div>svg]:text-green-500",
+				// Target any nested svg so additional icon wrappers still receive color
+				default: "[&_svg]:text-muted-foreground",
+				info: "[&_svg]:text-blue-500",
+				warning: "[&_svg]:text-amber-500",
+				destructive: "[&_svg]:text-red-500",
+				success: "[&_svg]:text-emerald-500",
 			},
 			iconPlacement: {
 				left: "flex-row items-start",
@@ -48,18 +49,60 @@ export const InfoBox = React.forwardRef<HTMLDivElement, InfoBoxProps>(
 		ref,
 	) => {
 		const Icon = variantIcons[variant || "default"];
+		const contentRef = React.useRef<HTMLDivElement | null>(null);
+		const [isSingleLine, setIsSingleLine] = React.useState<boolean>(false);
+
+		// Detect if the content fits in a single line to center-align with the icon.
+		// Only applies for horizontal placements (left/right).
+		React.useEffect(() => {
+			if (!contentRef.current) return;
+
+			const el = contentRef.current;
+
+			const measure = () => {
+				const rect = el.getBoundingClientRect();
+				const style = window.getComputedStyle(el);
+				const lineHeightPx = Number.parseFloat(style.lineHeight);
+				const fallbackLineHeight = 20; // conservative fallback for 'normal'
+				const lineHeight = Number.isFinite(lineHeightPx)
+					? lineHeightPx
+					: fallbackLineHeight;
+
+				const lines = rect.height / (lineHeight || 1);
+				setIsSingleLine(lines <= 1.2);
+			};
+
+			measure();
+
+			const ro = new ResizeObserver(() => measure());
+			ro.observe(el);
+
+			const onResize = () => measure();
+			window.addEventListener("resize", onResize);
+
+			return () => {
+				ro.disconnect();
+				window.removeEventListener("resize", onResize);
+			};
+		}, []);
 
 		return (
 			<div
 				ref={ref}
-				className={cn(infoBoxVariants({ variant, iconPlacement }), className)}
+				className={cn(
+					infoBoxVariants({ variant, iconPlacement }),
+					(iconPlacement === "left" || iconPlacement === "right") &&
+						isSingleLine &&
+						"items-center",
+					className,
+				)}
 				{...props}
 			>
 				<div className="p-1.5 rounded-md bg-muted border border-border">
 					{icon || <Icon className="size-4 shrink-0" />}
 				</div>
 
-				<div>{children}</div>
+				<div ref={contentRef}>{children}</div>
 			</div>
 		);
 	},
