@@ -22,19 +22,21 @@ export const cors = createMiddleware<{ Bindings: Env }>((c, next) => {
 export const domainRouting = createMiddleware<{ Bindings: Env }>(async (c, next) => {
 	// Avoid production/preview routing for utility endpoints so they can be served by the root app
 	const { pathname } = new URL(c.req.url);
-	if (pathname.startsWith('/utility')) {
+	if (pathname.startsWith('/utility') || pathname.startsWith('/test')) {
 		await next();
 		return;
 	}
 
 	const campaign = c.req.header('X-Firebuzz-Campaign') || '';
 	const domainType = c.req.header('X-Firebuzz-Domain-Type') || '';
+	console.log('domainType', domainType);
 	const preview = c.req.header('X-Firebuzz-Preview') || '';
 
 	// Production Routing (Campaign - Custom and Project Domains)
 	if (campaign) {
 		// Support both short and verbose identifiers set by the edge router
 		const isCustomDomain = domainType === 'c' || domainType === 'custom';
+		console.log('isCustomDomain', isCustomDomain);
 
 		// Custom Domain Routing
 		if (isCustomDomain) {

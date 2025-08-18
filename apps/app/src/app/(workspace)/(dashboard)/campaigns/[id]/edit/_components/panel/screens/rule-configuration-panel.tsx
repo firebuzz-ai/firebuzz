@@ -20,12 +20,16 @@ import { DayOfWeekRule } from "../rule-configurations/day-of-week-rule";
 import { DeviceTypeRule } from "../rule-configurations/device-type-rule";
 import { GenericRule } from "../rule-configurations/generic-rule";
 import { HourOfDayRule } from "../rule-configurations/hour-of-day-rule";
+import { IsEUCountryRule } from "../rule-configurations/is-eu-country-rule";
 import { LanguageRule } from "../rule-configurations/language-rule";
 import { OperatingSystemRule } from "../rule-configurations/operating-system-rule";
 import { ReferrerRule } from "../rule-configurations/referrer-rule";
 import { TimeZoneRule } from "../rule-configurations/time-zone-rule";
+import { UtmCampaignRule } from "../rule-configurations/utm-campaign-rule";
+import { UtmContentRule } from "../rule-configurations/utm-content-rule";
 import { UtmMediumRule } from "../rule-configurations/utm-medium-rule";
 import { UtmSourceRule } from "../rule-configurations/utm-source-rule";
+import { UtmTermRule } from "../rule-configurations/utm-term-rule";
 import { VisitorTypeRule } from "../rule-configurations/visitor-type-rule";
 
 interface RuleConfigurationPanelProps {
@@ -135,6 +139,13 @@ export const RuleConfigurationPanel = ({
 						existingRule={existingRule}
 					/>
 				);
+			case "isEUCountry":
+				return (
+					<IsEUCountryRule
+						onRuleChange={handleRuleChange}
+						existingRule={existingRule}
+					/>
+				);
 			case "language":
 				return (
 					<LanguageRule
@@ -166,6 +177,27 @@ export const RuleConfigurationPanel = ({
 			case "utmMedium":
 				return (
 					<UtmMediumRule
+						onRuleChange={handleRuleChange}
+						existingRule={existingRule}
+					/>
+				);
+			case "utmCampaign":
+				return (
+					<UtmCampaignRule
+						onRuleChange={handleRuleChange}
+						existingRule={existingRule}
+					/>
+				);
+			case "utmTerm":
+				return (
+					<UtmTermRule
+						onRuleChange={handleRuleChange}
+						existingRule={existingRule}
+					/>
+				);
+			case "utmContent":
+				return (
+					<UtmContentRule
 						onRuleChange={handleRuleChange}
 						existingRule={existingRule}
 					/>

@@ -228,6 +228,7 @@ export const checkReservedKeys = (subdomain: string) => {
     "engine",
     "dispatcher",
     "cache",
+    "utility",
   ];
 
   return (
@@ -251,6 +252,6 @@ const subdomainSchema = z.object({
 });
 
 export const checkIsValidSubdomain = (subdomain: string) => {
-  const result = subdomainSchema.safeParse(subdomain);
+  const result = subdomainSchema.safeParse({ subdomain });
   return result.success;
 };
