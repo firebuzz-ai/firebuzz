@@ -2,7 +2,7 @@ import type { Doc } from "@firebuzz/convex";
 import { atom, useAtom } from "jotai";
 
 interface ConfigureDomainModalState {
-	domain?: Doc<"domains">;
+	domain?: Doc<"customDomains">;
 	isOpen?: boolean;
 }
 

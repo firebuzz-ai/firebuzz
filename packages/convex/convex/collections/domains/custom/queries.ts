@@ -1,14 +1,14 @@
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
-import { internalQuery, query } from "../../_generated/server";
-import { getCurrentUserWithWorkspace } from "../users/utils";
-import { domainSchema } from "./schema";
+import { internalQuery, query } from "../../../_generated/server";
+import { getCurrentUserWithWorkspace } from "../../users/utils";
+import { customDomainSchema } from "./schema";
 
 export const getPaginated = query({
 	args: {
 		paginationOpts: paginationOptsValidator,
 		sortOrder: v.union(v.literal("asc"), v.literal("desc")),
-		status: v.optional(domainSchema.validator.fields.status),
+		status: v.optional(customDomainSchema.validator.fields.status),
 		searchQuery: v.optional(v.string()),
 		isArchived: v.optional(v.boolean()),
 	},
@@ -26,7 +26,7 @@ export const getPaginated = query({
 		// If there's a search query, use the search index
 		const query = searchQuery
 			? ctx.db
-					.query("domains")
+					.query("customDomains")
 					.withSearchIndex("by_hostname", (q) =>
 						q.search("hostname", searchQuery),
 					)
@@ -40,7 +40,7 @@ export const getPaginated = query({
 					.filter((q) => q.eq(q.field("deletedAt"), undefined))
 					.paginate(paginationOpts)
 			: ctx.db
-					.query("domains")
+					.query("customDomains")
 					.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
 					.filter((q) =>
 						isArchived
@@ -58,7 +58,7 @@ export const getPaginated = query({
 
 export const getById = query({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, args) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -83,7 +83,7 @@ export const getById = query({
 
 export const getByIdInternal = internalQuery({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, args) => {
 		return await ctx.db.get(args.id);
@@ -102,7 +102,7 @@ export const getActiveByProject = query({
 		}
 
 		return await ctx.db
-			.query("domains")
+			.query("customDomains")
 			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
 			.filter((q) => q.eq(q.field("workspaceId"), user.currentWorkspaceId))
 			.filter((q) => q.eq(q.field("status"), "active"))
@@ -124,8 +124,9 @@ export const getByProject = query({
 		}
 
 		return await ctx.db
-			.query("domains")
+			.query("customDomains")
 			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+			.filter((q) => q.eq(q.field("workspaceId"), user.currentWorkspaceId))
 			.filter((q) => q.eq(q.field("deletedAt"), undefined))
 			.filter((q) => q.neq(q.field("isArchived"), true))
 			.order("desc")
@@ -139,7 +140,7 @@ export const getByProjectIdInternal = internalQuery({
 	},
 	handler: async (ctx, { projectId }) => {
 		return await ctx.db
-			.query("domains")
+			.query("customDomains")
 			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
 			.unique();
 	},

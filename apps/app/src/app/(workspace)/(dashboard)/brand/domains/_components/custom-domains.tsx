@@ -10,12 +10,12 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Globe } from "@firebuzz/ui/icons/lucide";
 import { DomainItem } from "./domain-item";
 
-export const Domains = () => {
+export const CustomDomains = () => {
 	const [, setModal] = useNewDomainModal();
 	const { currentProject } = useProject();
 
 	const domains = useCachedQuery(
-		api.collections.domains.queries.getByProject,
+		api.collections.domains.custom.queries.getByProject,
 		currentProject?._id ? { projectId: currentProject._id } : "skip",
 	);
 

@@ -16,7 +16,6 @@ import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Building, Info } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { slugify } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
@@ -26,7 +25,6 @@ const formSchema = z.object({
 		.string()
 		.min(1, "Workspace name is required")
 		.max(50, "Workspace name must be less than 50 characters"),
-	slug: z.string().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -45,7 +43,6 @@ export const WorkspaceForm = ({ onSuccess }: WorkspaceFormProps) => {
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			title: "",
-			slug: "",
 		},
 	});
 
@@ -59,7 +56,6 @@ export const WorkspaceForm = ({ onSuccess }: WorkspaceFormProps) => {
 
 			await createWorkspace({
 				title: data.title,
-				slug: data.slug,
 			});
 
 			toast.success("Workspace created", {
@@ -131,29 +127,7 @@ export const WorkspaceForm = ({ onSuccess }: WorkspaceFormProps) => {
 														disabled={isLoading}
 														onChange={(e) => {
 															field.onChange(e);
-															// Auto-generate slug from title
-															form.setValue("slug", slugify(e.target.value));
 														}}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									{/* Slug */}
-									<FormField
-										control={form.control}
-										name="slug"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Slug</FormLabel>
-												<FormControl>
-													<Input
-														className="h-8"
-														placeholder="my-workspace"
-														{...field}
-														disabled={isLoading}
 													/>
 												</FormControl>
 												<FormMessage />

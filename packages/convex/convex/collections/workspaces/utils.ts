@@ -55,17 +55,3 @@ export const getCurrentWorkspace = async (
 
 	return null;
 };
-
-export const checkIfSlugIsAvailable = async (
-	ctx: QueryCtx | MutationCtx,
-	slug: string,
-	workspaceId?: Id<"workspaces">,
-) => {
-	const workspace = await ctx.db
-		.query("workspaces")
-		.withIndex("by_slug", (q) => q.eq("slug", slug))
-		.filter((q) => (workspaceId ? q.neq(q.field("_id"), workspaceId) : true))
-		.unique();
-
-	return !workspace;
-};

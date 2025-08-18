@@ -36,7 +36,7 @@ interface DomainFormProps {
 export const DomainForm = ({ onSuccess }: DomainFormProps) => {
 	const [isCreating, setIsCreating] = useState(false);
 	const createDomain = useAction(
-		api.collections.domains.actions.createCustomDomain,
+		api.collections.domains.custom.actions.createCustomDomain,
 	);
 	const { currentProject } = useProject();
 	const { currentWorkspace } = useWorkspace();

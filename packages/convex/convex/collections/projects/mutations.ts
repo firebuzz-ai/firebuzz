@@ -1,4 +1,5 @@
 import { ConvexError, v } from "convex/values";
+import { internal } from "../../_generated/api";
 import type { Doc } from "../../_generated/dataModel";
 import { internalMutation, mutation } from "../../_generated/server";
 import {
@@ -6,42 +7,51 @@ import {
 	mutationWithTrigger,
 } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
+import { generateRandomSubdomain } from "../domains/project/helpers";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 import { projectSchema } from "./schema";
-import { checkIfSlugIsAvailable } from "./utils";
 
 export const create = mutation({
 	args: {
 		title: projectSchema.validator.fields.title,
-		slug: projectSchema.validator.fields.slug,
 		color: projectSchema.validator.fields.color,
 		icon: projectSchema.validator.fields.icon,
 	},
-	handler: async (ctx, { title, color, icon, slug }) => {
+	handler: async (ctx, { title, color, icon }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 		if (!user || !user.currentWorkspaceId) {
 			throw new ConvexError("User or current workspace not found.");
-		}
-
-		const isSlugAvailable = await checkIfSlugIsAvailable(
-			ctx,
-			slug,
-			user.currentWorkspaceId,
-		);
-
-		if (!isSlugAvailable) {
-			throw new ConvexError("Slug is already taken.");
 		}
 
 		// Create the project
 		const newProjectId = await ctx.db.insert("projects", {
 			title,
 			color,
-			slug,
 			icon,
 			workspaceId: user.currentWorkspaceId,
 			createdBy: user._id,
 			isOnboarded: false,
+		});
+
+		// Generate a random subdomain and check if it's available
+		let subdomain = generateRandomSubdomain();
+		while (
+			await ctx.runQuery(
+				internal.collections.domains.project.queries.checkSubdomainIsAvailable,
+				{
+					subdomain: subdomain,
+				},
+			)
+		) {
+			subdomain = generateRandomSubdomain();
+		}
+
+		// Create Project Domain
+		await ctx.db.insert("projectDomains", {
+			subdomain,
+			domain: process.env.ROUTING_DOMAIN!,
+			workspaceId: user.currentWorkspaceId,
+			projectId: newProjectId,
 		});
 
 		// Create onboarding
@@ -68,11 +78,10 @@ export const update = mutation({
 	args: {
 		projectId: v.id("projects"),
 		name: v.optional(v.string()),
-		slug: v.optional(v.string()),
 		color: v.optional(v.string()),
 		icon: v.optional(v.string()),
 	},
-	handler: async (ctx, { projectId, name, color, icon, slug }) => {
+	handler: async (ctx, { projectId, name, color, icon }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 
 		if (!user || !user.currentWorkspaceId) {
@@ -104,21 +113,6 @@ export const update = mutation({
 			updateObject.icon = icon;
 		}
 
-		if (slug) {
-			const isSlugAvailable = await checkIfSlugIsAvailable(
-				ctx,
-				slug,
-				user.currentWorkspaceId,
-				projectId,
-			);
-
-			if (!isSlugAvailable) {
-				throw new ConvexError("Slug is already taken.");
-			}
-
-			updateObject.slug = slug;
-		}
-
 		await ctx.db.patch(projectId, updateObject);
 	},
 });
@@ -127,7 +121,6 @@ export const updateInternal = internalMutation({
 	args: {
 		projectId: v.id("projects"),
 		name: v.optional(v.string()),
-		slug: v.optional(v.string()),
 		color: v.optional(v.string()),
 		icon: v.optional(v.string()),
 		isOnboarded: v.optional(v.boolean()),
@@ -149,26 +142,6 @@ export const updateInternal = internalMutation({
 
 		if (args.isOnboarded) {
 			updateObject.isOnboarded = args.isOnboarded;
-		}
-
-		if (args.slug) {
-			const project = await ctx.db.get(args.projectId);
-			if (!project) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-
-			const isSlugAvailable = await checkIfSlugIsAvailable(
-				ctx,
-				args.slug,
-				project.workspaceId,
-				args.projectId,
-			);
-
-			if (!isSlugAvailable) {
-				throw new ConvexError("Slug is already taken.");
-			}
-
-			updateObject.slug = args.slug;
 		}
 
 		await ctx.db.patch(args.projectId, updateObject);

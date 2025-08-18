@@ -3,7 +3,8 @@ import type { KVNamespace } from "@cloudflare/workers-types";
 export interface Env {
 	ASSETS: KVNamespace;
 	CACHE: KVNamespace;
-	CONFIG: KVNamespace;
+	CAMPAIGN: KVNamespace;
+	DOMAIN_CONFIG: KVNamespace;
 	SERVICE_TOKEN: string;
 	CONVEX_HTTP_URL: string;
 	// Cloudflare API credentials for custom hostname operations

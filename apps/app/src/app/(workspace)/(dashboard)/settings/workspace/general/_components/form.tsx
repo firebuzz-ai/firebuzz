@@ -101,29 +101,6 @@ export const WorkspaceGeneralForm = () => {
 							)}
 						/>
 
-						{/* Slug */}
-						<FormField
-							control={form.control}
-							name="slug"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Slug</FormLabel>
-									<FormControl>
-										<Input
-											className="!h-8"
-											placeholder="my-workspace"
-											{...field}
-											disabled={isLoading}
-										/>
-									</FormControl>
-									<FormDescription>
-										This is the slug that will be used to access your workspace.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-
 						{/* Logo */}
 						<FormField
 							control={form.control}

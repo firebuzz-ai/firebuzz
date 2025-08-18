@@ -6,14 +6,19 @@ import {
 	type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
-import { Globe } from "@firebuzz/ui/icons/lucide";
+import { Globe, Globe2 } from "@firebuzz/ui/icons/lucide";
 import { useCallback } from "react";
 
 const TABS: TabItem[] = [
 	{
-		value: "domains",
+		value: "project-domains",
+		icon: Globe2,
+		label: "Project Domains",
+	},
+	{
+		value: "custom-domains",
 		icon: Globe,
-		label: "Domains",
+		label: "Custom Domains",
 	},
 ];
 
@@ -21,8 +26,8 @@ export const DomainsTabs = ({
 	currentTab,
 	setCurrentTab,
 }: {
-	currentTab: "domains";
-	setCurrentTab: (tab: "domains") => void;
+	currentTab: "project-domains" | "custom-domains";
+	setCurrentTab: (tab: "project-domains" | "custom-domains") => void;
 }) => {
 	const [, setNewDomainModal] = useNewDomainModal();
 
@@ -37,7 +42,9 @@ export const DomainsTabs = ({
 			<AnimatedTabs
 				tabs={TABS}
 				value={currentTab}
-				onValueChange={(value) => setCurrentTab(value as "domains")}
+				onValueChange={(value) =>
+					setCurrentTab(value as "project-domains" | "custom-domains")
+				}
 				indicatorPadding={0}
 				tabsContainerClassName="flex items-center gap-2"
 				withBorder={false}
@@ -46,10 +53,12 @@ export const DomainsTabs = ({
 
 			{/* Buttons */}
 			<div className="flex items-center gap-2">
-				<Button variant="outline" size="sm" onClick={handleNew}>
-					Add Domain
-					<ButtonShortcut>⌘N</ButtonShortcut>
-				</Button>
+				{currentTab === "custom-domains" && (
+					<Button variant="outline" size="sm" onClick={handleNew}>
+						Add Custom Domain
+						<ButtonShortcut>⌘N</ButtonShortcut>
+					</Button>
+				)}
 			</div>
 		</div>
 	);

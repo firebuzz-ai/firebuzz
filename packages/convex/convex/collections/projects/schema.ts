@@ -4,7 +4,6 @@ import { v } from "convex/values";
 export const projectSchema = defineTable(
 	v.object({
 		title: v.string(),
-		slug: v.string(),
 		color: v.string(),
 		icon: v.string(),
 		// Relations
@@ -15,6 +14,4 @@ export const projectSchema = defineTable(
 	}),
 )
 	.index("by_workspace_id", ["workspaceId"])
-	.index("by_title", ["title"])
-	.index("by_slug", ["slug"])
-	.index("by_slug_workspace_id", ["slug", "workspaceId"]);
+	.index("by_title", ["title"]);

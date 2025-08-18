@@ -3,7 +3,6 @@ import {
 	WorkflowManager,
 	vWorkflowId,
 } from "@convex-dev/workflow";
-import { slugify } from "@firebuzz/utils";
 import { ConvexError, v } from "convex/values";
 import { components, internal } from "../_generated/api";
 import { internalMutation, internalQuery } from "../_generated/server";
@@ -315,9 +314,6 @@ export const onboardingWorkspaceStepFour = workflow.define({
 			{
 				projectId: onboarding.projectId,
 				name: onboarding.step3?.formData?.brandName ?? "Untitled Project",
-				slug: slugify(
-					`${onboarding.step3?.formData?.brandName ?? "untitled-project"}-${new Date().getTime().toString()}`,
-				),
 			},
 		);
 

@@ -32,7 +32,7 @@ export const storeFormConfigInKV = internalAction({
 
 		try {
 			// Store the Config in KV
-			await engineAPIClient.kv.config.$post({
+			await engineAPIClient.kv.campaign.$post({
 				json: {
 					key: `form:${type}:${form._id}`,
 					value: JSON.stringify(config),

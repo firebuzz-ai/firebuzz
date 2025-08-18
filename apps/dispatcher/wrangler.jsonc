@@ -12,7 +12,7 @@
 	},
 	"kv_namespaces": [
 		{
-			"binding": "CONFIG",
+			"binding": "DOMAIN_CONFIG",
 			"id": "87d1c295bfd54f1c91a09155b558aaed"
 		}
 	]

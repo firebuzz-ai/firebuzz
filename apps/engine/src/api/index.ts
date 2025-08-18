@@ -4,14 +4,16 @@ import type { Env } from "../env";
 import { apiAuth, cors } from "../middleware";
 import { assetsRoute } from "./v1/kv/assets";
 import { cacheRoute } from "./v1/kv/cache";
-import { configRoute } from "./v1/kv/config";
+import { campaignRoute } from "./v1/kv/campaign";
+import { domainConfigRoute } from "./v1/kv/domain-config";
 
 const apiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 	.use(cors)
 	.use(apiAuth)
 	.route("/kv/assets", assetsRoute)
 	.route("/kv/cache", cacheRoute)
-	.route("/kv/config", configRoute);
+	.route("/kv/domain", domainConfigRoute)
+	.route("/kv/campaign", campaignRoute);
 
 // Export the app routes and the type of the app
 type AppType = typeof apiRoutes;

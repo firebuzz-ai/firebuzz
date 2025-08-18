@@ -12,7 +12,6 @@ const formSchema = z.object({
 		.min(1, "Title is required")
 		.min(3, "Title must be at least 3 characters"),
 	logo: z.string().optional(),
-	slug: z.string().min(5, "Slug must be at least 5 characters"),
 });
 
 interface WorkspaceGeneralFormContextType {
@@ -48,7 +47,6 @@ export const WorkspaceGeneralFormProvider = ({
 		defaultValues: {
 			title: currentWorkspace?.title || "",
 			logo: currentWorkspace?.logo || "",
-			slug: currentWorkspace?.slug || "",
 		},
 		mode: "onChange",
 	});
@@ -67,7 +65,6 @@ export const WorkspaceGeneralFormProvider = ({
 				id: currentWorkspace._id,
 				title: data.title,
 				logo: data.logo || undefined,
-				slug: data.slug,
 			});
 
 			toast.success("Workspace updated successfully", {

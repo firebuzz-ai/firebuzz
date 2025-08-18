@@ -45,7 +45,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
 
 interface DomainItemProps {
-	domain: Doc<"domains">;
+	domain: Doc<"customDomains">;
 }
 
 export const DomainItem = ({ domain }: DomainItemProps) => {
@@ -54,11 +54,11 @@ export const DomainItem = ({ domain }: DomainItemProps) => {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
 	const deleteDomain = useAction(
-		api.collections.domains.actions.deleteCustomDomain,
+		api.collections.domains.custom.actions.deleteCustomDomain,
 	);
 
 	const syncWithCloudflare = useAction(
-		api.collections.domains.actions.syncWithCloudflare,
+		api.collections.domains.custom.actions.syncWithCloudflare,
 	);
 
 	const statusIcon = useMemo(() => {

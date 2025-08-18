@@ -3,6 +3,7 @@ import { createMiddleware } from "hono/factory";
 import type { Env } from "./env";
 import { previewApp } from "./preview";
 import { productionCustomDomainApp } from "./production/custom-domain";
+import { productionProjectDomainApp } from "./production/firebuzz-subdomain";
 
 export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 	const auth = bearerAuth({
@@ -26,18 +27,23 @@ export const cors = createMiddleware<{ Bindings: Env }>((c, next) => {
 
 export const domainRouting = createMiddleware<{ Bindings: Env }>(
 	async (c, next) => {
-		const hostname = c.req.header("host") || "";
 		const campaign = c.req.header("X-Firebuzz-Campaign") || "";
+		const domainType = c.req.header("X-Firebuzz-Domain-Type") || "";
+		const preview = c.req.header("X-Firebuzz-Preview") || "";
 
+		// Production Routing (Campaign - Custom and Project Domains)
 		if (campaign) {
-			return productionCustomDomainApp.fetch(c.req.raw, c.env);
+			// Custom Domain Routing
+			if (domainType === "c") {
+				return productionCustomDomainApp.fetch(c.req.raw, c.env);
+			}
+
+			// Project Domain Routing (Firebuzz Subdomain)
+			return productionProjectDomainApp.fetch(c.req.raw, c.env);
 		}
 
-		// If request is coming from preview.getfirebuzz.com,
-		// route it accordingly without the /preview prefix
-		if (hostname === "preview.getfirebuzz.com") {
-			// Create a new request with the modified URL path
-
+		// Preview Routing (Campaign & Landing Page Previews)
+		if (preview) {
 			return previewApp.fetch(c.req.raw, c.env);
 		}
 

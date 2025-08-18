@@ -214,11 +214,11 @@ const listKvRoute = createRoute({
 
 const app = new OpenAPIHono<{ Bindings: Env }>();
 
-export const configRoute = app
+export const campaignRoute = app
 	.openapi(insertKvRoute, async (c) => {
 		const { key, value, options } = c.req.valid("json");
 		try {
-			const result = await c.env.CONFIG.put(key, value, options);
+			const result = await c.env.CAMPAIGN.put(key, value, options);
 			return c.json({
 				success: true,
 				message: "Key-value pair inserted successfully",
@@ -239,7 +239,7 @@ export const configRoute = app
 			// Without Metadata
 			if (!withMetadata) {
 				if (type === "json") {
-					const result = await c.env.CONFIG.get(key, {
+					const result = await c.env.CAMPAIGN.get(key, {
 						type: "json",
 						cacheTtl: cacheTtl,
 					});
@@ -264,7 +264,7 @@ export const configRoute = app
 					);
 				}
 
-				const result = await c.env.CONFIG.get(key, {
+				const result = await c.env.CAMPAIGN.get(key, {
 					type: "text",
 					cacheTtl: cacheTtl,
 				});
@@ -285,7 +285,7 @@ export const configRoute = app
 
 			// With Metadata
 			if (type === "json") {
-				const result = await c.env.CONFIG.getWithMetadata(key, {
+				const result = await c.env.CAMPAIGN.getWithMetadata(key, {
 					type: "json",
 					cacheTtl: cacheTtl,
 				});
@@ -309,7 +309,7 @@ export const configRoute = app
 				);
 			}
 
-			const result = await c.env.CONFIG.getWithMetadata(key, {
+			const result = await c.env.CAMPAIGN.getWithMetadata(key, {
 				type: "text",
 				cacheTtl: cacheTtl,
 			});
@@ -341,7 +341,7 @@ export const configRoute = app
 	.openapi(deleteKvRoute, async (c) => {
 		const { key } = c.req.valid("json");
 		try {
-			await c.env.CONFIG.delete(key);
+			await c.env.CAMPAIGN.delete(key);
 			return c.json(
 				{ success: true, message: "Key-value pair deleted successfully" },
 				200,
@@ -357,7 +357,7 @@ export const configRoute = app
 	.openapi(listKvRoute, async (c) => {
 		const { prefix, limit, cursor } = c.req.valid("query");
 		try {
-			const result = await c.env.CONFIG.list({ prefix, limit, cursor });
+			const result = await c.env.CAMPAIGN.list({ prefix, limit, cursor });
 
 			return c.json(
 				{

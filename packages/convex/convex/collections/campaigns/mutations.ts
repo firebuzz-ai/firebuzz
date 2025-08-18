@@ -193,7 +193,7 @@ export const publish = mutationWithTrigger({
 	args: {
 		id: v.id("campaigns"),
 		type: v.union(v.literal("preview"), v.literal("production")),
-		domainIds: v.optional(v.array(v.id("domains"))),
+		domainIds: v.optional(v.array(v.id("customDomains"))),
 	},
 	handler: async (ctx, { id, type, domainIds }) => {
 		// Check if user is authenticated
@@ -293,22 +293,30 @@ export const publish = mutationWithTrigger({
 				throw new ConvexError("Can't publish campaign in this status");
 			}
 
-			// Get workspace and project for URL generation
-			const workspace = await ctx.db.get(campaign.workspaceId);
-			const project = await ctx.db.get(campaign.projectId);
+			// Get project domain for URL generation
+			const projectDomains = await ctx.db
+				.query("projectDomains")
+				.withIndex("by_project_id", (q) =>
+					q.eq("projectId", campaign.projectId),
+				)
+				.filter((q) => q.eq(q.field("deletedAt"), undefined))
+				.filter((q) => q.neq(q.field("isArchived"), true))
+				.collect();
 
-			if (!workspace || !project) {
-				throw new ConvexError("Workspace or project not found");
+			if (!projectDomains || projectDomains.length === 0) {
+				throw new ConvexError("Project domain not found");
 			}
+
+			const projectDomain = projectDomains[0]!;
 
 			// Generate production URLs
 			const productionUrls = [];
 
-			// Always add workspace URL
-			const workspaceUrl = `${workspace.slug}.getfirebuzz.com/${project.slug}/${campaign.slug}`;
+			// Always add project domain URL
+			const projectUrl = `${projectDomain.subdomain}.${projectDomain.domain}/${campaign.slug}`;
 			productionUrls.push({
 				type: "workspace" as const,
-				url: workspaceUrl,
+				url: projectUrl,
 			});
 
 			// Add custom domain URLs if specified
@@ -363,7 +371,7 @@ export const publishInternal = internalMutationWithTrigger({
 	args: {
 		id: v.id("campaigns"),
 		type: v.union(v.literal("preview"), v.literal("production")),
-		domainIds: v.optional(v.array(v.id("domains"))),
+		domainIds: v.optional(v.array(v.id("customDomains"))),
 	},
 	handler: async (ctx, { id, type, domainIds }) => {
 		// Check if user is authenticated
@@ -463,22 +471,30 @@ export const publishInternal = internalMutationWithTrigger({
 				throw new ConvexError("Can't publish campaign in this status");
 			}
 
-			// Get workspace and project for URL generation
-			const workspace = await ctx.db.get(campaign.workspaceId);
-			const project = await ctx.db.get(campaign.projectId);
+			// Get project domain for URL generation
+			const projectDomains = await ctx.db
+				.query("projectDomains")
+				.withIndex("by_project_id", (q) =>
+					q.eq("projectId", campaign.projectId),
+				)
+				.filter((q) => q.eq(q.field("deletedAt"), undefined))
+				.filter((q) => q.neq(q.field("isArchived"), true))
+				.collect();
 
-			if (!workspace || !project) {
-				throw new ConvexError("Workspace or project not found");
+			if (!projectDomains || projectDomains.length === 0) {
+				throw new ConvexError("Project domain not found");
 			}
+
+			const projectDomain = projectDomains[0]!;
 
 			// Generate production URLs
 			const productionUrls = [];
 
-			// Always add workspace URL
-			const workspaceUrl = `${workspace.slug}.getfirebuzz.com/${project.slug}/${campaign.slug}`;
+			// Always add project domain URL
+			const projectUrl = `${projectDomain.subdomain}.${projectDomain.domain}/${campaign.slug}`;
 			productionUrls.push({
 				type: "workspace" as const,
-				url: workspaceUrl,
+				url: projectUrl,
 			});
 
 			// Add custom domain URLs if specified
@@ -533,7 +549,7 @@ export const schedulePublish = mutationWithTrigger({
 	args: {
 		id: v.id("campaigns"),
 		scheduledAt: v.string(), // ISO date string
-		domainIds: v.optional(v.array(v.id("domains"))),
+		domainIds: v.optional(v.array(v.id("customDomains"))),
 	},
 	handler: async (ctx, { id, scheduledAt, domainIds }) => {
 		// Check if user is authenticated
@@ -591,7 +607,7 @@ export const reschedulePublish = mutationWithTrigger({
 	args: {
 		id: v.id("campaigns"),
 		newScheduledAt: v.string(),
-		domainIds: v.optional(v.array(v.id("domains"))),
+		domainIds: v.optional(v.array(v.id("customDomains"))),
 	},
 	handler: async (ctx, { id, newScheduledAt, domainIds }) => {
 		// Check if user is authenticated

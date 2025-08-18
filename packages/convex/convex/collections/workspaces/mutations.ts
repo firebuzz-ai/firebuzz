@@ -1,30 +1,20 @@
-import { slugify } from "@firebuzz/utils";
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
 import { internalMutation, mutation } from "../../_generated/server";
 import { retrier } from "../../components/actionRetrier";
 import { internalMutationWithTrigger } from "../../triggers";
 import { ERRORS } from "../../utils/errors";
+import { generateRandomSubdomain } from "../domains/project/helpers";
 import { getCurrentUser, getCurrentUserWithWorkspace } from "../users/utils";
-import { checkIfSlugIsAvailable } from "./utils";
 
 export const createWorkspace = mutation({
 	args: {
 		title: v.string(),
-		slug: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const { title } = args;
 
 		const user = await getCurrentUser(ctx);
-		const slug =
-			args.slug || slugify(`${title}-${new Date().getTime().toString()}`);
-
-		const isSlugAvailable = await checkIfSlugIsAvailable(ctx, slug);
-
-		if (!isSlugAvailable) {
-			throw new ConvexError("Slug is already taken.");
-		}
 
 		// Create workspace
 		const workspaceId = await ctx.db.insert("workspaces", {
@@ -32,7 +22,6 @@ export const createWorkspace = mutation({
 			ownerId: user._id, // We will change this to the organization id when we create the organization
 			workspaceType: "personal",
 			title,
-			slug,
 			isOnboarded: false,
 			isSubscribed: false,
 		});
@@ -43,12 +32,32 @@ export const createWorkspace = mutation({
 		// Create Project
 		const projectId = await ctx.db.insert("projects", {
 			title: "Untitled Project",
-			slug: slugify(`project-${new Date().getTime().toString()}`),
 			color: "indigo",
 			icon: "rocket",
 			workspaceId: workspaceId,
 			createdBy: user._id,
 			isOnboarded: false,
+		});
+
+		// Generate a random subdomain and check if it's available
+		let subdomain = generateRandomSubdomain();
+		while (
+			await ctx.runQuery(
+				internal.collections.domains.project.queries.checkSubdomainIsAvailable,
+				{
+					subdomain: subdomain,
+				},
+			)
+		) {
+			subdomain = generateRandomSubdomain();
+		}
+
+		// Create Project Domain
+		await ctx.db.insert("projectDomains", {
+			subdomain,
+			domain: process.env.ROUTING_DOMAIN!,
+			workspaceId: workspaceId,
+			projectId: projectId,
 		});
 
 		// Set user's current project
@@ -156,7 +165,6 @@ export const update = mutation({
 	args: {
 		id: v.id("workspaces"),
 		title: v.optional(v.string()),
-		slug: v.optional(v.string()),
 		logo: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
@@ -188,24 +196,11 @@ export const update = mutation({
 			updateObject.logo = args.logo;
 		}
 
-		if (args.slug !== undefined) {
-			updateObject.slug = args.slug;
-			const isSlugAvailable = await checkIfSlugIsAvailable(
-				ctx,
-				args.slug,
-				args.id,
-			);
-
-			if (!isSlugAvailable) {
-				throw new ConvexError("Slug is already taken.");
-			}
-		}
-
 		await ctx.db.patch(args.id, updateObject);
 
 		// Update organization name in Clerk too
 		if (
-			(args.title !== undefined || args.slug !== undefined) &&
+			args.title !== undefined &&
 			workspace.externalId &&
 			workspace.externalId.startsWith("org_")
 		) {
@@ -215,7 +210,6 @@ export const update = mutation({
 				{
 					organizationId: workspace.externalId,
 					name: args.title,
-					slug: args.slug,
 				},
 			);
 		}

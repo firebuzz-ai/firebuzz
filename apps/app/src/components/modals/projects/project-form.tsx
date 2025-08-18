@@ -26,13 +26,11 @@ import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Info } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { slugify } from "@firebuzz/utils";
 import { useState } from "react";
 import { z } from "zod";
 
 const formSchema = z.object({
 	title: z.string().min(3, "Title must be at least 3 characters"),
-	slug: z.string().min(3, "Slug must be at least 3 characters"),
 	color: colorPickerColorZodEnum,
 	icon: iconPickerIconZodEnum,
 });
@@ -60,7 +58,6 @@ export const ProjectForm = ({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
 			title: project?.title || "",
-			slug: project?.slug || "",
 			color: (project?.color || "sky") as z.infer<
 				typeof colorPickerColorZodEnum
 			>,
@@ -84,7 +81,6 @@ export const ProjectForm = ({
 				await updateProjectMutation({
 					projectId: project._id,
 					name: data.title,
-					slug: data.slug,
 					color: data.color,
 					icon: data.icon,
 				});
@@ -96,7 +92,6 @@ export const ProjectForm = ({
 			} else {
 				await createProjectMutation({
 					title: data.title,
-					slug: data.slug,
 					color: data.color,
 					icon: data.icon,
 				});
@@ -167,29 +162,7 @@ export const ProjectForm = ({
 														disabled={isLoading}
 														onChange={(e) => {
 															field.onChange(e);
-															// Auto-generate slug from title
-															form.setValue("slug", slugify(e.target.value));
 														}}
-													/>
-												</FormControl>
-												<FormMessage />
-											</FormItem>
-										)}
-									/>
-
-									{/* Slug */}
-									<FormField
-										control={form.control}
-										name="slug"
-										render={({ field }) => (
-											<FormItem>
-												<FormLabel>Slug</FormLabel>
-												<FormControl>
-													<Input
-														className="h-8"
-														placeholder="my-project"
-														{...field}
-														disabled={isLoading}
 													/>
 												</FormControl>
 												<FormMessage />

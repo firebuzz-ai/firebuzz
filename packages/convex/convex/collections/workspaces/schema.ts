@@ -7,7 +7,6 @@ export const workspaceSchema = defineTable(
 		workspaceType: v.union(v.literal("personal"), v.literal("team")),
 		ownerId: v.id("users"),
 		title: v.string(),
-		slug: v.optional(v.string()),
 		logo: v.optional(v.string()),
 		// Stripe
 		customerId: v.optional(v.string()), // Stripe Customer ID
@@ -18,5 +17,4 @@ export const workspaceSchema = defineTable(
 )
 	.index("by_external_id", ["externalId"])
 	.index("by_owner_id", ["ownerId"])
-	.index("by_stripe_customer_id", ["customerId"])
-	.index("by_slug", ["slug"]);
+	.index("by_stripe_customer_id", ["customerId"]);

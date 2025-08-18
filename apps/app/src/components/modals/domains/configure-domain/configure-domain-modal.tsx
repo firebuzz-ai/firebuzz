@@ -24,17 +24,6 @@ export const ConfigureDomainModal = () => {
 
 	if (!domain) return null;
 
-	console.log({ verificationRecord: domain.verificationRecord });
-
-	/* <div className="text-sm text-muted-foreground">
-                Add this{" "}
-                <Badge className="text-brand" variant="outline">
-                  CNAME
-                </Badge>{" "}
-                record to your <Badge variant="outline">DNS</Badge> provider to
-                point your domain to our service.
-              </div> */
-
 	return (
 		<Dialog open={isOpen} onOpenChange={handleClose}>
 			<DialogContent className="sm:max-w-2xl w-full flex flex-col !gap-0 !p-0">

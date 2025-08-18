@@ -22,7 +22,7 @@ export const storeCampaignConfigInKV = internalAction({
 	args: {
 		campaignId: v.id("campaigns"),
 		type: v.union(v.literal("preview"), v.literal("production")),
-		domainIds: v.optional(v.array(v.id("domains"))),
+		domainIds: v.optional(v.array(v.id("customDomains"))),
 	},
 	handler: async (ctx, args) => {
 		// Fetch and validate campaign
@@ -95,9 +95,24 @@ export const storeCampaignConfigInKV = internalAction({
 				});
 			}
 
-			// Add workspace domain key
+			// Get project domain for KV key generation
+			const projectDomains = await ctx.runQuery(
+				internal.collections.domains.project.queries.getByProjectIdInternal,
+				{ projectId: campaign.projectId },
+			);
+
+			if (!projectDomains || projectDomains.length === 0) {
+				throw new ConvexError({
+					message: "Project domain not found",
+					data: { projectId: campaign.projectId },
+				});
+			}
+
+			const projectDomain = projectDomains[0]!;
+
+			// Add project domain key
 			kvPayloads.push({
-				key: `campaign:${workspace.slug}:${project.slug}:${campaign.slug}`,
+				key: `campaign:${projectDomain.subdomain}.${projectDomain.domain}:${campaign.slug}`,
 				value: serializedConfig,
 				options: { metadata: {} },
 			});
@@ -129,12 +144,12 @@ export const storeCampaignConfigInKV = internalAction({
  */
 async function fetchAndValidateDomains(
 	ctx: ActionCtx,
-	domainIds: Id<"domains">[],
-): Promise<Doc<"domains">[]> {
+	domainIds: Id<"customDomains">[],
+): Promise<Doc<"customDomains">[]> {
 	const fetchedDomains = await asyncMap(domainIds, async (domainId) => {
 		try {
 			return await ctx.runQuery(
-				internal.collections.domains.queries.getByIdInternal,
+				internal.collections.domains.custom.queries.getByIdInternal,
 				{ id: domainId },
 			);
 		} catch (error) {
@@ -144,7 +159,7 @@ async function fetchAndValidateDomains(
 	});
 
 	const validDomains = fetchedDomains.filter(
-		(domain): domain is Doc<"domains"> => domain !== null,
+		(domain): domain is Doc<"customDomains"> => domain !== null,
 	);
 
 	if (validDomains.length !== domainIds.length) {
@@ -166,7 +181,7 @@ async function storeConfigsInKV(payloads: KVPayload[]): Promise<void> {
 
 	try {
 		const promises = payloads.map((payload) =>
-			engineAPIClient.kv.config.$post({ json: payload }),
+			engineAPIClient.kv.campaign.$post({ json: payload }),
 		);
 
 		const results = await Promise.allSettled(promises);

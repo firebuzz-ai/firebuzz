@@ -13,8 +13,6 @@ export const landingPagesSchema = defineTable(
 		previewPublishedAt: v.optional(v.string()),
 		previewUrl: v.optional(v.string()),
 		language: v.optional(v.string()),
-		customDomainId: v.optional(v.id("domains")),
-		customDomainUrl: v.optional(v.string()),
 		// Relations
 		workspaceId: v.id("workspaces"),
 		projectId: v.id("projects"),

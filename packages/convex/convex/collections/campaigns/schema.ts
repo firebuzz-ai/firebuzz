@@ -106,7 +106,7 @@ export const campaignSchema = defineTable(
 						v.object({
 							type: v.union(v.literal("custom"), v.literal("workspace")),
 							url: v.string(),
-							domainId: v.optional(v.id("domains")),
+							domainId: v.optional(v.id("customDomains")),
 						}),
 					),
 				),

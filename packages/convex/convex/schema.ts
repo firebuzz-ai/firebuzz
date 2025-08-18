@@ -14,7 +14,8 @@ import { brandSchema } from "./collections/brands/schema";
 import { socialSchema } from "./collections/brands/socials/schema";
 import { testimonialSchema } from "./collections/brands/testimonials/schema";
 import { themeSchema } from "./collections/brands/themes/schema";
-import { domainSchema } from "./collections/domains/schema";
+import { customDomainSchema } from "./collections/domains/custom/schema";
+import { projectDomainsSchema } from "./collections/domains/project/schema";
 import { formSchema } from "./collections/forms/schema";
 import { formSubmissionSchema } from "./collections/forms/submissions/schema";
 import { invitationSchema } from "./collections/invitations/schema";
@@ -53,7 +54,8 @@ export default defineSchema({
 	landingPageMessages: landingPageMessagesSchema,
 	media: mediaSchema,
 	mediaVectors: mediaVectorsSchema,
-	domains: domainSchema,
+	customDomains: customDomainSchema,
+	projectDomains: projectDomainsSchema,
 	documents: documentsSchema,
 	documentChunks: documentChunksSchema,
 	documentVectors: documentVectorsSchema,

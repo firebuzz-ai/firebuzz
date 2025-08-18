@@ -3,25 +3,25 @@ import { v } from "convex/values";
 import {
 	internalMutationWithTrigger,
 	mutationWithTrigger,
-} from "../../triggers";
-import { getCurrentUserWithWorkspace } from "../users/utils";
-import { domainSchema } from "./schema";
+} from "../../../triggers";
+import { getCurrentUserWithWorkspace } from "../../users/utils";
+import { customDomainSchema } from "./schema";
 
 export const createInternal = internalMutationWithTrigger({
 	args: {
 		hostname: v.string(),
-		status: domainSchema.validator.fields.status,
+		status: customDomainSchema.validator.fields.status,
 		cloudflareHostnameId: v.string(),
-		sslStatus: domainSchema.validator.fields.sslStatus,
-		sslExpiresAt: domainSchema.validator.fields.sslExpiresAt,
-		verificationRecord: domainSchema.validator.fields.verificationRecord,
-		metadata: domainSchema.validator.fields.metadata,
+		sslStatus: customDomainSchema.validator.fields.sslStatus,
+		sslExpiresAt: customDomainSchema.validator.fields.sslExpiresAt,
+		verificationRecord: customDomainSchema.validator.fields.verificationRecord,
+		metadata: customDomainSchema.validator.fields.metadata,
 		workspaceId: v.id("workspaces"),
 		projectId: v.id("projects"),
 		createdBy: v.id("users"),
 	},
 	handler: async (ctx, args) => {
-		const customDomainId = await ctx.db.insert("domains", {
+		const customDomainId = await ctx.db.insert("customDomains", {
 			...args,
 			status: args.status,
 			sslStatus: args.sslStatus,
@@ -38,10 +38,10 @@ export const createInternal = internalMutationWithTrigger({
 
 export const updateStatus = mutationWithTrigger({
 	args: {
-		id: v.id("domains"),
-		status: domainSchema.validator.fields.status,
-		sslStatus: domainSchema.validator.fields.sslStatus,
-		sslExpiresAt: domainSchema.validator.fields.sslExpiresAt,
+		id: v.id("customDomains"),
+		status: customDomainSchema.validator.fields.status,
+		sslStatus: customDomainSchema.validator.fields.sslStatus,
+		sslExpiresAt: customDomainSchema.validator.fields.sslExpiresAt,
 		lastCheckedAt: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
@@ -67,12 +67,12 @@ export const updateStatus = mutationWithTrigger({
 
 export const updateStatusInternal = internalMutationWithTrigger({
 	args: {
-		id: v.id("domains"),
-		status: domainSchema.validator.fields.status,
-		sslStatus: domainSchema.validator.fields.sslStatus,
-		sslExpiresAt: domainSchema.validator.fields.sslExpiresAt,
+		id: v.id("customDomains"),
+		status: customDomainSchema.validator.fields.status,
+		sslStatus: customDomainSchema.validator.fields.sslStatus,
+		sslExpiresAt: customDomainSchema.validator.fields.sslExpiresAt,
 		lastCheckedAt: v.optional(v.string()),
-		verificationRecord: domainSchema.validator.fields.verificationRecord,
+		verificationRecord: customDomainSchema.validator.fields.verificationRecord,
 	},
 	handler: async (ctx, args) => {
 		const domain = await ctx.db.get(args.id);
@@ -89,8 +89,8 @@ export const updateStatusInternal = internalMutationWithTrigger({
 
 export const updateMetadata = mutationWithTrigger({
 	args: {
-		id: v.id("domains"),
-		metadata: domainSchema.validator.fields.metadata,
+		id: v.id("customDomains"),
+		metadata: customDomainSchema.validator.fields.metadata,
 	},
 	handler: async (ctx, args) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -112,7 +112,7 @@ export const updateMetadata = mutationWithTrigger({
 
 export const deleteTemporary = mutationWithTrigger({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, { id }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -134,7 +134,7 @@ export const deleteTemporary = mutationWithTrigger({
 
 export const deletePermanent = internalMutationWithTrigger({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, { id }) => {
 		await ctx.db.delete(id);
@@ -143,7 +143,7 @@ export const deletePermanent = internalMutationWithTrigger({
 
 export const archive = mutationWithTrigger({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, { id }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -163,7 +163,7 @@ export const archive = mutationWithTrigger({
 
 export const restore = mutationWithTrigger({
 	args: {
-		id: v.id("domains"),
+		id: v.id("customDomains"),
 	},
 	handler: async (ctx, { id }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -183,7 +183,7 @@ export const restore = mutationWithTrigger({
 
 export const archiveMultiple = mutationWithTrigger({
 	args: {
-		ids: v.array(v.id("domains")),
+		ids: v.array(v.id("customDomains")),
 	},
 	handler: async (ctx, { ids }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -204,7 +204,7 @@ export const archiveMultiple = mutationWithTrigger({
 
 export const restoreMultiple = mutationWithTrigger({
 	args: {
-		ids: v.array(v.id("domains")),
+		ids: v.array(v.id("customDomains")),
 	},
 	handler: async (ctx, { ids }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -225,7 +225,7 @@ export const restoreMultiple = mutationWithTrigger({
 
 export const deleteTemporaryMultiple = mutationWithTrigger({
 	args: {
-		ids: v.array(v.id("domains")),
+		ids: v.array(v.id("customDomains")),
 	},
 	handler: async (ctx, { ids }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);

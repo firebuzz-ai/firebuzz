@@ -50,7 +50,6 @@ export const createOrganizationInternal = internalAction({
 			// 3) Create the organization
 			const organization = await clerkClient.organizations.createOrganization({
 				name: workspace.title,
-				slug: workspace.slug,
 				maxAllowedMemberships: args.maxAllowedMemberships,
 				createdBy: owner.externalId,
 				privateMetadata: {
@@ -110,7 +109,6 @@ export const deleteUserInternal = internalAction({
 export const updateOrganizationInternal = internalAction({
 	args: {
 		name: v.optional(v.string()),
-		slug: v.optional(v.string()),
 		organizationId: v.string(),
 		maxAllowedMemberships: v.optional(v.number()),
 	},
@@ -123,10 +121,6 @@ export const updateOrganizationInternal = internalAction({
 
 		if (args.name) {
 			updateObject.name = args.name;
-		}
-
-		if (args.slug) {
-			updateObject.slug = args.slug;
 		}
 
 		if (args.maxAllowedMemberships) {

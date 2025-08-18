@@ -1,12 +1,12 @@
 import { sleep } from "@firebuzz/utils";
 import Cloudflare from "cloudflare";
 import { ConvexError, v } from "convex/values";
-import { internal } from "../../_generated/api";
-import type { Doc, Id } from "../../_generated/dataModel";
-import { action, internalAction } from "../../_generated/server";
-import { cloudflare } from "../../lib/cloudflare";
-import { engineAPIClient } from "../../lib/engine";
-import { ERRORS } from "../../utils/errors";
+import { internal } from "../../../_generated/api";
+import type { Doc, Id } from "../../../_generated/dataModel";
+import { action, internalAction } from "../../../_generated/server";
+import { cloudflare } from "../../../lib/cloudflare";
+import { engineAPIClient } from "../../../lib/engine";
+import { ERRORS } from "../../../utils/errors";
 
 export const createCustomDomain = action({
 	args: {
@@ -19,7 +19,7 @@ export const createCustomDomain = action({
 		{ hostname, workspaceId, projectId },
 	): Promise<{
 		success: boolean;
-		customDomainId: Id<"domains">;
+		customDomainId: Id<"customDomains">;
 		cloudflareData: Cloudflare.CustomHostnames.CustomHostnameCreateResponse;
 	}> => {
 		try {
@@ -43,7 +43,7 @@ export const createCustomDomain = action({
 
 			// Check if project already has a custom domain
 			const existingDomain = await ctx.runQuery(
-				internal.collections.domains.queries.getByProjectIdInternal,
+				internal.collections.domains.custom.queries.getByProjectIdInternal,
 				{
 					projectId,
 				},
@@ -66,13 +66,14 @@ export const createCustomDomain = action({
 			});
 
 			// Store the Config in KV
-			await engineAPIClient.kv.config.$post({
+			await engineAPIClient.kv.domain.$post({
 				json: {
 					key: `${hostname}`,
 					value: JSON.stringify({
 						w: workspaceId,
 						p: projectId,
-						e: "dev",
+						e: process.env.ENVIRONMENT,
+						t: "c",
 					}),
 					options: {
 						metadata: {},
@@ -107,12 +108,13 @@ export const createCustomDomain = action({
 
 			// Store in Convex database
 			const customDomainId = await ctx.runMutation(
-				internal.collections.domains.mutations.createInternal,
+				internal.collections.domains.custom.mutations.createInternal,
 				{
 					hostname,
-					status: customHostname.status as Doc<"domains">["status"],
+					status: customHostname.status as Doc<"customDomains">["status"],
 					cloudflareHostnameId: customHostname.id,
-					sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
+					sslStatus: customHostname.ssl
+						?.status as Doc<"customDomains">["sslStatus"],
 					sslExpiresAt: customHostname.ssl?.expires_on,
 					verificationRecord: [
 						{
@@ -154,7 +156,7 @@ export const createCustomDomain = action({
 
 export const deleteCustomDomain = action({
 	args: {
-		customDomainId: v.id("domains"),
+		customDomainId: v.id("customDomains"),
 	},
 	handler: async (ctx, { customDomainId }) => {
 		try {
@@ -172,7 +174,7 @@ export const deleteCustomDomain = action({
 
 			// Get domain from database
 			const domain = await ctx.runQuery(
-				internal.collections.domains.queries.getByIdInternal,
+				internal.collections.domains.custom.queries.getByIdInternal,
 				{
 					id: customDomainId,
 				},
@@ -194,7 +196,7 @@ export const deleteCustomDomain = action({
 
 			// Delete from database
 			await ctx.runMutation(
-				internal.collections.domains.mutations.deletePermanent,
+				internal.collections.domains.custom.mutations.deletePermanent,
 				{
 					id: customDomainId,
 				},
@@ -219,7 +221,7 @@ export const deleteCustomDomain = action({
 
 export const syncWithCloudflare = action({
 	args: {
-		customDomainId: v.id("domains"),
+		customDomainId: v.id("customDomains"),
 	},
 	handler: async (ctx, { customDomainId }) => {
 		try {
@@ -242,7 +244,7 @@ export const syncWithCloudflare = action({
 			}
 			// Get domain from database
 			const domain = await ctx.runQuery(
-				internal.collections.domains.queries.getByIdInternal,
+				internal.collections.domains.custom.queries.getByIdInternal,
 				{
 					id: customDomainId,
 				},
@@ -276,11 +278,12 @@ export const syncWithCloudflare = action({
 
 			// Update domain status in database
 			await ctx.runMutation(
-				internal.collections.domains.mutations.updateStatusInternal,
+				internal.collections.domains.custom.mutations.updateStatusInternal,
 				{
 					id: customDomainId,
-					status: customHostname.status as Doc<"domains">["status"],
-					sslStatus: customHostname.ssl?.status as Doc<"domains">["sslStatus"],
+					status: customHostname.status as Doc<"customDomains">["status"],
+					sslStatus: customHostname.ssl
+						?.status as Doc<"customDomains">["sslStatus"],
 					sslExpiresAt: customHostname.ssl?.expires_on,
 					lastCheckedAt: new Date().toISOString(),
 					verificationRecord: [

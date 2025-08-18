@@ -107,7 +107,11 @@ export const CampaignStatusButton = ({
 	});
 
 	const domains = useCachedQuery(
-		api.collections.domains.queries.getActiveByProject,
+		api.collections.domains.custom.queries.getActiveByProject,
+		campaign ? { projectId: campaign.projectId } : "skip",
+	);
+	const projectDomains = useCachedQuery(
+		api.collections.domains.project.queries.getByProject,
 		campaign ? { projectId: campaign.projectId } : "skip",
 	);
 	const validation = useCachedQuery(
@@ -139,7 +143,9 @@ export const CampaignStatusButton = ({
 		!campaign ||
 		!currentWorkspace ||
 		!currentProject ||
-		validation === undefined
+		validation === undefined ||
+		!projectDomains ||
+		projectDomains.length === 0
 	) {
 		return (
 			<Button variant="outline" size="sm" disabled>
@@ -413,9 +419,8 @@ export const CampaignStatusButton = ({
 											variant="outline"
 										>
 											<Link className="size-3" />
-											{currentWorkspace.slug}
-											.getfirebuzz.com/
-											{currentProject.slug}/{campaign.slug}
+											{projectDomains[0]?.subdomain}.{projectDomains[0]?.domain}
+											/{campaign.slug}
 										</Badge>
 										{domains
 											?.filter((d) => d.status === "active")
@@ -585,9 +590,8 @@ export const CampaignStatusButton = ({
 											variant="outline"
 										>
 											<Link className="size-3" />
-											{currentWorkspace.slug}
-											.getfirebuzz.com/
-											{currentProject.slug}/{campaign.slug}
+											{projectDomains[0]?.subdomain}.{projectDomains[0]?.domain}
+											/{campaign.slug}
 										</Badge>
 										{domains
 											?.filter((d) => d.status === "active")

@@ -22,7 +22,11 @@
 			"id": "949acd8a64084e2699f85c2fd4e89f27"
 		},
 		{
-			"binding": "CONFIG",
+			"binding": "CAMPAIGN",
+			"id": "98f54b4e12964778ab9899cc9f03fa3b"
+		},
+		{
+			"binding": "DOMAIN_CONFIG",
 			"id": "87d1c295bfd54f1c91a09155b558aaed"
 		}
 	],
@@ -50,8 +54,12 @@
 					"id": "45e58414198b4581aabaaf37c5e8eccf"
 				},
 				{
-					"binding": "CONFIG",
+					"binding": "DOMAIN_CONFIG",
 					"id": "87d1c295bfd54f1c91a09155b558aaed"
+				},
+				{
+					"binding": "CAMPAIGN",
+					"id": "9b602873a05a49d289c901ecff5a8fc8"
 				}
 			]
 		},
@@ -72,8 +80,12 @@
 					"id": "e3d780109b4346139ae315bc6b4cc137"
 				},
 				{
-					"binding": "CONFIG",
+					"binding": "DOMAIN_CONFIG",
 					"id": "87d1c295bfd54f1c91a09155b558aaed"
+				},
+				{
+					"binding": "CAMPAIGN",
+					"id": "ef527432c7674adfb61122bd3fe4f251"
 				}
 			]
 		}

@@ -242,7 +242,7 @@ function getVariantForVisitor(
 app.get("/:id", async (c) => {
 	const campaignId = c.req.param("id");
 
-	const config = await c.env.CONFIG.get<CampaignConfig>(
+	const config = await c.env.CAMPAIGN.get<CampaignConfig>(
 		`campaign:preview:${campaignId}`,
 		{
 			type: "json",
