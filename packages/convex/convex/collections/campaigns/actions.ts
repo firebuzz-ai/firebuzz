@@ -43,6 +43,7 @@ export const storeCampaignConfigInKV = internalAction({
 			campaign.nodes,
 			campaign.edges,
 			campaign.campaignSettings,
+			{ primaryLanguage: campaign.primaryLanguage },
 		);
 
 		const validationResult = await ctx.runQuery(

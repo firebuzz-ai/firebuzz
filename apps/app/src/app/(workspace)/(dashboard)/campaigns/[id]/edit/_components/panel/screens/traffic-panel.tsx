@@ -73,18 +73,18 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 
 	// Get the current default landing page data
 	const currentDefaultLandingPage = useMemo(() => {
-		if (!node.data.defaultVariantId || !landingPages) return null;
-		return landingPages.find((page) => page._id === node.data.defaultVariantId);
-	}, [node.data.defaultVariantId, landingPages]);
+		if (!node.data.defaultLandingPageId || !landingPages) return null;
+		return landingPages.find((page) => page._id === node.data.defaultLandingPageId);
+	}, [node.data.defaultLandingPageId, landingPages]);
 
 	const updateDefaultVariant = (variantId: string) => {
 		// Prevent unselecting once a landing page is selected
-		if (!variantId && node.data.defaultVariantId) {
+		if (!variantId && node.data.defaultLandingPageId) {
 			return;
 		}
 
 		updateNodeData(node.id, {
-			defaultVariantId: variantId
+			defaultLandingPageId: variantId
 				? (variantId as Id<"landingPages">)
 				: undefined,
 		});

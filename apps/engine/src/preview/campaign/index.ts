@@ -17,7 +17,7 @@ app.get('/:id', async (c) => {
 	}
 
 	// Check Default Landing Page
-	const defaultLandingPageId = config.defaultVariantId;
+	const defaultLandingPageId = config.defaultLandingPageId;
 
 	const html = await c.env.ASSETS.get(`landing:preview:${defaultLandingPageId}`);
 

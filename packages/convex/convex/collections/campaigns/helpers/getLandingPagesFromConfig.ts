@@ -22,8 +22,8 @@ export const extractLandingPageIdsFromNodes = (
 		switch (node.type) {
 			case "traffic": {
 				const trafficData = node.data as TrafficNodeData;
-				if (trafficData.defaultVariantId) {
-					landingPageIds.add(trafficData.defaultVariantId);
+				if (trafficData.defaultLandingPageId) {
+					landingPageIds.add(trafficData.defaultLandingPageId);
 				}
 				break;
 			}

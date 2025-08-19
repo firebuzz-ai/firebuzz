@@ -313,7 +313,7 @@ export const CampaignOverviewPanel = ({
 		try {
 			await updateCampaignSettings({
 				campaignId: campaign._id,
-				campaignSettings: { sessionDuration: duration },
+				campaignSettings: { sessionDurationInMinutes: duration },
 			});
 		} catch (error) {
 			console.error("Failed to update session duration:", error);
@@ -324,7 +324,7 @@ export const CampaignOverviewPanel = ({
 		try {
 			await updateCampaignSettings({
 				campaignId: campaign._id,
-				campaignSettings: { attributionPeriod: period },
+				campaignSettings: { attributionPeriodInDays: period },
 			});
 		} catch (error) {
 			console.error("Failed to update attribution period:", error);
@@ -514,7 +514,7 @@ export const CampaignOverviewPanel = ({
 						<div className="space-y-4">
 							<DurationSlider
 								label="Session Duration"
-								value={campaign.campaignSettings?.sessionDuration || 30}
+								value={campaign.campaignSettings?.sessionDurationInMinutes || 30}
 								min={5}
 								max={30}
 								unit="minutes"
@@ -524,7 +524,7 @@ export const CampaignOverviewPanel = ({
 
 							<DurationSlider
 								label="Attribution Period"
-								value={campaign.campaignSettings?.attributionPeriod || 30}
+								value={campaign.campaignSettings?.attributionPeriodInDays || 30}
 								min={1}
 								max={30}
 								unit="days"

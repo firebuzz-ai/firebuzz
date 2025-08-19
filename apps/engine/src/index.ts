@@ -36,4 +36,7 @@ app.get('/', async (c) => {
 	});
 });
 
+// Export the Durable Object class
+export { ABTestDurableObject } from './durable-objects/ab-test';
+
 export default app;

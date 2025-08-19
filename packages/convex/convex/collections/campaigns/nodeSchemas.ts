@@ -63,7 +63,7 @@ export const trafficNodeData = v.object({
 	title: v.string(),
 	description: v.string(),
 	isHovered: v.optional(v.boolean()),
-	defaultVariantId: v.optional(v.id("landingPages")),
+	defaultLandingPageId: v.optional(v.id("landingPages")),
 });
 
 export const segmentRule = v.object({

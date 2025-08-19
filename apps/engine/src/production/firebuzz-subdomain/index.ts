@@ -23,27 +23,67 @@ app.get('/:campaignSlug', async (c) => {
 	// Evaluate campaign to determine which segment/landing page to serve
 	const evaluation = evaluateCampaign(c, config);
 
-	console.log('Campaign evaluation:', {
-		type: evaluation.type,
-		segmentId: evaluation.segmentId,
-		landingPageId: evaluation.landingPageId,
-		abTest: evaluation.abTest?.id,
-	});
-
-	// Handle AB test scenario (will be implemented with Durable Objects later)
+	// Handle AB test scenario with Durable Objects
 	if (evaluation.type === 'abtest' && evaluation.abTest) {
-		// TODO: Implement AB test variant selection with Durable Objects
-		// For now, use the control variant
-		const controlVariant = evaluation.abTest.variants.find((v) => v.isControl);
-		const landingPageId = controlVariant?.landingPageId || evaluation.matchedSegment?.primaryLandingPageId;
+		// Get or create visitor ID from cookie
+		const cookies = c.req.header('Cookie') || '';
+		let visitorId = cookies.match(/visitor_id=([^;]+)/)?.[1];
 
-		if (landingPageId) {
-			const html = await c.env.ASSETS.get(`landing:production:${landingPageId}`);
-			if (html) {
-				// Add AB test tracking headers/cookies
-				c.header('X-AB-Test', evaluation.abTest.id);
-				c.header('X-AB-Variant', controlVariant?.id || 'control');
-				return c.html(html);
+		if (!visitorId) {
+			// Generate new visitor ID
+			visitorId = crypto.randomUUID();
+		}
+
+		// Get AB Test Durable Object instance
+		const abTestId = c.env.AB_TEST.idFromName(`${campaignSlug}-${evaluation.abTest.id}`);
+		const abTestDO = c.env.AB_TEST.get(abTestId);
+
+		try {
+			// Get variant assignment from Durable Object
+			const assignmentUrl = `http://internal/assign-variant?visitorId=${visitorId}`;
+			const assignmentResponse = await abTestDO.fetch(assignmentUrl, {
+				method: 'GET',
+			});
+
+			const assignment = (await assignmentResponse.json()) as {
+				variantId: string;
+				isNew: boolean;
+				landingPageId?: string;
+				testStatus?: string;
+			};
+
+			// Find the assigned variant
+			const assignedVariant = evaluation.abTest.variants.find((v) => v.id === assignment.variantId);
+			const landingPageId =
+				assignedVariant?.landingPageId || assignment.landingPageId || evaluation.matchedSegment?.primaryLandingPageId;
+
+			if (landingPageId) {
+				const html = await c.env.ASSETS.get(`landing:production:${landingPageId}`);
+				if (html) {
+					// Set visitor ID cookie if new
+					if (!cookies.includes('visitor_id=')) {
+						c.header('Set-Cookie', `visitor_id=${visitorId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`);
+					}
+
+					// Add AB test tracking headers
+					c.header('X-AB-Test', evaluation.abTest.id);
+					c.header('X-AB-Variant', assignment.variantId);
+					c.header('X-AB-Test-Status', assignment.testStatus || 'running');
+
+					return c.html(html);
+				}
+			}
+		} catch (error) {
+			console.error('AB Test DO error:', error);
+			// Fallback to control variant on error
+			const controlVariant = evaluation.abTest.variants.find((v) => v.isControl);
+			const landingPageId = controlVariant?.landingPageId || evaluation.matchedSegment?.primaryLandingPageId;
+
+			if (landingPageId) {
+				const html = await c.env.ASSETS.get(`landing:production:${landingPageId}`);
+				if (html) {
+					return c.html(html);
+				}
 			}
 		}
 	}

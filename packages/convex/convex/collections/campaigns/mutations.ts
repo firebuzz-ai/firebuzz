@@ -65,8 +65,8 @@ export const create = mutationWithTrigger({
 			campaignSettings: {
 				primaryGoal,
 				customGoals: [],
-				sessionDuration: 30,
-				attributionPeriod: 30,
+				sessionDurationInMinutes: 30,
+				attributionPeriodInDays: 30,
 			},
 			createdBy: user._id,
 			workspaceId: user.currentWorkspaceId,
@@ -82,7 +82,7 @@ export const create = mutationWithTrigger({
 					data: {
 						title: "Incoming Traffic",
 						description: "Start of the campaign",
-						defaultVariantId: undefined,
+						defaultLandingPageId: undefined,
 					},
 				},
 			],
@@ -1017,8 +1017,8 @@ export const updateCampaignSettings = mutationWithTrigger({
 		campaignSettings: v.object({
 			primaryGoal: v.optional(goalSchemaValidator),
 			customGoals: v.optional(v.array(goalSchemaValidator)),
-			sessionDuration: v.optional(v.number()),
-			attributionPeriod: v.optional(v.number()),
+			sessionDurationInMinutes: v.optional(v.number()),
+			attributionPeriodInDays: v.optional(v.number()),
 		}),
 	},
 	handler: async (ctx, args) => {
@@ -1037,10 +1037,10 @@ export const updateCampaignSettings = mutationWithTrigger({
 		}
 
 		// Validate session duration (5-30 minutes)
-		if (args.campaignSettings.sessionDuration !== undefined) {
+		if (args.campaignSettings.sessionDurationInMinutes !== undefined) {
 			if (
-				args.campaignSettings.sessionDuration < 5 ||
-				args.campaignSettings.sessionDuration > 30
+				args.campaignSettings.sessionDurationInMinutes < 5 ||
+				args.campaignSettings.sessionDurationInMinutes > 30
 			) {
 				throw new ConvexError(
 					"Session duration must be between 5 and 30 minutes",
@@ -1049,10 +1049,10 @@ export const updateCampaignSettings = mutationWithTrigger({
 		}
 
 		// Validate attribution period (1-30 days)
-		if (args.campaignSettings.attributionPeriod !== undefined) {
+		if (args.campaignSettings.attributionPeriodInDays !== undefined) {
 			if (
-				args.campaignSettings.attributionPeriod < 1 ||
-				args.campaignSettings.attributionPeriod > 30
+				args.campaignSettings.attributionPeriodInDays < 1 ||
+				args.campaignSettings.attributionPeriodInDays > 30
 			) {
 				throw new ConvexError(
 					"Attribution period must be between 1 and 30 days",

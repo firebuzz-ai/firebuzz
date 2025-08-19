@@ -28,14 +28,14 @@ const validateTrafficNode = (
 	const data = node.data as TrafficNodeData;
 
 	// Always require default landing page if landing pages exist
-	if (!data.defaultVariantId) {
+	if (!data.defaultLandingPageId) {
 		if (context.landingPages.length > 0) {
 			validations.push({
 				id: "traffic-default-landing-page",
 				isValid: false,
 				message: "Default landing page must be selected",
 				severity: "error",
-				field: "defaultVariantId",
+				field: "defaultLandingPageId",
 			});
 		} else {
 			// Check if it's a lead-generation campaign without form schema first
@@ -49,13 +49,13 @@ const validateTrafficNode = (
 				isValid: false,
 				message,
 				severity: "error",
-				field: "defaultVariantId",
+				field: "defaultLandingPageId",
 			});
 		}
 	} else {
 		// Check if selected landing page exists and is published
 		const selectedLandingPage = context.landingPages.find(
-			(lp) => lp._id === data.defaultVariantId,
+			(lp) => lp._id === data.defaultLandingPageId,
 		);
 		if (!selectedLandingPage) {
 			// Landing page was deleted
@@ -64,7 +64,7 @@ const validateTrafficNode = (
 				isValid: false,
 				message: "Selected landing page has been deleted",
 				severity: "error",
-				field: "defaultVariantId",
+				field: "defaultLandingPageId",
 			});
 		} else if (selectedLandingPage.status !== "published") {
 			// Landing page exists but is not published
@@ -73,7 +73,7 @@ const validateTrafficNode = (
 				isValid: false,
 				message: "Selected landing page must be published",
 				severity: "error",
-				field: "defaultVariantId",
+				field: "defaultLandingPageId",
 			});
 		}
 	}

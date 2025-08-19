@@ -1,18 +1,26 @@
 export interface CampaignConfig {
-	defaultVariantId?: string;
+	defaultLandingPageId?: string;
+	primaryLanguage: string;
 	segments: Segment[];
+	sessionDurationInMinutes: number;
+	attributionPeriodInDays: number;
+	primaryGoal: Goal;
+	customGoals: Goal[];
 }
 
 export interface Segment {
 	id: string;
 	title: string;
-	description: string;
 	priority: number;
 	primaryLandingPageId?: string;
 	translationMode: "disabled" | "auto-detect" | "parameter";
+	translations?: Array<{
+		id: string;
+		language: string;
+		title: string;
+	}>;
 	rules: SegmentRule[];
 	abTests?: ABTest[];
-	variants?: Variant[];
 }
 
 export interface SegmentRule {
@@ -20,15 +28,29 @@ export interface SegmentRule {
 	ruleType: string;
 	operator: string;
 	value: string | number | boolean | string[] | number[];
-	label: string;
-	isRequired?: boolean;
+	isRequired: boolean;
 }
 
 export interface ABTest {
 	id: string;
 	title: string;
-	description: string;
 	status: "draft" | "running" | "completed" | "paused";
+	hypo: string;
+	isCompleted: boolean;
+	startedAt?: string;
+	completedAt?: string;
+	pausedAt?: string;
+	resumedAt?: string;
+	endDate?: string;
+	primaryMetric: string;
+	completionCriteria: {
+		sampleSizePerVariant?: number;
+		testDuration?: number;
+	};
+	confidenceLevel: 90 | 95 | 99;
+	rules: {
+		winningStrategy: "winner" | "winnerOrControl";
+	};
 	poolingPercent: number;
 	variants: ABTestVariant[];
 	winner?: string;
@@ -42,16 +64,14 @@ export interface ABTestVariant {
 	isControl: boolean;
 }
 
-export interface Variant {
+export interface Goal {
 	id: string;
 	title: string;
-	landingPageId?: string;
-	trafficPercentage: number;
-	translations?: Translation[];
-}
-
-export interface Translation {
-	id: string;
-	language: string;
-	title: string;
+	description?: string;
+	direction: "up" | "down";
+	placement: "internal" | "external";
+	value: number;
+	currency?: string;
+	type: "conversion" | "engagement";
+	isCustom: boolean;
 }

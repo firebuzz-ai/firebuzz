@@ -1,4 +1,4 @@
-import type { KVNamespace } from "@cloudflare/workers-types";
+import type { KVNamespace, DurableObjectNamespace } from "@cloudflare/workers-types";
 
 export interface Env {
 	ASSETS: KVNamespace;
@@ -14,4 +14,6 @@ export interface Env {
 	INNGEST_SIGNING_KEY: string;
 	INNGEST_EVENT_KEY: string;
 	INNGEST_BASE_URL: string;
+	// Durable Objects
+	AB_TEST: DurableObjectNamespace;
 }
