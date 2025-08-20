@@ -45,5 +45,9 @@
 		}
 	},
 	"exclude": ["test"],
-	"include": ["worker-configuration.d.ts", "src/**/*.ts", "src/utility-routes/campaign/not-found.ts"]
+	"include": [
+		"worker-configuration.d.ts",
+		"src/**/*.ts",
+		"src/utility-routes/campaign/not-found.ts"
+	]
 }

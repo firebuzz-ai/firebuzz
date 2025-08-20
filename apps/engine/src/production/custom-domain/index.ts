@@ -1,63 +1,179 @@
-import { Hono } from 'hono';
-import type { Env } from '../../env';
-import type { CampaignConfig } from '../../preview/campaign/types';
+import { Hono } from "hono";
+import type { Env } from "../../env";
+import { evaluateCampaign } from "../../lib/campaign";
+import {
+	ensureSessionAndAttribution,
+	updateSessionWithVariant,
+} from "../../lib/session";
+import type { CampaignConfig } from "../../types/campaign";
+import { getContentType } from "../../utils/assets";
 
 const app = new Hono<{ Bindings: Env }>();
 
 // Index Route
-app.get('/:campaignSlug', async (c) => {
-	const hostname = c.req.header('X-User-Hostname') || '';
-	const campaignSlug = c.req.param('campaignSlug');
+app.get("/:campaignSlug", async (c) => {
+	const hostname = c.req.header("X-User-Hostname") || "";
+	const campaignSlug = c.req.param("campaignSlug");
 
 	const key = `campaign:${hostname}:${campaignSlug}`;
 
-	// Get Campaign Config
 	const config = await c.env.CAMPAIGN.get<CampaignConfig>(key, {
-		type: 'json',
+		type: "json",
 	});
 
 	if (!config) {
-		return c.redirect(`/utility/campaign-not-found/${campaignSlug}`);
+		return c.redirect("/utility/campaign-not-found");
 	}
 
-	// Check Default Landing Page
-	const defaultLandingPageId = config.defaultLandingPageId;
+	// Ensure session and attribution; then evaluate with that session
+	const { session, isReturning } = ensureSessionAndAttribution(c, config);
+	const evaluation = evaluateCampaign(c, config, session, isReturning);
 
-	const html = await c.env.ASSETS.get(`landing:production:${defaultLandingPageId}`);
+	// Determine landing page ID based on evaluation type
+	let landingPageId: string | undefined;
+
+	if (evaluation.type === "abtest" && evaluation.abTest) {
+		// For AB tests, we need to select or retrieve the variant
+		let variantId: string;
+
+		if (
+			isReturning &&
+			session.abTest?.variantId &&
+			session.abTest.testId === evaluation.abTest.id &&
+			evaluation.abTest.variants.some(
+				(v) => v.id === session?.abTest?.variantId,
+			) // Check if variant is still in the test
+		) {
+			// Returning user - use existing variant
+			variantId = session.abTest.variantId;
+		} else {
+			// New user - use Durable Object to select variant
+			try {
+				const abTestId = c.env.AB_TEST.idFromName(
+					`${config.campaignId}-${evaluation.abTest.id}`,
+				);
+				const abTestDO = c.env.AB_TEST.get(abTestId);
+
+				// Select variant using DO (DO should already be initialized via API)
+				const { variantId: selectedVariantId } = await abTestDO.selectVariant();
+				variantId = selectedVariantId;
+
+				// Selection succeeded; cookie will be written after try/catch to also cover fallback
+			} catch (error) {
+				console.error("Failed to select variant using DO:", error);
+				// Fallback to first variant
+				variantId = evaluation.abTest.variants[0].id;
+			}
+		}
+
+		// Persist selected or fallback variant into session and update cookie via helper
+		updateSessionWithVariant(
+			c,
+			session,
+			config.sessionDurationInMinutes,
+			evaluation.abTest.id,
+			variantId,
+		);
+
+		// Get the selected variant
+		const selectedVariant = evaluation.abTest.variants.find(
+			(v) => v.id === variantId,
+		);
+		landingPageId =
+			selectedVariant?.landingPageId ||
+			evaluation.matchedSegment?.primaryLandingPageId;
+
+		// Add AB test tracking headers
+		c.header("X-AB-Test", evaluation.abTest.id);
+		c.header("X-AB-Variant", variantId);
+		c.header("X-AB-Test-Status", evaluation.abTest.status);
+	} else if (evaluation.landingPageId) {
+		// Regular segment or default scenario
+		landingPageId = evaluation.landingPageId;
+	} else if (config.defaultLandingPageId) {
+		// Fallback to campaign default
+		landingPageId = config.defaultLandingPageId;
+	}
+
+	// Check if we have a landing page to serve
+	if (!landingPageId) {
+		console.error("No landing page ID found for evaluation:", evaluation);
+		return c.redirect("/utility/landing-not-found");
+	}
+
+	// Fetch the landing page HTML from KV
+	const html = await c.env.ASSETS.get(`landing:production:${landingPageId}`);
 
 	if (!html) {
-		return c.text('Not found', 404);
+		console.error("Landing page not found in KV:", landingPageId);
+		return c.redirect("/utility/landing-not-found");
 	}
 
+	// Add tracking headers for analytics
+	if (evaluation.segmentId) {
+		c.header("X-Segment-Id", evaluation.segmentId);
+	}
+	c.header("X-Evaluation-Type", evaluation.type);
+	c.header("X-Session-Id", session.sessionId);
+	c.header("X-Is-Returning", isReturning ? "true" : "false");
+
+	// Serve the HTML
 	return c.html(html);
 });
 
-// Assets Route
-app.get('/landing/:landingPageId/assets/:asset', async (c) => {
-	const landingPageId = c.req.param('landingPageId');
-	const assetP = c.req.param('asset');
-	const key = `landing:production:${landingPageId}:assets:${assetP}`;
+// Assets Route for landing pages (CSS/JS) - MUST BE BEFORE WILDCARD
+app.get("/landing/:landingPageId/assets/:asset", async (c) => {
+	const landingPageId = c.req.param("landingPageId");
+	const assetName = c.req.param("asset");
+	const key = `landing:production:${landingPageId}:assets:${assetName}`;
 
 	const asset = await c.env.ASSETS.get(key);
 
 	if (!asset) {
-		return c.text('Not found', 404);
+		return c.text("Not found", 404);
 	}
 
-	if (assetP === 'styles') {
-		c.header('Content-Type', 'text/css');
+	// Set appropriate content type
+	if (assetName === "styles") {
+		c.header("Content-Type", "text/css");
+	} else if (assetName === "script") {
+		c.header("Content-Type", "text/javascript");
 	}
 
-	if (assetP === 'script') {
-		c.header('Content-Type', 'text/javascript');
+	return c.body(asset, 200, {
+		"Cache-Control": "public, max-age=31536000, immutable",
+	});
+});
+
+// Wildcard Route for other nested paths and file assets
+app.get("/:campaignSlug/*", async (c) => {
+	const campaignSlug = c.req.param("campaignSlug");
+	const path = c.req.path;
+
+	// Handle file assets with extensions (images, fonts, etc.)
+	if (path.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/)) {
+		const assetKey = `asset:production:${path}`;
+		const asset = await c.env.ASSETS.get(assetKey);
+
+		if (asset) {
+			// Set appropriate content type based on file extension
+			const ext = path.split(".").pop()?.toLowerCase();
+			const contentType = getContentType(ext);
+
+			return c.body(asset, 200, {
+				"Content-Type": contentType,
+				"Cache-Control": "public, max-age=31536000, immutable",
+			});
+		}
 	}
 
-	return c.body(asset);
+	// For non-asset paths, redirect to the main campaign route
+	return c.redirect(`/${campaignSlug}`);
 });
 
 // Root route - handles redirect to main site
-app.get('/', async (c) => {
-	return c.redirect('https://getfirebuzz.com', 301);
+app.get("/", async (c) => {
+	return c.redirect("https://getfirebuzz.com", 301);
 });
 
 export { app as productionCustomDomainApp };

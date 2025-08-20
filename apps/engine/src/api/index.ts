@@ -2,6 +2,7 @@ import { OpenAPIHono } from "@hono/zod-openapi";
 import { hc } from "hono/client";
 import type { Env } from "../env";
 import { apiAuth, cors } from "../middleware";
+import { abTestRoute } from "./v1/do/ab-test";
 import { assetsRoute } from "./v1/kv/assets";
 import { cacheRoute } from "./v1/kv/cache";
 import { campaignRoute } from "./v1/kv/campaign";
@@ -13,7 +14,8 @@ const apiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 	.route("/kv/assets", assetsRoute)
 	.route("/kv/cache", cacheRoute)
 	.route("/kv/domain", domainConfigRoute)
-	.route("/kv/campaign", campaignRoute);
+	.route("/kv/campaign", campaignRoute)
+	.route("/do/abtest", abTestRoute);
 
 // Export the app routes and the type of the app
 type AppType = typeof apiRoutes;

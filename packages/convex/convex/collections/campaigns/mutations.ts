@@ -351,6 +351,13 @@ export const publish = mutationWithTrigger({
 				);
 			}
 
+			// Sync AB tests
+			await retrier.run(
+				ctx,
+				internal.collections.campaigns.actions.syncABTest,
+				{ campaignId: id },
+			);
+
 			await ctx.db.patch(id, {
 				status: "published",
 				isPublished: true,

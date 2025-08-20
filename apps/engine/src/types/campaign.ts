@@ -1,110 +1,135 @@
-export interface CampaignConfig {
-	defaultLandingPageId: string;
-	primaryLanguage: string;
-	segments: Segment[];
-	sessionDurationInMinutes: number;
-	attributionPeriodInDays: number;
-	primaryGoal: Goal;
-	customGoals: Goal[];
-}
+import { z } from "zod";
 
-export interface Segment {
-	id: string;
-	title: string;
-	description: string;
-	priority: number;
-	primaryLandingPageId?: string;
-	translationMode: 'disabled' | 'auto-detect' | 'parameter';
-	translations?: Array<{
-		id: string;
-		language: string;
-		title: string;
-	}>;
-	rules: SegmentRule[];
-	abTests?: ABTest[];
-}
+export const RuleTypeIdSchema = z.enum([
+	"visitorType",
+	"country",
+	"isEUCountry",
+	"language",
+	"deviceType",
+	"browser",
+	"operatingSystem",
+	"utmSource",
+	"utmMedium",
+	"utmCampaign",
+	"utmTerm",
+	"utmContent",
+	"referrer",
+	"customParameter",
+	"timeZone",
+	"hourOfDay",
+	"dayOfWeek",
+]);
 
-export type RuleTypeId =
-	| 'visitorType'
-	| 'country'
-	| 'isEUCountry'
-	| 'language'
-	| 'deviceType'
-	| 'browser'
-	| 'operatingSystem'
-	| 'utmSource'
-	| 'utmMedium'
-	| 'utmCampaign'
-	| 'utmTerm'
-	| 'utmContent'
-	| 'referrer'
-	| 'customParameter'
-	| 'timeZone'
-	| 'hourOfDay'
-	| 'dayOfWeek';
+export const FilterOperatorSchema = z.enum([
+	"equals",
+	"not_equals",
+	"greater_than",
+	"less_than",
+	"between",
+	"in",
+	"not_in",
+	"contains",
+	"not_contains",
+	"starts_with",
+	"ends_with",
+]);
 
-export type FilterOperator =
-	| 'equals'
-	| 'not_equals'
-	| 'greater_than'
-	| 'less_than'
-	| 'between'
-	| 'in'
-	| 'not_in'
-	| 'contains'
-	| 'not_contains'
-	| 'starts_with'
-	| 'ends_with';
+export const SegmentRuleSchema = z.object({
+	id: z.string(),
+	ruleType: RuleTypeIdSchema,
+	operator: FilterOperatorSchema,
+	value: z.union([
+		z.string(),
+		z.number(),
+		z.boolean(),
+		z.array(z.string()),
+		z.array(z.number()),
+	]),
+	isRequired: z.boolean(),
+});
 
-export interface SegmentRule {
-	id: string;
-	ruleType: RuleTypeId;
-	operator: FilterOperator;
-	value: string | number | boolean | string[] | number[];
-	isRequired: boolean;
-}
+export const ABTestVariantSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	landingPageId: z.string().optional(),
+	trafficAllocation: z.number(),
+	isControl: z.boolean(),
+});
 
-export interface ABTest {
-	id: string;
-	title: string;
-	status: 'draft' | 'running' | 'completed' | 'paused';
-	hypothesis: string;
-	isCompleted: boolean;
-	startedAt?: string;
-	completedAt?: string;
-	pausedAt?: string;
-	resumedAt?: string;
-	endDate?: string;
-	primaryMetric: string;
-	completionCriteria: {
-		sampleSizePerVariant?: number;
-		testDuration?: number;
-	};
-	confidenceLevel: 90 | 95 | 99;
-	rules: {
-		winningStrategy: 'winner' | 'winnerOrControl';
-	};
-	poolingPercent: number;
-	variants: ABTestVariant[];
-	winner?: string;
-}
+export const ABTestSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	status: z.enum(["draft", "running", "completed", "paused"]),
+	hypothesis: z.string(),
+	isCompleted: z.boolean(),
+	startedAt: z.string().optional(),
+	completedAt: z.string().optional(),
+	pausedAt: z.string().optional(),
+	resumedAt: z.string().optional(),
+	endDate: z.string().optional(),
+	primaryMetric: z.string(),
+	completionCriteria: z.object({
+		sampleSizePerVariant: z.number(),
+		testDuration: z.number(),
+	}),
+	confidenceLevel: z.union([z.literal(90), z.literal(95), z.literal(99)]),
+	rules: z.object({
+		winningStrategy: z.enum(["winner", "winnerOrControl"]),
+	}),
+	poolingPercent: z.number(),
+	variants: z.array(ABTestVariantSchema),
+	winner: z.string().optional(),
+});
 
-export interface ABTestVariant {
-	id: string;
-	name: string;
-	landingPageId?: string;
-	trafficAllocation: number;
-	isControl: boolean;
-}
+export const GoalSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	description: z.string().optional(),
+	direction: z.enum(["up", "down"]),
+	placement: z.enum(["internal", "external"]),
+	value: z.number(),
+	currency: z.string().optional(),
+	type: z.enum(["conversion", "engagement"]),
+	isCustom: z.boolean(),
+});
 
-export interface Goal {
-	id: string;
-	title: string;
-	description?: string;
-	direction: 'up' | 'down';
-	placement: 'internal' | 'external';
-	value: number;
-	currency?: string;
-	type: 'conversion' | 'engagement';
-	isCustom: boolean;
-}
+export const SegmentSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	description: z.string(),
+	priority: z.number(),
+	primaryLandingPageId: z.string().optional(),
+	translationMode: z.enum(["disabled", "auto-detect", "parameter"]),
+	translations: z
+		.array(
+			z.object({
+				id: z.string(),
+				language: z.string(),
+				title: z.string(),
+			}),
+		)
+		.optional(),
+	rules: z.array(SegmentRuleSchema),
+	abTests: z.array(ABTestSchema).optional(),
+});
+
+export const CampaignConfigSchema = z.object({
+	campaignId: z.string(),
+	defaultLandingPageId: z.string().optional(),
+	primaryLanguage: z.string(),
+	segments: z.array(SegmentSchema),
+	sessionDurationInMinutes: z.number(),
+	attributionPeriodInDays: z.number(),
+	primaryGoal: GoalSchema,
+	customGoals: z.array(GoalSchema),
+});
+
+// Inferred types
+export type RuleTypeId = z.infer<typeof RuleTypeIdSchema>;
+export type FilterOperator = z.infer<typeof FilterOperatorSchema>;
+export type SegmentRule = z.infer<typeof SegmentRuleSchema>;
+export type ABTestVariant = z.infer<typeof ABTestVariantSchema>;
+export type ABTest = z.infer<typeof ABTestSchema>;
+export type Goal = z.infer<typeof GoalSchema>;
+export type Segment = z.infer<typeof SegmentSchema>;
+export type CampaignConfig = z.infer<typeof CampaignConfigSchema>;

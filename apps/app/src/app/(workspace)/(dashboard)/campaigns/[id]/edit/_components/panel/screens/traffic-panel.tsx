@@ -74,7 +74,9 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 	// Get the current default landing page data
 	const currentDefaultLandingPage = useMemo(() => {
 		if (!node.data.defaultLandingPageId || !landingPages) return null;
-		return landingPages.find((page) => page._id === node.data.defaultLandingPageId);
+		return landingPages.find(
+			(page) => page._id === node.data.defaultLandingPageId,
+		);
 	}, [node.data.defaultLandingPageId, landingPages]);
 
 	const updateDefaultVariant = (variantId: string) => {

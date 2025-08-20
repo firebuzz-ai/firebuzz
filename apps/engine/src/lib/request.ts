@@ -1,13 +1,25 @@
-import type { Context } from 'hono';
+import type { Context } from "hono";
 
 // ============================================================================
 // Type Definitions
 // ============================================================================
 
-export type DeviceType = 'mobile' | 'tablet' | 'desktop' | 'unknown';
-export type OS = 'Windows' | 'macOS' | 'Linux' | 'Android' | 'iOS' | 'Unknown';
-export type Browser = 'Chrome' | 'Firefox' | 'Safari' | 'Edge' | 'Opera' | 'Unknown';
-export type ConnectionType = 'slow-2g' | '2g' | '3g' | '4g' | 'wifi' | 'unknown';
+export type DeviceType = "mobile" | "tablet" | "desktop" | "unknown";
+export type OS = "Windows" | "macOS" | "Linux" | "Android" | "iOS" | "Unknown";
+export type Browser =
+	| "Chrome"
+	| "Firefox"
+	| "Safari"
+	| "Edge"
+	| "Opera"
+	| "Unknown";
+export type ConnectionType =
+	| "slow-2g"
+	| "2g"
+	| "3g"
+	| "4g"
+	| "wifi"
+	| "unknown";
 
 export interface BotManagement {
 	corporateProxy: boolean;
@@ -106,14 +118,16 @@ export function parseRequest(c: Context): RequestData {
 	const url = new URL(c.req.url);
 
 	// Parse bot management
-	const bot: BotManagement | null = cf?.botManagement ? (cf.botManagement as BotManagement) : null;
+	const bot: BotManagement | null = cf?.botManagement
+		? (cf.botManagement as BotManagement)
+		: null;
 
 	// Parse geographical data
 	const geo: GeographicalData = {
 		city: cf?.city ? String(cf.city) : null,
 		continent: cf?.continent ? String(cf.continent) : null,
 		country: cf?.country ? String(cf.country) : null,
-		isEUCountry: cf?.isEUCountry === '1',
+		isEUCountry: cf?.isEUCountry === "1",
 		latitude: cf?.latitude ? String(cf.latitude) : null,
 		longitude: cf?.longitude ? String(cf.longitude) : null,
 		postalCode: cf?.postalCode ? String(cf.postalCode) : null,
@@ -129,11 +143,17 @@ export function parseRequest(c: Context): RequestData {
 		browser: parseBrowser(headers),
 		browserVersion: parseBrowserVersion(headers),
 		isMobile:
-			headers['sec-ch-ua-mobile'] === '?1' ||
-			/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(headers['user-agent'] || ''),
+			headers["sec-ch-ua-mobile"] === "?1" ||
+			/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+				headers["user-agent"] || "",
+			),
 		screenResolution: {
-			width: headers['sec-ch-viewport-width'] ? Number.parseInt(headers['sec-ch-viewport-width'], 10) : null,
-			height: headers['sec-ch-viewport-height'] ? Number.parseInt(headers['sec-ch-viewport-height'], 10) : null,
+			width: headers["sec-ch-viewport-width"]
+				? Number.parseInt(headers["sec-ch-viewport-width"], 10)
+				: null,
+			height: headers["sec-ch-viewport-height"]
+				? Number.parseInt(headers["sec-ch-viewport-height"], 10)
+				: null,
 		},
 		connectionType: parseConnectionType(headers),
 	};
@@ -144,7 +164,7 @@ export function parseRequest(c: Context): RequestData {
 	// Parse traffic data
 	const traffic: TrafficData = {
 		referrer: headers.referer || null,
-		userAgent: headers['user-agent'] || '',
+		userAgent: headers["user-agent"] || "",
 	};
 
 	// Parse query parameters
@@ -152,16 +172,16 @@ export function parseRequest(c: Context): RequestData {
 
 	// Parse Firebuzz-specific data
 	const firebuzz: FirebuzzData = {
-		environment: headers['x-environment'] || null,
-		isCampaign: headers['x-firebuzz-campaign'] === 'true',
-		domainType: headers['x-firebuzz-domain-type'] || null,
-		projectId: headers['x-project-id'] || null,
-		workspaceId: headers['x-workspace-id'] || null,
-		userHostname: headers['x-user-hostname'] || null,
-		uri: headers['x-uri'] || null,
-		fullUri: headers['x-full-uri'] || null,
-		realIp: headers['x-real-ip'] || null,
-		isSSL: headers['x-ssl'] === 'true',
+		environment: headers["x-environment"] || null,
+		isCampaign: headers["x-firebuzz-campaign"] === "true",
+		domainType: headers["x-firebuzz-domain-type"] || null,
+		projectId: headers["x-project-id"] || null,
+		workspaceId: headers["x-workspace-id"] || null,
+		userHostname: headers["x-user-hostname"] || null,
+		uri: headers["x-uri"] || null,
+		fullUri: headers["x-full-uri"] || null,
+		realIp: headers["x-real-ip"] || null,
+		isSSL: headers["x-ssl"] === "true",
 	};
 
 	return {
@@ -179,97 +199,103 @@ export function parseRequest(c: Context): RequestData {
 // Helper Functions
 // ============================================================================
 
-function parseDeviceType(headers: Record<string, string | undefined>): DeviceType {
-	const userAgent = headers['user-agent'] || '';
+function parseDeviceType(
+	headers: Record<string, string | undefined>,
+): DeviceType {
+	const userAgent = headers["user-agent"] || "";
 	const isMobile =
-		headers['sec-ch-ua-mobile'] === '?1' ||
-		/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+		headers["sec-ch-ua-mobile"] === "?1" ||
+		/Mobile|Android|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+			userAgent,
+		);
 
 	if (!isMobile) {
-		return 'desktop';
+		return "desktop";
 	}
 
 	if (/iPad|Android.*Tablet/i.test(userAgent)) {
-		return 'tablet';
+		return "tablet";
 	}
 
-	return 'mobile';
+	return "mobile";
 }
 
 function parseOS(headers: Record<string, string | undefined>): OS {
-	const secChUaPlatform = headers['sec-ch-ua-platform']?.replace(/"/g, '');
-	const userAgent = headers['user-agent'] || '';
+	const secChUaPlatform = headers["sec-ch-ua-platform"]?.replace(/"/g, "");
+	const userAgent = headers["user-agent"] || "";
 
 	if (secChUaPlatform) {
 		switch (secChUaPlatform) {
-			case 'Windows':
-				return 'Windows';
-			case 'macOS':
-				return 'macOS';
-			case 'Linux':
-				return 'Linux';
-			case 'Android':
-				return 'Android';
-			case 'iOS':
-				return 'iOS';
+			case "Windows":
+				return "Windows";
+			case "macOS":
+				return "macOS";
+			case "Linux":
+				return "Linux";
+			case "Android":
+				return "Android";
+			case "iOS":
+				return "iOS";
 		}
 	}
 
 	// Fallback to User-Agent parsing
 	if (/Windows NT/i.test(userAgent)) {
-		return 'Windows';
+		return "Windows";
 	}
 	if (/Mac OS X/i.test(userAgent)) {
-		return 'macOS';
+		return "macOS";
 	}
 	if (/Linux/i.test(userAgent)) {
-		return 'Linux';
+		return "Linux";
 	}
 	if (/Android/i.test(userAgent)) {
-		return 'Android';
+		return "Android";
 	}
 	if (/iPhone|iPad|iPod/i.test(userAgent)) {
-		return 'iOS';
+		return "iOS";
 	}
 
-	return 'Unknown';
+	return "Unknown";
 }
 
 function parseBrowser(headers: Record<string, string | undefined>): Browser {
-	const secChUa = headers['sec-ch-ua'] || '';
-	const userAgent = headers['user-agent'] || '';
+	const secChUa = headers["sec-ch-ua"] || "";
+	const userAgent = headers["user-agent"] || "";
 
 	// Try sec-ch-ua first
 	if (secChUa) {
-		if (secChUa.includes('Google Chrome')) return 'Chrome';
-		if (secChUa.includes('Microsoft Edge')) return 'Edge';
-		if (secChUa.includes('Firefox')) return 'Firefox';
-		if (secChUa.includes('Safari')) return 'Safari';
+		if (secChUa.includes("Google Chrome")) return "Chrome";
+		if (secChUa.includes("Microsoft Edge")) return "Edge";
+		if (secChUa.includes("Firefox")) return "Firefox";
+		if (secChUa.includes("Safari")) return "Safari";
 	}
 
 	// Fallback to User-Agent
 	if (/Chrome/i.test(userAgent) && !/Edge/i.test(userAgent)) {
-		return 'Chrome';
+		return "Chrome";
 	}
 	if (/Edge|Edg/i.test(userAgent)) {
-		return 'Edge';
+		return "Edge";
 	}
 	if (/Firefox/i.test(userAgent)) {
-		return 'Firefox';
+		return "Firefox";
 	}
 	if (/Safari/i.test(userAgent) && !/Chrome/i.test(userAgent)) {
-		return 'Safari';
+		return "Safari";
 	}
 	if (/Opera/i.test(userAgent)) {
-		return 'Opera';
+		return "Opera";
 	}
 
-	return 'Unknown';
+	return "Unknown";
 }
 
-function parseBrowserVersion(headers: Record<string, string | undefined>): string | null {
-	const secChUa = headers['sec-ch-ua'] || '';
-	const userAgent = headers['user-agent'] || '';
+function parseBrowserVersion(
+	headers: Record<string, string | undefined>,
+): string | null {
+	const secChUa = headers["sec-ch-ua"] || "";
+	const userAgent = headers["user-agent"] || "";
 
 	// Try sec-ch-ua first
 	if (secChUa) {
@@ -301,25 +327,31 @@ function parseBrowserVersion(headers: Record<string, string | undefined>): strin
 	return null;
 }
 
-function parseConnectionType(headers: Record<string, string | undefined>): ConnectionType {
-	if (headers['sec-ch-ua-mobile'] !== '?1') {
-		return 'wifi'; // Desktop devices likely use wifi
+function parseConnectionType(
+	headers: Record<string, string | undefined>,
+): ConnectionType {
+	if (headers["sec-ch-ua-mobile"] !== "?1") {
+		return "wifi"; // Desktop devices likely use wifi
 	}
 
 	// Mobile device - try to determine connection from downlink speed
-	const downlink = headers.downlink ? Number.parseFloat(headers.downlink) : null;
+	const downlink = headers.downlink
+		? Number.parseFloat(headers.downlink)
+		: null;
 	if (downlink !== null) {
-		if (downlink < 0.15) return 'slow-2g';
-		if (downlink < 0.75) return '2g';
-		if (downlink < 10) return '3g';
-		return '4g';
+		if (downlink < 0.15) return "slow-2g";
+		if (downlink < 0.75) return "2g";
+		if (downlink < 10) return "3g";
+		return "4g";
 	}
 
-	return 'unknown';
+	return "unknown";
 }
 
-function parseLocalization(headers: Record<string, string | undefined>): LocalizationData {
-	const acceptLanguage = headers['accept-language'] || '';
+function parseLocalization(
+	headers: Record<string, string | undefined>,
+): LocalizationData {
+	const acceptLanguage = headers["accept-language"] || "";
 
 	if (!acceptLanguage) {
 		return {
@@ -330,9 +362,9 @@ function parseLocalization(headers: Record<string, string | undefined>): Localiz
 
 	// Parse Accept-Language: "tr,en;q=0.9,en-US;q=0.8"
 	const langEntries = acceptLanguage
-		.split(',')
+		.split(",")
 		.map((lang) => {
-			const [code, quality] = lang.trim().split(';q=');
+			const [code, quality] = lang.trim().split(";q=");
 			return {
 				code: code.trim(),
 				quality: quality ? Number.parseFloat(quality) : 1.0,
@@ -350,7 +382,13 @@ function parseQueryParams(searchParams: URLSearchParams): QueryParams {
 	const utm: UtmParams = {};
 	const custom: Record<string, string> = {};
 
-	const utmKeys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const;
+	const utmKeys = [
+		"utm_source",
+		"utm_medium",
+		"utm_campaign",
+		"utm_term",
+		"utm_content",
+	] as const;
 
 	searchParams.forEach((value, key) => {
 		if (utmKeys.includes(key as keyof UtmParams)) {

@@ -1,4 +1,5 @@
 export interface CampaignConfig {
+	campaignId: string;
 	defaultLandingPageId?: string;
 	primaryLanguage: string;
 	segments: Segment[];

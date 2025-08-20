@@ -30,6 +30,20 @@
 			"id": "87d1c295bfd54f1c91a09155b558aaed"
 		}
 	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "AB_TEST",
+				"class_name": "ABTestDurableObject"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["ABTestDurableObject"]
+		}
+	],
 	"vars": {
 		"ENVIRONMENT": "development",
 		"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
@@ -61,6 +75,20 @@
 					"binding": "CAMPAIGN",
 					"id": "9b602873a05a49d289c901ecff5a8fc8"
 				}
+			],
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "AB_TEST",
+						"class_name": "ABTestDurableObject"
+					}
+				]
+			},
+			"migrations": [
+				{
+					"tag": "v1",
+					"new_classes": ["ABTestDurableObject"]
+				}
 			]
 		},
 		"production": {
@@ -86,6 +114,20 @@
 				{
 					"binding": "CAMPAIGN",
 					"id": "ef527432c7674adfb61122bd3fe4f251"
+				}
+			],
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "AB_TEST",
+						"class_name": "ABTestDurableObject"
+					}
+				]
+			},
+			"migrations": [
+				{
+					"tag": "v1",
+					"new_classes": ["ABTestDurableObject"]
 				}
 			]
 		}

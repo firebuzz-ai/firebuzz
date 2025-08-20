@@ -5,7 +5,11 @@ import type { Doc, Id } from "../../_generated/dataModel";
 import { type ActionCtx, internalAction } from "../../_generated/server";
 import { engineAPIClient } from "../../lib/engine";
 import { ERRORS } from "../../utils/errors";
-import { buildCampaignConfig, serializeConfig } from "./helpers";
+import {
+	type CleanedABTest,
+	buildCampaignConfig,
+	serializeConfig,
+} from "./helpers";
 
 interface KVPayload {
 	key: string;
@@ -43,7 +47,7 @@ export const storeCampaignConfigInKV = internalAction({
 			campaign.nodes,
 			campaign.edges,
 			campaign.campaignSettings,
-			{ primaryLanguage: campaign.primaryLanguage },
+			{ _id: campaign._id, primaryLanguage: campaign.primaryLanguage },
 		);
 
 		const validationResult = await ctx.runQuery(
@@ -135,6 +139,76 @@ export const storeCampaignConfigInKV = internalAction({
 
 		// Store all configs in KV
 		await storeConfigsInKV(kvPayloads);
+
+		return { success: true };
+	},
+});
+
+export const syncABTest = internalAction({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, { campaignId }) => {
+		// Fetch and validate campaign
+		const campaign = await ctx.runQuery(
+			internal.collections.campaigns.queries.getByIdInternal,
+			{ id: campaignId },
+		);
+
+		if (!campaign) {
+			throw new ConvexError({
+				message: "Campaign not found",
+				data: { campaignId: campaignId },
+			});
+		}
+
+		// Build and validate config
+		const config = buildCampaignConfig(
+			campaign.nodes,
+			campaign.edges,
+			campaign.campaignSettings,
+			{ _id: campaign._id, primaryLanguage: campaign.primaryLanguage },
+		);
+
+		const notDraftAbTests = config.segments
+			.flatMap((segment) => {
+				return segment.abTests;
+			})
+			.filter((abTest) => abTest && abTest.status !== "draft")
+			.filter((abTest) => abTest !== undefined) as CleanedABTest[];
+
+		console.log("notDraftAbTests", notDraftAbTests);
+
+		if (notDraftAbTests.length === 0) {
+			return { success: true };
+		}
+
+		const promises = notDraftAbTests.map(async (abTest) => {
+			try {
+				await engineAPIClient.do.abtest.sync[":campaignId"].$post({
+					param: {
+						campaignId: campaignId,
+					},
+					json: {
+						config: abTest,
+					},
+				});
+			} catch (error) {
+				console.error(`Failed to sync AB test ${abTest.id}:`, error);
+			}
+		});
+
+		try {
+			await Promise.all(promises);
+		} catch (error) {
+			console.error("Failed to sync AB tests:", error);
+			throw new ConvexError({
+				message: "Failed to sync AB tests",
+				data: {
+					error: error instanceof Error ? error.message : "Unknown error",
+				},
+			});
+		}
 
 		return { success: true };
 	},

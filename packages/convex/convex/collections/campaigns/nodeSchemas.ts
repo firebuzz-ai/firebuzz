@@ -125,8 +125,8 @@ export const abTestNodeData = v.object({
 	endDate: v.optional(v.string()),
 	primaryMetric: v.string(),
 	completionCriteria: v.object({
-		sampleSizePerVariant: v.optional(v.number()),
-		testDuration: v.optional(v.number()),
+		sampleSizePerVariant: v.number(),
+		testDuration: v.number(),
 	}),
 	confidenceLevel: v.union(v.literal(90), v.literal(95), v.literal(99)),
 	variants: v.array(abTestVariant),

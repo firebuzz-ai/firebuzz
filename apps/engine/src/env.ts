@@ -1,4 +1,5 @@
-import type { KVNamespace, DurableObjectNamespace } from "@cloudflare/workers-types";
+import type { DurableObjectNamespace, KVNamespace } from '@cloudflare/workers-types';
+import type ABTestDurableObject from './durable-objects/ab-test';
 
 export interface Env {
 	ASSETS: KVNamespace;
@@ -14,6 +15,8 @@ export interface Env {
 	INNGEST_SIGNING_KEY: string;
 	INNGEST_EVENT_KEY: string;
 	INNGEST_BASE_URL: string;
+	CLERK_SECRET_KEY: string;
+	CLERK_PUBLISHABLE_KEY: string;
 	// Durable Objects
-	AB_TEST: DurableObjectNamespace;
+	AB_TEST: DurableObjectNamespace<ABTestDurableObject>;
 }

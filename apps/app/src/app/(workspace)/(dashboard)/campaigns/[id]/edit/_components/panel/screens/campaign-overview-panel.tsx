@@ -514,7 +514,9 @@ export const CampaignOverviewPanel = ({
 						<div className="space-y-4">
 							<DurationSlider
 								label="Session Duration"
-								value={campaign.campaignSettings?.sessionDurationInMinutes || 30}
+								value={
+									campaign.campaignSettings?.sessionDurationInMinutes || 30
+								}
 								min={5}
 								max={30}
 								unit="minutes"

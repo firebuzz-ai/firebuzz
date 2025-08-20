@@ -104,9 +104,8 @@ export const UtmTermRule = ({
 			/>
 
 			<InfoBox variant="info" iconPlacement="top">
-				Target visitors based on UTM term parameters. This is typically used
-				for paid search campaigns to identify the keywords that triggered your
-				ads.
+				Target visitors based on UTM term parameters. This is typically used for
+				paid search campaigns to identify the keywords that triggered your ads.
 			</InfoBox>
 		</div>
 	);
