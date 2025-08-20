@@ -21,6 +21,7 @@ declare namespace Cloudflare {
 		TINYBIRD_TOKEN: string;
 		TINYBIRD_BASE_URL: string;
 		AB_TEST: DurableObjectNamespace<import("./src/durable-objects/ab-test").default>;
+		SESSION_QUEUE: Queue<import("./src/types/queue").SessionQueueMessage>;
 	}
 }
 interface Env extends Cloudflare.Env {}

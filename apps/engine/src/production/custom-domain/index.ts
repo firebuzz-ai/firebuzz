@@ -1,12 +1,13 @@
 import { Hono } from "hono";
 import type { Env } from "../../env";
 import { evaluateCampaign } from "../../lib/campaign";
+import { getSessionQueueService } from "../../lib/queue";
 import { parseRequest } from "../../lib/request";
 import {
 	ensureSessionAndAttribution,
 	updateSessionWithVariant,
 } from "../../lib/session";
-import { trackSession } from "../../lib/tinybird";
+import { formatSessionData } from "../../lib/tinybird";
 import type { CampaignConfig } from "../../types/campaign";
 import { getContentType } from "../../utils/assets";
 
@@ -28,14 +29,17 @@ app.get("/:campaignSlug", async (c) => {
 	}
 
 	// Ensure session and attribution; then evaluate with that session
-	const { session, attribution, userId, isReturningUser, isExistingSession } = ensureSessionAndAttribution(c, config);
+	const { session, attribution, userId, isReturningUser, isExistingSession } =
+		ensureSessionAndAttribution(c, config);
 	const evaluation = evaluateCampaign(c, config, session, isExistingSession);
-	
+
 	// Parse request data for session tracking (will be used later)
 	const requestData = parseRequest(c);
 
 	// Determine landing page ID based on evaluation type
 	let landingPageId: string | undefined;
+	let abTestId: string | null = null;
+	let abTestVariantId: string | null = null;
 
 	if (evaluation.type === "abtest" && evaluation.abTest) {
 		// For AB tests, we need to select or retrieve the variant
@@ -79,6 +83,10 @@ app.get("/:campaignSlug", async (c) => {
 			evaluation.abTest.id,
 			variantId,
 		);
+
+		// Capture AB test data for session tracking
+		abTestId = evaluation.abTest.id;
+		abTestVariantId = variantId;
 
 		// Get the selected variant
 		const selectedVariant = evaluation.abTest.variants.find(
@@ -124,26 +132,87 @@ app.get("/:campaignSlug", async (c) => {
 	c.header("X-Is-Returning-User", isReturningUser ? "true" : "false");
 	c.header("X-Is-Existing-Session", isExistingSession ? "true" : "false");
 
-	// Track session to Tinybird asynchronously (only for new sessions)
-	if (!isExistingSession && requestData.firebuzz.projectId && requestData.firebuzz.workspaceId) {
-		// Fire and forget - track session without blocking response
-		trackSession({
-			sessionId: session.sessionId,
-			attributionId: attribution.attributionId,
-			userId: userId,
-			projectId: requestData.firebuzz.projectId,
-			workspaceId: requestData.firebuzz.workspaceId,
-			campaignId: config.campaignId,
-			landingPageId: landingPageId,
-			abTest: session.abTest ? {
-				testId: session.abTest.testId,
-				variantId: session.abTest.variantId,
-			} : null,
-			requestData: requestData,
-			isReturningUser: isReturningUser,
-		}).catch(error => {
-			console.error('Failed to track session:', error);
-		});
+	// Track session via queue for batching and throttling (only for new sessions)
+	if (
+		!isExistingSession &&
+		requestData.firebuzz.projectId &&
+		requestData.firebuzz.workspaceId
+	) {
+		// Fire and forget - enqueue session without blocking response
+		c.executionCtx.waitUntil(
+			(async () => {
+				try {
+					const queueService = getSessionQueueService(c.env);
+					const sessionData = formatSessionData({
+						timestamp: new Date().toISOString(),
+						sessionId: session.sessionId,
+						attributionId: attribution.attributionId,
+						userId: userId,
+						projectId: requestData.firebuzz.projectId || "",
+						workspaceId: requestData.firebuzz.workspaceId || "",
+						campaignId: config.campaignId,
+						landingPageId: landingPageId,
+						abTestId: abTestId,
+						abTestVariantId: abTestVariantId,
+						utm: {
+							source: requestData.params.utm.utm_source,
+							medium: requestData.params.utm.utm_medium,
+							campaign: requestData.params.utm.utm_campaign,
+							term: requestData.params.utm.utm_term,
+							content: requestData.params.utm.utm_content,
+						},
+						geo: {
+							country: requestData.geo.country,
+							city: requestData.geo.city,
+							region: requestData.geo.region,
+							regionCode: requestData.geo.regionCode,
+							continent: requestData.geo.continent,
+							latitude: requestData.geo.latitude,
+							longitude: requestData.geo.longitude,
+							postalCode: requestData.geo.postalCode,
+							timezone: requestData.geo.timezone,
+							isEUCountry: requestData.geo.isEUCountry,
+						},
+						device: {
+							type: requestData.device.type,
+							os: requestData.device.os,
+							browser: requestData.device.browser,
+							browserVersion: requestData.device.browserVersion,
+							isMobile: requestData.device.isMobile,
+							screenWidth: requestData.device.screenResolution.width,
+							screenHeight: requestData.device.screenResolution.height,
+							connectionType: requestData.device.connectionType,
+						},
+						traffic: {
+							referrer: requestData.traffic.referrer,
+							userAgent: requestData.traffic.userAgent,
+						},
+						localization: {
+							language: requestData.localization.language,
+							languages: requestData.localization.languages,
+						},
+						bot: requestData.bot,
+						network: {
+							ip: requestData.firebuzz.realIp,
+							isSSL: requestData.firebuzz.isSSL,
+							domainType: requestData.firebuzz.domainType,
+							userHostname: requestData.firebuzz.userHostname,
+						},
+						session: {
+							isReturning: isReturningUser,
+							environment: requestData.firebuzz.environment,
+							uri: requestData.firebuzz.uri,
+							fullUri: requestData.firebuzz.fullUri,
+						},
+					});
+
+					await queueService.enqueue(sessionData);
+				} catch (error) {
+					console.error("Failed to enqueue session:", error);
+					// Don't fail the request if tracking fails
+				}
+			})(),
+		);
 	}
 
 	// Serve the HTML

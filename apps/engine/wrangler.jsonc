@@ -30,6 +30,23 @@
 			"id": "87d1c295bfd54f1c91a09155b558aaed"
 		}
 	],
+	"queues": {
+		"producers": [
+			{
+				"queue": "session-ingestion",
+				"binding": "SESSION_QUEUE"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "session-ingestion",
+				"max_batch_size": 100,
+				"max_batch_timeout": 5,
+				"max_retries": 3,
+				"dead_letter_queue": "session-ingestion-dlq"
+			}
+		]
+	},
 	"durable_objects": {
 		"bindings": [
 			{
@@ -76,6 +93,23 @@
 					"id": "9b602873a05a49d289c901ecff5a8fc8"
 				}
 			],
+			"queues": {
+				"producers": [
+					{
+						"queue": "session-ingestion-preview",
+						"binding": "SESSION_QUEUE"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "session-ingestion-preview",
+						"max_batch_size": 100,
+						"max_batch_timeout": 5,
+						"max_retries": 3,
+						"dead_letter_queue": "session-ingestion-preview-dlq"
+					}
+				]
+			},
 			"durable_objects": {
 				"bindings": [
 					{
@@ -116,6 +150,23 @@
 					"id": "ef527432c7674adfb61122bd3fe4f251"
 				}
 			],
+			"queues": {
+				"producers": [
+					{
+						"queue": "session-ingestion-production",
+						"binding": "SESSION_QUEUE"
+					}
+				],
+				"consumers": [
+					{
+						"queue": "session-ingestion-production",
+						"max_batch_size": 100,
+						"max_batch_timeout": 5,
+						"max_retries": 3,
+						"dead_letter_queue": "session-ingestion-production-dlq"
+					}
+				]
+			},
 			"durable_objects": {
 				"bindings": [
 					{

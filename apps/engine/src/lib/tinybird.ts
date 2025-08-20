@@ -89,6 +89,81 @@ function getDateTime64(): string {
 	return new Date().toISOString();
 }
 
+/**
+ * Send batch of sessions to Tinybird using NDJSON format
+ * This is more efficient than individual requests
+ */
+export async function batchIngestSessions(
+	sessions: SessionData[],
+	env: { TINYBIRD_BASE_URL: string; TINYBIRD_TOKEN: string },
+): Promise<{
+	successful_rows: number;
+	quarantined_rows: number;
+	errors?: string[];
+	rateLimitHeaders?: {
+		limit?: string;
+		remaining?: string;
+		reset?: string;
+		retryAfter?: string;
+	};
+}> {
+	if (sessions.length === 0) {
+		return { successful_rows: 0, quarantined_rows: 0 };
+	}
+
+	// Format as NDJSON (newline-delimited JSON)
+	const ndjson = sessions.map((session) => JSON.stringify(session)).join("\n");
+
+	// Calculate payload size for monitoring
+	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
+	
+	// Warn if payload is large
+	if (payloadSizeMB > 5) {
+		console.warn(`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${sessions.length} sessions`);
+	}
+
+	const response = await fetch(`${env.TINYBIRD_BASE_URL}/v0/events?name=session_v1&wait=true`, {
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
+			"Content-Type": "application/x-ndjson",
+		},
+		body: ndjson,
+	});
+
+	// Extract rate limit headers for monitoring
+	const rateLimitHeaders = {
+		limit: response.headers.get("X-RateLimit-Limit") || undefined,
+		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
+		reset: response.headers.get("X-RateLimit-Reset") || undefined,
+		retryAfter: response.headers.get("Retry-After") || undefined,
+	};
+
+	// Handle rate limiting
+	if (response.status === 429) {
+		const retryAfter = rateLimitHeaders.retryAfter || "60";
+		throw new Error(
+			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
+			`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
+		);
+	}
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Tinybird batch ingestion failed: ${response.status} - ${errorText}`);
+	}
+
+	const result = await response.json<{
+		successful_rows: number;
+		quarantined_rows: number;
+	}>();
+
+	return {
+		...result,
+		rateLimitHeaders,
+	};
+}
+
 // Helper function to track session
 export async function trackSession(params: {
 	sessionId: string;

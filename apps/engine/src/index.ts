@@ -1,9 +1,9 @@
 import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import type { MessageBatch } from '@cloudflare/workers-types';
 import { apiRoutes } from './api';
 import { clientApiRoutes } from './client-api';
-import type { Env } from './env';
 import { domainRouting } from './middleware';
 import { utilityRoutes } from './utility-routes';
 import { inngestApp } from './workflows';
@@ -66,7 +66,16 @@ app.get('/', async (c) => {
 	});
 });
 
+// Import and re-export queue handler directly
+import { handleSessionQueue } from './queue/session-consumer';
+
 // Export the Durable Object class
 export { ABTestDurableObject } from './durable-objects/ab-test';
 
-export default app;
+// Export both fetch and queue handlers in the default export
+export default {
+	fetch: app.fetch,
+	async queue(batch: MessageBatch<import('./types/queue').SessionQueueMessage>, env: Env): Promise<void> {
+		await handleSessionQueue(batch, env);
+	},
+};
