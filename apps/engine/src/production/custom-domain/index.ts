@@ -1,10 +1,12 @@
 import { Hono } from "hono";
 import type { Env } from "../../env";
 import { evaluateCampaign } from "../../lib/campaign";
+import { parseRequest } from "../../lib/request";
 import {
 	ensureSessionAndAttribution,
 	updateSessionWithVariant,
 } from "../../lib/session";
+import { trackSession } from "../../lib/tinybird";
 import type { CampaignConfig } from "../../types/campaign";
 import { getContentType } from "../../utils/assets";
 
@@ -26,8 +28,11 @@ app.get("/:campaignSlug", async (c) => {
 	}
 
 	// Ensure session and attribution; then evaluate with that session
-	const { session, isReturning } = ensureSessionAndAttribution(c, config);
-	const evaluation = evaluateCampaign(c, config, session, isReturning);
+	const { session, attribution, userId, isReturningUser, isExistingSession } = ensureSessionAndAttribution(c, config);
+	const evaluation = evaluateCampaign(c, config, session, isExistingSession);
+	
+	// Parse request data for session tracking (will be used later)
+	const requestData = parseRequest(c);
 
 	// Determine landing page ID based on evaluation type
 	let landingPageId: string | undefined;
@@ -37,14 +42,14 @@ app.get("/:campaignSlug", async (c) => {
 		let variantId: string;
 
 		if (
-			isReturning &&
+			isExistingSession &&
 			session.abTest?.variantId &&
 			session.abTest.testId === evaluation.abTest.id &&
 			evaluation.abTest.variants.some(
 				(v) => v.id === session?.abTest?.variantId,
 			) // Check if variant is still in the test
 		) {
-			// Returning user - use existing variant
+			// Existing session - use existing variant
 			variantId = session.abTest.variantId;
 		} else {
 			// New user - use Durable Object to select variant
@@ -115,7 +120,31 @@ app.get("/:campaignSlug", async (c) => {
 	}
 	c.header("X-Evaluation-Type", evaluation.type);
 	c.header("X-Session-Id", session.sessionId);
-	c.header("X-Is-Returning", isReturning ? "true" : "false");
+	c.header("X-User-Id", userId);
+	c.header("X-Is-Returning-User", isReturningUser ? "true" : "false");
+	c.header("X-Is-Existing-Session", isExistingSession ? "true" : "false");
+
+	// Track session to Tinybird asynchronously (only for new sessions)
+	if (!isExistingSession && requestData.firebuzz.projectId && requestData.firebuzz.workspaceId) {
+		// Fire and forget - track session without blocking response
+		trackSession({
+			sessionId: session.sessionId,
+			attributionId: attribution.attributionId,
+			userId: userId,
+			projectId: requestData.firebuzz.projectId,
+			workspaceId: requestData.firebuzz.workspaceId,
+			campaignId: config.campaignId,
+			landingPageId: landingPageId,
+			abTest: session.abTest ? {
+				testId: session.abTest.testId,
+				variantId: session.abTest.variantId,
+			} : null,
+			requestData: requestData,
+			isReturningUser: isReturningUser,
+		}).catch(error => {
+			console.error('Failed to track session:', error);
+		});
+	}
 
 	// Serve the HTML
 	return c.html(html);

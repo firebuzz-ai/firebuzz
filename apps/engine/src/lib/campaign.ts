@@ -40,20 +40,20 @@ export interface CampaignEvaluationResult {
  * @param c Hono context containing the request
  * @param campaignConfig The campaign configuration to evaluate
  * @param sessionData The session data created at worker level
- * @param isReturning Whether this is a returning user
+ * @param isExistingSession Whether this is an existing session (not a new session)
  * @returns The evaluation result with the selected segment or default
  */
 export function evaluateCampaign(
 	c: Context,
 	campaignConfig: CampaignConfig,
 	sessionData: SessionData,
-	isReturning: boolean,
+	isExistingSession: boolean,
 ): CampaignEvaluationResult {
 	// IMPORTANT: We only maintain session consistency for AB tests
 	// Regular landing pages are re-evaluated on each visit
 
-	// If returning user with valid session and AB test variant, check if test is still running
-	if (isReturning && sessionData.abTest) {
+	// If existing session with AB test variant, check if test is still running
+	if (isExistingSession && sessionData.abTest) {
 		// Find the segment and AB test that matches the session
 		for (const segment of campaignConfig.segments) {
 			const abTest = segment.abTests?.find(

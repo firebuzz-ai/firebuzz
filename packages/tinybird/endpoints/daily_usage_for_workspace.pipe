@@ -38,7 +38,4 @@ SQL >
     LEFT JOIN actual_usage au ON dr.date = au.date
     ORDER BY dr.date
 
-TYPE ENDPOINT 
-
-jd7fe2b53mc68dvvac66ygvy9s7k3vq5
-2025-07-07 20:09:26.304
+TYPE ENDPOINT

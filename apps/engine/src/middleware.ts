@@ -47,16 +47,16 @@ export const domainRouting = createMiddleware<{ Bindings: Env }>(
 
 			// Custom Domain Routing
 			if (isCustomDomain) {
-				return productionCustomDomainApp.fetch(c.req.raw, c.env);
+				return productionCustomDomainApp.fetch(c.req.raw, c.env, c.executionCtx);
 			}
 
 			// Project Domain Routing (Firebuzz Subdomain)
-			return productionProjectDomainApp.fetch(c.req.raw, c.env);
+			return productionProjectDomainApp.fetch(c.req.raw, c.env, c.executionCtx);
 		}
 
 		// Preview Routing (Campaign & Landing Page Previews)
 		if (preview) {
-			return previewApp.fetch(c.req.raw, c.env);
+			return previewApp.fetch(c.req.raw, c.env, c.executionCtx);
 		}
 
 		// Continue with normal routing for other domains

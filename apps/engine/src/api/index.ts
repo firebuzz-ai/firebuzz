@@ -1,33 +1,23 @@
-import { OpenAPIHono } from "@hono/zod-openapi";
-import { hc } from "hono/client";
-import type { Env } from "../env";
-import { apiAuth, cors } from "../middleware";
-import { abTestRoute } from "./v1/do/ab-test";
-import { assetsRoute } from "./v1/kv/assets";
-import { cacheRoute } from "./v1/kv/cache";
-import { campaignRoute } from "./v1/kv/campaign";
-import { domainConfigRoute } from "./v1/kv/domain-config";
+import { OpenAPIHono } from '@hono/zod-openapi';
+import type { Env } from '../env';
+import { apiAuth, cors } from '../middleware';
+import { abTestRoute } from './v1/do/ab-test';
+import { assetsRoute } from './v1/kv/assets';
+import { cacheRoute } from './v1/kv/cache';
+import { campaignRoute } from './v1/kv/campaign';
+import { domainConfigRoute } from './v1/kv/domain-config';
 
 const apiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 	.use(cors)
 	.use(apiAuth)
-	.route("/kv/assets", assetsRoute)
-	.route("/kv/cache", cacheRoute)
-	.route("/kv/domain", domainConfigRoute)
-	.route("/kv/campaign", campaignRoute)
-	.route("/do/abtest", abTestRoute);
+	.route('/kv/assets', assetsRoute)
+	.route('/kv/cache', cacheRoute)
+	.route('/kv/domain', domainConfigRoute)
+	.route('/kv/campaign', campaignRoute)
+	.route('/do/abtest', abTestRoute);
 
-// Export the app routes and the type of the app
-type AppType = typeof apiRoutes;
-const createClient = ({
-	baseUrl = "http://localhost:8787",
-	apiKey,
-}: { baseUrl: string; apiKey: string }) => {
-	return hc<AppType>(`${baseUrl}/api/v1`, {
-		headers: {
-			Authorization: `Bearer ${apiKey}`,
-		},
-	});
-};
+// Export only the type to prevent bundling issues
+export type AppType = typeof apiRoutes;
 
-export { apiRoutes, createClient, type AppType };
+// Export the routes for internal use
+export { apiRoutes };

@@ -1,0 +1,126 @@
+TOKEN read_write READ
+TOKEN read_write APPEND
+TOKEN read_only READ
+
+DESCRIPTION "Stores session tracking data including attribution, device info, and geographic data"
+
+FORWARD_QUERY >
+    SELECT 
+        timestamp, 
+        session_id, 
+        attribution_id, 
+        defaultValueOfTypeName('String') AS user_id, 
+        project_id, 
+        workspace_id, 
+        campaign_id, 
+        landing_page_id, 
+        ab_test_id, 
+        ab_test_variant_id, 
+        utm_source, 
+        utm_medium, 
+        utm_campaign, 
+        utm_term, 
+        utm_content, 
+        country, 
+        city, 
+        region, 
+        region_code, 
+        continent, 
+        latitude, 
+        longitude, 
+        postal_code, 
+        timezone, 
+        is_eu_country, 
+        device_type, 
+        device_os, 
+        browser, 
+        browser_version, 
+        is_mobile, 
+        screen_width, 
+        screen_height, 
+        connection_type, 
+        referrer, 
+        user_agent, 
+        language, 
+        is_bot, 
+        bot_score, 
+        is_corporate_proxy, 
+        is_verified_bot, 
+        ip, 
+        is_ssl, 
+        domain_type, 
+        user_hostname, 
+        is_returning, 
+        environment, 
+        uri, 
+        full_uri
+
+SCHEMA >
+    `timestamp` DateTime64(3, 'UTC') `json:$.timestamp`,
+    `session_id` String `json:$.session_id`,
+    `attribution_id` String `json:$.attribution_id`,
+    `user_id` String `json:$.user_id`,
+    `project_id` String `json:$.project_id`,
+    `workspace_id` String `json:$.workspace_id`,
+    `campaign_id` String `json:$.campaign_id`,
+    `landing_page_id` Nullable(String) `json:$.landing_page_id`,
+    
+    # AB Test data
+    `ab_test_id` Nullable(String) `json:$.ab_test_id`,
+    `ab_test_variant_id` Nullable(String) `json:$.ab_test_variant_id`,
+    
+    # Attribution data
+    `utm_source` Nullable(String) `json:$.utm_source`,
+    `utm_medium` Nullable(String) `json:$.utm_medium`,
+    `utm_campaign` Nullable(String) `json:$.utm_campaign`,
+    `utm_term` Nullable(String) `json:$.utm_term`,
+    `utm_content` Nullable(String) `json:$.utm_content`,
+    
+    # Geographic data
+    `country` LowCardinality(String) `json:$.country`,
+    `city` String `json:$.city`,
+    `region` String `json:$.region`,
+    `region_code` Nullable(String) `json:$.region_code`,
+    `continent` LowCardinality(String) `json:$.continent`,
+    `latitude` Nullable(String) `json:$.latitude`,
+    `longitude` Nullable(String) `json:$.longitude`,
+    `postal_code` Nullable(String) `json:$.postal_code`,
+    `timezone` Nullable(String) `json:$.timezone`,
+    `is_eu_country` UInt8 `json:$.is_eu_country`,
+    
+    # Device data
+    `device_type` LowCardinality(String) `json:$.device_type`,
+    `device_os` LowCardinality(String) `json:$.device_os`,
+    `browser` LowCardinality(String) `json:$.browser`,
+    `browser_version` Nullable(String) `json:$.browser_version`,
+    `is_mobile` UInt8 `json:$.is_mobile`,
+    `screen_width` Nullable(Int32) `json:$.screen_width`,
+    `screen_height` Nullable(Int32) `json:$.screen_height`,
+    `connection_type` LowCardinality(String) `json:$.connection_type`,
+    
+    # Traffic data
+    `referrer` Nullable(String) `json:$.referrer`,
+    `user_agent` String `json:$.user_agent`,
+    `language` Nullable(String) `json:$.language`,
+    
+    # Bot detection
+    `is_bot` UInt8 `json:$.is_bot`,
+    `bot_score` Nullable(Float32) `json:$.bot_score`,
+    `is_corporate_proxy` UInt8 `json:$.is_corporate_proxy`,
+    `is_verified_bot` UInt8 `json:$.is_verified_bot`,
+    
+    # Network data
+    `ip` String `json:$.ip`,
+    `is_ssl` UInt8 `json:$.is_ssl`,
+    `domain_type` Nullable(String) `json:$.domain_type`,
+    `user_hostname` Nullable(String) `json:$.user_hostname`,
+    
+    # Session metadata
+    `is_returning` UInt8 `json:$.is_returning`,
+    `environment` Nullable(String) `json:$.environment`,
+    `uri` Nullable(String) `json:$.uri`,
+    `full_uri` Nullable(String) `json:$.full_uri`
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, workspace_id, project_id, session_id"

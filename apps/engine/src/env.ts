@@ -1,22 +1,5 @@
-import type { DurableObjectNamespace, KVNamespace } from '@cloudflare/workers-types';
-import type ABTestDurableObject from './durable-objects/ab-test';
+// Re-export the generated Env type from worker-configuration.d.ts
+// This provides a single source of truth while maintaining backward compatibility
+// The Env interface is globally available from worker-configuration.d.ts
 
-export interface Env {
-	ASSETS: KVNamespace;
-	CACHE: KVNamespace;
-	CAMPAIGN: KVNamespace;
-	DOMAIN_CONFIG: KVNamespace;
-	SERVICE_TOKEN: string;
-	CONVEX_HTTP_URL: string;
-	// Cloudflare API credentials for custom hostname operations
-	CLOUDFLARE_API_KEY: string;
-	CLOUDFLARE_EMAIL: string;
-	CLOUDFLARE_ZONE_ID: string;
-	INNGEST_SIGNING_KEY: string;
-	INNGEST_EVENT_KEY: string;
-	INNGEST_BASE_URL: string;
-	CLERK_SECRET_KEY: string;
-	CLERK_PUBLISHABLE_KEY: string;
-	// Durable Objects
-	AB_TEST: DurableObjectNamespace<ABTestDurableObject>;
-}
+export type { env as Env } from 'cloudflare:workers';
