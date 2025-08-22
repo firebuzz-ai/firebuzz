@@ -379,7 +379,7 @@ export function formatSessionData(data: {
 	};
 	session: {
 		isReturning: boolean;
-		campaignEnvironment: string;
+		campaignEnvironment: "production" | "preview";
 		environment: string | null;
 		uri: string | null;
 		fullUri: string | null;

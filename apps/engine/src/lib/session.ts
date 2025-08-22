@@ -6,10 +6,20 @@ import { getCookie, setCookie } from "hono/cookie";
 // Constants
 // ============================================================================
 
-export const COOKIE_PREFIX = "fb_";
-const SESSION_COOKIE = `${COOKIE_PREFIX}session`;
-const ATTRIBUTION_COOKIE = `${COOKIE_PREFIX}attribution`;
-const USER_ID_COOKIE = `${COOKIE_PREFIX}uid`;
+export const COOKIE_PREFIX = "frbzz_";
+
+// Environment-aware cookie helpers
+const getUserIdCookie = (campaignId?: string, isPreview = false) => {
+	if (isPreview && campaignId) {
+		// In preview mode, scope user ID by campaign to prevent cross-customer collisions
+		return `${COOKIE_PREFIX}uid_${campaignId}`;
+	}
+	return `${COOKIE_PREFIX}uid`;
+};
+const getSessionCookie = (campaignId: string) =>
+	`${COOKIE_PREFIX}session_${campaignId}`;
+const getAttributionCookie = (campaignId: string) =>
+	`${COOKIE_PREFIX}attribution_${campaignId}`;
 
 // ============================================================================
 // Types
@@ -74,8 +84,12 @@ export function generateUniqueId(): string {
  * Ensure user has a persistent user ID cookie
  * This cookie persists for 2 years and is used to identify returning users
  */
-export function ensureUserId(c: Context): string {
-	const userCookie = getCookie(c, USER_ID_COOKIE);
+export function ensureUserId(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): string {
+	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
 	const userData = parseCookieValue<UserData>(userCookie);
 
 	if (userData?.userId) {
@@ -91,13 +105,18 @@ export function ensureUserId(c: Context): string {
 	};
 
 	// Set user ID cookie for 400 days
-	setCookie(c, USER_ID_COOKIE, encodeCookieValue(newUserData), {
-		maxAge: 400 * 24 * 60 * 60, // 400 days in seconds
-		httpOnly: false,
-		secure: true,
-		sameSite: "Lax",
-		path: "/",
-	});
+	setCookie(
+		c,
+		getUserIdCookie(campaignId, isPreview),
+		encodeCookieValue(newUserData),
+		{
+			maxAge: 400 * 24 * 60 * 60, // 400 days in seconds
+			httpOnly: false,
+			secure: true,
+			sameSite: "Lax",
+			path: "/",
+		},
+	);
 
 	return userId;
 }
@@ -107,8 +126,12 @@ export function ensureUserId(c: Context): string {
  * A returning user is someone who has visited before (has a user ID cookie)
  * regardless of session state
  */
-export function isReturningUser(c: Context): boolean {
-	const userCookie = getCookie(c, USER_ID_COOKIE);
+export function isReturningUser(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): boolean {
+	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
 	const userData = parseCookieValue<UserData>(userCookie);
 	return userData !== null && userData.userId !== undefined;
 }
@@ -159,9 +182,9 @@ export function checkExistingSession(
 	campaignId: string,
 	config: CampaignConfig,
 ): SessionResult {
-	// Get existing cookies
-	const sessionCookie = getCookie(c, SESSION_COOKIE);
-	const attributionCookie = getCookie(c, ATTRIBUTION_COOKIE);
+	// Get existing cookies (campaign-scoped)
+	const sessionCookie = getCookie(c, getSessionCookie(campaignId));
+	const attributionCookie = getCookie(c, getAttributionCookie(campaignId));
 
 	// Parse existing data
 	const existingSession = parseCookieValue<SessionData>(sessionCookie);
@@ -229,8 +252,8 @@ export function createSession(
 		createdAt: now,
 	};
 
-	// Set session cookie
-	setCookie(c, SESSION_COOKIE, encodeCookieValue(sessionData), {
+	// Set session cookie (campaign-scoped)
+	setCookie(c, getSessionCookie(campaignId), encodeCookieValue(sessionData), {
 		maxAge: sessionDurationInMinutes * 60, // Convert minutes to seconds
 		httpOnly: false, // Accessible on client side as requested
 		secure: true, // Only over HTTPS
@@ -259,7 +282,7 @@ export function createBaseSession(
 		createdAt: now,
 	};
 
-	setCookie(c, SESSION_COOKIE, encodeCookieValue(sessionData), {
+	setCookie(c, getSessionCookie(campaignId), encodeCookieValue(sessionData), {
 		maxAge: config.sessionDurationInMinutes * 60,
 		httpOnly: false,
 		secure: true,
@@ -283,10 +306,10 @@ export function updateSessionWithVariant(
 	const maxAge =
 		sessionDurationInMinutes * 60 - (Date.now() - sessionData.createdAt);
 
-	// Update cookie with variant data
+	// Update cookie with variant data (campaign-scoped)
 	setCookie(
 		c,
-		SESSION_COOKIE,
+		getSessionCookie(sessionData.campaignId),
 		encodeCookieValue({ ...sessionData, abTest: { testId, variantId } }),
 		{
 			maxAge,
@@ -309,8 +332,8 @@ export function createAttribution(
 	medium?: string,
 	campaign?: string,
 ): AttributionData {
-	// Check for existing attribution
-	const existingCookie = getCookie(c, ATTRIBUTION_COOKIE);
+	// Check for existing attribution (campaign-scoped)
+	const existingCookie = getCookie(c, getAttributionCookie(campaignId));
 	const existing = parseCookieValue<AttributionData>(existingCookie);
 
 	// If valid attribution exists for same campaign, return it
@@ -333,14 +356,19 @@ export function createAttribution(
 		campaign,
 	};
 
-	// Set attribution cookie
-	setCookie(c, ATTRIBUTION_COOKIE, encodeCookieValue(attributionData), {
-		maxAge: config.attributionPeriodInDays * 24 * 60 * 60, // Convert days to seconds
-		httpOnly: false,
-		secure: true,
-		sameSite: "Lax",
-		path: "/",
-	});
+	// Set attribution cookie (campaign-scoped)
+	setCookie(
+		c,
+		getAttributionCookie(campaignId),
+		encodeCookieValue(attributionData),
+		{
+			maxAge: config.attributionPeriodInDays * 24 * 60 * 60, // Convert days to seconds
+			httpOnly: false,
+			secure: true,
+			sameSite: "Lax",
+			path: "/",
+		},
+	);
 
 	return attributionData;
 }
@@ -352,10 +380,15 @@ export function createAttribution(
 export function ensureSessionAndAttribution(
 	c: Context,
 	campaignConfig: CampaignConfig,
+	isPreview = false,
 ): EnsureSessionResult {
 	// First ensure user has a persistent user ID
-	const userId = ensureUserId(c);
-	const isReturningUserFlag = isReturningUser(c);
+	const userId = ensureUserId(c, campaignConfig.campaignId, isPreview);
+	const isReturningUserFlag = isReturningUser(
+		c,
+		campaignConfig.campaignId,
+		isPreview,
+	);
 
 	const sessionCheck = checkExistingSession(
 		c,
@@ -457,43 +490,79 @@ export function handleSession(
 // ============================================================================
 
 /**
- * Get current session data from cookies
+ * Get current session data from cookies for a specific campaign
  */
-export function getCurrentSession(c: Context): SessionData | null {
-	const sessionCookie = getCookie(c, SESSION_COOKIE);
+export function getCurrentSession(
+	c: Context,
+	campaignId: string,
+): SessionData | null {
+	const sessionCookie = getCookie(c, getSessionCookie(campaignId));
 	return parseCookieValue<SessionData>(sessionCookie);
 }
 
 /**
- * Get current attribution data from cookies
+ * Get current attribution data from cookies for a specific campaign
  */
-export function getCurrentAttribution(c: Context): AttributionData | null {
-	const attributionCookie = getCookie(c, ATTRIBUTION_COOKIE);
+export function getCurrentAttribution(
+	c: Context,
+	campaignId: string,
+): AttributionData | null {
+	const attributionCookie = getCookie(c, getAttributionCookie(campaignId));
 	return parseCookieValue<AttributionData>(attributionCookie);
 }
 
 /**
  * Get current user ID from cookies
  */
-export function getCurrentUserId(c: Context): string | null {
-	const userCookie = getCookie(c, USER_ID_COOKIE);
+export function getCurrentUserId(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): string | null {
+	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
 	const userData = parseCookieValue<UserData>(userCookie);
 	return userData?.userId || null;
 }
 
 /**
- * Clear all session cookies (but NOT user ID cookie)
+ * Clear session cookies for a specific campaign (but NOT user ID cookie)
  */
-export function clearSession(c: Context): void {
-	setCookie(c, SESSION_COOKIE, "", { maxAge: 0, path: "/" });
-	setCookie(c, ATTRIBUTION_COOKIE, "", { maxAge: 0, path: "/" });
+export function clearSession(c: Context, campaignId: string): void {
+	setCookie(c, getSessionCookie(campaignId), "", { maxAge: 0, path: "/" });
+	setCookie(c, getAttributionCookie(campaignId), "", { maxAge: 0, path: "/" });
 }
 
 /**
  * Clear all cookies including user ID (for testing or GDPR requests)
+ * Note: This only clears the specified campaign's session/attribution cookies
+ * For full cleanup across all campaigns, you'd need to call this for each campaign
  */
-export function clearAllCookies(c: Context): void {
-	setCookie(c, SESSION_COOKIE, "", { maxAge: 0, path: "/" });
-	setCookie(c, ATTRIBUTION_COOKIE, "", { maxAge: 0, path: "/" });
-	setCookie(c, USER_ID_COOKIE, "", { maxAge: 0, path: "/" });
+export function clearAllCookies(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): void {
+	if (campaignId) {
+		setCookie(c, getSessionCookie(campaignId), "", { maxAge: 0, path: "/" });
+		setCookie(c, getAttributionCookie(campaignId), "", {
+			maxAge: 0,
+			path: "/",
+		});
+		setCookie(c, getUserIdCookie(campaignId, isPreview), "", {
+			maxAge: 0,
+			path: "/",
+		});
+	}
+}
+
+/**
+ * Get campaign-scoped cookie names for external reference
+ * Useful for debugging or direct cookie manipulation
+ */
+export function getCampaignCookieNames(campaignId: string, isPreview = false) {
+	return {
+		session: getSessionCookie(campaignId),
+		attribution: getAttributionCookie(campaignId),
+		userId: getUserIdCookie(campaignId, isPreview),
+	};
 }
