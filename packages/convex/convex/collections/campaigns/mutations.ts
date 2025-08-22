@@ -1,4 +1,4 @@
-import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import {
 	type EdgeChange,
 	type NodeChange,
@@ -23,6 +23,7 @@ import {
 	nodeChangeValidator,
 	viewportChangeValidator,
 } from "./nodeSchemas";
+import { eventSchema } from "./schema";
 
 export const create = mutationWithTrigger({
 	args: {
@@ -50,9 +51,11 @@ export const create = mutationWithTrigger({
 
 		const primaryGoal = (
 			args.type === "lead-generation"
-				? CAMPAIGN_GOALS.find((goal) => goal.id === "form-submission")
-				: CAMPAIGN_GOALS.find((goal) => goal.id === "click-through-rate")
-		) as (typeof CAMPAIGN_GOALS)[number];
+				? DEFAULT_CAMPAIGN_EVENTS.find((goal) => goal.id === "form-submission")
+				: DEFAULT_CAMPAIGN_EVENTS.find(
+						(goal) => goal.id === "external-link-click",
+					)
+		) as (typeof DEFAULT_CAMPAIGN_EVENTS)[number];
 
 		// Create campaign with default canvas data in separate columns
 		const campaignId = await ctx.db.insert("campaigns", {
@@ -64,7 +67,7 @@ export const create = mutationWithTrigger({
 			primaryLanguage: args.primaryLanguage,
 			campaignSettings: {
 				primaryGoal,
-				customGoals: [],
+				customEvents: [],
 				sessionDurationInMinutes: 30,
 				attributionPeriodInDays: 30,
 			},
@@ -1006,24 +1009,12 @@ export const connectEdge = mutationWithTrigger({
 	},
 });
 
-const goalSchemaValidator = v.object({
-	id: v.string(),
-	title: v.string(),
-	description: v.optional(v.string()),
-	direction: v.union(v.literal("up"), v.literal("down")),
-	placement: v.union(v.literal("internal"), v.literal("external")),
-	value: v.number(),
-	currency: v.optional(v.string()),
-	type: v.union(v.literal("conversion"), v.literal("engagement")),
-	isCustom: v.boolean(),
-});
-
 export const updateCampaignSettings = mutationWithTrigger({
 	args: {
 		campaignId: v.id("campaigns"),
 		campaignSettings: v.object({
-			primaryGoal: v.optional(goalSchemaValidator),
-			customGoals: v.optional(v.array(goalSchemaValidator)),
+			primaryGoal: v.optional(eventSchema),
+			customEvents: v.optional(v.array(eventSchema)),
 			sessionDurationInMinutes: v.optional(v.number()),
 			attributionPeriodInDays: v.optional(v.number()),
 		}),

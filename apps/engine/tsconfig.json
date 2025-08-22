@@ -13,8 +13,6 @@
 		"module": "es2022",
 		/* Specify how TypeScript looks up a file from a given module specifier. */
 		"moduleResolution": "Bundler",
-		/* Specify type package names to be included without being referenced in a source file. */
-		"types": ["@cloudflare/workers-types/2023-07-01"],
 		/* Enable importing .json files */
 		"resolveJsonModule": true,
 
@@ -38,16 +36,12 @@
 
 		/* Skip type checking all .d.ts files. */
 		"skipLibCheck": true,
-
+		"types": ["@cloudflare/workers-types"],
 		"baseUrl": ".",
 		"paths": {
 			"@/*": ["src/*"]
 		}
 	},
 	"exclude": ["test"],
-	"include": [
-		"worker-configuration.d.ts",
-		"src/**/*.ts",
-		"src/utility-routes/campaign/not-found.ts"
-	]
+	"include": ["src/**/*.ts"]
 }

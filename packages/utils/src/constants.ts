@@ -3316,17 +3316,7 @@ export const AVATARS = [
 	},
 ];
 
-/*  id: v.string(),
-  title: v.string(),
-  description: v.optional(v.string()),
-  direction: v.union(v.literal("up"), v.literal("down")),
-  placement: v.union(v.literal("internal"), v.literal("external")),
-  value: v.number(),
-  currency: v.optional(v.string()),
-  type: v.union(v.literal("conversion"), v.literal("engagement")),
-  isCustom: v.boolean(), */
-
-export const CAMPAIGN_GOALS = [
+export const DEFAULT_CAMPAIGN_EVENTS = [
 	{
 		id: "form-submission",
 		title: "Form Submission",
@@ -3337,6 +3327,19 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "conversion" as const,
 		isCustom: false,
+		icon: "text-cursor-input",
+	},
+	{
+		id: "external-link-click",
+		title: "External Link Click",
+		description: "Clicks on external links",
+		direction: "up" as const,
+		placement: "external" as const,
+		value: 1,
+		currency: "USD",
+		type: "conversion" as const,
+		isCustom: false,
+		icon: "mouse-pointer-click",
 	},
 	{
 		id: "page-view",
@@ -3348,29 +3351,7 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "engagement" as const,
 		isCustom: false,
-	},
-	{
-		id: "click-through-rate",
-		title: "Click Through Rate",
-		description: "Link clicks that lead to a conversion",
-		direction: "up" as const,
-		placement: "internal" as const,
-		value: 1,
-		currency: "USD",
-		type: "conversion" as const,
-		isCustom: false,
-	},
-	{
-		id: "bounce-rate",
-		title: "Bounce Rate",
-		description:
-			"Percentage of visitors who leave the page after viewing only one page",
-		direction: "down" as const,
-		placement: "internal" as const,
-		value: 1,
-		currency: "USD",
-		type: "engagement" as const,
-		isCustom: false,
+		icon: "eye",
 	},
 	{
 		id: "scroll-threshold-25",
@@ -3382,6 +3363,7 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "engagement" as const,
 		isCustom: false,
+		icon: "percent",
 	},
 	{
 		id: "scroll-threshold-50",
@@ -3393,6 +3375,7 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "engagement" as const,
 		isCustom: false,
+		icon: "percent",
 	},
 	{
 		id: "scroll-threshold-75",
@@ -3404,6 +3387,7 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "engagement" as const,
 		isCustom: false,
+		icon: "percent",
 	},
 	{
 		id: "scroll-threshold-100",
@@ -3415,16 +3399,6 @@ export const CAMPAIGN_GOALS = [
 		currency: "USD",
 		type: "engagement" as const,
 		isCustom: false,
-	},
-	{
-		id: "engagement-rate",
-		title: "Engagement Rate",
-		description: "Percentage of visitors who engage with the page",
-		direction: "up" as const,
-		placement: "internal" as const,
-		value: 1,
-		currency: "USD",
-		type: "engagement",
-		isCustom: false,
+		icon: "percent",
 	},
 ] as const;

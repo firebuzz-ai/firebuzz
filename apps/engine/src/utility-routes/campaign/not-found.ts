@@ -1,9 +1,9 @@
-import { Hono } from "hono";
-import type { Env } from "../../env";
+import { Hono } from 'hono';
+import type { Env } from '../../env';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get("*", async (c) => {
+app.get('*', async (c) => {
 	return c.html(`<!doctype html>
 	<html lang="en">
 		<head>

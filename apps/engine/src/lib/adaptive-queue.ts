@@ -1,5 +1,6 @@
-import type { SessionData } from "./tinybird";
-import type { SessionQueueMessage } from "../types/queue";
+import type { Env } from '../env';
+import type { SessionQueueMessage } from '../types/queue';
+import type { SessionData } from './tinybird';
 
 /**
  * Adaptive queue service that handles high-volume traffic
@@ -21,7 +22,7 @@ export class AdaptiveSessionQueueService {
 	 */
 	async enqueue(sessionData: SessionData): Promise<void> {
 		const message: SessionQueueMessage = {
-			type: "session",
+			type: 'session',
 			data: sessionData,
 			timestamp: new Date().toISOString(),
 			retryCount: 0,
@@ -41,7 +42,7 @@ export class AdaptiveSessionQueueService {
 		// Strategy 2: Try other queues if primary fails
 		for (let i = 0; i < this.queues.length; i++) {
 			if (i === queueIndex) continue; // Skip primary queue
-			
+
 			try {
 				await this.queues[i].send(message);
 				return;
@@ -77,14 +78,14 @@ export class AdaptiveSessionQueueService {
 				expirationTtl: 24 * 60 * 60,
 				// Add metadata for recovery job
 				metadata: {
-					type: "fallback_session",
+					type: 'fallback_session',
 					timestamp: message.timestamp,
 				},
 			});
-			
+
 			console.log(`Session stored in KV fallback: ${key}`);
 		} catch (error) {
-			console.error("Critical: Failed to store session data anywhere:", error);
+			console.error('Critical: Failed to store session data anywhere:', error);
 			// This is the only true failure case - log for manual recovery
 		}
 	}
@@ -95,14 +96,12 @@ export class AdaptiveSessionQueueService {
 	async enqueueBatch(sessions: SessionData[]): Promise<void> {
 		// Split large batches to avoid overwhelming single queue
 		const BATCH_SIZE = 50; // Smaller than queue consumer batch size
-		
+
 		for (let i = 0; i < sessions.length; i += BATCH_SIZE) {
 			const batch = sessions.slice(i, i + BATCH_SIZE);
-			
+
 			// Process batches in parallel across queues
-			await Promise.allSettled(
-				batch.map(session => this.enqueue(session))
-			);
+			await Promise.allSettled(batch.map((session) => this.enqueue(session)));
 		}
 	}
 }
@@ -123,11 +122,11 @@ export class FallbackRecoveryService {
 		failed: number;
 	}> {
 		const result = { processed: 0, failed: 0 };
-		
+
 		try {
 			// List all fallback session keys
 			const list = await this.env.CACHE.list({
-				prefix: "fallback_session:",
+				prefix: 'fallback_session:',
 				limit: 100, // Process in batches
 			});
 
@@ -135,25 +134,24 @@ export class FallbackRecoveryService {
 
 			for (const key of list.keys) {
 				try {
-					const data = await this.env.CACHE.get(key.name, "text");
+					const data = await this.env.CACHE.get(key.name, 'text');
 					if (!data) continue;
 
 					const message: SessionQueueMessage = JSON.parse(data);
-					
+
 					// Try to re-enqueue
 					await queueService.enqueue(message.data);
-					
+
 					// Remove from KV if successful
 					await this.env.CACHE.delete(key.name);
 					result.processed++;
-
 				} catch (error) {
 					console.error(`Failed to process fallback session ${key.name}:`, error);
 					result.failed++;
 				}
 			}
 		} catch (error) {
-			console.error("Failed to process fallback sessions:", error);
+			console.error('Failed to process fallback sessions:', error);
 		}
 
 		console.log(`Fallback recovery: ${result.processed} processed, ${result.failed} failed`);

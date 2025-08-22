@@ -1,9 +1,9 @@
-import type { Context } from "hono";
-import { InngestMiddleware } from "inngest";
-import type { Env } from "../env";
+import type { Context } from 'hono';
+import { InngestMiddleware } from 'inngest';
+import type { Env } from '../env';
 
 export const bindings = new InngestMiddleware({
-	name: "Hono bindings",
+	name: 'Hono bindings',
 	init() {
 		return {
 			onFunctionRun({ reqArgs }) {

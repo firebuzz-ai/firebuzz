@@ -81,9 +81,10 @@ export const ABTestSchema = z.object({
 	winner: z.string().optional(),
 });
 
-export const GoalSchema = z.object({
+export const EventSchema = z.object({
 	id: z.string(),
 	title: z.string(),
+	icon: z.string(),
 	description: z.string().optional(),
 	direction: z.enum(["up", "down"]),
 	placement: z.enum(["internal", "external"]),
@@ -120,8 +121,8 @@ export const CampaignConfigSchema = z.object({
 	segments: z.array(SegmentSchema),
 	sessionDurationInMinutes: z.number(),
 	attributionPeriodInDays: z.number(),
-	primaryGoal: GoalSchema,
-	customGoals: z.array(GoalSchema),
+	primaryGoal: EventSchema,
+	customEvents: z.array(EventSchema),
 });
 
 // Inferred types
@@ -130,6 +131,6 @@ export type FilterOperator = z.infer<typeof FilterOperatorSchema>;
 export type SegmentRule = z.infer<typeof SegmentRuleSchema>;
 export type ABTestVariant = z.infer<typeof ABTestVariantSchema>;
 export type ABTest = z.infer<typeof ABTestSchema>;
-export type Goal = z.infer<typeof GoalSchema>;
+export type Event = z.infer<typeof EventSchema>;
 export type Segment = z.infer<typeof SegmentSchema>;
 export type CampaignConfig = z.infer<typeof CampaignConfigSchema>;

@@ -36,8 +36,7 @@ FORWARD_QUERY >
         browser, 
         browser_version, 
         is_mobile, 
-        screen_width, 
-        screen_height, 
+ 
         connection_type, 
         referrer, 
         user_agent, 
@@ -51,6 +50,7 @@ FORWARD_QUERY >
         domain_type, 
         user_hostname, 
         is_returning, 
+        defaultValueOfTypeName('LowCardinality(String)') AS campaign_environment, 
         environment, 
         uri, 
         full_uri
@@ -94,8 +94,6 @@ SCHEMA >
     `browser` LowCardinality(String) `json:$.browser`,
     `browser_version` Nullable(String) `json:$.browser_version`,
     `is_mobile` UInt8 `json:$.is_mobile`,
-    `screen_width` Nullable(Int32) `json:$.screen_width`,
-    `screen_height` Nullable(Int32) `json:$.screen_height`,
     `connection_type` LowCardinality(String) `json:$.connection_type`,
     
     # Traffic data
@@ -117,6 +115,7 @@ SCHEMA >
     
     # Session metadata
     `is_returning` UInt8 `json:$.is_returning`,
+    `campaign_environment` LowCardinality(String) `json:$.campaign_environment`,
     `environment` Nullable(String) `json:$.environment`,
     `uri` Nullable(String) `json:$.uri`,
     `full_uri` Nullable(String) `json:$.full_uri`

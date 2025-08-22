@@ -1,12 +1,12 @@
-import type { Context } from 'hono';
-import { getCookie, setCookie } from 'hono/cookie';
-import type { CampaignConfig } from '../types/campaign';
+import type { Context } from "hono";
+import { getCookie, setCookie } from "hono/cookie";
+import type { CampaignConfig } from "../types/campaign";
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-export const COOKIE_PREFIX = 'fb_';
+export const COOKIE_PREFIX = "fb_";
 const SESSION_COOKIE = `${COOKIE_PREFIX}session`;
 const ATTRIBUTION_COOKIE = `${COOKIE_PREFIX}attribution`;
 const USER_ID_COOKIE = `${COOKIE_PREFIX}uid`;
@@ -95,8 +95,8 @@ export function ensureUserId(c: Context): string {
 		maxAge: 400 * 24 * 60 * 60, // 400 days in seconds
 		httpOnly: false,
 		secure: true,
-		sameSite: 'Lax',
-		path: '/',
+		sameSite: "Lax",
+		path: "/",
 	});
 
 	return userId;
@@ -120,7 +120,10 @@ export function isReturningUser(c: Context): boolean {
  * Where t = timestamp, 7 = version, x = random, y = variant bits
  */
 function generateUUIDv7(timestamp: Date = new Date()): string {
-	const serializedTimestamp = timestamp.valueOf().toString(16).padStart(12, '0');
+	const serializedTimestamp = timestamp
+		.valueOf()
+		.toString(16)
+		.padStart(12, "0");
 	const baseUUID = crypto.randomUUID();
 	return `${serializedTimestamp.slice(0, 8)}-${serializedTimestamp.slice(8, 12)}-7${baseUUID.slice(15)}`;
 }
@@ -151,14 +154,19 @@ export function encodeCookieValue(data: unknown): string {
 /**
  * Check for existing session and determine if user is returning
  */
-export function checkExistingSession(c: Context, campaignId: string, config: CampaignConfig): SessionResult {
+export function checkExistingSession(
+	c: Context,
+	campaignId: string,
+	config: CampaignConfig,
+): SessionResult {
 	// Get existing cookies
 	const sessionCookie = getCookie(c, SESSION_COOKIE);
 	const attributionCookie = getCookie(c, ATTRIBUTION_COOKIE);
 
 	// Parse existing data
 	const existingSession = parseCookieValue<SessionData>(sessionCookie);
-	const existingAttribution = parseCookieValue<AttributionData>(attributionCookie);
+	const existingAttribution =
+		parseCookieValue<AttributionData>(attributionCookie);
 
 	// Check if session is still valid
 	if (existingSession && existingSession.campaignId === campaignId) {
@@ -180,7 +188,8 @@ export function checkExistingSession(c: Context, campaignId: string, config: Cam
 	// Check if attribution is still valid (for conversion tracking)
 	if (existingAttribution && existingAttribution.campaignId === campaignId) {
 		const attributionAge = Date.now() - existingAttribution.createdAt;
-		const attributionPeriodMs = config.attributionPeriodInDays * 24 * 60 * 60 * 1000;
+		const attributionPeriodMs =
+			config.attributionPeriodInDays * 24 * 60 * 60 * 1000;
 
 		if (attributionAge < attributionPeriodMs) {
 			// Valid attribution exists but session expired
@@ -205,7 +214,11 @@ export function checkExistingSession(c: Context, campaignId: string, config: Cam
 /**
  * Create a new session for the user
  */
-export function createSession(c: Context, campaignId: string, sessionDurationInMinutes: number): SessionData {
+export function createSession(
+	c: Context,
+	campaignId: string,
+	sessionDurationInMinutes: number,
+): SessionData {
 	const sessionId = generateUniqueId();
 	const now = Date.now();
 
@@ -221,8 +234,8 @@ export function createSession(c: Context, campaignId: string, sessionDurationInM
 		maxAge: sessionDurationInMinutes * 60, // Convert minutes to seconds
 		httpOnly: false, // Accessible on client side as requested
 		secure: true, // Only over HTTPS
-		sameSite: 'Lax',
-		path: '/',
+		sameSite: "Lax",
+		path: "/",
 	});
 
 	return sessionData;
@@ -232,7 +245,11 @@ export function createSession(c: Context, campaignId: string, sessionDurationInM
  * Create a base session (no AB test or landing page data)
  * Used when we want the session cookie set before evaluation
  */
-export function createBaseSession(c: Context, campaignId: string, config: CampaignConfig): SessionData {
+export function createBaseSession(
+	c: Context,
+	campaignId: string,
+	config: CampaignConfig,
+): SessionData {
 	const sessionId = generateUniqueId();
 	const now = Date.now();
 
@@ -246,8 +263,8 @@ export function createBaseSession(c: Context, campaignId: string, config: Campai
 		maxAge: config.sessionDurationInMinutes * 60,
 		httpOnly: false,
 		secure: true,
-		sameSite: 'Lax',
-		path: '/',
+		sameSite: "Lax",
+		path: "/",
 	});
 
 	return sessionData;
@@ -263,16 +280,22 @@ export function updateSessionWithVariant(
 	testId: string,
 	variantId: string,
 ): void {
-	const maxAge = sessionDurationInMinutes * 60 - (Date.now() - sessionData.createdAt);
+	const maxAge =
+		sessionDurationInMinutes * 60 - (Date.now() - sessionData.createdAt);
 
 	// Update cookie with variant data
-	setCookie(c, SESSION_COOKIE, encodeCookieValue({ ...sessionData, abTest: { testId, variantId } }), {
-		maxAge,
-		httpOnly: false,
-		secure: true,
-		sameSite: 'Lax',
-		path: '/',
-	});
+	setCookie(
+		c,
+		SESSION_COOKIE,
+		encodeCookieValue({ ...sessionData, abTest: { testId, variantId } }),
+		{
+			maxAge,
+			httpOnly: false,
+			secure: true,
+			sameSite: "Lax",
+			path: "/",
+		},
+	);
 }
 
 /**
@@ -315,8 +338,8 @@ export function createAttribution(
 		maxAge: config.attributionPeriodInDays * 24 * 60 * 60, // Convert days to seconds
 		httpOnly: false,
 		secure: true,
-		sameSite: 'Lax',
-		path: '/',
+		sameSite: "Lax",
+		path: "/",
 	});
 
 	return attributionData;
@@ -326,22 +349,36 @@ export function createAttribution(
  * Ensure there is a valid session and attribution; sets cookies when creating new ones.
  * Returns current session, attribution, user ID, and flags for returning user and existing session.
  */
-export function ensureSessionAndAttribution(c: Context, campaignConfig: CampaignConfig): EnsureSessionResult {
+export function ensureSessionAndAttribution(
+	c: Context,
+	campaignConfig: CampaignConfig,
+): EnsureSessionResult {
 	// First ensure user has a persistent user ID
 	const userId = ensureUserId(c);
 	const isReturningUserFlag = isReturningUser(c);
 
-	const sessionCheck = checkExistingSession(c, campaignConfig.campaignId, campaignConfig);
+	const sessionCheck = checkExistingSession(
+		c,
+		campaignConfig.campaignId,
+		campaignConfig,
+	);
 
 	// Parse UTM parameters for attribution creation
 	const url = new URL(c.req.url);
-	const utmSource = url.searchParams.get('utm_source') || undefined;
-	const utmMedium = url.searchParams.get('utm_medium') || undefined;
-	const utmCampaign = url.searchParams.get('utm_campaign') || undefined;
+	const utmSource = url.searchParams.get("utm_source") || undefined;
+	const utmMedium = url.searchParams.get("utm_medium") || undefined;
+	const utmCampaign = url.searchParams.get("utm_campaign") || undefined;
 
 	const attribution =
 		sessionCheck.attributionData ||
-		createAttribution(c, campaignConfig.campaignId, campaignConfig, utmSource, utmMedium, utmCampaign);
+		createAttribution(
+			c,
+			campaignConfig.campaignId,
+			campaignConfig,
+			utmSource,
+			utmMedium,
+			utmCampaign,
+		);
 
 	let session: SessionData;
 	let isExistingSession = false;
@@ -387,13 +424,14 @@ export function handleSession(
 
 	// Get UTM parameters for attribution
 	const url = new URL(c.req.url);
-	const utmSource = url.searchParams.get('utm_source') || undefined;
-	const utmMedium = url.searchParams.get('utm_medium') || undefined;
-	const utmCampaign = url.searchParams.get('utm_campaign') || undefined;
+	const utmSource = url.searchParams.get("utm_source") || undefined;
+	const utmMedium = url.searchParams.get("utm_medium") || undefined;
+	const utmCampaign = url.searchParams.get("utm_campaign") || undefined;
 
 	// Handle attribution (create or reuse)
 	const attribution =
-		sessionCheck.attributionData || createAttribution(c, campaignId, config, utmSource, utmMedium, utmCampaign);
+		sessionCheck.attributionData ||
+		createAttribution(c, campaignId, config, utmSource, utmMedium, utmCampaign);
 
 	// Handle session
 	let session: SessionData;
@@ -447,15 +485,15 @@ export function getCurrentUserId(c: Context): string | null {
  * Clear all session cookies (but NOT user ID cookie)
  */
 export function clearSession(c: Context): void {
-	setCookie(c, SESSION_COOKIE, '', { maxAge: 0, path: '/' });
-	setCookie(c, ATTRIBUTION_COOKIE, '', { maxAge: 0, path: '/' });
+	setCookie(c, SESSION_COOKIE, "", { maxAge: 0, path: "/" });
+	setCookie(c, ATTRIBUTION_COOKIE, "", { maxAge: 0, path: "/" });
 }
 
 /**
  * Clear all cookies including user ID (for testing or GDPR requests)
  */
 export function clearAllCookies(c: Context): void {
-	setCookie(c, SESSION_COOKIE, '', { maxAge: 0, path: '/' });
-	setCookie(c, ATTRIBUTION_COOKIE, '', { maxAge: 0, path: '/' });
-	setCookie(c, USER_ID_COOKIE, '', { maxAge: 0, path: '/' });
+	setCookie(c, SESSION_COOKIE, "", { maxAge: 0, path: "/" });
+	setCookie(c, ATTRIBUTION_COOKIE, "", { maxAge: 0, path: "/" });
+	setCookie(c, USER_ID_COOKIE, "", { maxAge: 0, path: "/" });
 }

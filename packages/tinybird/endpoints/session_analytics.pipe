@@ -14,9 +14,7 @@ SQL >
         countIf(is_returning = 0) AS new_visitors,
         countIf(is_bot = 1) AS bot_sessions,
         countIf(is_mobile = 1) AS mobile_sessions,
-        countIf(is_mobile = 0) AS desktop_sessions,
-        avg(screen_width) AS avg_screen_width,
-        avg(screen_height) AS avg_screen_height
+        countIf(is_mobile = 0) AS desktop_sessions
     FROM session_v1
     WHERE
         workspace_id = {{ String(workspaceId, required=True) }}

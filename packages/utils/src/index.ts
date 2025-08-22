@@ -11,8 +11,8 @@ import {
 import { countriesAndLanguages } from "./constants";
 export {
 	AVATARS,
-	CAMPAIGN_GOALS,
 	countriesAndLanguages,
+	DEFAULT_CAMPAIGN_EVENTS,
 	TIMEZONES,
 } from "./constants";
 

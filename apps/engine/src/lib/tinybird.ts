@@ -1,11 +1,14 @@
-import { Tinybird } from "@chronark/zod-bird";
-import { z } from "zod";
-import { env } from "cloudflare:workers";
+import { Tinybird } from '@chronark/zod-bird';
+import { env } from 'cloudflare:workers';
+import { z } from 'zod';
+import type { Env } from '../env';
 
 // Initialize Tinybird client with global env
+// We use cloudflare:workers env for runtime singleton initialization
+// while maintaining type safety with our custom Env type
 const tinybird = new Tinybird({
-	baseUrl: env.TINYBIRD_BASE_URL,
-	token: env.TINYBIRD_TOKEN,
+	baseUrl: (env as Env).TINYBIRD_BASE_URL,
+	token: (env as Env).TINYBIRD_TOKEN,
 });
 
 // Session Schema based on session_v1.datasource
@@ -46,8 +49,6 @@ const sessionSchema = z.object({
 	browser: z.string(),
 	browser_version: z.string().nullable().optional(),
 	is_mobile: z.number().min(0).max(1),
-	screen_width: z.number().nullable().optional(),
-	screen_height: z.number().nullable().optional(),
 	connection_type: z.string(),
 
 	// Traffic data
@@ -70,6 +71,7 @@ const sessionSchema = z.object({
 
 	// Session metadata
 	is_returning: z.number().min(0).max(1),
+	campaign_environment: z.string(),
 	environment: z.string().nullable().optional(),
 	uri: z.string().nullable().optional(),
 	full_uri: z.string().nullable().optional(),
@@ -77,7 +79,7 @@ const sessionSchema = z.object({
 
 // Build ingest endpoint for sessions
 export const ingestSession = tinybird.buildIngestEndpoint({
-	datasource: "session_v1",
+	datasource: 'session_v1',
 	event: sessionSchema,
 });
 
@@ -95,7 +97,7 @@ function getDateTime64(): string {
  */
 export async function batchIngestSessions(
 	sessions: SessionData[],
-	env: { TINYBIRD_BASE_URL: string; TINYBIRD_TOKEN: string },
+	env: Pick<Env, 'TINYBIRD_BASE_URL' | 'TINYBIRD_TOKEN'>,
 ): Promise<{
 	successful_rows: number;
 	quarantined_rows: number;
@@ -112,39 +114,39 @@ export async function batchIngestSessions(
 	}
 
 	// Format as NDJSON (newline-delimited JSON)
-	const ndjson = sessions.map((session) => JSON.stringify(session)).join("\n");
+	const ndjson = sessions.map((session) => JSON.stringify(session)).join('\n');
 
 	// Calculate payload size for monitoring
 	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
-	
+
 	// Warn if payload is large
 	if (payloadSizeMB > 5) {
 		console.warn(`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${sessions.length} sessions`);
 	}
 
 	const response = await fetch(`${env.TINYBIRD_BASE_URL}/v0/events?name=session_v1&wait=true`, {
-		method: "POST",
+		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
-			"Content-Type": "application/x-ndjson",
+			'Content-Type': 'application/x-ndjson',
 		},
 		body: ndjson,
 	});
 
 	// Extract rate limit headers for monitoring
 	const rateLimitHeaders = {
-		limit: response.headers.get("X-RateLimit-Limit") || undefined,
-		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
-		reset: response.headers.get("X-RateLimit-Reset") || undefined,
-		retryAfter: response.headers.get("Retry-After") || undefined,
+		limit: response.headers.get('X-RateLimit-Limit') || undefined,
+		remaining: response.headers.get('X-RateLimit-Remaining') || undefined,
+		reset: response.headers.get('X-RateLimit-Reset') || undefined,
+		retryAfter: response.headers.get('Retry-After') || undefined,
 	};
 
 	// Handle rate limiting
 	if (response.status === 429) {
-		const retryAfter = rateLimitHeaders.retryAfter || "60";
+		const retryAfter = rateLimitHeaders.retryAfter || '60';
 		throw new Error(
 			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
-			`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
+				`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
 		);
 	}
 
@@ -258,11 +260,11 @@ export async function trackSession(params: {
 		utm_content: requestData.params.utm.utm_content ?? null,
 
 		// Geographic
-		country: requestData.geo.country || "Unknown",
-		city: requestData.geo.city || "Unknown",
-		region: requestData.geo.region || "Unknown",
+		country: requestData.geo.country || 'Unknown',
+		city: requestData.geo.city || 'Unknown',
+		region: requestData.geo.region || 'Unknown',
 		region_code: requestData.geo.regionCode ?? null,
-		continent: requestData.geo.continent || "Unknown",
+		continent: requestData.geo.continent || 'Unknown',
 		latitude: requestData.geo.latitude ?? null,
 		longitude: requestData.geo.longitude ?? null,
 		postal_code: requestData.geo.postalCode ?? null,
@@ -275,8 +277,6 @@ export async function trackSession(params: {
 		browser: requestData.device.browser,
 		browser_version: requestData.device.browserVersion ?? null,
 		is_mobile: requestData.device.isMobile ? 1 : 0,
-		screen_width: requestData.device.screenResolution.width ?? null,
-		screen_height: requestData.device.screenResolution.height ?? null,
 		connection_type: requestData.device.connectionType,
 
 		// Traffic
@@ -292,13 +292,14 @@ export async function trackSession(params: {
 		is_verified_bot: requestData.bot?.verifiedBot ? 1 : 0,
 
 		// Network
-		ip: requestData.firebuzz.realIp || "Unknown",
+		ip: requestData.firebuzz.realIp || 'Unknown',
 		is_ssl: requestData.firebuzz.isSSL ? 1 : 0,
 		domain_type: requestData.firebuzz.domainType ?? null,
 		user_hostname: requestData.firebuzz.userHostname ?? null,
 
 		// Session metadata
 		is_returning: params.isReturningUser ? 1 : 0,
+		campaign_environment: 'production',
 		environment: requestData.firebuzz.environment ?? null,
 		uri: requestData.firebuzz.uri ?? null,
 		full_uri: requestData.firebuzz.fullUri ?? null,
@@ -307,7 +308,7 @@ export async function trackSession(params: {
 	try {
 		await ingestSession(sessionData);
 	} catch (error) {
-		console.error("Failed to track session:", error);
+		console.error('Failed to track session:', error);
 		// Don't throw - we don't want tracking failures to break the request
 	}
 }
@@ -349,8 +350,6 @@ export function formatSessionData(data: {
 		browser: string;
 		browserVersion: string | null;
 		isMobile: boolean;
-		screenWidth: number | null;
-		screenHeight: number | null;
 		connectionType: string;
 	};
 	traffic: {
@@ -374,6 +373,7 @@ export function formatSessionData(data: {
 	};
 	session: {
 		isReturning: boolean;
+		campaignEnvironment: string;
 		environment: string | null;
 		uri: string | null;
 		fullUri: string | null;
@@ -399,11 +399,11 @@ export function formatSessionData(data: {
 		utm_content: data.utm?.content ?? null,
 
 		// Geographic
-		country: data.geo.country || "Unknown",
-		city: data.geo.city || "Unknown",
-		region: data.geo.region || "Unknown",
+		country: data.geo.country || 'Unknown',
+		city: data.geo.city || 'Unknown',
+		region: data.geo.region || 'Unknown',
 		region_code: data.geo.regionCode ?? null,
-		continent: data.geo.continent || "Unknown",
+		continent: data.geo.continent || 'Unknown',
 		latitude: data.geo.latitude ?? null,
 		longitude: data.geo.longitude ?? null,
 		postal_code: data.geo.postalCode ?? null,
@@ -416,8 +416,6 @@ export function formatSessionData(data: {
 		browser: data.device.browser,
 		browser_version: data.device.browserVersion ?? null,
 		is_mobile: data.device.isMobile ? 1 : 0,
-		screen_width: data.device.screenWidth ?? null,
-		screen_height: data.device.screenHeight ?? null,
 		connection_type: data.device.connectionType,
 
 		// Traffic
@@ -433,13 +431,14 @@ export function formatSessionData(data: {
 		is_verified_bot: data.bot?.verifiedBot ? 1 : 0,
 
 		// Network
-		ip: data.network.ip || "Unknown",
+		ip: data.network.ip || 'Unknown',
 		is_ssl: data.network.isSSL ? 1 : 0,
 		domain_type: data.network.domainType ?? null,
 		user_hostname: data.network.userHostname ?? null,
 
 		// Session metadata
 		is_returning: data.session.isReturning ? 1 : 0,
+		campaign_environment: data.session.campaignEnvironment,
 		environment: data.session.environment ?? null,
 		uri: data.session.uri ?? null,
 		full_uri: data.session.fullUri ?? null,

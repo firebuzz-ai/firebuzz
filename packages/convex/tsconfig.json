@@ -1,5 +1,5 @@
 {
-	"extends": "@firebuzz/typescript-config/base.json",
-	"include": ["src"],
-	"exclude": ["node_modules", "convex/generated"]
+  "extends": "@firebuzz/typescript-config/base.json",
+  "include": ["src"],
+  "exclude": ["node_modules", "convex/generated", "../../apps/engine/src/**"]
 }

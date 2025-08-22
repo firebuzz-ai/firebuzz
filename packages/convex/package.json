@@ -51,14 +51,13 @@
     "cloudflare": "^4.4.1",
     "convex": "^1.21.0",
     "convex-helpers": "^0.1.72",
-    "engine": "workspace:*",
     "exa-js": "^1.8.22",
     "hono": "^4.9.2",
     "openai": "^4.96.0",
     "react": "^19.0.0",
     "stripe": "^18.2.0",
     "svix": "^1.37.0",
-    "zod": "^3.24.4"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@firebuzz/typescript-config": "workspace:*",

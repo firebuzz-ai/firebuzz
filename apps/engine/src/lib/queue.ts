@@ -1,3 +1,4 @@
+import type { Env } from "../env";
 import type { SessionQueueMessage } from "../types/queue";
 import type { SessionData } from "./tinybird";
 
@@ -5,7 +6,7 @@ import type { SessionData } from "./tinybird";
  * Queue service for handling session data ingestion with batching and throttling
  */
 export class SessionQueueService {
-	private queue: Queue<SessionQueueMessage>;
+	private queue: Queue;
 
 	constructor(env: Env) {
 		this.queue = env.SESSION_QUEUE;
@@ -30,7 +31,9 @@ export class SessionQueueService {
 		} catch (error) {
 			console.error("Failed to enqueue session:", error);
 			// Fallback: Try direct ingestion if queue fails
-			throw new Error(`Queue enqueue failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+			throw new Error(
+				`Queue enqueue failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
 		}
 	}
 
@@ -50,7 +53,9 @@ export class SessionQueueService {
 			await Promise.all(messages.map((msg) => this.queue.send(msg)));
 		} catch (error) {
 			console.error("Failed to enqueue batch:", error);
-			throw new Error(`Batch enqueue failed: ${error instanceof Error ? error.message : "Unknown error"}`);
+			throw new Error(
+				`Batch enqueue failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
 		}
 	}
 }

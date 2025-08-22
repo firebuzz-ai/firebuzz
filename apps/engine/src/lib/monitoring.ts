@@ -25,9 +25,10 @@ export function logQueueMetrics(metrics: QueueMetrics): void {
 		JSON.stringify({
 			type: "queue_metrics",
 			...metrics,
-			successRate: metrics.batchSize > 0 
-				? (metrics.successfulSessions / metrics.batchSize).toFixed(2) 
-				: "0",
+			successRate:
+				metrics.batchSize > 0
+					? (metrics.successfulSessions / metrics.batchSize).toFixed(2)
+					: "0",
 		}),
 	);
 
@@ -46,11 +47,11 @@ export function logQueueMetrics(metrics: QueueMetrics): void {
 	}
 
 	// Alert if failure rate is high
-	const failureRate = metrics.batchSize > 0 
-		? metrics.failedSessions / metrics.batchSize 
-		: 0;
-	
-	if (failureRate > 0.1) { // More than 10% failure rate
+	const failureRate =
+		metrics.batchSize > 0 ? metrics.failedSessions / metrics.batchSize : 0;
+
+	if (failureRate > 0.1) {
+		// More than 10% failure rate
 		console.error(
 			JSON.stringify({
 				type: "high_failure_rate_alert",
@@ -77,7 +78,8 @@ export function trackRateLimiting(headers: Headers): void {
 	if (rateLimit && remaining) {
 		const remainingNum = Number.parseInt(remaining, 10);
 		const limitNum = Number.parseInt(rateLimit, 10);
-		const usageRate = limitNum > 0 ? ((limitNum - remainingNum) / limitNum).toFixed(2) : "0";
+		const usageRate =
+			limitNum > 0 ? ((limitNum - remainingNum) / limitNum).toFixed(2) : "0";
 
 		console.log(
 			JSON.stringify({
@@ -92,7 +94,8 @@ export function trackRateLimiting(headers: Headers): void {
 		);
 
 		// Alert if approaching rate limit
-		if (remainingNum < limitNum * 0.1) { // Less than 10% remaining
+		if (remainingNum < limitNum * 0.1) {
+			// Less than 10% remaining
 			console.warn(
 				JSON.stringify({
 					type: "rate_limit_warning",
