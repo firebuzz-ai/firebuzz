@@ -408,6 +408,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -550,6 +574,30 @@ export declare const components: {
         "internal",
         { namespace?: any; node?: string },
         null
+      >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
       >;
     };
     public: {
@@ -694,6 +742,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -836,6 +908,30 @@ export declare const components: {
         "internal",
         { namespace?: any; node?: string },
         null
+      >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
       >;
     };
     public: {
@@ -980,6 +1076,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -1122,6 +1242,30 @@ export declare const components: {
         "internal",
         { namespace?: any; node?: string },
         null
+      >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
       >;
     };
     public: {
@@ -1266,6 +1410,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -1408,6 +1576,30 @@ export declare const components: {
         "internal",
         { namespace?: any; node?: string },
         null
+      >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
       >;
     };
     public: {
@@ -1552,6 +1744,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -1694,6 +1910,30 @@ export declare const components: {
         "internal",
         { namespace?: any; node?: string },
         null
+      >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
       >;
     };
     public: {
@@ -1838,6 +2078,30 @@ export declare const components: {
         { namespace?: any; node?: string },
         null
       >;
+      listTreeNodes: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          aggregate?: { count: number; sum: number };
+          items: Array<{ k: any; s: number; v: any }>;
+          subtrees: Array<string>;
+        }>
+      >;
+      listTrees: FunctionReference<
+        "query",
+        "internal",
+        { take?: number },
+        Array<{
+          _creationTime: number;
+          _id: string;
+          maxNodeSize: number;
+          namespace?: any;
+          root: string;
+        }>
+      >;
     };
     public: {
       clear: FunctionReference<
@@ -1964,83 +2228,6 @@ export declare const components: {
         }>
       >;
       migrate: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          batchSize?: number;
-          cursor?: string | null;
-          dryRun: boolean;
-          fnHandle: string;
-          name: string;
-          next?: Array<{ fnHandle: string; name: string }>;
-        },
-        {
-          batchSize?: number;
-          cursor?: string | null;
-          error?: string;
-          isDone: boolean;
-          latestEnd?: number;
-          latestStart: number;
-          name: string;
-          next?: Array<string>;
-          processed: number;
-          state: "inProgress" | "success" | "failed" | "canceled" | "unknown";
-        }
-      >;
-    };
-    public: {
-      cancel: FunctionReference<
-        "mutation",
-        "internal",
-        { name: string },
-        {
-          batchSize?: number;
-          cursor?: string | null;
-          error?: string;
-          isDone: boolean;
-          latestEnd?: number;
-          latestStart: number;
-          name: string;
-          next?: Array<string>;
-          processed: number;
-          state: "inProgress" | "success" | "failed" | "canceled" | "unknown";
-        }
-      >;
-      cancelAll: FunctionReference<
-        "mutation",
-        "internal",
-        { sinceTs?: number },
-        Array<{
-          batchSize?: number;
-          cursor?: string | null;
-          error?: string;
-          isDone: boolean;
-          latestEnd?: number;
-          latestStart: number;
-          name: string;
-          next?: Array<string>;
-          processed: number;
-          state: "inProgress" | "success" | "failed" | "canceled" | "unknown";
-        }>
-      >;
-      getStatus: FunctionReference<
-        "query",
-        "internal",
-        { limit?: number; migrationNames?: Array<string> },
-        Array<{
-          batchSize?: number;
-          cursor?: string | null;
-          error?: string;
-          isDone: boolean;
-          latestEnd?: number;
-          latestStart: number;
-          name: string;
-          next?: Array<string>;
-          processed: number;
-          state: "inProgress" | "success" | "failed" | "canceled" | "unknown";
-        }>
-      >;
-      runMigration: FunctionReference<
         "mutation",
         "internal",
         {
@@ -2262,7 +2449,7 @@ export declare const components: {
           ttl: number | null;
           value: any;
         },
-        null
+        { cacheHit: boolean; deletedExpiredEntry: boolean }
       >;
       remove: FunctionReference<
         "mutation",
@@ -2274,26 +2461,6 @@ export declare const components: {
         "mutation",
         "internal",
         { batchSize?: number; before?: number; name?: string },
-        null
-      >;
-    };
-    public: {
-      fetch: FunctionReference<
-        "action",
-        "internal",
-        { args: any; expiration: number | null; fn: string; name: string },
-        any
-      >;
-      remove: FunctionReference<
-        "mutation",
-        "internal",
-        { args: any; name: string },
-        null
-      >;
-      removeAll: FunctionReference<
-        "mutation",
-        "internal",
-        { before?: number; name?: string },
         null
       >;
     };
@@ -2340,6 +2507,30 @@ export declare const components: {
         },
         string
       >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
       status: FunctionReference<
         "query",
         "internal",
@@ -2347,6 +2538,16 @@ export declare const components: {
         | { previousAttempts: number; state: "pending" }
         | { previousAttempts: number; state: "running" }
         | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
       >;
     };
   };
@@ -2392,6 +2593,30 @@ export declare const components: {
         },
         string
       >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
       status: FunctionReference<
         "query",
         "internal",
@@ -2399,6 +2624,16 @@ export declare const components: {
         | { previousAttempts: number; state: "pending" }
         | { previousAttempts: number; state: "running" }
         | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
       >;
     };
   };
@@ -2444,6 +2679,30 @@ export declare const components: {
         },
         string
       >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
       status: FunctionReference<
         "query",
         "internal",
@@ -2451,6 +2710,16 @@ export declare const components: {
         | { previousAttempts: number; state: "pending" }
         | { previousAttempts: number; state: "running" }
         | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
       >;
     };
   };
@@ -2496,6 +2765,30 @@ export declare const components: {
         },
         string
       >;
+      enqueueBatch: FunctionReference<
+        "mutation",
+        "internal",
+        {
+          config: {
+            logLevel: "DEBUG" | "TRACE" | "INFO" | "REPORT" | "WARN" | "ERROR";
+            maxParallelism: number;
+          };
+          items: Array<{
+            fnArgs: any;
+            fnHandle: string;
+            fnName: string;
+            fnType: "action" | "mutation" | "query";
+            onComplete?: { context?: any; fnHandle: string };
+            retryBehavior?: {
+              base: number;
+              initialBackoffMs: number;
+              maxAttempts: number;
+            };
+            runAt: number;
+          }>;
+        },
+        Array<string>
+      >;
       status: FunctionReference<
         "query",
         "internal",
@@ -2503,6 +2796,16 @@ export declare const components: {
         | { previousAttempts: number; state: "pending" }
         | { previousAttempts: number; state: "running" }
         | { state: "finished" }
+      >;
+      statusBatch: FunctionReference<
+        "query",
+        "internal",
+        { ids: Array<string> },
+        Array<
+          | { previousAttempts: number; state: "pending" }
+          | { previousAttempts: number; state: "running" }
+          | { state: "finished" }
+        >
       >;
     };
   };
@@ -2520,6 +2823,7 @@ export declare const components: {
                 period: number;
                 rate: number;
                 shards?: number;
+                start?: null;
               }
             | {
                 capacity?: number;
@@ -2544,6 +2848,59 @@ export declare const components: {
         { before?: number },
         null
       >;
+      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
+      getValue: FunctionReference<
+        "query",
+        "internal",
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          key?: string;
+          name: string;
+          sampleShards?: number;
+        },
+        {
+          config:
+            | {
+                capacity?: number;
+                kind: "token bucket";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: null;
+              }
+            | {
+                capacity?: number;
+                kind: "fixed window";
+                maxReserved?: number;
+                period: number;
+                rate: number;
+                shards?: number;
+                start?: number;
+              };
+          shard: number;
+          ts: number;
+          value: number;
+        }
+      >;
       rateLimit: FunctionReference<
         "mutation",
         "internal",
@@ -2556,6 +2913,7 @@ export declare const components: {
                 period: number;
                 rate: number;
                 shards?: number;
+                start?: null;
               }
             | {
                 capacity?: number;
@@ -2581,73 +2939,8 @@ export declare const components: {
         null
       >;
     };
-    public: {
-      checkRateLimit: FunctionReference<
-        "query",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      rateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        {
-          config:
-            | {
-                capacity?: number;
-                kind: "token bucket";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-              }
-            | {
-                capacity?: number;
-                kind: "fixed window";
-                maxReserved?: number;
-                period: number;
-                rate: number;
-                shards?: number;
-                start?: number;
-              };
-          count?: number;
-          key?: string;
-          name: string;
-          reserve?: boolean;
-          throws?: boolean;
-        },
-        { ok: true; retryAfter?: number } | { ok: false; retryAfter: number }
-      >;
-      resetRateLimit: FunctionReference<
-        "mutation",
-        "internal",
-        { key?: string; name: string },
-        null
-      >;
+    time: {
+      getServerTime: FunctionReference<"mutation", "internal", {}, number>;
     };
   };
   workflow: {
@@ -2657,27 +2950,6 @@ export declare const components: {
         "internal",
         { workflowId: string },
         {
-          inProgress: Array<{
-            _creationTime: number;
-            _id: string;
-            step: {
-              args: any;
-              argsSize: number;
-              completedAt?: number;
-              functionType: "query" | "mutation" | "action";
-              handle: string;
-              inProgress: boolean;
-              name: string;
-              runResult?:
-                | { kind: "success"; returnValue: any }
-                | { error: string; kind: "failed" }
-                | { kind: "canceled" };
-              startedAt: number;
-              workId?: string;
-            };
-            stepNumber: number;
-            workflowId: string;
-          }>;
           journalEntries: Array<{
             _creationTime: number;
             _id: string;
@@ -2797,7 +3069,6 @@ export declare const components: {
         "internal",
         {
           generationNumber: number;
-          now: number;
           runResult:
             | { kind: "success"; returnValue: any }
             | { error: string; kind: "failed" }
@@ -2812,7 +3083,7 @@ export declare const components: {
         {
           maxParallelism?: number;
           onComplete?: { context?: any; fnHandle: string };
-          validateAsync?: boolean;
+          startAsync?: boolean;
           workflowArgs: any;
           workflowHandle: string;
           workflowName: string;
