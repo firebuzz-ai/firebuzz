@@ -1,8 +1,8 @@
-import type { Context } from 'hono';
-import { InngestMiddleware } from 'inngest';
+import type { Context } from "hono";
+import { InngestMiddleware } from "inngest";
 
 export const bindings = new InngestMiddleware({
-	name: 'Hono bindings',
+	name: "Hono bindings",
 	init() {
 		return {
 			onFunctionRun({ reqArgs }) {

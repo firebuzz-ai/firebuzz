@@ -1,5 +1,5 @@
-import { DurableObject } from 'cloudflare:workers';
-import type { CleanedABTest as ABTest } from '@firebuzz/shared-types/campaign';
+import { DurableObject } from "cloudflare:workers";
+import type { CleanedABTest as ABTest } from "@firebuzz/shared-types/campaign";
 
 // ============================================================================
 // Types
@@ -9,7 +9,7 @@ export interface Test {
 	test_id: string;
 	campaign_id: string;
 	config_json: string;
-	status: 'running' | 'paused' | 'completed' | 'draft';
+	status: "running" | "paused" | "completed" | "draft";
 	end_date: string;
 	duration_days: number;
 	target_sample_size: number;
@@ -34,7 +34,7 @@ export interface TestStats {
 	variantStats: VariantStats[];
 	startedAt: number;
 	completedAt?: number;
-	completionReason?: 'duration' | 'sample_size' | 'manual';
+	completionReason?: "duration" | "sample_size" | "manual";
 	winner?: string;
 }
 
@@ -94,9 +94,9 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	 * Check if the AB test is initialized
 	 */
 	async isInitialized(): Promise<boolean> {
-		const existing = this.sql.exec('SELECT COUNT(*) as count FROM test_config').toArray()[0] as
-			| { count: number }
-			| undefined;
+		const existing = this.sql
+			.exec("SELECT COUNT(*) as count FROM test_config")
+			.toArray()[0] as { count: number } | undefined;
 
 		return Boolean(existing && existing.count > 0);
 	}
@@ -104,11 +104,16 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	/**
 	 * Initialize the AB test with configuration
 	 */
-	async initialize(config: ABTest, campaignId: string): Promise<{ success: boolean; error?: string }> {
+	async initialize(
+		config: ABTest,
+		campaignId: string,
+	): Promise<{ success: boolean; error?: string }> {
 		const now = Date.now();
 		const endDateISO = config.endDate
 			? config.endDate
-			: new Date(now + config.completionCriteria.testDuration * 60 * 1000).toISOString();
+			: new Date(
+					now + config.completionCriteria.testDuration * 60 * 1000,
+				).toISOString();
 
 		// Insert configuration and variants inside a storage transaction
 		await this.ctx.storage.transaction(async () => {
@@ -130,7 +135,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 			// Insert variant configurations
 			for (const variant of config.variants) {
 				this.sql.exec(
-					'INSERT INTO variants (variant_id, traffic_allocation, visitors) VALUES (?, ?, 0)',
+					"INSERT INTO variants (variant_id, traffic_allocation, visitors) VALUES (?, ?, 0)",
 					variant.id,
 					variant.trafficAllocation,
 				);
@@ -148,12 +153,12 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	 * Get the current configuration of the AB test
 	 */
 	async getJsonConfig(): Promise<ABTest> {
-		const config = this.sql.exec('SELECT config_json FROM test_config WHERE id = 1').toArray()[0] as
-			| { config_json: string }
-			| undefined;
+		const config = this.sql
+			.exec("SELECT config_json FROM test_config WHERE id = 1")
+			.toArray()[0] as { config_json: string } | undefined;
 
 		if (!config) {
-			throw new Error('Test not initialized');
+			throw new Error("Test not initialized");
 		}
 
 		return JSON.parse(config.config_json) as ABTest;
@@ -162,34 +167,41 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	/**
 	 * Update the AB test configuration (variants, traffic allocation, etc.)
 	 */
-	async sync(latestConfig: ABTest): Promise<{ success: boolean; error?: string }> {
+	async sync(
+		latestConfig: ABTest,
+	): Promise<{ success: boolean; error?: string }> {
 		// Check if test exists
 		const testData = this.getTestData();
 
 		if (!testData) {
-			return { success: false, error: 'Test not found' };
+			return { success: false, error: "Test not found" };
 		}
 
 		const currentStatus = testData.status;
 		const latestStatus = latestConfig.status;
 
 		// Pause Test
-		if (currentStatus === 'running' && latestStatus === 'paused') {
+		if (currentStatus === "running" && latestStatus === "paused") {
 			await this.pauseTest();
 		}
 
 		// Resume Test
-		if (currentStatus === 'paused' && latestStatus === 'running' && latestConfig.endDate) {
+		if (
+			currentStatus === "paused" &&
+			latestStatus === "running" &&
+			latestConfig.endDate
+		) {
 			await this.resumeTest(latestConfig.endDate);
 		}
 
 		// Complete Test
-		if (latestStatus === 'completed') {
-			await this.completeTest('manual');
+		if (latestStatus === "completed") {
+			await this.completeTest("manual");
 		}
 
 		// Check if there is a change (compare traffic allocation, number of variants, etc.)
-		const hasConfigurationChanged = await this.hasConfigurationChanged(latestConfig);
+		const hasConfigurationChanged =
+			await this.hasConfigurationChanged(latestConfig);
 		if (hasConfigurationChanged) {
 			await this.recreateVariants(latestConfig);
 		}
@@ -206,29 +218,31 @@ export class ABTestDurableObject extends DurableObject<Env> {
 		variantId: string;
 		trafficAllocation: number;
 	}> {
-		let selectedVariantId = '';
+		let selectedVariantId = "";
 		let selectedTraffic = 0;
 		let shouldComplete = false;
 
 		await this.ctx.storage.transaction(async () => {
 			// Ensure test is running
-			const statusRow = this.sql.exec('SELECT status FROM test_config WHERE id = 1').toArray()[0] as
-				| { status: string }
-				| undefined;
-			if (!statusRow || statusRow.status !== 'running') {
-				throw new Error('Test is not running');
+			const statusRow = this.sql
+				.exec("SELECT status FROM test_config WHERE id = 1")
+				.toArray()[0] as { status: string } | undefined;
+			if (!statusRow || statusRow.status !== "running") {
+				throw new Error("Test is not running");
 			}
 
 			// Get variants with current visitor counts
 			const variants = this.sql
-				.exec('SELECT variant_id, traffic_allocation, visitors FROM variants ORDER BY variant_id')
+				.exec(
+					"SELECT variant_id, traffic_allocation, visitors FROM variants ORDER BY variant_id",
+				)
 				.toArray() as Array<{
 				variant_id: string;
 				traffic_allocation: number;
 				visitors: number;
 			}>;
 			if (variants.length === 0) {
-				throw new Error('No variants configured');
+				throw new Error("No variants configured");
 			}
 
 			// Get total visitors to calculate current allocation percentages
@@ -240,7 +254,8 @@ export class ABTestDurableObject extends DurableObject<Env> {
 
 			for (const variant of variants) {
 				// Calculate current allocation percentage vs intended percentage
-				const currentPercentage = totalVisitors > 0 ? (variant.visitors / totalVisitors) * 100 : 0;
+				const currentPercentage =
+					totalVisitors > 0 ? (variant.visitors / totalVisitors) * 100 : 0;
 				const intendedPercentage = variant.traffic_allocation;
 
 				// Calculate deficit (positive means underrepresented)
@@ -254,7 +269,8 @@ export class ABTestDurableObject extends DurableObject<Env> {
 					let cumulative = 0;
 
 					for (const v of variants) {
-						const vCurrentPercentage = totalVisitors > 0 ? (v.visitors / totalVisitors) * 100 : 0;
+						const vCurrentPercentage =
+							totalVisitors > 0 ? (v.visitors / totalVisitors) * 100 : 0;
 						const vDeficit = v.traffic_allocation - vCurrentPercentage;
 						const vAdjustedWeight = v.traffic_allocation + vDeficit * 0.5;
 						cumulative += vAdjustedWeight;
@@ -278,15 +294,24 @@ export class ABTestDurableObject extends DurableObject<Env> {
 
 			// Read current totals for sample-size completion check
 			const totals = this.sql
-				.exec('SELECT target_sample_size, total_visitors FROM test_config WHERE id = 1')
-				.toArray()[0] as { target_sample_size: number | null; total_visitors: number } | undefined;
+				.exec(
+					"SELECT target_sample_size, total_visitors FROM test_config WHERE id = 1",
+				)
+				.toArray()[0] as
+				| { target_sample_size: number | null; total_visitors: number }
+				| undefined;
 			if (!totals) {
-				throw new Error('Test not initialized');
+				throw new Error("Test not initialized");
 			}
 
 			// Increment counters
-			this.sql.exec('UPDATE variants SET visitors = visitors + 1 WHERE variant_id = ?', selectedVariantId);
-			this.sql.exec('UPDATE test_config SET total_visitors = total_visitors + 1 WHERE id = 1');
+			this.sql.exec(
+				"UPDATE variants SET visitors = visitors + 1 WHERE variant_id = ?",
+				selectedVariantId,
+			);
+			this.sql.exec(
+				"UPDATE test_config SET total_visitors = total_visitors + 1 WHERE id = 1",
+			);
 
 			const newTotal = totals.total_visitors + 1;
 			if (totals.target_sample_size && newTotal >= totals.target_sample_size) {
@@ -295,7 +320,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 		});
 
 		if (shouldComplete) {
-			await this.completeTestInternal('sample_size');
+			await this.completeTestInternal("sample_size");
 		}
 
 		return { variantId: selectedVariantId, trafficAllocation: selectedTraffic };
@@ -304,7 +329,9 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	/**
 	 * Complete the AB test
 	 */
-	async completeTest(reason: 'duration' | 'sample_size' | 'manual' = 'manual'): Promise<void> {
+	async completeTest(
+		reason: "duration" | "sample_size" | "manual" = "manual",
+	): Promise<void> {
 		await this.completeTestInternal(reason);
 	}
 
@@ -312,25 +339,31 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	 * Get current test data
 	 */
 	private getTestData(): Test | null {
-		const data = this.sql.exec('SELECT * FROM test_config WHERE id = 1').toArray()[0] as unknown as Test;
+		const data = this.sql
+			.exec("SELECT * FROM test_config WHERE id = 1")
+			.toArray()[0] as unknown as Test;
 
 		return data || null;
 	}
 	private getVariantsData(): Variant[] | null {
-		const data = this.sql.exec('SELECT * FROM variants').toArray() as unknown as Variant[];
+		const data = this.sql
+			.exec("SELECT * FROM variants")
+			.toArray() as unknown as Variant[];
 		return data || null;
 	}
 
 	/**
 	 * Internal method to complete test
 	 */
-	private async completeTestInternal(reason: 'duration' | 'sample_size' | 'manual'): Promise<void> {
+	private async completeTestInternal(
+		reason: "duration" | "sample_size" | "manual",
+	): Promise<void> {
 		// Check if already completed
-		const status = this.sql.exec('SELECT status FROM test_config WHERE id = 1').toArray()[0] as
-			| { status: string }
-			| undefined;
+		const status = this.sql
+			.exec("SELECT status FROM test_config WHERE id = 1")
+			.toArray()[0] as { status: string } | undefined;
 
-		if (!status || status.status === 'completed') {
+		if (!status || status.status === "completed") {
 			return; // Already completed or not initialized
 		}
 
@@ -341,7 +374,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 			WHERE id = 1`,
 		);
 
-		if (reason === 'duration' || reason === 'sample_size') {
+		if (reason === "duration" || reason === "sample_size") {
 			// TODO: Notify Convex backend about test completion
 			// This would typically be done via an API call or webhook
 		}
@@ -357,10 +390,12 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	 * Pause the AB test
 	 */
 	async pauseTest(): Promise<void> {
-		const result = this.sql.exec("UPDATE test_config SET status = 'paused' WHERE id = 1 AND status = 'running'");
+		const result = this.sql.exec(
+			"UPDATE test_config SET status = 'paused' WHERE id = 1 AND status = 'running'",
+		);
 
 		if (result.rowsWritten === 0) {
-			throw new Error('Test is not running or not initialized');
+			throw new Error("Test is not running or not initialized");
 		}
 
 		// Cancel the alarm
@@ -377,7 +412,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 		);
 
 		if (result.rowsWritten === 0) {
-			throw new Error('Test is not paused or not initialized');
+			throw new Error("Test is not paused or not initialized");
 		}
 
 		// Set new alarm
@@ -411,7 +446,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 			return JSON.stringify(currentVariants) !== JSON.stringify(newVariants);
 		} catch (error) {
 			// If we can't get current config, assume it has changed
-			console.error('Error getting current config', error);
+			console.error("Error getting current config", error);
 			return true;
 		}
 	}
@@ -422,19 +457,22 @@ export class ABTestDurableObject extends DurableObject<Env> {
 	private async recreateVariants(newConfig: ABTest): Promise<void> {
 		await this.ctx.storage.transaction(async () => {
 			// Remove all existing variants
-			this.sql.exec('DELETE FROM variants');
+			this.sql.exec("DELETE FROM variants");
 
 			// Insert new variant configurations
 			for (const variant of newConfig.variants) {
 				this.sql.exec(
-					'INSERT INTO variants (variant_id, traffic_allocation, visitors) VALUES (?, ?, 0)',
+					"INSERT INTO variants (variant_id, traffic_allocation, visitors) VALUES (?, ?, 0)",
 					variant.id,
 					variant.trafficAllocation,
 				);
 			}
 
 			// Update the stored configuration JSON
-			this.sql.exec('UPDATE test_config SET config_json = ? WHERE id = 1', JSON.stringify(newConfig));
+			this.sql.exec(
+				"UPDATE test_config SET config_json = ? WHERE id = 1",
+				JSON.stringify(newConfig),
+			);
 		});
 	}
 
@@ -475,7 +513,8 @@ export class ABTestDurableObject extends DurableObject<Env> {
 			const totalVisitors = variants.reduce((sum, v) => sum + v.visitors, 0);
 
 			const variantAnalysis = variants.map((variant) => {
-				const actualPercentage = totalVisitors > 0 ? (variant.visitors / totalVisitors) * 100 : 0;
+				const actualPercentage =
+					totalVisitors > 0 ? (variant.visitors / totalVisitors) * 100 : 0;
 				const intendedPercentage = variant.traffic_allocation;
 				const deficit = intendedPercentage - actualPercentage;
 
@@ -507,7 +546,7 @@ export class ABTestDurableObject extends DurableObject<Env> {
 
 	async alarm(): Promise<void> {
 		// Complete test due to duration expiry
-		await this.completeTestInternal('duration');
+		await this.completeTestInternal("duration");
 	}
 }
 

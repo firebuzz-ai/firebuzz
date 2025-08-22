@@ -1,3 +1,3 @@
-import type { AppType } from '.';
+import type { AppType } from ".";
 
 export type App = AppType;

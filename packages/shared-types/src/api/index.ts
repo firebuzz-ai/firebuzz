@@ -4,10 +4,10 @@ export * from "./kv";
 export * from "./do/ab-test";
 
 // Export client types for engine API
-export type { 
-  App, 
-  KVClientRoutes, 
-  ABTestClientRoutes 
+export type {
+	App,
+	KVClientRoutes,
+	ABTestClientRoutes,
 } from "./client-types";
 
 // Export types

@@ -1,8 +1,8 @@
-import { Hono } from 'hono';
+import { Hono } from "hono";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.get('*', async (c) => {
+app.get("*", async (c) => {
 	return c.html(`<!doctype html>
 	<html lang="en">
 		<head>

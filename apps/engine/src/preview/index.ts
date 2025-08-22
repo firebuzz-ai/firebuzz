@@ -1,21 +1,21 @@
-import { Hono } from 'hono';
-import { previewCampaignApp } from './campaign';
-import { previewLandingApp } from './landing';
+import { Hono } from "hono";
+import { previewCampaignApp } from "./campaign";
+import { previewLandingApp } from "./landing";
 
 const app = new Hono<{ Bindings: Env }>();
 
 // Preview [Landing Page]
-app.route('/landing', previewLandingApp);
+app.route("/landing", previewLandingApp);
 
 // Preview [Campaign]
-app.route('/campaign', previewCampaignApp);
+app.route("/campaign", previewCampaignApp);
 
 // Root route - handles both subdomain root and redirect
-app.get('/', async (c) => {
-	const hostname = c.req.header('host') || '';
+app.get("/", async (c) => {
+	const hostname = c.req.header("host") || "";
 
 	// If accessed from preview subdomain, show preview index
-	if (hostname === 'preview.getfirebuzz.com') {
+	if (hostname === "preview.getfirebuzz.com") {
 		return c.html(`
 			<html>
 				<head>
@@ -35,7 +35,7 @@ app.get('/', async (c) => {
 	}
 
 	// Otherwise redirect to main site
-	return c.redirect('https://getfirebuzz.com');
+	return c.redirect("https://getfirebuzz.com");
 });
 
 export { app as previewApp };

@@ -1,5 +1,5 @@
-import type { SessionQueueMessage } from '../types/queue';
-import type { SessionData } from './tinybird';
+import type { SessionQueueMessage } from "../types/queue";
+import type { SessionData } from "./tinybird";
 
 /**
  * Adaptive queue service that handles high-volume traffic
@@ -21,7 +21,7 @@ export class AdaptiveSessionQueueService {
 	 */
 	async enqueue(sessionData: SessionData): Promise<void> {
 		const message: SessionQueueMessage = {
-			type: 'session',
+			type: "session",
 			data: sessionData,
 			timestamp: new Date().toISOString(),
 			retryCount: 0,
@@ -59,7 +59,7 @@ export class AdaptiveSessionQueueService {
 	 */
 	private selectQueue(sessionId: string): number {
 		// Simple hash to distribute sessions across queues
-		const hash = sessionId.split('').reduce((acc, char) => {
+		const hash = sessionId.split("").reduce((acc, char) => {
 			return ((acc << 5) - acc + char.charCodeAt(0)) & 0x7fffffff;
 		}, 0);
 		return hash % this.queues.length;
@@ -77,14 +77,14 @@ export class AdaptiveSessionQueueService {
 				expirationTtl: 24 * 60 * 60,
 				// Add metadata for recovery job
 				metadata: {
-					type: 'fallback_session',
+					type: "fallback_session",
 					timestamp: message.timestamp,
 				},
 			});
 
 			console.log(`Session stored in KV fallback: ${key}`);
 		} catch (error) {
-			console.error('Critical: Failed to store session data anywhere:', error);
+			console.error("Critical: Failed to store session data anywhere:", error);
 			// This is the only true failure case - log for manual recovery
 		}
 	}
@@ -125,7 +125,7 @@ export class FallbackRecoveryService {
 		try {
 			// List all fallback session keys
 			const list = await this.env.CACHE.list({
-				prefix: 'fallback_session:',
+				prefix: "fallback_session:",
 				limit: 100, // Process in batches
 			});
 
@@ -133,7 +133,7 @@ export class FallbackRecoveryService {
 
 			for (const key of list.keys) {
 				try {
-					const data = await this.env.CACHE.get(key.name, 'text');
+					const data = await this.env.CACHE.get(key.name, "text");
 					if (!data) continue;
 
 					const message: SessionQueueMessage = JSON.parse(data);
@@ -145,15 +145,20 @@ export class FallbackRecoveryService {
 					await this.env.CACHE.delete(key.name);
 					result.processed++;
 				} catch (error) {
-					console.error(`Failed to process fallback session ${key.name}:`, error);
+					console.error(
+						`Failed to process fallback session ${key.name}:`,
+						error,
+					);
 					result.failed++;
 				}
 			}
 		} catch (error) {
-			console.error('Failed to process fallback sessions:', error);
+			console.error("Failed to process fallback sessions:", error);
 		}
 
-		console.log(`Fallback recovery: ${result.processed} processed, ${result.failed} failed`);
+		console.log(
+			`Fallback recovery: ${result.processed} processed, ${result.failed} failed`,
+		);
 		return result;
 	}
 }

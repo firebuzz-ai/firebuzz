@@ -1,18 +1,18 @@
-import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
-import { Hono } from 'hono';
-import { cors } from 'hono/cors';
-import { apiRoutes } from './api';
-import { clientApiRoutes } from './client-api';
-import { domainRouting } from './middleware';
-import { utilityRoutes } from './utility-routes';
-import { inngestApp } from './workflows';
+import { clerkMiddleware, getAuth } from "@hono/clerk-auth";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { apiRoutes } from "./api";
+import { clientApiRoutes } from "./client-api";
+import { domainRouting } from "./middleware";
+import { utilityRoutes } from "./utility-routes";
+import { inngestApp } from "./workflows";
 
 const app = new Hono<{ Bindings: Env }>().use(domainRouting);
 
 const clerkTestRoute = new Hono<{ Bindings: Env }>()
 	.use(
 		cors({
-			origin: ['http://localhost:3000', 'https://localhost:3000'],
+			origin: ["http://localhost:3000", "https://localhost:3000"],
 			credentials: true,
 		}),
 	)
@@ -23,7 +23,7 @@ const clerkTestRoute = new Hono<{ Bindings: Env }>()
 		})(c, next);
 	});
 
-clerkTestRoute.get('/', async (c) => {
+clerkTestRoute.get("/", async (c) => {
 	const session = getAuth(c);
 	return c.json({
 		session,
@@ -31,11 +31,11 @@ clerkTestRoute.get('/', async (c) => {
 });
 
 // Test
-app.route('/testclerk', clerkTestRoute);
+app.route("/testclerk", clerkTestRoute);
 
-app.get('/test/:campaignSlug/:testId', async (c) => {
-	const campaignSlug = c.req.param('campaignSlug');
-	const testId = c.req.param('testId');
+app.get("/test/:campaignSlug/:testId", async (c) => {
+	const campaignSlug = c.req.param("campaignSlug");
+	const testId = c.req.param("testId");
 	const abTestId = c.env.AB_TEST.idFromName(`${campaignSlug}-${testId}`);
 
 	const test = c.env.AB_TEST.get(abTestId);
@@ -48,28 +48,28 @@ app.get('/test/:campaignSlug/:testId', async (c) => {
 });
 
 // Inngest Routes
-app.route('/api/workflows', inngestApp);
+app.route("/api/workflows", inngestApp);
 
 // Authenticated API Routes
-app.route('/api/v1/', apiRoutes);
+app.route("/api/v1/", apiRoutes);
 
 // Public Client API Routes
-app.route('/client-api/v1/', clientApiRoutes);
+app.route("/client-api/v1/", clientApiRoutes);
 
 // Utility Routes
-app.route('/utility', utilityRoutes);
+app.route("/utility", utilityRoutes);
 
-app.get('/', async (c) => {
+app.get("/", async (c) => {
 	return c.json({
-		message: 'Hello Firebuzz!',
+		message: "Hello Firebuzz!",
 	});
 });
 
 // Import and re-export queue handler directly
-import { handleSessionQueue } from './queue/session-consumer';
+import { handleSessionQueue } from "./queue/session-consumer";
 
 // Export the Durable Object class
-export { ABTestDurableObject } from './durable-objects/ab-test';
+export { ABTestDurableObject } from "./durable-objects/ab-test";
 
 // Export both fetch and queue handlers in the default export
 export default {

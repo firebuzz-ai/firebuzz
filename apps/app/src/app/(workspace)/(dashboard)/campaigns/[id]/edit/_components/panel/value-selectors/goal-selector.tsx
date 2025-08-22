@@ -352,8 +352,7 @@ export const GoalSelector = ({
 										<Tooltip key={goal.id}>
 											<TooltipTrigger asChild>
 												<Badge
-													variant="outline"
-													className="flex items-center gap-1.5 px-2 py-1 cursor-pointer hover:bg-background transition-colors"
+													className="flex items-center gap-1.5 px-2 py-1 cursor-pointer"
 													onClick={() => onNavigateToCustomEvents?.(goal.id)}
 												>
 													{getGoalIcon(goal)}
@@ -372,7 +371,7 @@ export const GoalSelector = ({
 										<Tooltip key={goal.id}>
 											<TooltipTrigger asChild>
 												<Badge
-													variant="secondary"
+													variant="outline"
 													className="flex items-center gap-1.5 px-2 py-1"
 												>
 													{getGoalIcon(goal)}
@@ -386,7 +385,7 @@ export const GoalSelector = ({
 									))}
 								</div>
 							) : (
-								<div className="text-center py-2">
+								<div className="py-2 text-center">
 									<p className="text-sm text-muted-foreground">
 										No tracked events yet
 									</p>

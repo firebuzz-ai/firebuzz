@@ -26,10 +26,10 @@ const getProductionKey = (landingPageId: string, assetType?: string) => {
 // Helper to fetch asset from KV store
 const fetchAsset = async (key: string) => {
 	return engineAPIClient.kv.assets.$get({
-		query: { 
+		query: {
 			key,
 			type: "text",
-			withMetadata: false
+			withMetadata: false,
 		},
 	});
 };

@@ -1,6 +1,6 @@
-import { Tinybird } from '@chronark/zod-bird';
-import { env } from 'cloudflare:workers';
-import { z } from 'zod';
+import { env } from "cloudflare:workers";
+import { Tinybird } from "@chronark/zod-bird";
+import { z } from "zod";
 
 // Initialize Tinybird client with global env
 // We use cloudflare:workers env for runtime singleton initialization
@@ -78,7 +78,7 @@ const sessionSchema = z.object({
 
 // Build ingest endpoint for sessions
 export const ingestSession = tinybird.buildIngestEndpoint({
-	datasource: 'session_v1',
+	datasource: "session_v1",
 	event: sessionSchema,
 });
 
@@ -96,7 +96,7 @@ function getDateTime64(): string {
  */
 export async function batchIngestSessions(
 	sessions: SessionData[],
-	env: Pick<Env, 'TINYBIRD_BASE_URL' | 'TINYBIRD_TOKEN'>,
+	env: Pick<Env, "TINYBIRD_BASE_URL" | "TINYBIRD_TOKEN">,
 ): Promise<{
 	successful_rows: number;
 	quarantined_rows: number;
@@ -113,36 +113,41 @@ export async function batchIngestSessions(
 	}
 
 	// Format as NDJSON (newline-delimited JSON)
-	const ndjson = sessions.map((session) => JSON.stringify(session)).join('\n');
+	const ndjson = sessions.map((session) => JSON.stringify(session)).join("\n");
 
 	// Calculate payload size for monitoring
 	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
 
 	// Warn if payload is large
 	if (payloadSizeMB > 5) {
-		console.warn(`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${sessions.length} sessions`);
+		console.warn(
+			`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${sessions.length} sessions`,
+		);
 	}
 
-	const response = await fetch(`${env.TINYBIRD_BASE_URL}/v0/events?name=session_v1&wait=true`, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
-			'Content-Type': 'application/x-ndjson',
+	const response = await fetch(
+		`${env.TINYBIRD_BASE_URL}/v0/events?name=session_v1&wait=true`,
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
+				"Content-Type": "application/x-ndjson",
+			},
+			body: ndjson,
 		},
-		body: ndjson,
-	});
+	);
 
 	// Extract rate limit headers for monitoring
 	const rateLimitHeaders = {
-		limit: response.headers.get('X-RateLimit-Limit') || undefined,
-		remaining: response.headers.get('X-RateLimit-Remaining') || undefined,
-		reset: response.headers.get('X-RateLimit-Reset') || undefined,
-		retryAfter: response.headers.get('Retry-After') || undefined,
+		limit: response.headers.get("X-RateLimit-Limit") || undefined,
+		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
+		reset: response.headers.get("X-RateLimit-Reset") || undefined,
+		retryAfter: response.headers.get("Retry-After") || undefined,
 	};
 
 	// Handle rate limiting
 	if (response.status === 429) {
-		const retryAfter = rateLimitHeaders.retryAfter || '60';
+		const retryAfter = rateLimitHeaders.retryAfter || "60";
 		throw new Error(
 			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
 				`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
@@ -151,7 +156,9 @@ export async function batchIngestSessions(
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(`Tinybird batch ingestion failed: ${response.status} - ${errorText}`);
+		throw new Error(
+			`Tinybird batch ingestion failed: ${response.status} - ${errorText}`,
+		);
 	}
 
 	const result = await response.json<{
@@ -259,11 +266,11 @@ export async function trackSession(params: {
 		utm_content: requestData.params.utm.utm_content ?? null,
 
 		// Geographic
-		country: requestData.geo.country || 'Unknown',
-		city: requestData.geo.city || 'Unknown',
-		region: requestData.geo.region || 'Unknown',
+		country: requestData.geo.country || "Unknown",
+		city: requestData.geo.city || "Unknown",
+		region: requestData.geo.region || "Unknown",
 		region_code: requestData.geo.regionCode ?? null,
-		continent: requestData.geo.continent || 'Unknown',
+		continent: requestData.geo.continent || "Unknown",
 		latitude: requestData.geo.latitude ?? null,
 		longitude: requestData.geo.longitude ?? null,
 		postal_code: requestData.geo.postalCode ?? null,
@@ -291,14 +298,14 @@ export async function trackSession(params: {
 		is_verified_bot: requestData.bot?.verifiedBot ? 1 : 0,
 
 		// Network
-		ip: requestData.firebuzz.realIp || 'Unknown',
+		ip: requestData.firebuzz.realIp || "Unknown",
 		is_ssl: requestData.firebuzz.isSSL ? 1 : 0,
 		domain_type: requestData.firebuzz.domainType ?? null,
 		user_hostname: requestData.firebuzz.userHostname ?? null,
 
 		// Session metadata
 		is_returning: params.isReturningUser ? 1 : 0,
-		campaign_environment: 'production',
+		campaign_environment: "production",
 		environment: requestData.firebuzz.environment ?? null,
 		uri: requestData.firebuzz.uri ?? null,
 		full_uri: requestData.firebuzz.fullUri ?? null,
@@ -307,7 +314,7 @@ export async function trackSession(params: {
 	try {
 		await ingestSession(sessionData);
 	} catch (error) {
-		console.error('Failed to track session:', error);
+		console.error("Failed to track session:", error);
 		// Don't throw - we don't want tracking failures to break the request
 	}
 }
@@ -398,11 +405,11 @@ export function formatSessionData(data: {
 		utm_content: data.utm?.content ?? null,
 
 		// Geographic
-		country: data.geo.country || 'Unknown',
-		city: data.geo.city || 'Unknown',
-		region: data.geo.region || 'Unknown',
+		country: data.geo.country || "Unknown",
+		city: data.geo.city || "Unknown",
+		region: data.geo.region || "Unknown",
 		region_code: data.geo.regionCode ?? null,
-		continent: data.geo.continent || 'Unknown',
+		continent: data.geo.continent || "Unknown",
 		latitude: data.geo.latitude ?? null,
 		longitude: data.geo.longitude ?? null,
 		postal_code: data.geo.postalCode ?? null,
@@ -430,7 +437,7 @@ export function formatSessionData(data: {
 		is_verified_bot: data.bot?.verifiedBot ? 1 : 0,
 
 		// Network
-		ip: data.network.ip || 'Unknown',
+		ip: data.network.ip || "Unknown",
 		is_ssl: data.network.isSSL ? 1 : 0,
 		domain_type: data.network.domainType ?? null,
 		user_hostname: data.network.userHostname ?? null,

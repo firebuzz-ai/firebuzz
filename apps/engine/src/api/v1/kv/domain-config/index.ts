@@ -1,24 +1,24 @@
-import { errorResponses } from '@firebuzz/shared-types/api/errors';
+import { errorResponses } from "@firebuzz/shared-types/api/errors";
 import {
-	insertKvBodySchema,
-	insertKvResponseSchema,
-	getKvQuerySchema,
-	getKvResponseSchema,
 	deleteKvBodySchema,
 	deleteKvResponseSchema,
+	getKvQuerySchema,
+	getKvResponseSchema,
+	insertKvBodySchema,
+	insertKvResponseSchema,
 	listKvQuerySchema,
-	listKvResponseSchema
-} from '@firebuzz/shared-types/api/kv';
-import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
+	listKvResponseSchema,
+} from "@firebuzz/shared-types/api/kv";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 
 // @route POST /api/v1/kv
 const insertKvRoute = createRoute({
-	path: '/',
-	method: 'post',
+	path: "/",
+	method: "post",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: insertKvBodySchema,
 				},
 			},
@@ -27,11 +27,11 @@ const insertKvRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: insertKvResponseSchema,
 				},
 			},
-			description: 'Successfully inserted key-value pair',
+			description: "Successfully inserted key-value pair",
 		},
 		...errorResponses,
 	},
@@ -39,19 +39,19 @@ const insertKvRoute = createRoute({
 
 // @route GET /api/v1/kv
 const getKvRoute = createRoute({
-	path: '/',
-	method: 'get',
+	path: "/",
+	method: "get",
 	request: {
 		query: getKvQuerySchema,
 	},
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: getKvResponseSchema,
 				},
 			},
-			description: 'Successfully retrieved key-value pair',
+			description: "Successfully retrieved key-value pair",
 		},
 		...errorResponses,
 	},
@@ -59,12 +59,12 @@ const getKvRoute = createRoute({
 
 // @route DELETE /api/v1/kv
 const deleteKvRoute = createRoute({
-	path: '/',
-	method: 'delete',
+	path: "/",
+	method: "delete",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: deleteKvBodySchema,
 				},
 			},
@@ -73,11 +73,11 @@ const deleteKvRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: deleteKvResponseSchema,
 				},
 			},
-			description: 'Successfully deleted key-value pair',
+			description: "Successfully deleted key-value pair",
 		},
 		...errorResponses,
 	},
@@ -85,19 +85,19 @@ const deleteKvRoute = createRoute({
 
 // @route GET /api/v1/kv/list
 const listKvRoute = createRoute({
-	path: '/list',
-	method: 'get',
+	path: "/list",
+	method: "get",
 	request: {
 		query: listKvQuerySchema,
 	},
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: listKvResponseSchema,
 				},
 			},
-			description: 'Successfully listed key-value pairs',
+			description: "Successfully listed key-value pairs",
 		},
 		...errorResponses,
 	},
@@ -107,40 +107,47 @@ const app = new OpenAPIHono<{ Bindings: Env }>();
 
 export const domainConfigRoute = app
 	.openapi(insertKvRoute, async (c) => {
-		const { key, value, options } = c.req.valid('json');
+		const { key, value, options } = c.req.valid("json");
 		try {
 			const result = await c.env.DOMAIN_CONFIG.put(key, value, options);
 			return c.json({
 				success: true,
-				message: 'Key-value pair inserted successfully',
+				message: "Key-value pair inserted successfully",
 				data: result,
 			});
 		} catch (error) {
 			console.error(error);
-			return c.json({ success: false as const, message: 'Internal Server Error' as const }, 500);
+			return c.json(
+				{ success: false as const, message: "Internal Server Error" as const },
+				500,
+			);
 		}
 	})
 	.openapi(getKvRoute, async (c) => {
-		const { key, type, withMetadata, cacheTtl } = c.req.valid('query');
+		const { key, type, withMetadata, cacheTtl } = c.req.valid("query");
 
 		try {
 			// Without Metadata
 			if (!withMetadata) {
-				if (type === 'json') {
+				if (type === "json") {
 					const result = await c.env.DOMAIN_CONFIG.get(key, {
-						type: 'json',
+						type: "json",
 						cacheTtl: cacheTtl,
 					});
-					if (!result) return c.json({ success: false as const, message: 'Not Found' as const }, 404);
+					if (!result)
+						return c.json(
+							{ success: false as const, message: "Not Found" as const },
+							404,
+						);
 					return c.json(
 						{
 							success: true,
-							message: 'Key-value pair retrieved successfully',
+							message: "Key-value pair retrieved successfully",
 
 							data: {
 								// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 								value: result as Record<string, any>,
-								type: 'json' as const,
+								type: "json" as const,
 								metadata: undefined,
 							},
 						},
@@ -149,35 +156,43 @@ export const domainConfigRoute = app
 				}
 
 				const result = await c.env.DOMAIN_CONFIG.get(key, {
-					type: 'text',
+					type: "text",
 					cacheTtl: cacheTtl,
 				});
-				if (!result) return c.json({ success: false as const, message: 'Not Found' as const }, 404);
+				if (!result)
+					return c.json(
+						{ success: false as const, message: "Not Found" as const },
+						404,
+					);
 				return c.json(
 					{
 						success: true,
-						message: 'Key-value pair retrieved successfully',
-						data: { value: result, type: 'text' as const, metadata: undefined },
+						message: "Key-value pair retrieved successfully",
+						data: { value: result, type: "text" as const, metadata: undefined },
 					},
 					200,
 				);
 			}
 
 			// With Metadata
-			if (type === 'json') {
+			if (type === "json") {
 				const result = await c.env.DOMAIN_CONFIG.getWithMetadata(key, {
-					type: 'json',
+					type: "json",
 					cacheTtl: cacheTtl,
 				});
-				if (!result || !result.value) return c.json({ success: false as const, message: 'Not Found' as const }, 404);
+				if (!result || !result.value)
+					return c.json(
+						{ success: false as const, message: "Not Found" as const },
+						404,
+					);
 				return c.json(
 					{
 						success: true,
-						message: 'Key-value pair retrieved successfully',
+						message: "Key-value pair retrieved successfully",
 						data: {
 							// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 							value: result.value as Record<string, any>,
-							type: 'json' as const,
+							type: "json" as const,
 							metadata: result.metadata,
 						},
 					},
@@ -186,17 +201,21 @@ export const domainConfigRoute = app
 			}
 
 			const result = await c.env.DOMAIN_CONFIG.getWithMetadata(key, {
-				type: 'text',
+				type: "text",
 				cacheTtl: cacheTtl,
 			});
-			if (!result || !result.value) return c.json({ success: false as const, message: 'Not Found' as const }, 404);
+			if (!result || !result.value)
+				return c.json(
+					{ success: false as const, message: "Not Found" as const },
+					404,
+				);
 			return c.json(
 				{
 					success: true,
-					message: 'Key-value pair retrieved successfully',
+					message: "Key-value pair retrieved successfully",
 					data: {
 						value: result.value,
-						type: 'text' as const,
+						type: "text" as const,
 						metadata: result.metadata,
 					},
 				},
@@ -204,28 +223,37 @@ export const domainConfigRoute = app
 			);
 		} catch (error) {
 			console.error(error);
-			return c.json({ success: false as const, message: 'Internal Server Error' as const }, 500);
+			return c.json(
+				{ success: false as const, message: "Internal Server Error" as const },
+				500,
+			);
 		}
 	})
 	.openapi(deleteKvRoute, async (c) => {
-		const { key } = c.req.valid('json');
+		const { key } = c.req.valid("json");
 		try {
 			await c.env.DOMAIN_CONFIG.delete(key);
-			return c.json({ success: true, message: 'Key-value pair deleted successfully' }, 200);
+			return c.json(
+				{ success: true, message: "Key-value pair deleted successfully" },
+				200,
+			);
 		} catch (error) {
 			console.error(error);
-			return c.json({ success: false as const, message: 'Internal Server Error' as const }, 500);
+			return c.json(
+				{ success: false as const, message: "Internal Server Error" as const },
+				500,
+			);
 		}
 	})
 	.openapi(listKvRoute, async (c) => {
-		const { prefix, limit, cursor } = c.req.valid('query');
+		const { prefix, limit, cursor } = c.req.valid("query");
 		try {
 			const result = await c.env.DOMAIN_CONFIG.list({ prefix, limit, cursor });
 
 			return c.json(
 				{
 					success: true,
-					message: 'Key-value pairs listed successfully',
+					message: "Key-value pairs listed successfully",
 					data: result.list_complete
 						? {
 								keys: result.keys,
@@ -241,17 +269,20 @@ export const domainConfigRoute = app
 			);
 		} catch (error) {
 			console.error(error);
-			return c.json({ success: false as const, message: 'Internal Server Error' as const }, 500);
+			return c.json(
+				{ success: false as const, message: "Internal Server Error" as const },
+				500,
+			);
 		}
 	})
-	.options('*', (c) => {
-		return c.text('', {
+	.options("*", (c) => {
+		return c.text("", {
 			status: 200,
 			headers: {
-				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-				'Access-Control-Max-Age': '86400',
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type, Authorization",
+				"Access-Control-Max-Age": "86400",
 			},
 		});
 	});
