@@ -340,6 +340,9 @@ importers:
       '@chronark/zod-bird':
         specifier: ^0.3.10
         version: 0.3.10
+      '@firebuzz/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@hono/clerk-auth':
         specifier: ^3.0.3
         version: 3.0.3(hono@4.9.2)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -480,6 +483,9 @@ importers:
       '@firebuzz/file-system':
         specifier: workspace:*
         version: link:../file-system
+      '@firebuzz/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
       '@firebuzz/utils':
         specifier: workspace:*
         version: link:../utils

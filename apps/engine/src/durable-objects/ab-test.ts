@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import type { Env } from '../env';
-import type { ABTest } from '../types/campaign';
+import type { CleanedABTest as ABTest } from '@firebuzz/shared-types/campaign';
 
 // ============================================================================
 // Types

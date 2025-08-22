@@ -1,72 +1,18 @@
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+import { errorResponses } from '@firebuzz/shared-types/api/errors';
+import {
+	insertKvBodySchema,
+	insertKvResponseSchema,
+	getKvQuerySchema,
+	getKvResponseSchema,
+	deleteKvBodySchema,
+	deleteKvResponseSchema,
+	listKvQuerySchema,
+	listKvResponseSchema
+} from '@firebuzz/shared-types/api/kv';
+import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
 import type { Env } from '../../../../env';
 
-// Error Response Schema
-const errorResponses = {
-	400: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					success: z.literal(false),
-					message: z.literal('Bad Request'),
-				}),
-			},
-		},
-		description: 'Bad Request',
-	},
-	401: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					success: z.literal(false),
-					message: z.literal('Unauthorized'),
-				}),
-			},
-		},
-		description: 'Unauthorized',
-	},
-	404: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					success: z.literal(false),
-					message: z.literal('Not Found'),
-				}),
-			},
-		},
-		description: 'Not Found',
-	},
-	500: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					success: z.literal(false),
-					message: z.literal('Internal Server Error'),
-				}),
-			},
-		},
-		description: 'Internal Server Error',
-	},
-};
-
-const metadataSchema = z.record(z.string(), z.any());
-
 // @route POST /api/v1/kv
-export const insertKvBodySchema = z.object({
-	key: z.string(),
-	value: z.string(),
-	options: z.object({
-		expiration: z.number().optional(),
-		expirationTtl: z.number().optional(),
-		metadata: metadataSchema,
-	}),
-});
-
-export const insertKvResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-});
-
 const insertKvRoute = createRoute({
 	path: '/',
 	method: 'post',
@@ -93,30 +39,6 @@ const insertKvRoute = createRoute({
 });
 
 // @route GET /api/v1/kv
-export const getKvQuerySchema = z.object({
-	key: z.string(),
-	type: z.enum(['text', 'json']).optional().default('text'),
-	cacheTtl: z.coerce.number().optional().describe('Cache TTL in seconds'),
-	withMetadata: z.coerce.boolean().optional().default(false),
-});
-
-export const getKvResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-	data: z.union([
-		z.object({
-			type: z.literal('text'),
-			value: z.string(),
-			metadata: metadataSchema.optional(),
-		}),
-		z.object({
-			type: z.literal('json'),
-			value: z.record(z.string(), z.any()),
-			metadata: metadataSchema.optional(),
-		}),
-	]),
-});
-
 const getKvRoute = createRoute({
 	path: '/',
 	method: 'get',
@@ -137,15 +59,6 @@ const getKvRoute = createRoute({
 });
 
 // @route DELETE /api/v1/kv
-export const deleteKvBodySchema = z.object({
-	key: z.string(),
-});
-
-export const deleteKvResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-});
-
 const deleteKvRoute = createRoute({
 	path: '/',
 	method: 'delete',
@@ -172,28 +85,6 @@ const deleteKvRoute = createRoute({
 });
 
 // @route GET /api/v1/kv/list
-export const listKvQuerySchema = z.object({
-	prefix: z.string().optional(),
-	limit: z.coerce.number().optional().default(100),
-	cursor: z.string().optional(),
-});
-
-export const listKvResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-	data: z.object({
-		keys: z.array(
-			z.object({
-				name: z.string(),
-				expiration: z.number().optional(),
-				metadata: z.record(z.string(), z.string()).optional(),
-			}),
-		),
-		list_complete: z.boolean(),
-		cursor: z.string().optional(),
-	}),
-});
-
 const listKvRoute = createRoute({
 	path: '/list',
 	method: 'get',
@@ -288,7 +179,7 @@ export const cacheRoute = app
 							// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 							value: result.value as Record<string, any>,
 							type: 'json' as const,
-							metadata: result.metadata as z.infer<typeof metadataSchema>,
+							metadata: result.metadata,
 						},
 					},
 					200,
@@ -307,7 +198,7 @@ export const cacheRoute = app
 					data: {
 						value: result.value,
 						type: 'text' as const,
-						metadata: result.metadata as z.infer<typeof metadataSchema>,
+						metadata: result.metadata,
 					},
 				},
 				200,

@@ -39,6 +39,7 @@
     "@firebuzz/emails": "workspace:*",
     "@firebuzz/env": "workspace:*",
     "@firebuzz/file-system": "workspace:*",
+    "@firebuzz/shared-types": "workspace:*",
     "@firebuzz/utils": "workspace:*",
     "@llamaindex/core": "^0.6.4",
     "@llamaindex/readers": "^3.1.1",

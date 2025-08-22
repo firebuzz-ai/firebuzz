@@ -5,7 +5,7 @@ import { getSessionQueueService } from '../../lib/queue';
 import { parseRequest } from '../../lib/request';
 import { ensureSessionAndAttribution, updateSessionWithVariant } from '../../lib/session';
 import { formatSessionData } from '../../lib/tinybird';
-import type { CampaignConfig } from '../../types/campaign';
+import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 import { getContentType } from '../../utils/assets';
 
 const app = new Hono<{ Bindings: Env }>();

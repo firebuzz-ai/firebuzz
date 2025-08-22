@@ -1,53 +1,12 @@
+import {
+	abTestErrorResponses,
+	syncABTestBodySchema,
+	syncABTestSuccessResponseSchema,
+	syncABTestMessageResponseSchema,
+	cleanedABTestSchema as ABTestSchema
+} from '@firebuzz/shared-types/api/do/ab-test';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import type { Env } from '../../../../env';
-import { ABTestSchema } from '../../../../types/campaign';
-
-// Error Response Schema
-const errorResponses = {
-	400: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					error: z.string(),
-				}),
-			},
-		},
-		description: 'Bad Request',
-	},
-	404: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					error: z.string(),
-				}),
-			},
-		},
-		description: 'Not Found',
-	},
-	500: {
-		content: {
-			'application/json': {
-				schema: z.object({
-					error: z.string(),
-				}),
-			},
-		},
-		description: 'Internal Server Error',
-	},
-};
-
-const syncABTestBodySchema = z.object({
-	config: ABTestSchema,
-});
-
-const syncABTestSuccessResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string(),
-});
-
-const syncABTestMessageResponseSchema = z.object({
-	message: z.string(),
-});
 
 const syncABTestRoute = createRoute({
 	path: '/sync/{campaignId}',
@@ -81,7 +40,7 @@ const syncABTestRoute = createRoute({
 			},
 			description: 'AB test initialized for first time',
 		},
-		...errorResponses,
+		...abTestErrorResponses,
 	},
 });
 

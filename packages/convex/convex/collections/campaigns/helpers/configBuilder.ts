@@ -1,81 +1,19 @@
-import type { Infer } from "convex/values";
-import type { Doc } from "../../../_generated/dataModel";
 import type {
   ABTestNodeData,
-  FilterOperator,
-  RuleTypeId,
+  CampaignConfig,
+  CleanedABTest,
+  CleanedABTestVariant,
+  CleanedSegment,
+  CleanedSegmentRule,
+  ConfigValidationResult,
+  Edge,
+  Node,
   SegmentNodeData,
   SegmentRule,
   TrafficNodeData,
   VariantNodeData,
-  abTestVariant,
-} from "../nodeSchemas";
-import type { edgeSchema, nodeSchema } from "../schema";
-
-type Node = Infer<typeof nodeSchema>;
-type Edge = Infer<typeof edgeSchema>;
-
-// Types for the cleaned config structure derived from nodeSchemas.ts
-export type CleanedSegmentRule = Pick<
-  SegmentRule,
-  "id" | "value" | "isRequired"
-> & {
-  ruleType: RuleTypeId;
-  operator: FilterOperator;
-};
-
-export type CleanedABTestVariant = Pick<
-  Infer<typeof abTestVariant>,
-  "id" | "name" | "landingPageId" | "trafficAllocation" | "isControl"
->;
-
-export type CleanedSegment = Pick<
-  SegmentNodeData,
-  | "title"
-  | "priority"
-  | "primaryLandingPageId"
-  | "translationMode"
-  | "translations"
-> & {
-  id: string;
-  rules: CleanedSegmentRule[];
-  abTests?: CleanedABTest[];
-};
-
-export type CleanedABTest = Pick<
-  ABTestNodeData,
-  | "title"
-  | "status"
-  | "winner"
-  | "hypothesis"
-  | "isCompleted"
-  | "startedAt"
-  | "completedAt"
-  | "pausedAt"
-  | "resumedAt"
-  | "endDate"
-  | "primaryMetric"
-  | "completionCriteria"
-  | "confidenceLevel"
-  | "rules"
-> & {
-  id: string;
-  poolingPercent: number;
-  variants: CleanedABTestVariant[];
-};
-
-export type Event = Doc<"campaigns">["campaignSettings"]["primaryGoal"];
-
-export interface CampaignConfig {
-  campaignId: string;
-  defaultLandingPageId?: string;
-  primaryLanguage: string;
-  segments: CleanedSegment[];
-  sessionDurationInMinutes: number;
-  attributionPeriodInDays: number;
-  primaryGoal: Event;
-  customEvents: Event[];
-}
+} from "@firebuzz/shared-types/campaign";
+import type { Doc } from "../../../_generated/dataModel";
 
 /**
  * Clean React Flow nodes and edges into a config structure for CF Worker
@@ -219,10 +157,9 @@ function cleanRule(rule: SegmentRule): CleanedSegmentRule {
 /**
  * Validate the config structure
  */
-export function validateCampaignConfig(config: CampaignConfig): {
-  isValid: boolean;
-  errors: string[];
-} {
+export function validateCampaignConfig(
+  config: CampaignConfig
+): ConfigValidationResult {
   const errors: string[] = [];
 
   // Check if there's at least one segment or a default landing page

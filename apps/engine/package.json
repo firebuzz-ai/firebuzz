@@ -29,6 +29,7 @@
 	},
 	"dependencies": {
 		"@chronark/zod-bird": "^0.3.10",
+		"@firebuzz/shared-types": "workspace:*",
 		"@hono/clerk-auth": "^3.0.3",
 		"@hono/zod-openapi": "^0.18.4",
 		"cloudflare": "^4.4.1",

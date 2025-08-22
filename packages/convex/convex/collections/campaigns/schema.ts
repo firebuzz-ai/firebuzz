@@ -1,71 +1,11 @@
+import {
+  campaignSettingsSchemaConvex,
+  edgeSchemaConvex,
+  nodeSchemaConvex,
+  viewportSchemaConvex,
+} from "@firebuzz/shared-types/campaign";
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { edgeDataSchema, nodeDataSchema } from "./nodeSchemas";
-
-export const edgeSchema = v.object({
-  id: v.string(),
-  source: v.string(),
-  target: v.string(),
-  type: v.optional(v.string()),
-  animated: v.optional(v.boolean()),
-  hidden: v.optional(v.boolean()),
-  selected: v.optional(v.boolean()),
-  data: v.optional(edgeDataSchema),
-});
-
-export const viewportSchema = v.object({
-  x: v.number(),
-  y: v.number(),
-  zoom: v.number(),
-});
-
-export const nodeSchema = v.object({
-  id: v.string(),
-  type: v.optional(v.string()),
-  position: v.object({
-    x: v.number(),
-    y: v.number(),
-  }),
-  resizing: v.optional(v.boolean()),
-  dragging: v.optional(v.boolean()),
-  selected: v.optional(v.boolean()),
-  hidden: v.optional(v.boolean()),
-  parentId: v.optional(v.string()),
-  measured: v.optional(
-    v.object({
-      width: v.optional(v.number()),
-      height: v.optional(v.number()),
-    })
-  ),
-  data: nodeDataSchema,
-  dragHandle: v.optional(v.string()),
-  width: v.optional(v.number()),
-  height: v.optional(v.number()),
-  initialWidth: v.optional(v.number()),
-  initialHeight: v.optional(v.number()),
-  zIndex: v.optional(v.number()),
-  handles: v.optional(v.array(v.any())),
-});
-
-export const eventSchema = v.object({
-  id: v.string(),
-  title: v.string(),
-  icon: v.string(),
-  description: v.optional(v.string()),
-  direction: v.union(v.literal("up"), v.literal("down")),
-  placement: v.union(v.literal("internal"), v.literal("external")),
-  value: v.number(),
-  currency: v.optional(v.string()),
-  type: v.union(v.literal("conversion"), v.literal("engagement")),
-  isCustom: v.boolean(),
-});
-
-export const campaignSettingsSchema = v.object({
-  primaryGoal: eventSchema,
-  customEvents: v.optional(v.array(eventSchema)),
-  sessionDurationInMinutes: v.number(),
-  attributionPeriodInDays: v.number(),
-});
 
 export const campaignSchema = defineTable(
   v.object({
@@ -82,11 +22,11 @@ export const campaignSchema = defineTable(
     ),
     primaryLanguage: v.string(),
     // Canvas data as separate columns
-    nodes: v.array(nodeSchema),
-    edges: v.array(edgeSchema),
-    viewport: viewportSchema,
+    nodes: v.array(nodeSchemaConvex),
+    edges: v.array(edgeSchemaConvex),
+    viewport: viewportSchemaConvex,
     // Campaign Settings
-    campaignSettings: campaignSettingsSchema,
+    campaignSettings: campaignSettingsSchemaConvex,
     // Timestamps
     updatedAt: v.optional(v.string()),
     startedAt: v.optional(v.string()),
@@ -128,3 +68,22 @@ export const campaignSchema = defineTable(
   .index("by_deleted_at", ["deletedAt"])
   .index("by_slug_project_id", ["slug", "projectId"])
   .searchIndex("by_title", { searchField: "title" });
+
+// React FLow Change Validators
+export const nodeChangeValidator = v.any();
+export const edgeChangeValidator = v.any();
+
+// Connection validator for new edge connections
+export const connectionValidator = v.object({
+  source: v.string(),
+  target: v.string(),
+  sourceHandle: v.optional(v.string()),
+  targetHandle: v.optional(v.string()),
+});
+
+// Viewport change validator
+export const viewportChangeValidator = v.object({
+  x: v.number(),
+  y: v.number(),
+  zoom: v.number(),
+});

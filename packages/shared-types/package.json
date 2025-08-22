@@ -1,24 +1,28 @@
 {
-	"name": "@firebuzz/shared-types",
-	"version": "0.0.1",
-	"private": true,
-	"type": "module",
-	"main": "./src/index.ts",
-	"module": "./src/index.ts",
-	"types": "./src/index.ts",
-	"exports": {
-		".": "./src/index.ts",
-		"./campaign": "./src/campaign/index.ts"
-	},
-	"scripts": {
-		"typecheck": "tsc --noEmit"
-	},
-	"dependencies": {
-		"convex": "^1.21.0",
-		"convex-helpers": "^0.1.60",
-		"zod": "^3.24.1"
-	},
-	"devDependencies": {
-		"typescript": "^5.7.2"
-	}
+  "name": "@firebuzz/shared-types",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./campaign": "./src/campaign/index.ts",
+    "./api": "./src/api/index.ts",
+    "./api/errors": "./src/api/errors/index.ts",
+    "./api/kv": "./src/api/kv/index.ts",
+    "./api/do/ab-test": "./src/api/do/ab-test/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "convex": "^1.21.0",
+    "convex-helpers": "^0.1.60",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
 }

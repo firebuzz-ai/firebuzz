@@ -1,10 +1,10 @@
 import type { Context } from "hono";
 import type {
-	ABTest,
+	CleanedABTest as ABTest,
 	CampaignConfig,
-	Segment,
-	SegmentRule,
-} from "../types/campaign";
+	CleanedSegment as Segment,
+	CleanedSegmentRule as SegmentRule,
+} from "@firebuzz/shared-types/campaign";
 import { type RequestData, parseRequest } from "./request";
 import {
 	type AttributionData,
