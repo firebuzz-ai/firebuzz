@@ -617,12 +617,18 @@ importers:
 
   packages/shared-types:
     dependencies:
+      '@hono/zod-openapi':
+        specifier: ^0.18.4
+        version: 0.18.4(hono@4.9.4)(zod@3.25.76)
       convex:
         specifier: ^1.21.0
         version: 1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       convex-helpers:
         specifier: ^0.1.60
-        version: 0.1.72(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(hono@4.9.2)(react@19.0.0)(zod@3.25.76)
+        version: 0.1.72(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(hono@4.9.4)(react@19.0.0)(zod@3.25.76)
+      hono:
+        specifier: ^4.9.4
+        version: 4.9.4
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -7350,6 +7356,10 @@ packages:
     resolution: {integrity: sha512-UG2jXGS/gkLH42l/1uROnwXpkjvvxkl3kpopL3LBo27NuaDPI6xHNfuUSilIHcrBkPfl4y0z6y2ByI455TjNRw==}
     engines: {node: '>=16.9.0'}
 
+  hono@4.9.4:
+    resolution: {integrity: sha512-61hl6MF6ojTl/8QSRu5ran6GXt+6zsngIUN95KzF5v5UjiX/xnrLR358BNRawwIRO49JwUqJqQe3Rb2v559R8Q==}
+    engines: {node: '>=16.9.0'}
+
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
     engines: {node: '>=18'}
@@ -12447,6 +12457,13 @@ snapshots:
       hono: 4.9.2
       zod: 3.25.76
 
+  '@hono/zod-openapi@0.18.4(hono@4.9.4)(zod@3.25.76)':
+    dependencies:
+      '@asteasolutions/zod-to-openapi': 7.3.0(zod@3.25.76)
+      '@hono/zod-validator': 0.4.2(hono@4.9.4)(zod@3.25.76)
+      hono: 4.9.4
+      zod: 3.25.76
+
   '@hono/zod-validator@0.4.2(hono@4.7.1)(zod@3.25.76)':
     dependencies:
       hono: 4.7.1
@@ -12456,6 +12473,11 @@ snapshots:
   '@hono/zod-validator@0.4.2(hono@4.9.2)(zod@3.25.76)':
     dependencies:
       hono: 4.9.2
+      zod: 3.25.76
+
+  '@hono/zod-validator@0.4.2(hono@4.9.4)(zod@3.25.76)':
+    dependencies:
+      hono: 4.9.4
       zod: 3.25.76
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.54.2(react@19.0.0))':
@@ -16770,6 +16792,14 @@ snapshots:
       react: 19.0.0
       zod: 3.25.76
 
+  convex-helpers@0.1.72(convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(hono@4.9.4)(react@19.0.0)(zod@3.25.76):
+    dependencies:
+      convex: 1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
+    optionalDependencies:
+      hono: 4.9.4
+      react: 19.0.0
+      zod: 3.25.76
+
   convex@1.21.0(@clerk/clerk-react@5.22.12(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       esbuild: 0.25.1
@@ -18094,6 +18124,8 @@ snapshots:
   hono@4.8.1: {}
 
   hono@4.9.2: {}
+
+  hono@4.9.4: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:

@@ -213,6 +213,7 @@ export const classifyLinks = internalAction({
 				query: {
 					key,
 					type: "json",
+					withMetadata: false,
 				},
 			});
 

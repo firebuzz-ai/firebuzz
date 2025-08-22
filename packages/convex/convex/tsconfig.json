@@ -7,12 +7,13 @@
     /* These settings are not required by Convex and can be modified. */
     "allowJs": true,
     "strict": true,
-    "moduleResolution": "Bundler",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
     "paths": {
-      "@engine/*": ["../../../apps/engine/src/*"]
+      "@shared-types/*": ["../../shared-types/src/*"]
     },
 
     /* These compiler options are required by Convex */
@@ -24,5 +25,5 @@
     "noEmit": true
   },
   "include": ["./**/*"],
-  "exclude": ["./_generated", "../../../apps/engine/src/**"]
+  "exclude": ["./_generated"]
 }
