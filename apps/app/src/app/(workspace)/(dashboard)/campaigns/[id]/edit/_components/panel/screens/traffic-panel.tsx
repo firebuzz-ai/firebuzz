@@ -245,7 +245,7 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 							<>
 								<div className="flex gap-2">
 									<Select
-										value={node.data.defaultVariantId || undefined}
+										value={node.data.defaultLandingPageId || undefined}
 										onValueChange={updateDefaultVariant}
 									>
 										<SelectTrigger id="default-variant" className="h-8">
@@ -286,44 +286,45 @@ export const TrafficPanel = ({ node, campaign }: TrafficPanelProps) => {
 									This page will be shown to all traffic that doesn't match any
 									segment rules
 								</p>
-								{node.data.defaultVariantId && currentDefaultLandingPage && (
-									<div className="flex gap-2">
-										<Button
-											variant="outline"
-											size="sm"
-											className="flex-1"
-											onClick={() => {
-												if (currentDefaultLandingPage.previewUrl) {
-													window.open(
-														currentDefaultLandingPage.previewUrl,
-														"_blank",
-													);
-												} else {
-													toast.error("Cannot preview landing page", {
-														description:
-															"This landing page needs to be published first to generate a preview URL.",
-													});
-												}
-											}}
-											disabled={!currentDefaultLandingPage.previewUrl}
-										>
-											<Eye className="size-3.5" />
-											Preview
-										</Button>
-										<Button
-											variant="outline"
-											size="sm"
-											className="flex-1"
-											onClick={() => {
-												window.location.href = `/assets/landing-pages/${currentDefaultLandingPage._id}/edit`;
-											}}
-										>
-											Edit
-											<ChevronRight className="size-3.5" />
-										</Button>
-									</div>
-								)}
-								{node.data.defaultVariantId &&
+								{node.data.defaultLandingPageId &&
+									currentDefaultLandingPage && (
+										<div className="flex gap-2">
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex-1"
+												onClick={() => {
+													if (currentDefaultLandingPage.previewUrl) {
+														window.open(
+															currentDefaultLandingPage.previewUrl,
+															"_blank",
+														);
+													} else {
+														toast.error("Cannot preview landing page", {
+															description:
+																"This landing page needs to be published first to generate a preview URL.",
+														});
+													}
+												}}
+												disabled={!currentDefaultLandingPage.previewUrl}
+											>
+												<Eye className="size-3.5" />
+												Preview
+											</Button>
+											<Button
+												variant="outline"
+												size="sm"
+												className="flex-1"
+												onClick={() => {
+													window.location.href = `/assets/landing-pages/${currentDefaultLandingPage._id}/edit`;
+												}}
+											>
+												Edit
+												<ChevronRight className="size-3.5" />
+											</Button>
+										</div>
+									)}
+								{node.data.defaultLandingPageId &&
 									currentDefaultLandingPage &&
 									!currentDefaultLandingPage.previewUrl && (
 										<p className="text-xs text-muted-foreground">

@@ -47,7 +47,7 @@ import {
 	Trash2,
 } from "@firebuzz/ui/icons/lucide";
 import { cn, toast } from "@firebuzz/ui/lib/utils";
-import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -256,10 +256,10 @@ export const ABTestPanel = ({
 		api.collections.landingPages.mutations.promoteToChampion,
 	);
 
-	// Combine default goals with custom goals
-	const availableGoals = [
-		...CAMPAIGN_GOALS.map((goal) => ({ ...goal, isCustom: false })),
-		...(campaign?.campaignSettings?.customGoals || []),
+	// Combine default events with custom events
+	const availableEvents = [
+		...DEFAULT_CAMPAIGN_EVENTS.map((event) => ({ ...event, isCustom: false })),
+		...(campaign?.campaignSettings?.customEvents || []),
 	];
 
 	// Check if editing should be disabled (when test is completed)
@@ -736,12 +736,12 @@ export const ABTestPanel = ({
 		}
 		// Find goal by string value for backward compatibility
 		return (
-			availableGoals.find((goal) => goal.id === node.data.primaryMetric) ||
-			availableGoals[0]
+			availableEvents.find((goal) => goal.id === node.data.primaryMetric) ||
+			availableEvents[0]
 		);
 	};
 
-	const handleGoalChange = (goal: (typeof availableGoals)[0]) => {
+	const handleGoalChange = (goal: (typeof availableEvents)[0]) => {
 		// Store the goal ID as a string for compatibility with the schema
 		updateABTestData({ primaryMetric: goal.id });
 	};
@@ -1173,11 +1173,11 @@ export const ABTestPanel = ({
 						</div>
 
 						{/* Primary Goal Selection */}
-						{campaign && availableGoals.length > 0 ? (
+						{campaign && availableEvents.length > 0 ? (
 							<div className="space-y-4">
 								<PrimaryGoalSelector
 									selectedGoal={getCurrentGoal()}
-									availableGoals={availableGoals}
+									availableGoals={availableEvents}
 									onGoalChange={handleGoalChange}
 									label="Primary Goal"
 									disabled={isEditingDisabled}

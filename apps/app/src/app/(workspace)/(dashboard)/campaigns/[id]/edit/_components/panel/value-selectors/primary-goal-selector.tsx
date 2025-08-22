@@ -17,18 +17,53 @@ import {
 } from "@firebuzz/ui/components/ui/popover";
 import {
 	ArrowUpRight,
+	Calendar,
 	Check,
 	ChevronsUpDown,
+	CreditCard,
+	Download,
+	Eye,
+	FileText,
 	Focus,
 	Goal as GoalIcon,
+	Heart,
+	type LucideIcon,
+	Mail,
 	MousePointerClick,
+	Percent,
+	Phone,
+	Share2,
+	ShoppingCart,
+	TextCursorInput,
+	UserPlus,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 
+// Map icon names to actual icon components
+const iconMap: Record<string, LucideIcon> = {
+	"text-cursor-input": TextCursorInput,
+	"mouse-pointer-click": MousePointerClick,
+	eye: Eye,
+	percent: Percent,
+	goal: GoalIcon,
+	focus: Focus,
+	"shopping-cart": ShoppingCart,
+	"user-plus": UserPlus,
+	download: Download,
+	mail: Mail,
+	phone: Phone,
+	calendar: Calendar,
+	"file-text": FileText,
+	"credit-card": CreditCard,
+	"share-2": Share2,
+	heart: Heart,
+};
+
 type Goal = {
 	id: string;
 	title: string;
+	icon: string;
 	description?: string;
 	direction: "up" | "down";
 	placement: "internal" | "external";
@@ -68,18 +103,15 @@ export const PrimaryGoalSelector = ({
 		}
 	};
 
-	const getGoalTypeIcon = (type: string, isCustom = false) => {
-		if (isCustom) {
-			return <Focus className="size-3.5 text-muted-foreground" />;
+	const getGoalIcon = (goal: Goal) => {
+		// If goal has a specific icon property, use it
+		if (goal.icon && iconMap[goal.icon]) {
+			const Icon = iconMap[goal.icon];
+			return <Icon className="size-3.5 text-muted-foreground" />;
 		}
-		switch (type) {
-			case "conversion":
-				return <GoalIcon className="size-3.5 text-muted-foreground" />;
-			case "engagement":
-				return <MousePointerClick className="size-3.5 text-muted-foreground" />;
-			default:
-				return <GoalIcon className="size-3.5 text-muted-foreground" />;
-		}
+
+		// Default icon if no icon property
+		return <GoalIcon className="size-3.5 text-muted-foreground" />;
 	};
 
 	return (
@@ -112,7 +144,7 @@ export const PrimaryGoalSelector = ({
 						>
 							{selectedGoal ? (
 								<div className="flex gap-2 items-center">
-									{getGoalTypeIcon(selectedGoal.type, selectedGoal.isCustom)}
+									{getGoalIcon(selectedGoal)}
 									<span className="truncate">{selectedGoal.title}</span>
 								</div>
 							) : (
@@ -145,7 +177,7 @@ export const PrimaryGoalSelector = ({
 														: "opacity-0",
 												)}
 											/>
-											{getGoalTypeIcon(goal.type, goal.isCustom)}
+											{getGoalIcon(goal)}
 											<div className="flex-1 min-w-0">
 												<div className="font-medium truncate">{goal.title}</div>
 												{goal.description && (

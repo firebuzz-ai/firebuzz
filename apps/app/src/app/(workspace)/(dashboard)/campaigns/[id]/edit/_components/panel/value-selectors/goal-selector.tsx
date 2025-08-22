@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Command,
@@ -23,20 +24,63 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@firebuzz/ui/components/ui/select";
+import { Separator } from "@firebuzz/ui/components/ui/separator";
 import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
+import {
+	ArrowRight,
+	Calendar,
 	Check,
 	ChevronsUpDown,
+	CreditCard,
+	Download,
+	Eye,
+	FileText,
 	Focus,
 	Goal as GoalIcon,
+	Heart,
+	type LucideIcon,
+	Mail,
 	MousePointerClick,
+	Percent,
+	Phone,
+	Plus,
+	Share2,
+	ShoppingCart,
+	TextCursorInput,
+	UserPlus,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+
+// Map icon names to actual icon components
+const iconMap: Record<string, LucideIcon> = {
+	"text-cursor-input": TextCursorInput,
+	"mouse-pointer-click": MousePointerClick,
+	eye: Eye,
+	percent: Percent,
+	goal: GoalIcon,
+	focus: Focus,
+	"shopping-cart": ShoppingCart,
+	"user-plus": UserPlus,
+	download: Download,
+	mail: Mail,
+	phone: Phone,
+	calendar: Calendar,
+	"file-text": FileText,
+	"credit-card": CreditCard,
+	"share-2": Share2,
+	heart: Heart,
+};
 
 type Goal = {
 	id: string;
 	title: string;
 	description?: string;
+	icon: string;
 	direction: "up" | "down";
 	placement: "internal" | "external";
 	value: number;
@@ -53,8 +97,10 @@ interface GoalSelectorProps {
 	onCurrencyChange: (currency: string) => void;
 	label?: string;
 	className?: string;
-	onNavigateToCustomGoals?: (editGoalId?: string) => void;
+	onNavigateToCustomEvents?: (editEventId?: string) => void;
+	onCreateCustomEvent?: () => void;
 	customGoalsCount?: number;
+	campaignType?: "lead-generation" | "traffic" | "e-commerce" | string;
 }
 
 const currencyOptions = [
@@ -83,7 +129,9 @@ export const GoalSelector = ({
 	onCurrencyChange,
 	label = "Primary Goal",
 	className,
-	onNavigateToCustomGoals,
+	onNavigateToCustomEvents,
+	onCreateCustomEvent,
+	campaignType,
 }: GoalSelectorProps) => {
 	const [open, setOpen] = useState(false);
 
@@ -95,18 +143,15 @@ export const GoalSelector = ({
 		}
 	};
 
-	const getGoalTypeIcon = (type: string, isCustom = false) => {
-		if (isCustom) {
-			return <Focus className="size-3.5 text-muted-foreground" />;
+	const getGoalIcon = (goal: Goal) => {
+		// Use icon from goal.icon property if available
+		if (goal.icon && iconMap[goal.icon]) {
+			const Icon = iconMap[goal.icon];
+			return <Icon className="size-3.5 text-muted-foreground" />;
 		}
-		switch (type) {
-			case "conversion":
-				return <GoalIcon className="size-3.5 text-muted-foreground" />;
-			case "engagement":
-				return <MousePointerClick className="size-3.5 text-muted-foreground" />;
-			default:
-				return <GoalIcon className="size-3.5 text-muted-foreground" />;
-		}
+
+		// Default icon if no icon property
+		return <GoalIcon className="size-3.5 text-muted-foreground" />;
 	};
 
 	return (
@@ -125,7 +170,7 @@ export const GoalSelector = ({
 						>
 							{selectedGoal ? (
 								<div className="flex gap-2 items-center">
-									{getGoalTypeIcon(selectedGoal.type, selectedGoal.isCustom)}
+									{getGoalIcon(selectedGoal)}
 									<span className="truncate">{selectedGoal.title}</span>
 								</div>
 							) : (
@@ -139,37 +184,81 @@ export const GoalSelector = ({
 						align="start"
 					>
 						<Command>
-							<CommandInput placeholder="Search goals..." className="h-8" />
+							<CommandInput placeholder="Search events..." className="h-8" />
 							<CommandList>
-								<CommandEmpty>No goals found.</CommandEmpty>
-								<CommandGroup>
-									{availableGoals.map((goal) => (
-										<CommandItem
-											key={goal.id}
-											value={goal.id}
-											onSelect={() => handleGoalSelect(goal.id)}
-											className="flex gap-3 items-center cursor-pointer"
-										>
-											<Check
-												className={cn(
-													"h-4 w-4",
-													selectedGoal?.id === goal.id
-														? "opacity-100"
-														: "opacity-0",
-												)}
-											/>
-											{getGoalTypeIcon(goal.type, goal.isCustom)}
-											<div className="flex-1 min-w-0">
-												<div className="font-medium truncate">{goal.title}</div>
-												{goal.description && (
-													<p className="text-xs text-muted-foreground mt-0.5 truncate">
-														{goal.description}
-													</p>
-												)}
-											</div>
-										</CommandItem>
-									))}
-								</CommandGroup>
+								<CommandEmpty>No events found.</CommandEmpty>
+
+								{/* Custom Events Group (on top) */}
+								{availableGoals.filter((goal) => goal.isCustom).length > 0 && (
+									<CommandGroup heading="Custom Events">
+										{availableGoals
+											.filter((goal) => goal.isCustom)
+											.map((goal) => (
+												<CommandItem
+													key={goal.id}
+													value={goal.id}
+													onSelect={() => handleGoalSelect(goal.id)}
+													className="flex gap-3 items-center cursor-pointer"
+												>
+													<Check
+														className={cn(
+															"h-4 w-4",
+															selectedGoal?.id === goal.id
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+													{getGoalIcon(goal)}
+													<div className="flex-1 min-w-0">
+														<div className="font-medium truncate">
+															{goal.title}
+														</div>
+														{goal.description && (
+															<p className="text-xs text-muted-foreground mt-0.5 truncate">
+																{goal.description}
+															</p>
+														)}
+													</div>
+												</CommandItem>
+											))}
+									</CommandGroup>
+								)}
+
+								{/* Default Events Group */}
+								{availableGoals.filter((goal) => !goal.isCustom).length > 0 && (
+									<CommandGroup heading="Default Events">
+										{availableGoals
+											.filter((goal) => !goal.isCustom)
+											.map((goal) => (
+												<CommandItem
+													key={goal.id}
+													value={goal.id}
+													onSelect={() => handleGoalSelect(goal.id)}
+													className="flex gap-3 items-center cursor-pointer"
+												>
+													<Check
+														className={cn(
+															"h-4 w-4",
+															selectedGoal?.id === goal.id
+																? "opacity-100"
+																: "opacity-0",
+														)}
+													/>
+													{getGoalIcon(goal)}
+													<div className="flex-1 min-w-0">
+														<div className="font-medium truncate">
+															{goal.title}
+														</div>
+														{goal.description && (
+															<p className="text-xs text-muted-foreground mt-0.5 truncate">
+																{goal.description}
+															</p>
+														)}
+													</div>
+												</CommandItem>
+											))}
+									</CommandGroup>
+								)}
 							</CommandList>
 						</Command>
 					</PopoverContent>
@@ -215,24 +304,106 @@ export const GoalSelector = ({
 							</Select>
 						</div>
 					</div>
-
-					{/* Add/Edit Custom Goal Button */}
-					{onNavigateToCustomGoals && (
-						<Button
-							variant="outline"
-							size="sm"
-							className="w-full h-8"
-							onClick={() =>
-								onNavigateToCustomGoals(
-									selectedGoal.isCustom ? selectedGoal.id : undefined,
-								)
-							}
-						>
-							{selectedGoal.isCustom ? "Edit Custom Goal" : "Add Custom Goal"}
-						</Button>
-					)}
 				</div>
 			)}
+
+			<Separator />
+
+			{/* Tracked Events Section */}
+			<div className="space-y-3">
+				<div className="space-y-2">
+					<div className="flex justify-between items-center">
+						<Label>Tracked Events</Label>
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={onCreateCustomEvent}
+							className="h-7 text-xs"
+						>
+							<Plus className="size-3" />
+							Add Event
+						</Button>
+					</div>
+
+					<div className="p-3 rounded-lg border bg-muted">
+						{(() => {
+							// Filter built-in events based on campaign type
+							const builtInEvents = availableGoals.filter((goal) => {
+								if (goal.isCustom) return false;
+
+								// If it's form-submission, only show for lead-generation campaigns
+								if (goal.id === "form-submission") {
+									return campaignType === "lead-generation";
+								}
+
+								// Show all other built-in events
+								return true;
+							});
+
+							const customEvents = availableGoals.filter(
+								(goal) => goal.isCustom,
+							);
+							const allTrackedEvents = [...builtInEvents, ...customEvents];
+
+							return allTrackedEvents.length > 0 ? (
+								<div className="flex flex-wrap gap-2">
+									{/* Custom Events First (clickable) */}
+									{customEvents.map((goal) => (
+										<Tooltip key={goal.id}>
+											<TooltipTrigger asChild>
+												<Badge
+													variant="outline"
+													className="flex items-center gap-1.5 px-2 py-1 cursor-pointer hover:bg-background transition-colors"
+													onClick={() => onNavigateToCustomEvents?.(goal.id)}
+												>
+													{getGoalIcon(goal)}
+													<span className="text-xs">{goal.title}</span>
+													<ArrowRight className="size-2.5 ml-1 opacity-60" />
+												</Badge>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>Click to edit custom event</p>
+											</TooltipContent>
+										</Tooltip>
+									))}
+
+									{/* Built-in Events */}
+									{builtInEvents.map((goal) => (
+										<Tooltip key={goal.id}>
+											<TooltipTrigger asChild>
+												<Badge
+													variant="secondary"
+													className="flex items-center gap-1.5 px-2 py-1"
+												>
+													{getGoalIcon(goal)}
+													<span className="text-xs">{goal.title}</span>
+												</Badge>
+											</TooltipTrigger>
+											<TooltipContent>
+												<p>Built-in event tracked automatically</p>
+											</TooltipContent>
+										</Tooltip>
+									))}
+								</div>
+							) : (
+								<div className="text-center py-2">
+									<p className="text-sm text-muted-foreground">
+										No tracked events yet
+									</p>
+									<Button
+										size="sm"
+										variant="outline"
+										onClick={onCreateCustomEvent}
+										className="mt-2 h-7 text-xs"
+									>
+										Create your first event
+									</Button>
+								</div>
+							);
+						})()}
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 };

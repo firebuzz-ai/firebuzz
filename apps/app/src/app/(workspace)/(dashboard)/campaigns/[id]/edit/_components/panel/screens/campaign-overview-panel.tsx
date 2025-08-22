@@ -25,7 +25,7 @@ import {
 	X,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
-import { CAMPAIGN_GOALS } from "@firebuzz/utils";
+import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import { useReactFlow } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
@@ -34,12 +34,12 @@ import { GoalSelector } from "../value-selectors/goal-selector";
 
 interface CampaignOverviewPanelProps {
 	campaign: Doc<"campaigns">;
-	onNavigateToCustomGoals?: (editGoalId?: string) => void;
+	onNavigateToCustomEvents?: (editEventId?: string) => void;
 }
 
 export const CampaignOverviewPanel = ({
 	campaign,
-	onNavigateToCustomGoals,
+	onNavigateToCustomEvents,
 }: CampaignOverviewPanelProps) => {
 	const { setNodes } = useReactFlow();
 	const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -97,10 +97,10 @@ export const CampaignOverviewPanel = ({
 		}
 	});
 
-	// Combine default goals with custom goals
-	const availableGoals = [
-		...CAMPAIGN_GOALS.map((goal) => ({ ...goal, isCustom: false })),
-		...(campaign.campaignSettings?.customGoals || []),
+	// Combine default events with custom events
+	const availableEvents = [
+		...DEFAULT_CAMPAIGN_EVENTS.map((event) => ({ ...event, isCustom: false })),
+		...(campaign.campaignSettings?.customEvents || []),
 	];
 
 	const validateSlug = (slugValue: string): string | null => {
@@ -267,7 +267,7 @@ export const CampaignOverviewPanel = ({
 	};
 
 	// Campaign Settings Handlers
-	const handleGoalChange = async (goal: (typeof availableGoals)[0]) => {
+	const handleGoalChange = async (goal: (typeof availableEvents)[0]) => {
 		try {
 			await updateCampaignSettings({
 				campaignId: campaign._id,
@@ -424,7 +424,7 @@ export const CampaignOverviewPanel = ({
 										{slugState === "idle" && (
 											<motion.div
 												key="idle"
-												className="flex items-center justify-center"
+												className="flex justify-center items-center"
 												initial={{ opacity: 0, scale: 0.8 }}
 												animate={{ opacity: 1, scale: 1 }}
 												exit={{ opacity: 0, scale: 0.8 }}
@@ -435,7 +435,7 @@ export const CampaignOverviewPanel = ({
 										{slugState === "validating" && (
 											<motion.div
 												key="validating"
-												className="flex items-center justify-center"
+												className="flex justify-center items-center"
 												initial={{ opacity: 0, scale: 0.8 }}
 												animate={{ opacity: 1, scale: 1 }}
 												exit={{ opacity: 0, scale: 0.8 }}
@@ -446,7 +446,7 @@ export const CampaignOverviewPanel = ({
 										{slugState === "updating" && (
 											<motion.div
 												key="updating"
-												className="flex items-center justify-center"
+												className="flex justify-center items-center"
 												initial={{ opacity: 0, scale: 0.8 }}
 												animate={{ opacity: 1, scale: 1 }}
 												exit={{ opacity: 0, scale: 0.8 }}
@@ -457,7 +457,7 @@ export const CampaignOverviewPanel = ({
 										{slugState === "success" && (
 											<motion.div
 												key="success"
-												className="flex items-center justify-center"
+												className="flex justify-center items-center"
 												initial={{ opacity: 0, scale: 0.8 }}
 												animate={{ opacity: 1, scale: 1 }}
 												exit={{ opacity: 0, scale: 0.8 }}
@@ -468,7 +468,7 @@ export const CampaignOverviewPanel = ({
 										{slugState === "error" && (
 											<motion.div
 												key="error"
-												className="flex items-center justify-center"
+												className="flex justify-center items-center"
 												initial={{ opacity: 0, scale: 0.8 }}
 												animate={{ opacity: 1, scale: 1 }}
 												exit={{ opacity: 0, scale: 0.8 }}
@@ -500,12 +500,14 @@ export const CampaignOverviewPanel = ({
 						{/* Primary Goal Selection */}
 						<GoalSelector
 							selectedGoal={campaign.campaignSettings?.primaryGoal}
-							availableGoals={availableGoals}
+							availableGoals={availableEvents}
 							onGoalChange={handleGoalChange}
 							onValueChange={handleGoalValueChange}
 							onCurrencyChange={handleCurrencyChange}
 							label="Primary Goal"
-							onNavigateToCustomGoals={onNavigateToCustomGoals}
+							onNavigateToCustomEvents={onNavigateToCustomEvents}
+							onCreateCustomEvent={() => onNavigateToCustomEvents?.()}
+							campaignType={campaign.type}
 						/>
 
 						<Separator />

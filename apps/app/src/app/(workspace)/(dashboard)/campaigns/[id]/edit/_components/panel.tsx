@@ -11,7 +11,7 @@ import { useNodes } from "@xyflow/react";
 import { useMemo, useState } from "react";
 import { ABTestPanel } from "./panel/screens/abtest-panel";
 import { CampaignOverviewPanel } from "./panel/screens/campaign-overview-panel";
-import { CustomGoalsPanel } from "./panel/screens/custom-goals-panel";
+import { CustomEventsPanel } from "./panel/screens/custom-events-panel";
 import { SegmentPanel } from "./panel/screens/segment-panel";
 import { TrafficPanel } from "./panel/screens/traffic-panel";
 import { VariantPanel } from "./panel/screens/variant-panel";
@@ -22,10 +22,10 @@ interface PanelProps {
 
 export const Panel = ({ campaign }: PanelProps) => {
 	const nodes = useNodes<AllCampaignNodes>();
-	const [currentPanel, setCurrentPanel] = useState<"overview" | "custom-goals">(
-		"overview",
-	);
-	const [editGoalId, setEditGoalId] = useState<string | undefined>(undefined);
+	const [currentPanel, setCurrentPanel] = useState<
+		"overview" | "custom-events"
+	>("overview");
+	const [editEventId, setEditEventId] = useState<string | undefined>(undefined);
 
 	const selectedNodes = useMemo(
 		() => nodes.filter((node) => node.selected),
@@ -49,15 +49,15 @@ export const Panel = ({ campaign }: PanelProps) => {
 		if (campaign) {
 			// Handle panel navigation when no node is selected (campaign overview mode)
 			switch (currentPanel) {
-				case "custom-goals":
+				case "custom-events":
 					return (
-						<CustomGoalsPanel
+						<CustomEventsPanel
 							campaign={campaign}
 							onBackToCampaignOverview={() => {
 								setCurrentPanel("overview");
-								setEditGoalId(undefined);
+								setEditEventId(undefined);
 							}}
-							editGoalId={editGoalId}
+							editEventId={editEventId}
 						/>
 					);
 
@@ -65,9 +65,9 @@ export const Panel = ({ campaign }: PanelProps) => {
 					return (
 						<CampaignOverviewPanel
 							campaign={campaign}
-							onNavigateToCustomGoals={(goalId) => {
-								setEditGoalId(goalId);
-								setCurrentPanel("custom-goals");
+							onNavigateToCustomEvents={(eventId) => {
+								setEditEventId(eventId);
+								setCurrentPanel("custom-events");
 							}}
 						/>
 					);
@@ -109,7 +109,7 @@ export const Panel = ({ campaign }: PanelProps) => {
 					campaign={campaign}
 					onNavigateToCampaignOverview={() => {
 						setCurrentPanel("overview");
-						setEditGoalId(undefined);
+						setEditEventId(undefined);
 					}}
 				/>
 			);
@@ -126,9 +126,9 @@ export const Panel = ({ campaign }: PanelProps) => {
 			return (
 				<CampaignOverviewPanel
 					campaign={campaign}
-					onNavigateToCustomGoals={(goalId) => {
-						setEditGoalId(goalId);
-						setCurrentPanel("custom-goals");
+					onNavigateToCustomEvents={(eventId) => {
+						setEditEventId(eventId);
+						setCurrentPanel("custom-events");
 					}}
 				/>
 			);
