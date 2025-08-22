@@ -10,7 +10,6 @@ import {
 	listKvResponseSchema,
 } from '@firebuzz/shared-types/api/kv';
 import { OpenAPIHono, createRoute } from '@hono/zod-openapi';
-import type { Env } from '../../../../env';
 
 // @route POST /api/v1/kv
 const insertKvRoute = createRoute({

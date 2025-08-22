@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import type { Env } from '../../env';
 import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 
 const app = new Hono<{ Bindings: Env }>();

@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import type { Env } from '../env';
 import { campaignNotFound } from './campaign/not-found';
 import { landingNotFound } from './landing/not-found';
 

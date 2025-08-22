@@ -1,4 +1,3 @@
-import type { Env } from '../env';
 import { logQueueMetrics, trackRateLimiting } from '../lib/monitoring';
 import type { SessionData } from '../lib/tinybird';
 import { batchIngestSessions } from '../lib/tinybird';

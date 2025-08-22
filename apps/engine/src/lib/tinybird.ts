@@ -1,14 +1,13 @@
 import { Tinybird } from '@chronark/zod-bird';
 import { env } from 'cloudflare:workers';
 import { z } from 'zod';
-import type { Env } from '../env';
 
 // Initialize Tinybird client with global env
 // We use cloudflare:workers env for runtime singleton initialization
 // while maintaining type safety with our custom Env type
 const tinybird = new Tinybird({
-	baseUrl: (env as Env).TINYBIRD_BASE_URL,
-	token: (env as Env).TINYBIRD_TOKEN,
+	baseUrl: env.TINYBIRD_BASE_URL,
+	token: env.TINYBIRD_TOKEN,
 });
 
 // Session Schema based on session_v1.datasource

@@ -1,6 +1,5 @@
 import { bearerAuth } from 'hono/bearer-auth';
 import { createMiddleware } from 'hono/factory';
-import type { Env } from './env';
 import { previewApp } from './preview';
 import { productionCustomDomainApp } from './production/custom-domain';
 import { productionProjectDomainApp } from './production/firebuzz-subdomain';

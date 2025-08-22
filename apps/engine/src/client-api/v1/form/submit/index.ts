@@ -1,5 +1,4 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import type { Env } from '../../../../env';
 
 // Error Response Schema
 const errorResponses = {

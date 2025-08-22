@@ -1,6 +1,5 @@
 import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 import { Hono } from 'hono';
-import type { Env } from '../../env';
 import { evaluateCampaign } from '../../lib/campaign';
 import { getSessionQueueService } from '../../lib/queue';
 import { parseRequest } from '../../lib/request';

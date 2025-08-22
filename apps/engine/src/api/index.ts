@@ -1,5 +1,4 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { Env } from '../env';
 import { apiAuth, cors } from '../middleware';
 import { abTestRoute } from './v1/do/ab-test';
 import { assetsRoute } from './v1/kv/assets';

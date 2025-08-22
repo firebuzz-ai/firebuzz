@@ -1,6 +1,5 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { hc } from 'hono/client';
-import type { Env } from '../env';
 import { cors } from '../middleware';
 import { formSubmitRoute } from './v1/form/submit';
 

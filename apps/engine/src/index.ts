@@ -3,7 +3,6 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { apiRoutes } from './api';
 import { clientApiRoutes } from './client-api';
-import type { Env } from './env';
 import { domainRouting } from './middleware';
 import { utilityRoutes } from './utility-routes';
 import { inngestApp } from './workflows';

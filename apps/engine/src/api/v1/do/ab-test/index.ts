@@ -6,7 +6,6 @@ import {
 	cleanedABTestSchema as ABTestSchema
 } from '@firebuzz/shared-types/api/do/ab-test';
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
-import type { Env } from '../../../../env';
 
 const syncABTestRoute = createRoute({
 	path: '/sync/{campaignId}',

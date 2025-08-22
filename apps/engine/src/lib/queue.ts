@@ -1,4 +1,3 @@
-import type { Env } from "../env";
 import type { SessionQueueMessage } from "../types/queue";
 import type { SessionData } from "./tinybird";
 

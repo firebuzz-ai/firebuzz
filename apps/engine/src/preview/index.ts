@@ -1,5 +1,4 @@
 import { Hono } from 'hono';
-import type { Env } from '../env';
 import { previewCampaignApp } from './campaign';
 import { previewLandingApp } from './landing';
 
