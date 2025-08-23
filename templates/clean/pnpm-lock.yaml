@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@firebuzz/analytics':
+    specifier: 1.0.0-beta.1
+    version: 1.0.0-beta.1(react-dom@18.3.1)(react@18.3.1)
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.10.0(react-hook-form@7.61.1)
@@ -638,6 +641,16 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@firebuzz/analytics@1.0.0-beta.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-m087+y4huXHpydUuBN5C6DXZ5kpztHKpVXCvWz0rt/n+Qpmy0riyFtlvEOZdRbWxaeSS6pQGx8bTk0b+TUx0Sw==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
 
   /@floating-ui/core@1.7.2:
     resolution: {integrity: sha512-wNB5ooIKHQc+Kui96jE/n69rHFWAVoxn5CAzL1Xdd8FG03cgY3MLO+GF9U3W737fYDSgPWA6MReKhBQBop6Pcw==}

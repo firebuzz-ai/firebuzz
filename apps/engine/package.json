@@ -17,6 +17,7 @@
 		"deploy:production": "wrangler deploy --env production",
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
+		"typegen": "wrangler types",
 		"test!": "vitest",
 		"typecheck": "tsc --noEmit"
 	},

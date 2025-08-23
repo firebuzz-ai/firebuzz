@@ -3,11 +3,13 @@ import { hc } from "hono/client";
 import { cors } from "../middleware";
 import { formSubmitRoute } from "./v1/form/submit";
 import { eventsRoutes } from "./v1/events";
+import { trackingVerifyRoute } from "./v1/tracking/verify";
 
 const clientApiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 	.use(cors)
 	.route("/form/submit", formSubmitRoute)
-	.route("/events", eventsRoutes);
+	.route("/events", eventsRoutes)
+	.route("/", trackingVerifyRoute);
 
 // Export the client API routes and the type
 type ClientApiType = typeof clientApiRoutes;

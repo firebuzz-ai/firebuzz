@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { trackEventRequestSchema } from "@firebuzz/shared-types/events";
+import { generateUniqueId } from "../../../utils/id-generator";
 
 export const trackRoute = new Hono<{ Bindings: Env }>()
 	.post("/track", async (c) => {
@@ -15,6 +16,16 @@ export const trackRoute = new Hono<{ Bindings: Env }>()
 			const result = await eventTracker.trackEvent(eventData);
 
 			if (!result.success) {
+				// Handle session expiry with renewal opportunity
+				if (result.error === "Session expired") {
+					const newSessionId = generateUniqueId();
+					return c.json({
+						success: false,
+						error: "Session expired",
+						new_session_id: newSessionId, // Provide new session ID for renewal
+					}, 200); // Return 200, not 400, so client can handle gracefully
+				}
+
 				return c.json({
 					success: false,
 					error: result.error || "Failed to track event",

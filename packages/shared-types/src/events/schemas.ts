@@ -7,7 +7,7 @@ export const eventDataSchema = z.object({
 	event_id: z.string(),
 	event_value: z.string(),
 	event_value_type: z.enum(["dynamic", "static"]),
-	event_type: z.enum(["conversion", "engagement"]),
+	event_type: z.enum(["conversion", "engagement", "system"]),
 
 	// Context IDs for joining (no geo/device data - stored in session_v1)
 	user_id: z.string(),
@@ -45,7 +45,7 @@ export const eventDataSchema = z.object({
 // Client event tracking request (minimal data sent from client)
 export const trackEventRequestSchema = z.object({
 	session_id: z.string(),
-	event_type: z.enum(["conversion", "engagement"]),
+	event_type: z.enum(["conversion", "engagement", "system"]),
 	event_value: z.string().optional(),
 	event_value_type: z.enum(["dynamic", "static"]).optional(),
 

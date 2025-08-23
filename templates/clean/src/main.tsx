@@ -1,9 +1,12 @@
+import { AnalyticsProvider } from "@firebuzz/analytics";
 import { ViteReactSSG } from "vite-react-ssg/single-page";
 import { App } from "./app.tsx";
 import { Toaster } from "./components/ui/sonner.tsx";
+import { campaignConfiguration } from "./configuration/campaign.ts";
 import { tagsConfiguration } from "./configuration/tags.ts";
 import { Head } from "./head.tsx";
 import "./index.css";
+
 export const createRoot = ViteReactSSG(
   <>
     {/* Tag Manager Script Directly after Body Opening Tag */}
@@ -18,9 +21,18 @@ export const createRoot = ViteReactSSG(
         />
       </noscript>
     )}
-    <Head />
-    <App />
-    <Toaster />
+    <AnalyticsProvider
+      enabled={campaignConfiguration.analyticsEnabled}
+      apiUrl={campaignConfiguration.apiUrl.split("/client-api")[0]}
+      campaignId={campaignConfiguration.campaignId}
+      workspaceId={campaignConfiguration.workspaceId}
+      projectId={campaignConfiguration.projectId}
+      landingPageId={campaignConfiguration.landingPageId}
+    >
+      <Head />
+      <App />
+      <Toaster />
+    </AnalyticsProvider>
     {/* Facebook Pixel Tag */}
     {tagsConfiguration.facebookPixelId && (
       <noscript>

@@ -516,6 +516,7 @@ export async function evaluateCampaignWithSession(
 			sessionId: generateUniqueId(),
 			campaignId: campaignConfig.campaignId,
 			createdAt: Date.now(),
+			sessionEndsAt: Date.now() + (campaignConfig.sessionDurationInMinutes * 60 * 1000),
 		};
 		isReturning = false;
 	}

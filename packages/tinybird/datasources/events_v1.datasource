@@ -42,11 +42,11 @@ SCHEMA >
     `environment` LowCardinality(String) `json:$.environment`,
     `campaign_environment` LowCardinality(String) `json:$.campaign_environment`,
     `page_url` String `json:$.page_url`,
-    `referrer_url` Nullable(String) `json:$.referrer_url`
+    `referrer_url` Nullable(String) `json:$.referrer_url`,
     `viewport_width` Nullable(UInt16) `json:$.viewport_width`,
     `viewport_height` Nullable(UInt16) `json:$.viewport_height`,
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
 ENGINE_SORTING_KEY "timestamp, workspace_id, project_id, campaign_id, session_id, event_id, user_id"
-ENGINE_TTL "timestamp + INTERVAL 90 DAY"
+ENGINE_TTL "toDateTime(timestamp) + INTERVAL 90 DAY"

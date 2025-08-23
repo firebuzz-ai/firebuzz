@@ -38,6 +38,7 @@ export interface SessionData {
 		variantId: string;
 	};
 	createdAt: number;
+	sessionEndsAt: number;
 }
 
 export interface AttributionData {
@@ -145,10 +146,10 @@ function parseCookieValue<T>(value: string | undefined): T | null {
 }
 
 /**
- * Encode cookie value as JSON
+ * Encode cookie value as JSON (Hono's setCookie will handle URL encoding)
  */
 export function encodeCookieValue(data: unknown): string {
-	return encodeURIComponent(JSON.stringify(data));
+	return JSON.stringify(data);
 }
 
 // ============================================================================
@@ -231,6 +232,7 @@ export function createSession(
 		sessionId,
 		campaignId,
 		createdAt: now,
+		sessionEndsAt: now + (sessionDurationInMinutes * 60 * 1000),
 	};
 
 	// Set session cookie (campaign-scoped)
@@ -261,6 +263,7 @@ export function createBaseSession(
 		sessionId,
 		campaignId,
 		createdAt: now,
+		sessionEndsAt: now + (config.sessionDurationInMinutes * 60 * 1000),
 	};
 
 	setCookie(c, getSessionCookie(campaignId), encodeCookieValue(sessionData), {

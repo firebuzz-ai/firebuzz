@@ -20,6 +20,7 @@ export type EventBatch = z.infer<typeof eventBatchSchema>;
 export const EventType = {
 	CONVERSION: "conversion",
 	ENGAGEMENT: "engagement",
+	SYSTEM: "system",
 } as const;
 
 export const EventValueType = {

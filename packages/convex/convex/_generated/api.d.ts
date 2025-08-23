@@ -48,7 +48,6 @@ import type * as collections_invitations_mutations from "../collections/invitati
 import type * as collections_invitations_queries from "../collections/invitations/queries.js";
 import type * as collections_invitations_utils from "../collections/invitations/utils.js";
 import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
-import type * as collections_landingPages_getFileContent from "../collections/landingPages/getFileContent.js";
 import type * as collections_landingPages_helpers_brand from "../collections/landingPages/helpers/brand.js";
 import type * as collections_landingPages_helpers_campaign from "../collections/landingPages/helpers/campaign.js";
 import type * as collections_landingPages_helpers_seo from "../collections/landingPages/helpers/seo.js";
@@ -211,7 +210,6 @@ declare const fullApi: ApiFromModules<{
   "collections/invitations/queries": typeof collections_invitations_queries;
   "collections/invitations/utils": typeof collections_invitations_utils;
   "collections/landingPages/actions": typeof collections_landingPages_actions;
-  "collections/landingPages/getFileContent": typeof collections_landingPages_getFileContent;
   "collections/landingPages/helpers/brand": typeof collections_landingPages_helpers_brand;
   "collections/landingPages/helpers/campaign": typeof collections_landingPages_helpers_campaign;
   "collections/landingPages/helpers/seo": typeof collections_landingPages_helpers_seo;

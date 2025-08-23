@@ -3,86 +3,100 @@ import { errorsAtom } from "../atoms";
 import { getWebcontainerInstance } from "../webcontainer";
 
 export const useWorkbenchHelpers = () => {
-	const setErrors = useSetAtom(errorsAtom);
-	// Handlers
-	const buildProject = async (id: string) => {
-		const webcontainerInstance = await getWebcontainerInstance();
+  const setErrors = useSetAtom(errorsAtom);
+  // Handlers
+  const buildProject = async (id: string) => {
+    const webcontainerInstance = await getWebcontainerInstance();
 
-		// Start building process
-		const buildProcess = await webcontainerInstance.spawn(
-			"pnpm",
-			["run", "build"],
-			{
-				cwd: `/${id}`,
-			},
-		);
+    // CHange analytics enabled to true
+    const analyticsEnabled = await webcontainerInstance.fs.readFile(
+      `${id}/src/configuration/campaign.ts`,
+      "utf-8"
+    );
 
-		// Improved logging - collect all output in a readable format
-		let buildOutput = "";
-		buildProcess.output.pipeTo(
-			new WritableStream({
-				write(data) {
-					// Remove ANSI escape codes for cleaner output
-					// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
-					const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
-					buildOutput += cleanedData;
-				},
-			}),
-		);
+    await webcontainerInstance.fs.writeFile(
+      `${id}/src/configuration/campaign.ts`,
+      analyticsEnabled.replace(
+        "analyticsEnabled: false",
+        "analyticsEnabled: true"
+      )
+    );
 
-		const exitCode = await buildProcess.exit;
+    // Start building process
+    const buildProcess = await webcontainerInstance.spawn(
+      "pnpm",
+      ["run", "build"],
+      {
+        cwd: `/${id}`,
+      }
+    );
 
-		if (exitCode !== 0) {
-			setErrors((prev) => [
-				...prev,
-				{
-					type: "build",
-					message: buildOutput,
-					rawError: null,
-				},
-			]);
-			return false;
-		}
+    // Improved logging - collect all output in a readable format
+    let buildOutput = "";
+    buildProcess.output.pipeTo(
+      new WritableStream({
+        write(data) {
+          // Remove ANSI escape codes for cleaner output
+          // biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
+          const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
+          buildOutput += cleanedData;
+        },
+      })
+    );
 
-		return true;
-	};
+    const exitCode = await buildProcess.exit;
 
-	const getBuildFiles = async (id: string) => {
-		const webcontainerInstance = await getWebcontainerInstance();
+    if (exitCode !== 0) {
+      setErrors((prev) => [
+        ...prev,
+        {
+          type: "build",
+          message: buildOutput,
+          rawError: null,
+        },
+      ]);
+      return false;
+    }
 
-		const indexHTML = await webcontainerInstance.fs.readFile(
-			`${id}/dist/index.html`,
-			"utf-8",
-		);
+    return true;
+  };
 
-		const files = await webcontainerInstance.fs.readdir(`${id}/dist/assets`);
+  const getBuildFiles = async (id: string) => {
+    const webcontainerInstance = await getWebcontainerInstance();
 
-		const assets = await Promise.all(
-			files.map(async (file) => ({
-				name: file,
-				content: await webcontainerInstance.fs.readFile(
-					`${id}/dist/assets/${file}`,
-					"utf-8",
-				),
-			})),
-		);
+    const indexHTML = await webcontainerInstance.fs.readFile(
+      `${id}/dist/index.html`,
+      "utf-8"
+    );
 
-		const indexJS = assets.find((asset) => asset.name.includes(".js"));
-		const indexCSS = assets.find((asset) => asset.name.includes(".css"));
+    const files = await webcontainerInstance.fs.readdir(`${id}/dist/assets`);
 
-		const updatedHTML = indexHTML
-			.replace(`/assets/${indexJS?.name}`, `/landing/${id}/assets/script`)
-			.replace(`/assets/${indexCSS?.name}`, `/landing/${id}/assets/styles`);
+    const assets = await Promise.all(
+      files.map(async (file) => ({
+        name: file,
+        content: await webcontainerInstance.fs.readFile(
+          `${id}/dist/assets/${file}`,
+          "utf-8"
+        ),
+      }))
+    );
 
-		return {
-			indexHTML: updatedHTML,
-			indexJS: indexJS?.content ?? "",
-			indexCSS: indexCSS?.content ?? "",
-		};
-	};
+    const indexJS = assets.find((asset) => asset.name.includes(".js"));
+    const indexCSS = assets.find((asset) => asset.name.includes(".css"));
 
-	return {
-		buildProject,
-		getBuildFiles,
-	};
+    const updatedHTML = indexHTML
+      .replace(`/assets/${indexJS?.name}`, `/landing/${id}/assets/script`)
+      .replace(`/assets/${indexCSS?.name}`, `/landing/${id}/assets/styles`);
+
+    return {
+      indexHTML: updatedHTML,
+      indexJS: indexJS?.content ?? "",
+      indexCSS: indexCSS?.content ?? "",
+    };
+  };
+
+  return {
+    buildProject,
+    getBuildFiles,
+  };
 };
