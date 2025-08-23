@@ -21,6 +21,7 @@ declare namespace Cloudflare {
 		CLERK_PUBLISHABLE_KEY: string;
 		CLERK_SECRET_KEY: string;
 		AB_TEST: DurableObjectNamespace<import("./src/index").ABTestDurableObject>;
+		EVENT_TRACKER: DurableObjectNamespace<import("./src/index").EventTrackerDurableObject>;
 		SESSION_QUEUE: Queue;
 	}
 }

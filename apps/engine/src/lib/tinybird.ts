@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers";
 import { Tinybird } from "@chronark/zod-bird";
 import { z } from "zod";
+import type { EventData } from "@firebuzz/shared-types/events";
+import { eventDataSchema } from "@firebuzz/shared-types/events";
 
 // Initialize Tinybird client with global env
 // We use cloudflare:workers env for runtime singleton initialization
@@ -82,6 +84,12 @@ export const ingestSession = tinybird.buildIngestEndpoint({
 	event: sessionSchema,
 });
 
+// Build ingest endpoint for events
+export const ingestEvent = tinybird.buildIngestEndpoint({
+	datasource: "events_v1",
+	event: eventDataSchema,
+});
+
 // Type exports
 export type SessionData = z.infer<typeof sessionSchema>;
 
@@ -158,6 +166,88 @@ export async function batchIngestSessions(
 		const errorText = await response.text();
 		throw new Error(
 			`Tinybird batch ingestion failed: ${response.status} - ${errorText}`,
+		);
+	}
+
+	const result = await response.json<{
+		successful_rows: number;
+		quarantined_rows: number;
+	}>();
+
+	return {
+		...result,
+		rateLimitHeaders,
+	};
+}
+
+/**
+ * Send batch of events to Tinybird using NDJSON format
+ * This is more efficient than individual requests for event tracking
+ */
+export async function batchIngestEvents(
+	events: EventData[],
+	env: Pick<Env, "TINYBIRD_BASE_URL" | "TINYBIRD_TOKEN">,
+): Promise<{
+	successful_rows: number;
+	quarantined_rows: number;
+	errors?: string[];
+	rateLimitHeaders?: {
+		limit?: string;
+		remaining?: string;
+		reset?: string;
+		retryAfter?: string;
+	};
+}> {
+	if (events.length === 0) {
+		return { successful_rows: 0, quarantined_rows: 0 };
+	}
+
+	// Format as NDJSON (newline-delimited JSON)
+	const ndjson = events.map((event) => JSON.stringify(event)).join("\n");
+
+	// Calculate payload size for monitoring
+	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
+
+	// Warn if payload is large
+	if (payloadSizeMB > 5) {
+		console.warn(
+			`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${events.length} events`,
+		);
+	}
+
+	const response = await fetch(
+		`${env.TINYBIRD_BASE_URL}/v0/events?name=events_v1&wait=true`,
+		{
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
+				"Content-Type": "application/x-ndjson",
+			},
+			body: ndjson,
+		},
+	);
+
+	// Extract rate limit headers for monitoring
+	const rateLimitHeaders = {
+		limit: response.headers.get("X-RateLimit-Limit") || undefined,
+		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
+		reset: response.headers.get("X-RateLimit-Reset") || undefined,
+		retryAfter: response.headers.get("Retry-After") || undefined,
+	};
+
+	// Handle rate limiting
+	if (response.status === 429) {
+		const retryAfter = rateLimitHeaders.retryAfter || "60";
+		throw new Error(
+			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
+				`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
+		);
+	}
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(
+			`Tinybird event batch ingestion failed: ${response.status} - ${errorText}`,
 		);
 	}
 

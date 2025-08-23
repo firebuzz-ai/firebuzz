@@ -52,6 +52,10 @@
 			{
 				"name": "AB_TEST",
 				"class_name": "ABTestDurableObject"
+			},
+			{
+				"name": "EVENT_TRACKER",
+				"class_name": "EventTrackerDurableObject"
 			}
 		]
 	},
@@ -59,6 +63,10 @@
 		{
 			"tag": "v1",
 			"new_sqlite_classes": ["ABTestDurableObject"]
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": ["EventTrackerDurableObject"]
 		}
 	],
 	"vars": {
@@ -115,6 +123,10 @@
 					{
 						"name": "AB_TEST",
 						"class_name": "ABTestDurableObject"
+					},
+					{
+						"name": "EVENT_TRACKER",
+						"class_name": "EventTrackerDurableObject"
 					}
 				]
 			},
@@ -122,6 +134,10 @@
 				{
 					"tag": "v1",
 					"new_classes": ["ABTestDurableObject"]
+				},
+				{
+					"tag": "v2",
+					"new_classes": ["EventTrackerDurableObject"]
 				}
 			]
 		},
@@ -172,6 +188,10 @@
 					{
 						"name": "AB_TEST",
 						"class_name": "ABTestDurableObject"
+					},
+					{
+						"name": "EVENT_TRACKER",
+						"class_name": "EventTrackerDurableObject"
 					}
 				]
 			},
@@ -179,6 +199,10 @@
 				{
 					"tag": "v1",
 					"new_classes": ["ABTestDurableObject"]
+				},
+				{
+					"tag": "v2",
+					"new_classes": ["EventTrackerDurableObject"]
 				}
 			]
 		}

@@ -68,8 +68,9 @@ app.get("/", async (c) => {
 // Import and re-export queue handler directly
 import { handleSessionQueue } from "./queue/session-consumer";
 
-// Export the Durable Object class
+// Export the Durable Object classes
 export { ABTestDurableObject } from "./durable-objects/ab-test";
+export { EventTrackerDurableObject } from "./durable-objects/event-tracker";
 
 // Export both fetch and queue handlers in the default export
 export default {
