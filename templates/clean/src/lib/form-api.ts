@@ -64,7 +64,7 @@ class FormApiClient {
   ): Promise<ApiResult<SubmitFormResponse["data"]>> {
     try {
       const response = await fetch(
-        `${this.config.baseUrl}/form/submit/${formId}`,
+        `${this.config.baseUrl}/client-api/v1/form/submit/${formId}`,
         {
           method: "POST",
           headers: {

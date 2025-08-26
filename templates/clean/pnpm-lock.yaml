@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@firebuzz/analytics':
-    specifier: '@firebuzz/analytics@1.0.0-beta.12'
-    version: link:@firebuzz/analytics@1.0.0-beta.12
+    specifier: ^1.0.0
+    version: 1.0.0(react-dom@18.3.1)(react@18.3.1)
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.10.0(react-hook-form@7.62.0)
@@ -641,6 +641,17 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@firebuzz/analytics@1.0.0(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-9k8uYmc3D4bSlUOzl12/SgsXrI285JVd5mOHBKn8x+rP4BwahZwIEKwoEOlNjFLEjy21RTBC+awCTqz519dYdQ==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+    dependencies:
+      js-cookie: 3.0.5
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    dev: false
 
   /@floating-ui/core@1.7.3:
     resolution: {integrity: sha512-sGnvb5dmrJaKEZ+LDIpguvdX3bDlEllmv4/ClQ9awcmCZrlx5jQyyMWFM5kBI+EyNOCDDiKk8il0zeuX3Zlg/w==}
@@ -2917,6 +2928,11 @@ packages:
   /jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
+
+  /js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
+    dev: false
 
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}

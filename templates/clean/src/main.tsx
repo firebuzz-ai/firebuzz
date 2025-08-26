@@ -23,7 +23,7 @@ export const createRoot = ViteReactSSG(
     )}
     <AnalyticsProvider
       enabled={campaignConfiguration.analyticsEnabled}
-      apiUrl={campaignConfiguration.apiUrl.split("/client-api")[0]}
+      apiUrl={campaignConfiguration.apiUrl}
       campaignId={campaignConfiguration.campaignId}
       workspaceId={campaignConfiguration.workspaceId}
       projectId={campaignConfiguration.projectId}
