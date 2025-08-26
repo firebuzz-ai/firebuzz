@@ -35,6 +35,10 @@
 			{
 				"queue": "session-ingestion",
 				"binding": "SESSION_QUEUE"
+			},
+			{
+				"queue": "event-ingestion",
+				"binding": "EVENT_QUEUE"
 			}
 		],
 		"consumers": [
@@ -44,6 +48,13 @@
 				"max_batch_timeout": 5,
 				"max_retries": 3,
 				"dead_letter_queue": "session-ingestion-dlq"
+			},
+			{
+				"queue": "event-ingestion",
+				"max_batch_size": 50,
+				"max_batch_timeout": 3,
+				"max_retries": 3,
+				"dead_letter_queue": "event-ingestion-dlq"
 			}
 		]
 	},
@@ -106,6 +117,10 @@
 					{
 						"queue": "session-ingestion-preview",
 						"binding": "SESSION_QUEUE"
+					},
+					{
+						"queue": "event-ingestion-preview",
+						"binding": "EVENT_QUEUE"
 					}
 				],
 				"consumers": [
@@ -115,6 +130,13 @@
 						"max_batch_timeout": 5,
 						"max_retries": 3,
 						"dead_letter_queue": "session-ingestion-preview-dlq"
+					},
+					{
+						"queue": "event-ingestion-preview",
+						"max_batch_size": 50,
+						"max_batch_timeout": 3,
+						"max_retries": 3,
+						"dead_letter_queue": "event-ingestion-preview-dlq"
 					}
 				]
 			},
@@ -171,6 +193,10 @@
 					{
 						"queue": "session-ingestion-production",
 						"binding": "SESSION_QUEUE"
+					},
+					{
+						"queue": "event-ingestion-production",
+						"binding": "EVENT_QUEUE"
 					}
 				],
 				"consumers": [
@@ -180,6 +206,13 @@
 						"max_batch_timeout": 5,
 						"max_retries": 3,
 						"dead_letter_queue": "session-ingestion-production-dlq"
+					},
+					{
+						"queue": "event-ingestion-production",
+						"max_batch_size": 50,
+						"max_batch_timeout": 3,
+						"max_retries": 3,
+						"dead_letter_queue": "event-ingestion-production-dlq"
 					}
 				]
 			},

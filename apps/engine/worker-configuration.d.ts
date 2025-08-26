@@ -24,6 +24,7 @@ declare namespace Cloudflare {
 		AB_TEST: DurableObjectNamespace<import("./src/index").ABTestDurableObject>;
 		EVENT_TRACKER: DurableObjectNamespace<import("./src/index").EventTrackerDurableObject>;
 		SESSION_QUEUE: Queue;
+		EVENT_QUEUE: Queue;
 	}
 }
 interface Env extends Cloudflare.Env {}

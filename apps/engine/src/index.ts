@@ -65,7 +65,8 @@ app.get("/", async (c) => {
 	});
 });
 
-// Import and re-export queue handler directly
+import { handleEventQueue } from "./queue/event-consumer";
+// Import and re-export queue handlers directly
 import { handleSessionQueue } from "./queue/session-consumer";
 
 // Export the Durable Object classes
@@ -76,6 +77,23 @@ export { EventTrackerDurableObject } from "./durable-objects/event-tracker";
 export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch, env: Env): Promise<void> {
-		await handleSessionQueue(batch, env);
+		// Route to appropriate queue handler based on queue name
+		const queueName = batch.queue;
+
+		console.log(
+			`📥 Processing queue: ${queueName} with ${batch.messages.length} messages`,
+		);
+
+		if (queueName.includes("session-ingestion")) {
+			await handleSessionQueue(batch, env);
+		} else if (queueName.includes("event-ingestion")) {
+			await handleEventQueue(batch, env);
+		} else {
+			console.error(`Unknown queue: ${queueName}`);
+			// Acknowledge all messages to prevent infinite retry
+			for (const message of batch.messages) {
+				message.ack();
+			}
+		}
 	},
 };

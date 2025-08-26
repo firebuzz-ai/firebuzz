@@ -12,6 +12,7 @@ import {
 	checkExistingSession,
 	createAttribution,
 	generateUniqueId,
+	isReturningUser,
 } from "./session";
 
 // ============================================================================
@@ -88,7 +89,7 @@ export function evaluateCampaign(
 
 	// Evaluate each segment in priority order
 	for (const segment of sortedSegments) {
-		if (evaluateSegment(requestData, segment)) {
+		if (evaluateSegment(c, requestData, segment, campaignConfig.campaignId)) {
 			// Check if segment has active AB test
 			const activeABTest = segment.abTests?.find(
 				(test) => test.status === "running",
@@ -137,18 +138,27 @@ export function evaluateCampaign(
 
 /**
  * Evaluate if a segment matches the request data
+ * @param c Hono context containing the request
  * @param requestData The parsed request data
  * @param segment The segment to evaluate
+ * @param campaignId The campaign ID for visitor tracking
  * @returns True if all rules match, false otherwise
  */
-function evaluateSegment(requestData: RequestData, segment: Segment): boolean {
+function evaluateSegment(
+	c: Context,
+	requestData: RequestData,
+	segment: Segment,
+	campaignId: string,
+): boolean {
 	// If no rules, segment always matches
 	if (!segment.rules || segment.rules.length === 0) {
 		return true;
 	}
 
 	// All rules must match (AND logic)
-	return segment.rules.every((rule) => evaluateRule(requestData, rule));
+	return segment.rules.every((rule) =>
+		evaluateRule(c, requestData, rule, campaignId),
+	);
 }
 
 // ============================================================================
@@ -192,17 +202,43 @@ function shouldEnterPool(
 
 /**
  * Evaluate a single rule against request data
+ * @param c Hono context containing the request
  * @param requestData The parsed request data
  * @param rule The rule to evaluate
+ * @param campaignId The campaign ID for visitor tracking
  * @returns True if the rule matches, false otherwise
  */
-function evaluateRule(requestData: RequestData, rule: SegmentRule): boolean {
+function evaluateRule(
+	c: Context,
+	requestData: RequestData,
+	rule: SegmentRule,
+	campaignId: string,
+): boolean {
 	try {
 		switch (rule.ruleType) {
-			case "visitorType":
-				// For now, always match "all" visitor type
-				// TODO: Implement visitor tracking with cookies/storage
-				return rule.value === "all";
+			case "visitorType": {
+				// Check visitor type based on user ID cookie presence
+				const ruleValue =
+					typeof rule.value === "string"
+						? rule.value.toLowerCase()
+						: String(rule.value).toLowerCase();
+
+				switch (ruleValue) {
+					case "all":
+						return true; // Always matches all visitors
+					case "new":
+					case "first_time":
+						// New visitor = doesn't have user ID cookie
+						return !isReturningUser(c, campaignId);
+					case "returning":
+					case "repeat":
+						// Returning visitor = has user ID cookie
+						return isReturningUser(c, campaignId);
+					default:
+						// Unknown visitor type, don't match
+						return false;
+				}
+			}
 
 			case "country":
 				return evaluateStringRule(
@@ -310,12 +346,29 @@ function evaluateRule(requestData: RequestData, rule: SegmentRule): boolean {
 
 			case "hourOfDay": {
 				// Get current hour in user's timezone
-				const hour = new Date().getHours(); // TODO: Use user's timezone
+				let hour: number;
+				try {
+					if (requestData.geo.timezone) {
+						// Use user's timezone if available
+						const userDate = new Date().toLocaleString("en-US", {
+							timeZone: requestData.geo.timezone,
+							hour: "numeric",
+							hour12: false,
+						});
+						hour = Number.parseInt(userDate, 10);
+					} else {
+						// Fallback to UTC/server time
+						hour = new Date().getHours();
+					}
+				} catch {
+					// If timezone conversion fails, fallback to server time
+					hour = new Date().getHours();
+				}
 				return evaluateNumberRule(hour, rule.operator, rule.value);
 			}
 
 			case "dayOfWeek": {
-				// Get current day of week
+				// Get current day of week in user's timezone
 				const days = [
 					"sunday",
 					"monday",
@@ -325,7 +378,23 @@ function evaluateRule(requestData: RequestData, rule: SegmentRule): boolean {
 					"friday",
 					"saturday",
 				];
-				const currentDay = days[new Date().getDay()];
+				let dayIndex: number;
+				try {
+					if (requestData.geo.timezone) {
+						// Use user's timezone if available
+						const dateInUserTz = new Date().toLocaleDateString("en-CA", {
+							timeZone: requestData.geo.timezone,
+						});
+						dayIndex = new Date(`${dateInUserTz}T12:00:00`).getDay();
+					} else {
+						// Fallback to server time
+						dayIndex = new Date().getDay();
+					}
+				} catch {
+					// If timezone conversion fails, fallback to server time
+					dayIndex = new Date().getDay();
+				}
+				const currentDay = days[dayIndex];
 				return evaluateStringRule(currentDay, rule.operator, rule.value);
 			}
 
@@ -516,7 +585,8 @@ export async function evaluateCampaignWithSession(
 			sessionId: generateUniqueId(),
 			campaignId: campaignConfig.campaignId,
 			createdAt: Date.now(),
-			sessionEndsAt: Date.now() + (campaignConfig.sessionDurationInMinutes * 60 * 1000),
+			sessionEndsAt:
+				Date.now() + campaignConfig.sessionDurationInMinutes * 60 * 1000,
 		};
 		isReturning = false;
 	}

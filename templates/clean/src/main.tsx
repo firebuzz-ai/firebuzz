@@ -28,6 +28,9 @@ export const createRoot = ViteReactSSG(
       workspaceId={campaignConfiguration.workspaceId}
       projectId={campaignConfiguration.projectId}
       landingPageId={campaignConfiguration.landingPageId}
+      debug={true}
+      customEvents={campaignConfiguration.customEvents}
+      primaryGoal={campaignConfiguration.primaryGoal}
     >
       <Head />
       <App />

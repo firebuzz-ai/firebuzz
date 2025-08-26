@@ -75,7 +75,6 @@ export interface EnsureSessionResult {
 // Cookie Utilities
 // ============================================================================
 
-
 /**
  * Ensure user has a persistent user ID cookie
  * This cookie persists for 2 years and is used to identify returning users
@@ -131,7 +130,6 @@ export function isReturningUser(
 	const userData = parseCookieValue<UserData>(userCookie);
 	return userData !== null && userData.userId !== undefined;
 }
-
 
 /**
  * Parse JSON cookie value safely
@@ -232,7 +230,7 @@ export function createSession(
 		sessionId,
 		campaignId,
 		createdAt: now,
-		sessionEndsAt: now + (sessionDurationInMinutes * 60 * 1000),
+		sessionEndsAt: now + sessionDurationInMinutes * 60 * 1000,
 	};
 
 	// Set session cookie (campaign-scoped)
@@ -263,7 +261,7 @@ export function createBaseSession(
 		sessionId,
 		campaignId,
 		createdAt: now,
-		sessionEndsAt: now + (config.sessionDurationInMinutes * 60 * 1000),
+		sessionEndsAt: now + config.sessionDurationInMinutes * 60 * 1000,
 	};
 
 	setCookie(c, getSessionCookie(campaignId), encodeCookieValue(sessionData), {

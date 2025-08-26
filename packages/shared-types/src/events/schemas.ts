@@ -5,7 +5,7 @@ export const eventDataSchema = z.object({
 	timestamp: z.string().datetime(),
 	id: z.string(),
 	event_id: z.string(),
-	event_value: z.string(),
+	event_value: z.number(),
 	event_value_type: z.enum(["dynamic", "static"]),
 	event_type: z.enum(["conversion", "engagement", "system"]),
 
@@ -45,14 +45,17 @@ export const eventDataSchema = z.object({
 // Client event tracking request (minimal data sent from client)
 export const trackEventRequestSchema = z.object({
 	session_id: z.string(),
+	event_id: z.string(),
 	event_type: z.enum(["conversion", "engagement", "system"]),
-	event_value: z.string().optional(),
+	event_value: z.number().optional(),
 	event_value_type: z.enum(["dynamic", "static"]).optional(),
 
 	// Optional event-specific data
 	form_id: z.string().optional(),
 	clicked_element: z.string().optional(),
 	clicked_url: z.string().optional(),
+	page_load_time: z.number().optional(),
+	dom_ready_time: z.number().optional(),
 	scroll_percentage: z.number().int().min(0).max(100).optional(),
 	time_on_page: z.number().int().min(0).optional(),
 	viewport_width: z.number().int().min(0).optional(),
@@ -69,11 +72,13 @@ export const initSessionRequestSchema = z.object({
 	workspace_id: z.string(),
 	project_id: z.string(),
 	landing_page_id: z.string(),
-	user_id: z.string(),
-	attribution_id: z.string(),
+	user_id: z.string(), // Required for init - server ensures these exist on page load
+	attribution_id: z.string(), // Required for init - server ensures these exist on page load
 	ab_test_id: z.string().optional(),
 	ab_test_variant_id: z.string().optional(),
 	session_timeout_minutes: z.number().int().min(5).max(30).default(30),
+	environment: z.string().optional(),
+	campaign_environment: z.string().optional(),
 });
 
 // DO Session State schema

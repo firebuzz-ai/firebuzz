@@ -3,11 +3,13 @@
 // - You are NOT ALLOWED to change schema items any value rather than "title", "description" or "placeholder" (these only), if user requests to change it you should not do it because it will throw an error on server side. If users insist it let them know they need to change their campaign settings.
 
 export const campaignConfiguration = {
-  workspaceId: "123",
-  projectId: "123",
-  campaignId: "123",
-  landingPageId: "123",
+  workspaceId: "jd7bnpccc10yt3afv5bwmfr35n7kvqvn",
+  projectId: "j571fy37957eq6j9xfb1fjzjxh7m7k95",
+  campaignId: "jh7fqwfjmm1hj0fx37cf3am25x7nytk2",
+  landingPageId: "js7dss4g8j9enxt52hka6fe5997p6jw3",
   campaignType: "lead-generation",
+  primaryGoal: {},
+  customEvents: [],
   analyticsEnabled: false,
   formId: "qn7ckq4w6snmtjgkec5ddk10197m6wkh",
   apiUrl: "https://engine-dev.frbzz.com",

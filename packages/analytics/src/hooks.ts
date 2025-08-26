@@ -1,3 +1,3 @@
-'use client';
+"use client";
 
-export { useAnalytics } from './context';
+export { useAnalytics } from "./context";

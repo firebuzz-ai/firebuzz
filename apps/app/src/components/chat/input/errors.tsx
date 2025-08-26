@@ -24,6 +24,8 @@ export const Errors = ({
 }) => {
 	const [errors, setErrors] = useAtom(errorsAtom);
 
+	console.log({ errors });
+
 	const { submit, isLoading: isHandlingError } = useObject({
 		api: "/api/chat/landing/fix-error",
 		schema: z.array(schema),

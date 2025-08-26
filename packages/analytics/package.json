@@ -1,60 +1,52 @@
 {
-  "name": "@firebuzz/analytics",
-  "version": "1.0.0-beta.5",
-  "description": "Analytics tracking for Firebuzz landing pages",
-  "author": "Firebuzz Team",
-  "license": "MIT",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsup",
-    "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist",
-    "test:serve": "python3 -m http.server 8080",
-    "test:open": "open http://localhost:8080/test.html",
-    "prepublishOnly": "pnpm build",
-    "publish:beta": "pnpm build && npm publish --tag beta",
-    "publish:stable": "pnpm build && npm publish"
-  },
-  "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
-  },
-  "devDependencies": {
-    "@types/js-cookie": "^3.0.6",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.7.2"
-  },
-  "keywords": [
-    "analytics",
-    "tracking",
-    "firebuzz",
-    "landing-pages",
-    "react"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/firebuzz/analytics.git"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "dependencies": {
-    "js-cookie": "^3.0.5"
-  }
+	"name": "@firebuzz/analytics",
+	"version": "1.0.0-beta.24",
+	"description": "Analytics tracking for Firebuzz landing pages",
+	"author": "Firebuzz Team",
+	"license": "MIT",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		}
+	},
+	"files": ["dist", "README.md"],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist",
+		"test:serve": "python3 -m http.server 8080",
+		"test:open": "open http://localhost:8080/test.html",
+		"prepublishOnly": "pnpm build",
+		"publish:beta": "pnpm build && npm publish --tag beta",
+		"publish:stable": "pnpm build && npm publish",
+		"format": "pnpm biome format . --write && pnpm biome check . --write"
+	},
+	"peerDependencies": {
+		"react": ">=18.0.0",
+		"react-dom": ">=18.0.0"
+	},
+	"devDependencies": {
+		"@types/js-cookie": "^3.0.6",
+		"@types/react": "^18.0.0",
+		"@types/react-dom": "^18.0.0",
+		"tsup": "^8.0.0",
+		"typescript": "^5.7.2"
+	},
+	"keywords": ["analytics", "tracking", "firebuzz", "landing-pages", "react"],
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/firebuzz/analytics.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"dependencies": {
+		"js-cookie": "^3.0.5"
+	}
 }

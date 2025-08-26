@@ -12,14 +12,18 @@ export const apiAuth = createMiddleware<{ Bindings: Env }>((c, next) => {
 });
 
 export const cors = createMiddleware<{ Bindings: Env }>(async (c, next) => {
+	const origin = c.req.header("Origin");
+	const allowedOrigin = origin || "*";
+
 	// Handle preflight requests
 	if (c.req.method === "OPTIONS") {
 		return new Response(null, {
 			status: 204,
 			headers: {
-				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Origin": allowedOrigin,
 				"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
 				"Access-Control-Allow-Headers": "Content-Type, Authorization",
+				"Access-Control-Allow-Credentials": "true",
 				"Access-Control-Max-Age": "86400",
 			},
 		});
@@ -27,8 +31,8 @@ export const cors = createMiddleware<{ Bindings: Env }>(async (c, next) => {
 
 	// Set CORS headers for all requests
 	await next();
-	
-	c.res.headers.set("Access-Control-Allow-Origin", "*");
+
+	c.res.headers.set("Access-Control-Allow-Origin", allowedOrigin);
 	c.res.headers.set(
 		"Access-Control-Allow-Methods",
 		"GET, POST, PUT, DELETE, OPTIONS",
@@ -37,6 +41,7 @@ export const cors = createMiddleware<{ Bindings: Env }>(async (c, next) => {
 		"Access-Control-Allow-Headers",
 		"Content-Type, Authorization",
 	);
+	c.res.headers.set("Access-Control-Allow-Credentials", "true");
 });
 
 export const domainRouting = createMiddleware<{ Bindings: Env }>(

@@ -1,11 +1,12 @@
 import type { FileSystemTree } from "@webcontainer/api";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useEffect, useRef } from "react";
 
 import {
 	devServerInstanceAtom,
 	devServerLogsAtom,
 	errorsAtom,
+	isBuildingAtom,
 	isDependenciesInstalledAtom,
 	isProjectMountedAtom,
 } from "../atoms";
@@ -27,6 +28,7 @@ export const useWorkbench = (
 	const setErrors = useSetAtom(errorsAtom);
 	const setDevServerLogs = useSetAtom(devServerLogsAtom);
 	const setIsProjectMounted = useSetAtom(isProjectMountedAtom);
+	const isBuilding = useAtomValue(isBuildingAtom);
 
 	const [devServerInstance, setDevServerInstance] = useAtom(
 		devServerInstanceAtom,
@@ -125,10 +127,8 @@ export const useWorkbench = (
 						// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
 						const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
 
-						if (
-							cleanedData.includes("Internal server error") ||
-							cleanedData.includes("Error:")
-						) {
+						if (cleanedData.includes("Error:") && !isBuilding) {
+							console.log(cleanedData);
 							setErrors((prev) => {
 								return [
 									...prev,
@@ -143,7 +143,7 @@ export const useWorkbench = (
 				}),
 			);
 		}
-	}, [devServerInstance, setErrors, setDevServerLogs]);
+	}, [devServerInstance, setErrors, setDevServerLogs, isBuilding]);
 
 	useEffect(() => {
 		if (!isInitilizing.current && !devServerInstance) {

@@ -8,7 +8,6 @@ import {
 	currentImportantFilesAtom,
 	currentVersionAtom,
 	isIframeLoadedAtom,
-	parsedFilesAtom,
 	workbenchStore,
 } from "@/lib/workbench/atoms";
 import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
@@ -114,8 +113,6 @@ export const Chat = ({ id }: ChatProps) => {
 		);
 	}, [landingPageMessages]);
 
-	console.log(workbenchStore.get(parsedFilesAtom));
-
 	const { messages, setMessages, status, append, addToolResult } = useChat({
 		api: "/api/chat/landing",
 		initialMessages: formattedMessages,
@@ -152,7 +149,7 @@ export const Chat = ({ id }: ChatProps) => {
 				const path = `${id}/${args.path}`;
 				try {
 					const content = await webcontainer.fs.readFile(path, "utf-8");
-					console.log("fileContent", content);
+
 					return { success: true, content };
 				} catch (error) {
 					const message = "Error reading file";

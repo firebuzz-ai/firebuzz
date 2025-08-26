@@ -1,8 +1,8 @@
 import { env } from "cloudflare:workers";
 import { Tinybird } from "@chronark/zod-bird";
-import { z } from "zod";
 import type { EventData } from "@firebuzz/shared-types/events";
 import { eventDataSchema } from "@firebuzz/shared-types/events";
+import { z } from "zod";
 
 // Initialize Tinybird client with global env
 // We use cloudflare:workers env for runtime singleton initialization
@@ -202,6 +202,18 @@ export async function batchIngestEvents(
 		return { successful_rows: 0, quarantined_rows: 0 };
 	}
 
+	console.log("📤 Preparing events for Tinybird ingestion:", {
+		event_count: events.length,
+		event_details: events.map((e) => ({
+			event_id: e.event_id,
+			internal_id: e.id,
+			event_type: e.event_type,
+			session_id: e.session_id,
+			timestamp: e.timestamp,
+		})),
+		timestamp: new Date().toISOString(),
+	});
+
 	// Format as NDJSON (newline-delimited JSON)
 	const ndjson = events.map((event) => JSON.stringify(event)).join("\n");
 
@@ -255,6 +267,13 @@ export async function batchIngestEvents(
 		successful_rows: number;
 		quarantined_rows: number;
 	}>();
+
+	console.log("✅ Tinybird ingestion result:", {
+		successful_rows: result.successful_rows,
+		quarantined_rows: result.quarantined_rows,
+		rate_limit_headers: rateLimitHeaders,
+		timestamp: new Date().toISOString(),
+	});
 
 	return {
 		...result,

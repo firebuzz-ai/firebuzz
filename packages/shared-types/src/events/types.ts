@@ -1,11 +1,11 @@
 import type { z } from "zod";
 import type {
-	eventDataSchema,
-	trackEventRequestSchema,
-	initSessionRequestSchema,
 	doSessionStateSchema,
-	sessionValidationResponseSchema,
 	eventBatchSchema,
+	eventDataSchema,
+	initSessionRequestSchema,
+	sessionValidationResponseSchema,
+	trackEventRequestSchema,
 } from "./schemas";
 
 // Infer types from Zod schemas
@@ -13,7 +13,9 @@ export type EventData = z.infer<typeof eventDataSchema>;
 export type TrackEventRequest = z.infer<typeof trackEventRequestSchema>;
 export type InitSessionRequest = z.infer<typeof initSessionRequestSchema>;
 export type DOSessionState = z.infer<typeof doSessionStateSchema>;
-export type SessionValidationResponse = z.infer<typeof sessionValidationResponseSchema>;
+export type SessionValidationResponse = z.infer<
+	typeof sessionValidationResponseSchema
+>;
 export type EventBatch = z.infer<typeof eventBatchSchema>;
 
 // Event type enums for convenience
@@ -25,12 +27,18 @@ export const EventType = {
 
 export const EventValueType = {
 	DYNAMIC: "dynamic",
-	STATIC: "static", 
+	STATIC: "static",
 } as const;
 
 // DO RPC method types
 export interface EventTrackerDORequest {
-	action: "initSession" | "trackEvent" | "validateSession" | "getSession" | "flushEvents" | "expireSession";
+	action:
+		| "initSession"
+		| "trackEvent"
+		| "validateSession"
+		| "getSession"
+		| "flushEvents"
+		| "expireSession";
 	data?: unknown;
 }
 
@@ -73,7 +81,7 @@ export interface ExpireSessionAction {
 }
 
 // Union type for all actions
-export type EventTrackerAction = 
+export type EventTrackerAction =
 	| InitSessionAction
 	| TrackEventAction
 	| ValidateSessionAction

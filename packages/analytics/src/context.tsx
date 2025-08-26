@@ -13,26 +13,26 @@ const AnalyticsContext = createContext<AnalyticsContextValue | null>(null);
  * Hook to access analytics context
  */
 export function useAnalytics(): AnalyticsContextValue {
-  const context = useContext(AnalyticsContext);
-  if (!context) {
-    throw new Error("useAnalytics must be used within an AnalyticsProvider");
-  }
-  return context;
+	const context = useContext(AnalyticsContext);
+	if (!context) {
+		throw new Error("useAnalytics must be used within an AnalyticsProvider");
+	}
+	return context;
 }
 
 /**
  * Analytics Context Provider
  */
 export function AnalyticsContextProvider({
-  children,
-  value,
+	children,
+	value,
 }: {
-  children: React.ReactNode;
-  value: AnalyticsContextValue;
+	children: React.ReactNode;
+	value: AnalyticsContextValue;
 }) {
-  return (
-    <AnalyticsContext.Provider value={value}>
-      {children}
-    </AnalyticsContext.Provider>
-  );
+	return (
+		<AnalyticsContext.Provider value={value}>
+			{children}
+		</AnalyticsContext.Provider>
+	);
 }

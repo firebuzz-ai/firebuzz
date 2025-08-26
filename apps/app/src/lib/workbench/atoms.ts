@@ -97,6 +97,7 @@ export const workbenchStateAtom = atom((get) => {
 	if (isProjectMounted) return "project-mounted";
 	return "initializing";
 });
+export const isBuildingAtom = atomWithReset(false);
 export const isProjectMountedAtom = atomWithReset(false);
 export const isDependenciesInstalledAtom = atomWithReset(false);
 export const portAtom = atomWithReset<ServerState | null>(null);
@@ -230,4 +231,5 @@ export const resetState = async () => {
 	workbenchStore.set(currentVersionAtom, RESET);
 	workbenchStore.set(currentPreviewVersionAtom, RESET);
 	workbenchStore.set(previewRefAtom, RESET);
+	workbenchStore.set(isBuildingAtom, RESET);
 };

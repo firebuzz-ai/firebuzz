@@ -1,18 +1,17 @@
-import type {
-	DOSessionState,
-	EventData,
-} from '@firebuzz/shared-types/events';
-import { eventDataSchema, initSessionRequestSchema, trackEventRequestSchema } from '@firebuzz/shared-types/events';
-import { DurableObject } from 'cloudflare:workers';
-import { batchIngestEvents } from '../lib/tinybird';
-import { generateUniqueId } from '../utils/id-generator';
+import { DurableObject } from "cloudflare:workers";
+import type { DOSessionState, EventData } from "@firebuzz/shared-types/events";
+import {
+	eventDataSchema,
+	initSessionRequestSchema,
+	trackEventRequestSchema,
+} from "@firebuzz/shared-types/events";
+import { getEventQueueService } from "../lib/queue";
+import { generateUniqueId } from "../utils/id-generator";
 
 // ============================================================================
 // Constants
 // ============================================================================
 
-const BATCH_SIZE_THRESHOLD = 50; // Flush after 50 events
-const TIME_THRESHOLD_MS = 30000; // Flush after 30 seconds
 const SESSION_CLEANUP_DELAY_MS = 60000; // Cleanup DO 1 minute after session expires
 
 // ============================================================================
@@ -22,7 +21,6 @@ const SESSION_CLEANUP_DELAY_MS = 60000; // Cleanup DO 1 minute after session exp
 export class EventTrackerDurableObject extends DurableObject<Env> {
 	private sql: SqlStorage;
 	private currentSession: DOSessionState | null = null;
-	private flushTimer: number | null = null;
 
 	constructor(ctx: DurableObjectState, env: Env) {
 		super(ctx, env);
@@ -73,12 +71,27 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				event_id TEXT NOT NULL,
 				event_data TEXT NOT NULL, -- JSON string
 				sequence_number INTEGER NOT NULL,
-				created_at INTEGER NOT NULL
+				created_at INTEGER NOT NULL,
+				sent_to_tinybird INTEGER NOT NULL DEFAULT 0 -- 0 = not sent, 1 = sent
 			);
 
 			-- Create index for efficient querying
 			CREATE INDEX IF NOT EXISTS idx_event_buffer_sequence ON event_buffer(sequence_number);
 		`);
+
+		// Add migration for existing databases that don't have sent_to_tinybird column
+		try {
+			this.sql.exec(
+				"ALTER TABLE event_buffer ADD COLUMN sent_to_tinybird INTEGER NOT NULL DEFAULT 0",
+			);
+		} catch (error) {
+			// Column already exists, ignore error
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			if (!errorMessage.includes("duplicate column name")) {
+				console.warn("Migration warning:", error);
+			}
+		}
 
 		// Load existing session state if it exists
 		await this.loadSessionFromStorage();
@@ -89,9 +102,9 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 	// ============================================================================
 
 	private async loadSessionFromStorage(): Promise<void> {
-		const sessionRow = this.sql.exec('SELECT * FROM session_state WHERE id = 1').toArray()[0] as
-			| Record<string, unknown>
-			| undefined;
+		const sessionRow = this.sql
+			.exec("SELECT * FROM session_state WHERE id = 1")
+			.toArray()[0] as Record<string, unknown> | undefined;
 
 		if (sessionRow) {
 			this.currentSession = {
@@ -120,7 +133,12 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 	}
 
 	private async loadEventBuffer(): Promise<EventData[]> {
-		const eventRows = this.sql.exec('SELECT event_data FROM event_buffer ORDER BY sequence_number').toArray() as Array<{
+		// Only load events that haven't been sent to Tinybird yet
+		const eventRows = this.sql
+			.exec(
+				"SELECT event_data FROM event_buffer WHERE sent_to_tinybird = 0 ORDER BY sequence_number",
+			)
+			.toArray() as Array<{
 			event_data: string;
 		}>;
 
@@ -186,7 +204,12 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 	// Public RPC Methods
 	// ============================================================================
 
-	async initSession(data: unknown): Promise<{ success: boolean; session_id?: string; session_data?: DOSessionState; error?: string }> {
+	async initSession(data: unknown): Promise<{
+		success: boolean;
+		session_id?: string;
+		session_data?: DOSessionState;
+		error?: string;
+	}> {
 		try {
 			const sessionData = initSessionRequestSchema.parse(data);
 			const sessionId = sessionData.session_id; // Use provided session ID
@@ -209,8 +232,8 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				sessionTimeout: sessionData.session_timeout_minutes,
 				createdAt: now,
 				isExpired: false,
-				environment: 'production', // TODO: Get from request context
-				campaignEnvironment: 'production',
+				environment: sessionData.environment || "production",
+				campaignEnvironment: sessionData.campaign_environment || "production",
 			};
 
 			await this.saveSessionToStorage();
@@ -224,19 +247,44 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		} catch (error) {
 			return {
 				success: false,
-				error: error instanceof Error ? error.message : 'Failed to initialize session',
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to initialize session",
 			};
 		}
 	}
 
-	async trackEvent(data: unknown): Promise<{ success: boolean; event_sequence?: number; events_in_buffer?: number; flushed_to_tinybird?: boolean; error?: string }> {
+	async trackEvent(data: unknown): Promise<{
+		success: boolean;
+		event_sequence?: number;
+		events_in_buffer?: number;
+		flushed_to_tinybird?: boolean;
+		error?: string;
+	}> {
 		try {
 			const eventRequest = trackEventRequestSchema.parse(data);
 
-			if (!this.currentSession || this.currentSession.sessionId !== eventRequest.session_id) {
+			console.log("🎯 DO trackEvent called:", {
+				event_id: eventRequest.event_id,
+				event_type: eventRequest.event_type,
+				session_id: eventRequest.session_id,
+				current_session_id: this.currentSession?.sessionId,
+				timestamp: new Date().toISOString(),
+			});
+
+			if (
+				!this.currentSession ||
+				this.currentSession.sessionId !== eventRequest.session_id
+			) {
+				console.log("❌ Session mismatch or not found:", {
+					event_id: eventRequest.event_id,
+					requested_session: eventRequest.session_id,
+					current_session: this.currentSession?.sessionId,
+				});
 				return {
 					success: false,
-					error: 'Session not found or mismatched',
+					error: "Session not found or mismatched",
 				};
 			}
 
@@ -244,7 +292,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			if (await this.checkSessionExpiry()) {
 				return {
 					success: false,
-					error: 'Session expired',
+					error: "Session expired",
 				};
 			}
 
@@ -255,13 +303,22 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			this.currentSession.eventSequence += 1;
 
 			// Create complete event data
-			const eventId = generateUniqueId();
+			const internalId = generateUniqueId(); // Internal unique ID for tracking
+
+			console.log("📝 Creating event data:", {
+				event_id: eventRequest.event_id,
+				internal_id: internalId,
+				event_sequence: this.currentSession.eventSequence,
+				buffer_length: this.currentSession.eventBuffer.length,
+				timestamp: new Date().toISOString(),
+			});
+
 			const eventData: EventData = {
 				timestamp: new Date().toISOString(),
-				id: eventId,
-				event_id: eventId,
-				event_value: eventRequest.event_value || '',
-				event_value_type: eventRequest.event_value_type || 'static',
+				id: internalId,
+				event_id: eventRequest.event_id, // Use the string identifier from request
+				event_value: eventRequest.event_value || 0,
+				event_value_type: eventRequest.event_value_type || "static",
 				event_type: eventRequest.event_type,
 
 				// Context from session
@@ -279,6 +336,8 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				form_id: eventRequest.form_id,
 				clicked_element: eventRequest.clicked_element,
 				clicked_url: eventRequest.clicked_url,
+				page_load_time: eventRequest.page_load_time,
+				dom_ready_time: eventRequest.dom_ready_time,
 				scroll_percentage: eventRequest.scroll_percentage,
 				time_on_page: eventRequest.time_on_page,
 				session_event_sequence: this.currentSession.eventSequence,
@@ -291,7 +350,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				// Environment
 				environment: this.currentSession.environment,
 				campaign_environment: this.currentSession.campaignEnvironment,
-				page_url: eventRequest.page_url || '',
+				page_url: eventRequest.page_url || "",
 				referrer_url: eventRequest.referrer_url,
 			};
 
@@ -304,46 +363,62 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			// Store in database
 			await this.ctx.storage.transaction(async () => {
 				this.sql.exec(
-					'INSERT INTO event_buffer (event_id, event_data, sequence_number, created_at) VALUES (?, ?, ?, ?)',
-					eventId,
+					"INSERT INTO event_buffer (event_id, event_data, sequence_number, created_at, sent_to_tinybird) VALUES (?, ?, ?, ?, ?)",
+					eventData.event_id,
 					JSON.stringify(eventData),
 					this.currentSession!.eventSequence,
 					Date.now(),
+					0, // Not sent yet
 				);
 			});
 
 			await this.saveSessionToStorage();
 
-			// Check if we should flush
-			const shouldFlush = this.currentSession.eventBuffer.length >= BATCH_SIZE_THRESHOLD || !this.flushTimer;
+			// Send event directly to queue for processing
+			try {
+				const eventQueueService = getEventQueueService(this.env);
+				await eventQueueService.enqueue(eventData);
 
-			let flushedToTinybird = false;
-			if (shouldFlush) {
-				flushedToTinybird = await this.flushEventsToTinybird();
-			} else {
-				// Schedule flush if not already scheduled
-				this.scheduleFlush();
+				// Clear the event from buffer since it's now queued
+				this.currentSession.eventBuffer = [];
+
+				console.log("✅ Event successfully queued:", {
+					event_id: eventData.event_id,
+					internal_id: eventData.id,
+					session_id: this.currentSession.sessionId,
+					event_sequence: this.currentSession.eventSequence,
+				});
+
+				return {
+					success: true,
+					event_sequence: this.currentSession.eventSequence,
+					events_in_buffer: 0, // Always 0 since we immediately queue
+					flushed_to_tinybird: true, // Queued for processing
+				};
+			} catch (error) {
+				console.error("Failed to enqueue event:", error);
+
+				return {
+					success: false,
+					error:
+						error instanceof Error ? error.message : "Failed to queue event",
+				};
 			}
-
-			return {
-				success: true,
-				event_sequence: this.currentSession.eventSequence,
-				events_in_buffer: this.currentSession.eventBuffer.length,
-				flushed_to_tinybird: flushedToTinybird,
-			};
 		} catch (error) {
 			return {
 				success: false,
-				error: error instanceof Error ? error.message : 'Failed to track event',
+				error: error instanceof Error ? error.message : "Failed to track event",
 			};
 		}
 	}
 
-	async validateSession(sessionId: string): Promise<{ success: boolean; session?: DOSessionState; error?: string }> {
+	async validateSession(
+		sessionId: string,
+	): Promise<{ success: boolean; session?: DOSessionState; error?: string }> {
 		if (!this.currentSession || this.currentSession.sessionId !== sessionId) {
 			return {
 				success: false,
-				error: 'Session not found',
+				error: "Session not found",
 			};
 		}
 
@@ -351,7 +426,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		if (isExpired) {
 			return {
 				success: false,
-				error: 'Session expired',
+				error: "Session expired",
 			};
 		}
 
@@ -365,11 +440,13 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		};
 	}
 
-	async getSession(sessionId: string): Promise<{ success: boolean; session?: DOSessionState; error?: string }> {
+	async getSession(
+		sessionId: string,
+	): Promise<{ success: boolean; session?: DOSessionState; error?: string }> {
 		if (!this.currentSession || this.currentSession.sessionId !== sessionId) {
 			return {
 				success: false,
-				error: 'Session not found',
+				error: "Session not found",
 			};
 		}
 
@@ -379,31 +456,39 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		};
 	}
 
-	async flushEvents(sessionId: string): Promise<{ success: boolean; flushed_events?: boolean; error?: string }> {
+	async flushEvents(
+		sessionId: string,
+	): Promise<{ success: boolean; flushed_events?: boolean; error?: string }> {
 		if (!this.currentSession || this.currentSession.sessionId !== sessionId) {
 			return {
 				success: false,
-				error: 'Session not found',
+				error: "Session not found",
 			};
 		}
 
-		const flushed = await this.flushEventsToTinybird();
+		// With queue system, events are immediately queued when tracked
+		// No buffered events to flush
+		console.log(
+			"🚀 Flush requested - events are immediately queued, no buffer to flush",
+		);
+
 		return {
 			success: true,
-			flushed_events: flushed,
+			flushed_events: true,
 		};
 	}
 
-	async expireSession(sessionId: string): Promise<{ success: boolean; error?: string }> {
+	async expireSession(
+		sessionId: string,
+	): Promise<{ success: boolean; error?: string }> {
 		if (!this.currentSession || this.currentSession.sessionId !== sessionId) {
 			return {
 				success: false,
-				error: 'Session not found',
+				error: "Session not found",
 			};
 		}
 
-		// Flush remaining events first
-		await this.flushEventsToTinybird();
+		// No need to flush since events are immediately queued
 
 		// Mark as expired
 		this.currentSession.isExpired = true;
@@ -442,64 +527,16 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 	private async scheduleSessionExpiry(): Promise<void> {
 		if (!this.currentSession) return;
 
-		const expiryTime = this.currentSession.lastActivity + this.currentSession.sessionTimeout * 60 * 1000;
+		const expiryTime =
+			this.currentSession.lastActivity +
+			this.currentSession.sessionTimeout * 60 * 1000;
 
 		await this.ctx.storage.setAlarm(expiryTime);
 	}
 
 	// ============================================================================
-	// Event Buffer Management
+	// Session Management - Queue-based event processing
 	// ============================================================================
-
-	private scheduleFlush(): void {
-		if (this.flushTimer) return; // Already scheduled
-
-		this.flushTimer = setTimeout(async () => {
-			await this.flushEventsToTinybird();
-			this.flushTimer = null;
-		}, TIME_THRESHOLD_MS) as unknown as number;
-	}
-
-	private async flushEventsToTinybird(): Promise<boolean> {
-		if (!this.currentSession || this.currentSession.eventBuffer.length === 0) {
-			return false;
-		}
-
-		try {
-			// Send events to Tinybird
-			const events = [...this.currentSession.eventBuffer];
-			const result = await batchIngestEvents(events, this.env);
-
-			console.log(`Flushed ${events.length} events to Tinybird:`, {
-				successful: result.successful_rows,
-				quarantined: result.quarantined_rows,
-				session_id: this.currentSession.sessionId,
-			});
-
-			// Clear buffer on successful flush
-			if (result.successful_rows > 0) {
-				this.currentSession.eventBuffer = [];
-
-				// Clear event buffer from storage
-				await this.ctx.storage.transaction(async () => {
-					this.sql.exec('DELETE FROM event_buffer');
-				});
-
-				await this.saveSessionToStorage();
-			}
-
-			// Clear flush timer
-			if (this.flushTimer) {
-				clearTimeout(this.flushTimer);
-				this.flushTimer = null;
-			}
-
-			return result.successful_rows > 0;
-		} catch (error) {
-			console.error('Failed to flush events to Tinybird:', error);
-			return false;
-		}
-	}
 
 	// ============================================================================
 	// Alarm Handler
@@ -515,17 +552,17 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 					await this.scheduleSessionExpiry();
 				}
 			} else {
-				// This is cleanup alarm - flush remaining events and cleanup
-				await this.flushEventsToTinybird();
+				// This is cleanup alarm - no events to flush with queue system
+				console.log("🧹 Cleaning up expired session, events already queued");
 
 				// Clear all storage for this DO
 				await this.ctx.storage.deleteAll();
 				this.currentSession = null;
 
-				console.log('EventTracker DO cleaned up after session expiry');
+				console.log("EventTracker DO cleaned up after session expiry");
 			}
 		} catch (error) {
-			console.error('EventTracker alarm error:', error);
+			console.error("EventTracker alarm error:", error);
 		}
 	}
 }
