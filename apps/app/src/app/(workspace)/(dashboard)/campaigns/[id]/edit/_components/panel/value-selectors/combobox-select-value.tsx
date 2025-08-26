@@ -95,7 +95,22 @@ export const ComboboxSelectValue = ({
 					className="w-full p-0 w-[var(--radix-popover-trigger-width)]"
 					align="start"
 				>
-					<Command>
+					<Command
+						filter={(value, search) => {
+							const option = options.find((opt) => opt.value === value);
+							if (!option) return 0;
+
+							const searchLower = search.toLowerCase();
+							const labelMatch = option.label
+								.toLowerCase()
+								.includes(searchLower);
+							const valueMatch = option.value
+								.toLowerCase()
+								.includes(searchLower);
+
+							return labelMatch || valueMatch ? 1 : 0;
+						}}
+					>
 						<CommandInput className="h-8" placeholder={searchPlaceholder} />
 						<CommandList>
 							<CommandEmpty>{emptyMessage}</CommandEmpty>

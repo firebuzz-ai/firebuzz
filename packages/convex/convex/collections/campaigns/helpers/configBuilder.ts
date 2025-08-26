@@ -22,7 +22,10 @@ export function buildCampaignConfig(
 	nodes: Node[],
 	edges: Edge[],
 	settings: Doc<"campaigns">["campaignSettings"],
-	campaign: Pick<Doc<"campaigns">, "_id" | "primaryLanguage">,
+	campaign: Pick<
+		Doc<"campaigns">,
+		"_id" | "primaryLanguage" | "projectId" | "workspaceId"
+	>,
 ): CampaignConfig {
 	// Find the traffic node (root node)
 	const trafficNode = nodes.find((node) => node.type === "traffic");
@@ -40,6 +43,8 @@ export function buildCampaignConfig(
 		attributionPeriodInDays: settings.attributionPeriodInDays,
 		primaryGoal: settings.primaryGoal,
 		customEvents: settings.customEvents || [],
+		projectId: campaign.projectId,
+		workspaceId: campaign.workspaceId,
 	};
 
 	// Get all segments connected to traffic node

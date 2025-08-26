@@ -1,11 +1,14 @@
 import { initSessionRequestSchema } from "@firebuzz/shared-types/events";
 import { Hono } from "hono";
 import { generateTrackingToken, verifyTrackingToken } from "../../../lib/jwt";
+import { getSessionQueueService } from "../../../lib/queue";
+import { parseRequest } from "../../../lib/request";
 import {
 	getCurrentAttribution,
 	getCurrentSession,
 	getCurrentUserId,
 } from "../../../lib/session";
+import { formatSessionData } from "../../../lib/tinybird";
 import { detectEnvironment } from "../../../utils/environment";
 import { generateUniqueId } from "../../../utils/id-generator";
 
@@ -215,6 +218,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				project_id,
 				landing_page_id,
 				session_timeout_minutes = 30,
+				session_context,
 			} = body;
 
 			// Detect environment based on hostname
@@ -327,6 +331,115 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 						abTestVariantId: oldSession?.abTest?.variantId,
 					},
 					c.env.TRACKING_JWT_SECRET,
+				);
+
+				// Track renewed session via queue for analytics (fire and forget)
+				c.executionCtx.waitUntil(
+					(async () => {
+						try {
+							const queueService = getSessionQueueService(c.env);
+
+							// Use stored session context if available, otherwise fall back to API request data
+							if (session_context) {
+								// Use the original session context from localStorage
+								const sessionQueueData = formatSessionData({
+									timestamp: new Date().toISOString(),
+									sessionId: new_session_id,
+									attributionId: attribution.attributionId,
+									userId: userId,
+									projectId: project_id,
+									workspaceId: workspace_id,
+									campaignId: campaign_id,
+									landingPageId: session_context.landingPageId,
+									abTestId: session_context.abTestId,
+									abTestVariantId: session_context.abTestVariantId,
+									utm: session_context.utm,
+									geo: session_context.geo,
+									device: session_context.device,
+									traffic: session_context.traffic,
+									localization: session_context.localization,
+									bot: session_context.bot,
+									network: session_context.network,
+									session: {
+										isReturning: true, // Renewal means it's a returning session
+										campaignEnvironment:
+											session_context.session.campaignEnvironment,
+										environment: session_context.session.environment,
+										uri: session_context.session.uri,
+										fullUri: session_context.session.fullUri,
+									},
+								});
+								await queueService.enqueue(sessionQueueData);
+							} else {
+								// Fallback to API request data (the old way)
+								const requestData = parseRequest(c);
+								const sessionQueueData = formatSessionData({
+									timestamp: new Date().toISOString(),
+									sessionId: new_session_id,
+									attributionId: attribution.attributionId,
+									userId: userId,
+									projectId: project_id,
+									workspaceId: workspace_id,
+									campaignId: campaign_id,
+									landingPageId: landing_page_id, // Use the correct landing page ID from session
+									abTestId: oldSession?.abTest?.testId || null,
+									abTestVariantId: oldSession?.abTest?.variantId || null,
+									utm: {
+										source: requestData.params.utm.utm_source,
+										medium: requestData.params.utm.utm_medium,
+										campaign: requestData.params.utm.utm_campaign,
+										term: requestData.params.utm.utm_term,
+										content: requestData.params.utm.utm_content,
+									},
+									geo: {
+										country: requestData.geo.country,
+										city: requestData.geo.city,
+										region: requestData.geo.region,
+										regionCode: requestData.geo.regionCode,
+										continent: requestData.geo.continent,
+										latitude: requestData.geo.latitude,
+										longitude: requestData.geo.longitude,
+										postalCode: requestData.geo.postalCode,
+										timezone: requestData.geo.timezone,
+										isEUCountry: requestData.geo.isEUCountry,
+									},
+									device: {
+										type: requestData.device.type,
+										os: requestData.device.os,
+										browser: requestData.device.browser,
+										browserVersion: requestData.device.browserVersion,
+										isMobile: requestData.device.isMobile,
+										connectionType: requestData.device.connectionType,
+									},
+									traffic: {
+										referrer: requestData.traffic.referrer,
+										userAgent: requestData.traffic.userAgent,
+									},
+									localization: {
+										language: requestData.localization.language,
+										languages: requestData.localization.languages,
+									},
+									bot: requestData.bot,
+									network: {
+										ip: requestData.firebuzz.realIp,
+										isSSL: requestData.firebuzz.isSSL,
+										domainType: requestData.firebuzz.domainType,
+										userHostname: requestData.firebuzz.userHostname,
+									},
+									session: {
+										isReturning: true, // Renewal means it's a returning session
+										campaignEnvironment: environmentContext.campaignEnvironment,
+										environment: requestData.firebuzz.environment,
+										uri: requestData.firebuzz.uri,
+										fullUri: requestData.firebuzz.fullUri,
+									},
+								});
+								await queueService.enqueue(sessionQueueData);
+							}
+						} catch (error) {
+							console.error("Failed to queue renewed session data:", error);
+						}
+					})(),
 				);
 
 				return c.json(

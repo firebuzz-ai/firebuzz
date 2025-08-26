@@ -30,6 +30,22 @@ const gridConfig = {
 	},
 };
 
+// Status color mapping from abtest-panel.tsx
+const getStatusColor = (status: string) => {
+	switch (status) {
+		case "draft":
+			return "bg-primary";
+		case "running":
+			return "bg-blue-500";
+		case "paused":
+			return "bg-gray-600";
+		case "completed":
+			return "bg-emerald-600";
+		default:
+			return "bg-gray-500";
+	}
+};
+
 // Use NodeProps with the complete node type
 export const ABTestNode = memo(
 	({ selected, data, id }: NodeProps<ABTestNodeType>) => {
@@ -298,10 +314,13 @@ export const ABTestNode = memo(
 					<span className="text-lg font-medium">{title}</span>
 
 					<div className="ml-auto">
-						<Badge variant="outline">
+						<Badge variant="outline" className="flex gap-1.5 items-center">
 							{data.status
 								? data.status.charAt(0).toUpperCase() + data.status.slice(1)
 								: "Draft"}
+							<div
+								className={`w-2 h-2 rounded-full ${getStatusColor(data.status || "draft")}`}
+							/>
 						</Badge>
 					</div>
 				</div>

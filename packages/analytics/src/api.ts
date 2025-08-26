@@ -83,6 +83,139 @@ export function getConfig(): ApiClientConfig {
 }
 
 // ============================================================================
+// Session Context Storage
+// ============================================================================
+
+interface StoredSessionContext {
+	landingPageId: string;
+	abTestId: string | null;
+	abTestVariantId: string | null;
+	utm: {
+		source?: string;
+		medium?: string;
+		campaign?: string;
+		term?: string;
+		content?: string;
+	};
+	geo: {
+		country: string | null;
+		city: string | null;
+		region: string | null;
+		regionCode: string | null;
+		continent: string | null;
+		latitude: string | null;
+		longitude: string | null;
+		postalCode: string | null;
+		timezone: string | null;
+		isEUCountry: boolean;
+	};
+	device: {
+		type: string;
+		os: string;
+		browser: string;
+		browserVersion: string | null;
+		isMobile: boolean;
+		connectionType: string;
+	};
+	traffic: {
+		referrer: string | null;
+		userAgent: string;
+	};
+	localization: {
+		language: string | null;
+		languages: string[];
+	};
+	bot: {
+		corporateProxy: boolean;
+		verifiedBot: boolean;
+		score: number;
+	} | null;
+	network: {
+		ip: string | null;
+		isSSL: boolean;
+		domainType: string | null;
+		userHostname: string | null;
+	};
+	session: {
+		isReturning: boolean;
+		campaignEnvironment: string;
+		environment: string | null;
+		uri: string | null;
+		fullUri: string | null;
+	};
+}
+
+/**
+ * Store session context from server-injected global variable
+ */
+function storeSessionContext(campaignId: string): boolean {
+	try {
+		// Check if we're in a browser
+		if (typeof window === "undefined" || typeof localStorage === "undefined") {
+			return false;
+		}
+
+		// Check for server-injected session context
+		// The server will inject this via a script tag: window.__FIREBUZZ_SESSION_CONTEXT__
+		const globalContext = (
+			window as { __FIREBUZZ_SESSION_CONTEXT__?: StoredSessionContext }
+		).__FIREBUZZ_SESSION_CONTEXT__;
+
+		if (!globalContext) {
+			log("No session context found from server");
+			return false;
+		}
+
+		const sessionContext: StoredSessionContext = globalContext;
+
+		// Store in localStorage
+		localStorage.setItem(
+			`firebuzz_session_context_${campaignId}`,
+			JSON.stringify(sessionContext),
+		);
+		log("Session context stored successfully", sessionContext);
+
+		// Clean up global variable
+		(
+			window as { __FIREBUZZ_SESSION_CONTEXT__?: StoredSessionContext }
+		).__FIREBUZZ_SESSION_CONTEXT__ = undefined;
+
+		return true;
+	} catch (error) {
+		log("Failed to store session context:", error);
+		return false;
+	}
+}
+
+/**
+ * Get stored session context from localStorage
+ */
+function getStoredSessionContext(
+	campaignId: string,
+): StoredSessionContext | null {
+	try {
+		if (typeof localStorage === "undefined") {
+			return null;
+		}
+
+		const stored = localStorage.getItem(
+			`firebuzz_session_context_${campaignId}`,
+		);
+		if (!stored) {
+			log("No stored session context found");
+			return null;
+		}
+
+		const context = JSON.parse(stored) as StoredSessionContext;
+		log("Retrieved stored session context", context);
+		return context;
+	} catch (error) {
+		log("Failed to retrieve stored session context:", error);
+		return null;
+	}
+}
+
+// ============================================================================
 // API Methods
 // ============================================================================
 
@@ -212,14 +345,19 @@ export async function renewSession(
 			? window.location.pathname.split("/").filter(Boolean)[0]
 			: config.campaignSlug; // Fallback to provided slug
 
+	// Get stored session context for proper renewal data
+	const storedContext = getStoredSessionContext(config.campaignId);
+
 	const renewalData = {
 		new_session_id: newSessionId,
 		campaign_id: config.campaignId,
 		campaign_slug: campaignSlug, // Auto-detect from URL or use provided
 		workspace_id: config.workspaceId,
 		project_id: config.projectId,
-		landing_page_id: config.landingPageId,
+		landing_page_id: storedContext?.landingPageId || config.landingPageId,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
+		// Include stored session context if available
+		session_context: storedContext,
 	};
 
 	log("Renewing session:", { oldSessionId, newSessionId, renewalData });
@@ -261,7 +399,13 @@ export async function renewSession(
 		// Import Cookies if not already imported
 		const Cookies = (await import("js-cookie")).default;
 
-		// 1. Set session cookie
+		// Determine if this is a preview environment by checking domain
+		const isPreview =
+			typeof window !== "undefined" &&
+			(window.location.hostname.includes("preview") ||
+				window.location.hostname.includes("engine-dev"));
+
+		// 1. Always set session cookie (this expires and triggers renewal)
 		const sessionCookie = {
 			sessionId: result.data.session_id,
 			campaignId: config.campaignId,
@@ -280,59 +424,71 @@ export async function renewSession(
 			},
 		);
 
-		// 2. Set user cookie if provided (may be newly generated)
+		// 2. Only set user cookie if it doesn't exist or if server provided new one
 		if (result.data.user_id) {
-			const userCookie = {
-				userId: result.data.user_id,
-				createdAt: Date.now(),
-			};
+			// Use correct cookie naming: preview uses campaign prefix, production doesn't
+			const userCookieName = isPreview
+				? `frbzz_uid_${config.campaignId}`
+				: "frbzz_uid";
 
-			Cookies.set(
-				`frbzz_uid_${config.campaignId}`,
-				JSON.stringify(userCookie),
-				{
+			// Check if user cookie already exists and is valid
+			const existingUserCookie = Cookies.get(userCookieName);
+
+			if (!existingUserCookie) {
+				// Only set if missing
+				const userCookie = {
+					userId: result.data.user_id,
+					createdAt: Date.now(),
+				};
+
+				Cookies.set(userCookieName, JSON.stringify(userCookie), {
 					expires: 400, // 400 days
 					secure: true,
 					sameSite: "Lax",
 					path: "/",
-				},
-			);
+				});
 
-			log("✅ User cookie set:", result.data.user_id);
+				log("✅ User cookie set (was missing):", result.data.user_id);
+			} else {
+				log("✅ User cookie already exists, not overwriting");
+			}
 		}
 
-		// 3. Set attribution cookie if provided (may be newly generated)
+		// 3. Only set attribution cookie if it doesn't exist or if server provided new one
 		if (result.data.attribution_id) {
-			// Use attribution duration from server response (includes campaign settings)
-			const attributionDurationDays =
-				result.data.attribution_duration_days || 30;
+			const attributionCookieName = `frbzz_attribution_${config.campaignId}`;
+			const existingAttributionCookie = Cookies.get(attributionCookieName);
 
-			const attributionCookie = {
-				attributionId: result.data.attribution_id,
-				campaignId: config.campaignId,
-				createdAt: Date.now(),
-			};
+			if (!existingAttributionCookie) {
+				// Only set if missing
+				const attributionDurationDays =
+					result.data.attribution_duration_days || 30;
 
-			Cookies.set(
-				`frbzz_attribution_${config.campaignId}`,
-				JSON.stringify(attributionCookie),
-				{
+				const attributionCookie = {
+					attributionId: result.data.attribution_id,
+					campaignId: config.campaignId,
+					createdAt: Date.now(),
+				};
+
+				Cookies.set(attributionCookieName, JSON.stringify(attributionCookie), {
 					expires: attributionDurationDays, // Use campaign-configured attribution period
 					secure: true,
 					sameSite: "Lax",
 					path: "/",
-				},
-			);
+				});
 
-			log(
-				"✅ Attribution cookie set with duration:",
-				attributionDurationDays,
-				"days",
-			);
+				log(
+					"✅ Attribution cookie set (was missing) with duration:",
+					attributionDurationDays,
+					"days",
+				);
+			} else {
+				log("✅ Attribution cookie already exists, not overwriting");
+			}
 		}
 
 		log(
-			"✅ All cookies renewed with session duration:",
+			"✅ Session renewal complete with duration:",
 			sessionDurationMinutes,
 			"minutes",
 		);
@@ -532,6 +688,10 @@ async function initializeSessionWithoutCookie(
  */
 export async function initializeAnalytics(): Promise<boolean> {
 	const config = getConfig();
+
+	// Try to store session context from server (only works on new sessions/page loads)
+	storeSessionContext(config.campaignId);
+
 	const validSessionId = getValidSessionId(config.campaignId);
 
 	if (validSessionId) {

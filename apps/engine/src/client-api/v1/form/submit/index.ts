@@ -193,12 +193,20 @@ export const formSubmitRoute = app
 	.openapi(submitFormRoute, async (c) => {
 		const { formId } = c.req.valid("param");
 		const submissionData = c.req.valid("json");
+		const origin = c.req.header("origin");
+		const isPreview =
+			origin?.includes("preview.frbzz.com") ||
+			origin?.includes("preview-dev.frbzz.com") ||
+			origin?.includes("preview-preview.frbzz.com");
 
 		try {
 			// Get form config from KV store
-			const configResult = await c.env.CAMPAIGN.get(`form:${formId}`, {
-				type: "json",
-			});
+			const configResult = await c.env.CAMPAIGN.get(
+				`form:${isPreview ? "preview" : "production"}:${formId}`,
+				{
+					type: "json",
+				},
+			);
 
 			if (!configResult) {
 				return c.json(
@@ -214,7 +222,7 @@ export const formSubmitRoute = app
 			const config = formConfigSchema.parse(configResult);
 
 			// Extract isTest flag from submission data
-			const { isTest, ...formData } = submissionData;
+			const { ...formData } = submissionData;
 
 			// Create Zod schema from form fields
 			const validationSchema = createZodSchemaFromFormFields(config.schema);
@@ -255,7 +263,7 @@ export const formSubmitRoute = app
 				body: JSON.stringify({
 					formId,
 					data: validationResult.data,
-					isTest: isTest || false,
+					isTest: isPreview,
 				}),
 			});
 

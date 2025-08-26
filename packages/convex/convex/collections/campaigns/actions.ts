@@ -44,7 +44,12 @@ export const storeCampaignConfigInKV = internalAction({
 			campaign.nodes,
 			campaign.edges,
 			campaign.campaignSettings,
-			{ _id: campaign._id, primaryLanguage: campaign.primaryLanguage },
+			{
+				_id: campaign._id,
+				primaryLanguage: campaign.primaryLanguage,
+				projectId: campaign.projectId,
+				workspaceId: campaign.workspaceId,
+			},
 		);
 
 		const validationResult = await ctx.runQuery(
@@ -164,7 +169,12 @@ export const syncABTest = internalAction({
 			campaign.nodes,
 			campaign.edges,
 			campaign.campaignSettings,
-			{ _id: campaign._id, primaryLanguage: campaign.primaryLanguage },
+			{
+				_id: campaign._id,
+				primaryLanguage: campaign.primaryLanguage,
+				projectId: campaign.projectId,
+				workspaceId: campaign.workspaceId,
+			},
 		);
 
 		const notDraftAbTests = config.segments

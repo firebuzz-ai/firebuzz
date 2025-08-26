@@ -24,6 +24,7 @@ app.get("/:campaignSlug", async (c) => {
 	});
 
 	if (!config) {
+		console.error("Campaign not found in KV:", key);
 		return c.redirect("/utility/campaign-not-found");
 	}
 
@@ -131,6 +132,70 @@ app.get("/:campaignSlug", async (c) => {
 	c.header("X-Is-Returning-User", isReturningUser ? "true" : "false");
 	c.header("X-Is-Existing-Session", isExistingSession ? "true" : "false");
 
+	// Store session context for analytics package (only for new sessions)
+	let finalHtml = html;
+	if (!isExistingSession) {
+		const sessionContext = {
+			landingPageId: landingPageId,
+			abTestId: abTestId,
+			abTestVariantId: abTestVariantId,
+			utm: {
+				source: requestData.params.utm.utm_source,
+				medium: requestData.params.utm.utm_medium,
+				campaign: requestData.params.utm.utm_campaign,
+				term: requestData.params.utm.utm_term,
+				content: requestData.params.utm.utm_content,
+			},
+			geo: {
+				country: requestData.geo.country,
+				city: requestData.geo.city,
+				region: requestData.geo.region,
+				regionCode: requestData.geo.regionCode,
+				continent: requestData.geo.continent,
+				latitude: requestData.geo.latitude,
+				longitude: requestData.geo.longitude,
+				postalCode: requestData.geo.postalCode,
+				timezone: requestData.geo.timezone,
+				isEUCountry: requestData.geo.isEUCountry,
+			},
+			device: {
+				type: requestData.device.type,
+				os: requestData.device.os,
+				browser: requestData.device.browser,
+				browserVersion: requestData.device.browserVersion,
+				isMobile: requestData.device.isMobile,
+				connectionType: requestData.device.connectionType,
+			},
+			traffic: {
+				referrer: requestData.traffic.referrer,
+				userAgent: requestData.traffic.userAgent,
+			},
+			localization: {
+				language: requestData.localization.language,
+				languages: requestData.localization.languages,
+			},
+			bot: requestData.bot,
+			network: {
+				ip: requestData.firebuzz.realIp,
+				isSSL: requestData.firebuzz.isSSL,
+				domainType: requestData.firebuzz.domainType,
+				userHostname: requestData.firebuzz.userHostname,
+			},
+			session: {
+				isReturning: isReturningUser,
+				campaignEnvironment: "production",
+				environment: requestData.firebuzz.environment,
+				uri: requestData.firebuzz.uri,
+				fullUri: requestData.firebuzz.fullUri,
+			},
+		};
+		c.header("X-Session-Context", JSON.stringify(sessionContext));
+
+		// Inject session context into HTML for client-side access
+		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
+		finalHtml = html.replace("</head>", `${contextScript}</head>`);
+	}
+
 	// Track session via queue for batching and throttling (only for new sessions)
 	if (
 		!isExistingSession &&
@@ -214,7 +279,7 @@ app.get("/:campaignSlug", async (c) => {
 	}
 
 	// Serve the HTML
-	return c.html(html);
+	return c.html(finalHtml);
 });
 
 // Assets Route for landing pages (CSS/JS)

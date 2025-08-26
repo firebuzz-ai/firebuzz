@@ -5,7 +5,8 @@ import {
 	initSessionRequestSchema,
 	trackEventRequestSchema,
 } from "@firebuzz/shared-types/events";
-import { getEventQueueService } from "../lib/queue";
+import { getEventQueueService, getSessionQueueService } from "../lib/queue";
+import { formatSessionData } from "../lib/tinybird";
 import { generateUniqueId } from "../utils/id-generator";
 
 // ============================================================================
@@ -73,6 +74,14 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				sequence_number INTEGER NOT NULL,
 				created_at INTEGER NOT NULL,
 				sent_to_tinybird INTEGER NOT NULL DEFAULT 0 -- 0 = not sent, 1 = sent
+			);
+
+			-- Session context table (stores original request context for renewals)
+			CREATE TABLE IF NOT EXISTS session_context (
+				id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+				context_data TEXT NOT NULL, -- JSON string with geo, device, traffic, etc.
+				created_at INTEGER NOT NULL,
+				CONSTRAINT single_context CHECK (id = 1)
 			);
 
 			-- Create index for efficient querying
@@ -265,14 +274,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		try {
 			const eventRequest = trackEventRequestSchema.parse(data);
 
-			console.log("🎯 DO trackEvent called:", {
-				event_id: eventRequest.event_id,
-				event_type: eventRequest.event_type,
-				session_id: eventRequest.session_id,
-				current_session_id: this.currentSession?.sessionId,
-				timestamp: new Date().toISOString(),
-			});
-
 			if (
 				!this.currentSession ||
 				this.currentSession.sessionId !== eventRequest.session_id
@@ -304,14 +305,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 
 			// Create complete event data
 			const internalId = generateUniqueId(); // Internal unique ID for tracking
-
-			console.log("📝 Creating event data:", {
-				event_id: eventRequest.event_id,
-				internal_id: internalId,
-				event_sequence: this.currentSession.eventSequence,
-				buffer_length: this.currentSession.eventBuffer.length,
-				timestamp: new Date().toISOString(),
-			});
 
 			const eventData: EventData = {
 				timestamp: new Date().toISOString(),
@@ -381,13 +374,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 
 				// Clear the event from buffer since it's now queued
 				this.currentSession.eventBuffer = [];
-
-				console.log("✅ Event successfully queued:", {
-					event_id: eventData.event_id,
-					internal_id: eventData.id,
-					session_id: this.currentSession.sessionId,
-					event_sequence: this.currentSession.eventSequence,
-				});
 
 				return {
 					success: true,
@@ -500,6 +486,109 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 		return {
 			success: true,
 		};
+	}
+
+	// ============================================================================
+	// Session Context Management (for renewals)
+	// ============================================================================
+
+	async storeSessionContext(
+		contextData: Record<string, unknown>,
+	): Promise<{ success: boolean; error?: string }> {
+		try {
+			await this.ctx.storage.transaction(async () => {
+				this.sql.exec(
+					`INSERT INTO session_context (id, context_data, created_at) VALUES (1, ?, ?)
+					ON CONFLICT(id) DO UPDATE SET
+						context_data = excluded.context_data,
+						created_at = excluded.created_at`,
+					JSON.stringify(contextData),
+					Date.now(),
+				);
+			});
+
+			return { success: true };
+		} catch (error) {
+			return {
+				success: false,
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to store session context",
+			};
+		}
+	}
+
+	async queueRenewalSessionData(): Promise<{
+		success: boolean;
+		error?: string;
+	}> {
+		try {
+			if (!this.currentSession) {
+				return {
+					success: false,
+					error: "No current session to queue",
+				};
+			}
+
+			// Get stored context data
+			const contextRow = this.sql
+				.exec("SELECT context_data FROM session_context WHERE id = 1")
+				.toArray()[0] as { context_data: string } | undefined;
+
+			if (!contextRow) {
+				return {
+					success: false,
+					error: "No session context stored",
+				};
+			}
+
+			const contextData = JSON.parse(contextRow.context_data);
+			const queueService = getSessionQueueService(this.env);
+
+			// Format session data using stored context + current session data
+			const sessionQueueData = formatSessionData({
+				timestamp: new Date().toISOString(),
+				sessionId: this.currentSession.sessionId,
+				attributionId: this.currentSession.attributionId,
+				userId: this.currentSession.userId,
+				projectId: this.currentSession.projectId,
+				workspaceId: this.currentSession.workspaceId,
+				campaignId: this.currentSession.campaignId,
+				landingPageId: this.currentSession.landingPageId,
+				abTestId: this.currentSession.abTestId,
+				abTestVariantId: this.currentSession.abTestVariantId,
+				// Use stored context for rich data
+				utm: contextData.utm,
+				geo: contextData.geo,
+				device: contextData.device,
+				traffic: contextData.traffic,
+				localization: contextData.localization,
+				bot: contextData.bot,
+				network: contextData.network,
+				session: {
+					isReturning: true, // This is a renewal
+					campaignEnvironment: this.currentSession.campaignEnvironment as
+						| "production"
+						| "preview",
+					environment: this.currentSession.environment,
+					uri: contextData.session.uri,
+					fullUri: contextData.session.fullUri,
+				},
+			});
+
+			await queueService.enqueue(sessionQueueData);
+
+			return { success: true };
+		} catch (error) {
+			return {
+				success: false,
+				error:
+					error instanceof Error
+						? error.message
+						: "Failed to queue renewal session data",
+			};
+		}
 	}
 
 	// ============================================================================

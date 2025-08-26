@@ -33,8 +33,15 @@ app.get("/:campaignId", async (c) => {
 		ensureSessionAndAttribution(c, config, true);
 	const evaluation = evaluateCampaign(c, config, session, isExistingSession);
 
-	// Parse request data for session tracking (will be used later)
+	// Parse request data for session tracking
+	// For preview campaigns, we need to supplement missing data from campaign config
 	const requestData = parseRequest(c);
+
+	// Override missing data with values from campaign config
+	requestData.firebuzz.projectId = config.projectId;
+	requestData.firebuzz.workspaceId = config.workspaceId;
+	requestData.firebuzz.isCampaign = true;
+	requestData.firebuzz.domainType = "preview";
 
 	// Determine landing page ID based on evaluation type
 	let landingPageId: string | undefined;
@@ -127,6 +134,70 @@ app.get("/:campaignId", async (c) => {
 	c.header("X-Is-Existing-Session", isExistingSession ? "true" : "false");
 	c.header("X-Preview-Mode", "true");
 
+	// Store session context for analytics package (only for new sessions)
+	let finalHtml = html;
+	if (!isExistingSession) {
+		const sessionContext = {
+			landingPageId: landingPageId,
+			abTestId: abTestId,
+			abTestVariantId: abTestVariantId,
+			utm: {
+				source: requestData.params.utm.utm_source,
+				medium: requestData.params.utm.utm_medium,
+				campaign: requestData.params.utm.utm_campaign,
+				term: requestData.params.utm.utm_term,
+				content: requestData.params.utm.utm_content,
+			},
+			geo: {
+				country: requestData.geo.country,
+				city: requestData.geo.city,
+				region: requestData.geo.region,
+				regionCode: requestData.geo.regionCode,
+				continent: requestData.geo.continent,
+				latitude: requestData.geo.latitude,
+				longitude: requestData.geo.longitude,
+				postalCode: requestData.geo.postalCode,
+				timezone: requestData.geo.timezone,
+				isEUCountry: requestData.geo.isEUCountry,
+			},
+			device: {
+				type: requestData.device.type,
+				os: requestData.device.os,
+				browser: requestData.device.browser,
+				browserVersion: requestData.device.browserVersion,
+				isMobile: requestData.device.isMobile,
+				connectionType: requestData.device.connectionType,
+			},
+			traffic: {
+				referrer: requestData.traffic.referrer,
+				userAgent: requestData.traffic.userAgent,
+			},
+			localization: {
+				language: requestData.localization.language,
+				languages: requestData.localization.languages,
+			},
+			bot: requestData.bot,
+			network: {
+				ip: requestData.firebuzz.realIp,
+				isSSL: requestData.firebuzz.isSSL,
+				domainType: requestData.firebuzz.domainType,
+				userHostname: requestData.firebuzz.userHostname,
+			},
+			session: {
+				isReturning: isReturningUser,
+				campaignEnvironment: "preview",
+				environment: requestData.firebuzz.environment,
+				uri: requestData.firebuzz.uri,
+				fullUri: requestData.firebuzz.fullUri,
+			},
+		};
+		c.header("X-Session-Context", JSON.stringify(sessionContext));
+
+		// Inject session context into HTML for client-side access
+		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
+		finalHtml = html.replace("</head>", `${contextScript}</head>`);
+	}
+
 	// Track session via queue for batching and throttling (only for new sessions)
 	if (
 		!isExistingSession &&
@@ -210,7 +281,7 @@ app.get("/:campaignId", async (c) => {
 	}
 
 	// Serve the HTML
-	return c.html(html);
+	return c.html(finalHtml);
 });
 
 export { app as previewCampaignApp };

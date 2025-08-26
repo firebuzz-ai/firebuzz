@@ -349,6 +349,21 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 		}
 	};
 
+	const getStatusColor = (status: string) => {
+		switch (status) {
+			case "draft":
+				return "bg-primary";
+			case "running":
+				return "bg-blue-500";
+			case "paused":
+				return "bg-gray-600";
+			case "completed":
+				return "bg-emerald-600";
+			default:
+				return "bg-gray-500";
+		}
+	};
+
 	const handleCreateTest = () => {
 		// Validate that there's no active test first
 		if (hasActiveABTest) {
@@ -926,10 +941,13 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 										<div className="flex flex-shrink-0 gap-1 items-center">
 											<Badge
 												variant={getStatusBadgeVariant(abTest.data.status)}
-												className="text-xs"
+												className="flex gap-1.5 items-center text-xs"
 											>
 												{abTest.data.status.charAt(0).toUpperCase() +
 													abTest.data.status.slice(1)}
+												<div
+													className={`w-2 h-2 rounded-full ${getStatusColor(abTest.data.status)}`}
+												/>
 											</Badge>
 											{abTest.data.status === "completed" && (
 												<Tooltip>

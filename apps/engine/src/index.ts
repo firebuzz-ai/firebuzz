@@ -33,20 +33,6 @@ clerkTestRoute.get("/", async (c) => {
 // Test
 app.route("/testclerk", clerkTestRoute);
 
-app.get("/test/:campaignSlug/:testId", async (c) => {
-	const campaignSlug = c.req.param("campaignSlug");
-	const testId = c.req.param("testId");
-	const abTestId = c.env.AB_TEST.idFromName(`${campaignSlug}-${testId}`);
-
-	const test = c.env.AB_TEST.get(abTestId);
-
-	const stats = await test.getStats();
-
-	return c.json({
-		stats,
-	});
-});
-
 // Inngest Routes
 app.route("/api/workflows", inngestApp);
 

@@ -48,7 +48,7 @@ export const domainRouting = createMiddleware<{ Bindings: Env }>(
 	async (c, next) => {
 		// Avoid production/preview routing for utility endpoints so they can be served by the root app
 		const { pathname } = new URL(c.req.url);
-		if (pathname.startsWith("/utility") || pathname.startsWith("/test")) {
+		if (pathname.startsWith("/utility")) {
 			await next();
 			return;
 		}

@@ -70,6 +70,8 @@ export interface CampaignConfig {
 	attributionPeriodInDays: number;
 	primaryGoal: Event;
 	customEvents: Event[];
+	projectId: string;
+	workspaceId: string;
 }
 
 // Validation result interface
