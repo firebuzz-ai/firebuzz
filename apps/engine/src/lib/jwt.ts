@@ -12,6 +12,7 @@ export interface TrackingTokenPayload {
 	landingPageId: string;
 	abTestId?: string;
 	abTestVariantId?: string;
+	campaignEnvironment: "preview" | "production";
 	timestamp: number;
 	exp: number; // Expiry timestamp
 }

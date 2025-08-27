@@ -6,8 +6,10 @@ export const eventDataSchema = z.object({
 	id: z.string(),
 	event_id: z.string(),
 	event_value: z.number(),
+	event_value_currency: z.string().default("USD"),
 	event_value_type: z.enum(["dynamic", "static"]),
 	event_type: z.enum(["conversion", "engagement", "system"]),
+	event_placement: z.enum(["internal", "external"]),
 
 	// Context IDs for joining (no geo/device data - stored in session_v1)
 	user_id: z.string(),
@@ -48,6 +50,7 @@ export const trackEventRequestSchema = z.object({
 	event_id: z.string(),
 	event_type: z.enum(["conversion", "engagement", "system"]),
 	event_value: z.number().optional(),
+	event_value_currency: z.string().default("USD").optional(),
 	event_value_type: z.enum(["dynamic", "static"]).optional(),
 
 	// Optional event-specific data
@@ -112,6 +115,15 @@ export const sessionValidationResponseSchema = z.object({
 	session: doSessionStateSchema.optional(),
 	reason: z.enum(["valid", "expired", "not_found"]).optional(),
 	new_session_id: z.string().optional(),
+});
+
+// External event tracking request (from track.js)
+export const externalTrackEventRequestSchema = z.object({
+	token: z.string(),
+	event_id: z.string(),
+	event_value: z.number().default(0),
+	event_value_currency: z.string().default("USD"),
+	event_value_type: z.enum(["dynamic", "static"]).default("dynamic"),
 });
 
 // Batch event processing for Tinybird

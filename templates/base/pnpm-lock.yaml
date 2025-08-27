@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@firebuzz/analytics':
-    specifier: ^1.0.0
-    version: 1.0.0(react-dom@18.3.1)(react@18.3.1)
+    specifier: ^1.0.3
+    version: 1.0.3(react-dom@18.3.1)(react@18.3.1)
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.10.0(react-hook-form@7.62.0)
@@ -642,8 +642,8 @@ packages:
     dev: true
     optional: true
 
-  /@firebuzz/analytics@1.0.0(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-9k8uYmc3D4bSlUOzl12/SgsXrI285JVd5mOHBKn8x+rP4BwahZwIEKwoEOlNjFLEjy21RTBC+awCTqz519dYdQ==}
+  /@firebuzz/analytics@1.0.3(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-IdSywQDx+Pit/qwKTpTfWZ2sH/R/rWwBjfgRzXAZXdzFaTq5R9wT3V0wWTxMrOoNkIDk7ueAej2b3oGxnHJZrQ==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'

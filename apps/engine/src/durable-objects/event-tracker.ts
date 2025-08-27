@@ -311,8 +311,10 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				id: internalId,
 				event_id: eventRequest.event_id, // Use the string identifier from request
 				event_value: eventRequest.event_value || 0,
+				event_value_currency: eventRequest.event_value_currency || "USD",
 				event_value_type: eventRequest.event_value_type || "static",
 				event_type: eventRequest.event_type,
+				event_placement: "internal", // Internal events are from landing pages
 
 				// Context from session
 				user_id: this.currentSession.userId,

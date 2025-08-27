@@ -12,6 +12,7 @@ import type {
 	TrackEventParams,
 	TrackEventResponse,
 } from "./types";
+import { generateUniqueId } from "./utils/uuid";
 
 // ============================================================================
 // API Client Configuration
@@ -24,6 +25,7 @@ interface ApiClientConfig {
 	workspaceId: string;
 	projectId: string;
 	landingPageId: string;
+	defaultCurrency?: string; // Default currency for events
 	debug?: boolean;
 	sessionTimeoutMinutes?: number;
 	batching?: {
@@ -62,8 +64,29 @@ export function getTrackingToken(): string | null {
 // Utility Functions
 // ============================================================================
 
-function generateUniqueId(): string {
-	return crypto.randomUUID();
+
+/**
+ * Detect campaign environment from hostname (client-side detection)
+ * This matches the server-side logic in detectCampaignEnvironment()
+ */
+function detectCampaignEnvironmentFromHostname(hostname: string): "preview" | "production" {
+	const normalizedHostname = hostname.toLowerCase();
+
+	// Check for preview URL patterns (matching server-side logic)
+	const previewPatterns = [
+		/^preview\.frbzz\.com$/,
+		/^preview-dev\.frbzz\.com$/,
+		/^preview-preview\.frbzz\.com$/,
+	];
+
+	for (const pattern of previewPatterns) {
+		if (pattern.test(normalizedHostname)) {
+			return "preview";
+		}
+	}
+
+	// Default to production for all other hostnames
+	return "production";
 }
 
 export function log(message: string, ...args: unknown[]) {
@@ -244,6 +267,10 @@ async function initializeSession(
 		log("Warning: Attribution cookie is missing, server will create new one");
 	}
 
+	// Detect campaign environment from current page domain (where user actually is)
+	const currentHostname = typeof window !== "undefined" ? window.location.hostname : "";
+	const currentCampaignEnvironment = detectCampaignEnvironmentFromHostname(currentHostname);
+
 	const sessionData = {
 		session_id,
 		campaign_id: config.campaignId,
@@ -255,6 +282,7 @@ async function initializeSession(
 		ab_test_id: abTest?.testId,
 		ab_test_variant_id: abTest?.variantId,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
+		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
 
 	log("Initializing session:", sessionData);
@@ -539,6 +567,7 @@ export async function trackEvent(
 	const requestPayload = {
 		session_id: sessionId,
 		...eventData,
+		event_value_currency: eventData.event_value_currency || config.defaultCurrency || "USD",
 		page_url: eventData.page_url || window.location.href,
 		referrer_url: eventData.referrer_url || document.referrer || undefined,
 	};
@@ -646,6 +675,10 @@ async function initializeSessionWithoutCookie(
 		log("Warning: Attribution cookie is missing, server will create new one");
 	}
 
+	// Detect campaign environment from current page domain
+	const currentHostname = typeof window !== "undefined" ? window.location.hostname : "";
+	const currentCampaignEnvironment = detectCampaignEnvironmentFromHostname(currentHostname);
+
 	const sessionData = {
 		session_id: sessionId,
 		campaign_id: config.campaignId,
@@ -657,6 +690,7 @@ async function initializeSessionWithoutCookie(
 		ab_test_id: abTest?.testId,
 		ab_test_variant_id: abTest?.variantId,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
+		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
 
 	log("Initializing DO session without cookie override:", sessionData);

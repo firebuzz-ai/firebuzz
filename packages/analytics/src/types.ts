@@ -3,6 +3,7 @@ export interface TrackEventParams {
 	event_id: string; // e.g., "form-submission", "pageload", "external-link-click"
 	event_type: "conversion" | "engagement" | "system";
 	event_value?: number; // Actual value as number (e.g., 10, 20)
+	event_value_currency?: string; // Currency code (e.g., "USD", "EUR")
 	event_value_type?: "static" | "dynamic";
 
 	// Optional event-specific data
@@ -31,6 +32,7 @@ export interface AnalyticsProviderProps {
 	// Note: abTestId and abTestVariantId are automatically read from cookies
 	customEvents?: EventConfig[]; // Additional custom events
 	primaryGoal: EventConfig; // Primary goal
+	defaultCurrency?: string; // Default currency for events (default: "USD")
 	enableDefaultEvents?: boolean; // Default: true
 	enabled?: boolean; // Default: true - disable entire analytics system
 	debug?: boolean; // Console logging
@@ -58,6 +60,7 @@ export interface EventConfig {
 	event_id: string;
 	event_type: "conversion" | "engagement" | "system";
 	event_value: number;
+	event_value_currency?: string; // Currency code (e.g., "USD", "EUR")
 	event_value_type: "static" | "dynamic";
 	isCustom: boolean;
 }

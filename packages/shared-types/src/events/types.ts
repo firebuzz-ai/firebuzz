@@ -3,6 +3,7 @@ import type {
 	doSessionStateSchema,
 	eventBatchSchema,
 	eventDataSchema,
+	externalTrackEventRequestSchema,
 	initSessionRequestSchema,
 	sessionValidationResponseSchema,
 	trackEventRequestSchema,
@@ -11,6 +12,7 @@ import type {
 // Infer types from Zod schemas
 export type EventData = z.infer<typeof eventDataSchema>;
 export type TrackEventRequest = z.infer<typeof trackEventRequestSchema>;
+export type ExternalTrackEventRequest = z.infer<typeof externalTrackEventRequestSchema>;
 export type InitSessionRequest = z.infer<typeof initSessionRequestSchema>;
 export type DOSessionState = z.infer<typeof doSessionStateSchema>;
 export type SessionValidationResponse = z.infer<
@@ -28,6 +30,11 @@ export const EventType = {
 export const EventValueType = {
 	DYNAMIC: "dynamic",
 	STATIC: "static",
+} as const;
+
+export const EventPlacement = {
+	INTERNAL: "internal",
+	EXTERNAL: "external",
 } as const;
 
 // DO RPC method types

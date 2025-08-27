@@ -11,8 +11,10 @@ SCHEMA >
     # Event data
     `event_id` String `json:$.event_id`,
     `event_value` Float64 `json:$.event_value`,
+    `event_value_currency` LowCardinality(String) `json:$.event_value_currency`,
     `event_value_type` LowCardinality(String) `json:$.event_value_type`,
     `event_type` LowCardinality(String) `json:$.event_type`,
+    `event_placement` LowCardinality(String) `json:$.event_placement`,
 
      # Context IDs for joining
     `user_id` String `json:$.user_id`,
@@ -52,4 +54,4 @@ ENGINE_SORTING_KEY "timestamp, workspace_id, project_id, campaign_id, session_id
 ENGINE_TTL "toDateTime(timestamp) + INTERVAL 90 DAY"
 
 FORWARD_QUERY > 
-  SELECT timestamp, id, event_id, CAST(event_value, 'Float64') AS event_value, event_value_type, event_type, user_id, campaign_id, session_id, attribution_id, workspace_id, project_id, landing_page_id, ab_test_id, ab_test_variant_id, form_id, clicked_element, clicked_url, page_load_time, dom_ready_time, scroll_percentage, time_on_page, session_event_sequence, metadata, environment, campaign_environment, page_url, referrer_url, viewport_width, viewport_height
+  SELECT timestamp, id, event_id, CAST(event_value, 'Float64') AS event_value, defaultValueOfTypeName('LowCardinality(String)') AS event_value_currency, event_value_type, event_type, defaultValueOfTypeName('LowCardinality(String)') AS event_placement, user_id, campaign_id, session_id, attribution_id, workspace_id, project_id, landing_page_id, ab_test_id, ab_test_variant_id, form_id, clicked_element, clicked_url, page_load_time, dom_ready_time, scroll_percentage, time_on_page, session_event_sequence, metadata, environment, campaign_environment, page_url, referrer_url, viewport_width, viewport_height

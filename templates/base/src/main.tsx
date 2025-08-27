@@ -1,11 +1,11 @@
-import { ViteReactSSG } from "vite-react-ssg/single-page";
 import { AnalyticsProvider } from "@firebuzz/analytics";
+import { ViteReactSSG } from "vite-react-ssg/single-page";
 import { App } from "./app.tsx";
 import { Toaster } from "./components/ui/sonner";
+import { campaignConfiguration } from "./configuration/campaign.ts";
 import { tagsConfiguration } from "./configuration/tags.ts";
 import { Head } from "./head";
 import "./index.css";
-import { campaignConfiguration } from "./configuration/campaign.ts";
 export const createRoot = ViteReactSSG(
   <>
     {/* Tag Manager Script Directly after Body Opening Tag */}
@@ -27,7 +27,6 @@ export const createRoot = ViteReactSSG(
       workspaceId={campaignConfiguration.workspaceId}
       projectId={campaignConfiguration.projectId}
       landingPageId={campaignConfiguration.landingPageId}
-      debug={true}
       customEvents={campaignConfiguration.customEvents}
       primaryGoal={campaignConfiguration.primaryGoal}
     >

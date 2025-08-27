@@ -13,6 +13,7 @@ export const campaignConfiguration = {
     event_type: "conversion" as const,
     event_value: 100,
     event_value_type: "static" as const,
+    event_value_currency: "USD",
     isCustom: true,
   },
   customEvents: [],

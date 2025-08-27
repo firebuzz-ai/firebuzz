@@ -1,6 +1,7 @@
 import { getConfig, log, renewSession } from "./api";
 import { getSessionId, getValidSessionId } from "./cookies";
 import type { TrackEventParams } from "./types";
+import { generateUniqueId } from "./utils/uuid";
 
 // ============================================================================
 // Batching Configuration
@@ -263,7 +264,7 @@ export class EventBatchTracker {
 				log("⚠️ No session ID found for batch, renewing session");
 				try {
 					// Generate new session ID and renew (handles missing cookies)
-					const newSessionId = crypto.randomUUID();
+					const newSessionId = generateUniqueId();
 					const oldSessionId = getSessionId(config.campaignId); // Get expired session ID if any
 
 					const result = await renewSession(
@@ -290,6 +291,7 @@ export class EventBatchTracker {
 			events: batchItems.map((item) => ({
 				...item.eventData,
 				session_id: sessionId, // Add session_id to each event
+				event_value_currency: item.eventData.event_value_currency || config.defaultCurrency || "USD",
 				page_url: item.eventData.page_url || window.location.href,
 				referrer_url:
 					item.eventData.referrer_url || document.referrer || undefined,

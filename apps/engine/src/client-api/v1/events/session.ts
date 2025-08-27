@@ -30,7 +30,18 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				);
 			}
 
-			// Detect environment based on hostname
+			// Use client-provided campaign environment if available, otherwise detect from hostname
+			let campaignEnvironment: "preview" | "production";
+			if (sessionData.campaign_environment === "preview" || sessionData.campaign_environment === "production") {
+				campaignEnvironment = sessionData.campaign_environment;
+			} else {
+				// Fallback to hostname-based detection
+				const hostname = c.req.header("host") || "";
+				const environmentContext = detectEnvironment(hostname, c.env);
+				campaignEnvironment = environmentContext.campaignEnvironment;
+			}
+
+			// Get engine environment from hostname (for internal tracking)
 			const hostname = c.req.header("host") || "";
 			const environmentContext = detectEnvironment(hostname, c.env);
 
@@ -54,7 +65,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			const result = await eventTracker.initSession({
 				...sessionData,
 				environment: environmentContext.environment,
-				campaign_environment: environmentContext.campaignEnvironment,
+				campaign_environment: campaignEnvironment, // Use determined campaign environment
 			});
 
 			if (!result.success) {
@@ -82,6 +93,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 					landingPageId: sessionData.landing_page_id,
 					abTestId: sessionData.ab_test_id,
 					abTestVariantId: sessionData.ab_test_variant_id,
+					campaignEnvironment: campaignEnvironment, // Use determined campaign environment
 				},
 				c.env.TRACKING_JWT_SECRET,
 			);
@@ -329,6 +341,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 						landingPageId: landing_page_id,
 						abTestId: oldSession?.abTest?.testId,
 						abTestVariantId: oldSession?.abTest?.variantId,
+						campaignEnvironment: environmentContext.campaignEnvironment,
 					},
 					c.env.TRACKING_JWT_SECRET,
 				);

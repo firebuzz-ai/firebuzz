@@ -16,6 +16,7 @@ interface DefaultEventConfig {
 		event_id: string;
 		event_type: "conversion" | "engagement" | "system";
 		event_value: number;
+		event_value_currency?: string;
 		event_value_type: "static" | "dynamic";
 		isCustom: boolean;
 	}>;
@@ -342,6 +343,7 @@ function setupPageviewTracking({
 		event_id: "page-view",
 		event_type: config?.event_type || "engagement",
 		event_value: config?.event_value,
+		event_value_currency: config?.event_value_currency,
 		event_value_type: config?.event_value_type || "static",
 		viewport_width,
 		viewport_height,
