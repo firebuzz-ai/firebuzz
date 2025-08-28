@@ -3,6 +3,7 @@ import { FlowLayout } from "@/components/layouts/two-panels/panels/campaign/flow
 import { PanelLayout } from "@/components/layouts/two-panels/panels/campaign/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { NewLandingPageModal } from "@/components/modals/landing-pages/landing-page-modal";
+import { TrackingSetupModal } from "@/components/modals/tracking/tracking-setup-modal";
 import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { notFound } from "next/navigation";
@@ -59,6 +60,7 @@ export function EditCampaign({ id, rightPanelSize }: EditCampaignProps) {
 				</PanelLayout>
 			</TwoPanelsProvider>
 			<NewLandingPageModal />
+			<TrackingSetupModal />
 		</>
 	);
 }

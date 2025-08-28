@@ -39,6 +39,10 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import {
+  useTrackingSetupModal,
+  createTrackingSetupState,
+} from "@/hooks/ui/use-tracking-setup-modal";
 
 // Map icon names to actual icon components
 const iconMap: Record<string, LucideIcon> = {
@@ -93,6 +97,7 @@ export const PrimaryGoalSelector = ({
   onNavigateToCampaignOverview,
 }: PrimaryGoalSelectorProps) => {
   const [open, setOpen] = useState(false);
+  const [, setTrackingSetupState] = useTrackingSetupModal();
 
   const handleGoalSelect = (goalId: string) => {
     if (disabled) return;
@@ -101,6 +106,20 @@ export const PrimaryGoalSelector = ({
       onGoalChange(goal);
       setOpen(false);
     }
+  };
+
+  const handleSetupTracking = () => {
+    if (!selectedGoal || !selectedGoal.isCustom) return;
+    
+    const trackingSetupData = createTrackingSetupState(
+      selectedGoal.id,
+      selectedGoal.title,
+      selectedGoal.placement,
+      selectedGoal.value,
+      selectedGoal.currency || "USD",
+    );
+    
+    setTrackingSetupState({ trackingSetup: trackingSetupData });
   };
 
   const getGoalIcon = (goal: Goal) => {
@@ -233,6 +252,20 @@ export const PrimaryGoalSelector = ({
             </Command>
           </PopoverContent>
         </Popover>
+        
+        {/* Setup Tracking for Custom Goals */}
+        {selectedGoal?.isCustom && (
+          <div className="mt-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSetupTracking}
+              className="h-7 text-xs text-muted-foreground hover:text-foreground p-0"
+            >
+              Setup tracking
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   );

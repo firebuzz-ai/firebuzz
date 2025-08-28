@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  createTrackingSetupState,
+  useTrackingSetupModal,
+} from "@/hooks/ui/use-tracking-setup-modal";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button, buttonVariants } from "@firebuzz/ui/components/ui/button";
 import {
@@ -35,6 +39,7 @@ import {
   Calendar,
   Check,
   ChevronsUpDown,
+  CornerDownRight,
   CreditCard,
   Download,
   Eye,
@@ -135,6 +140,7 @@ export const GoalSelector = ({
   campaignType,
 }: GoalSelectorProps) => {
   const [open, setOpen] = useState(false);
+  const [, setTrackingSetupState] = useTrackingSetupModal();
 
   const handleGoalSelect = (goalId: string) => {
     const goal = availableGoals.find((g) => g.id === goalId);
@@ -142,6 +148,20 @@ export const GoalSelector = ({
       onGoalChange(goal);
       setOpen(false);
     }
+  };
+
+  const handleSetupTracking = () => {
+    if (!selectedGoal || !selectedGoal.isCustom) return;
+
+    const trackingSetupData = createTrackingSetupState(
+      selectedGoal.id,
+      selectedGoal.title,
+      selectedGoal.placement,
+      selectedGoal.value,
+      selectedGoal.currency || "USD"
+    );
+
+    setTrackingSetupState({ trackingSetup: trackingSetupData });
   };
 
   const getGoalIcon = (goal: Goal) => {
@@ -293,6 +313,21 @@ export const GoalSelector = ({
               </Command>
             </PopoverContent>
           </Popover>
+        )}
+
+        {/* Setup Tracking for Custom Goals */}
+        {selectedGoal?.isCustom && (
+          <div className="flex gap-2 items-center">
+            <CornerDownRight className="size-3.5 text-muted-foreground" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleSetupTracking}
+              className="p-0 h-6 text-xs text-brand"
+            >
+              Setup tracking
+            </Button>
+          </div>
         )}
       </div>
 

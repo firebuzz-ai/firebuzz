@@ -197,7 +197,7 @@ export const CustomEventsPanel = ({
       } else {
         // Add new event
         const newEvent: Event = {
-          id: `${formData.icon}-${nanoid()}`,
+          id: `${nanoid()}`,
           title: finalTitle,
           description: finalDescription || undefined,
           icon: formData.icon,
@@ -240,12 +240,12 @@ export const CustomEventsPanel = ({
   ) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
-      
+
       // If placement changes to external, force type to be conversion
       if (field === "placement" && value === "external") {
         newData.type = "conversion";
       }
-      
+
       return newData;
     });
   };
@@ -409,7 +409,14 @@ export const CustomEventsPanel = ({
                 onValueChange={(value) => handleFormChange("type", value)}
                 disabled={formData.placement === "external"}
               >
-                <SelectTrigger id="event-type" className={cn("h-8", formData.placement === "external" && "opacity-50 cursor-not-allowed")}>
+                <SelectTrigger
+                  id="event-type"
+                  className={cn(
+                    "h-8",
+                    formData.placement === "external" &&
+                      "opacity-50 cursor-not-allowed"
+                  )}
+                >
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
