@@ -37,27 +37,27 @@ interface ApiClientConfig {
 }
 
 let globalConfig: ApiClientConfig | null = null;
-let currentTrackingToken: string | null = null;
+let currentClickId: string | null = null;
 
 export function configureApiClient(config: ApiClientConfig) {
 	globalConfig = config;
 }
 
 /**
- * Store tracking token received from session init/renewal
+ * Store click ID received from session init/renewal (short token system)
  */
-export function setTrackingToken(token: string | undefined) {
-	currentTrackingToken = token || null;
-	if (globalConfig?.debug && token) {
-		console.log("[Analytics] Tracking token stored");
+export function setTrackingToken(clickId: string | undefined) {
+	currentClickId = clickId || null;
+	if (globalConfig?.debug && clickId) {
+		console.log("[Analytics] Click ID stored");
 	}
 }
 
 /**
- * Get current tracking token
+ * Get current click ID for external link enhancement
  */
 export function getTrackingToken(): string | null {
-	return currentTrackingToken;
+	return currentClickId;
 }
 
 // ============================================================================
@@ -309,8 +309,8 @@ async function initializeSession(
 	}
 
 	// Store tracking token if provided
-	if (result.success && result.data?.tracking_token) {
-		setTrackingToken(result.data.tracking_token);
+	if (result.success && result.data?.click_id) {
+		setTrackingToken(result.data.click_id);
 	}
 
 	log("Session init result:", result);
@@ -411,9 +411,9 @@ export async function renewSession(
 		return { success: false, error: "Network error - analytics disabled" };
 	}
 
-	// Store new tracking token if provided
-	if (result.success && result.data?.tracking_token) {
-		setTrackingToken(result.data.tracking_token);
+	// Store new click ID if provided
+	if (result.success && result.data?.click_id) {
+		setTrackingToken(result.data.click_id);
 	}
 
 	// If successful, create all cookies on client-side (server can't set cross-domain cookies)
@@ -708,8 +708,8 @@ async function initializeSessionWithoutCookie(
 	const result = await response.json();
 
 	// Store tracking token if provided, but DON'T set session cookie
-	if (result.success && result.data?.tracking_token) {
-		setTrackingToken(result.data.tracking_token);
+	if (result.success && result.data?.click_id) {
+		setTrackingToken(result.data.click_id);
 	}
 
 	log("DO session init result (no cookie override):", result);

@@ -118,7 +118,7 @@ export interface SessionRenewalResponse {
 	error?: string;
 	data?: {
 		session_id: string;
-		tracking_token?: string;
+		click_id?: string; // Changed from tracking_token to click_id
 		session_duration_minutes?: number;
 		attribution_duration_days?: number;
 		user_id?: string;
@@ -133,7 +133,7 @@ export interface SessionInitResponse {
 	error?: string;
 	data?: {
 		session_id: string;
-		tracking_token?: string;
+		click_id?: string; // Changed from tracking_token to click_id
 		session_duration_minutes?: number;
 	};
 }

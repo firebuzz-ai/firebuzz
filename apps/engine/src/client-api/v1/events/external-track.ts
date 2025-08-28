@@ -1,8 +1,8 @@
 import type { EventData } from '@firebuzz/shared-types/events';
 import { externalTrackEventRequestSchema } from '@firebuzz/shared-types/events';
 import { Hono } from 'hono';
-import { verifyTrackingToken } from '../../../lib/jwt';
 import { getEventQueueService } from '../../../lib/queue';
+import { resolveClickId } from '../../../lib/short-tokens';
 import { generateUniqueId } from '../../../utils/id-generator';
 
 export const externalTrackRoute = new Hono<{ Bindings: Env }>().post('/external-track', async (c) => {
@@ -11,29 +11,36 @@ export const externalTrackRoute = new Hono<{ Bindings: Env }>().post('/external-
 		const externalEventData = externalTrackEventRequestSchema.parse(body);
 
 		console.log('📥 External track API received event:', {
+			click_id: externalEventData.click_id,
 			event_id: externalEventData.event_id,
 			event_value: externalEventData.event_value,
 			event_value_currency: externalEventData.event_value_currency,
+			page_url: externalEventData.page_url,
+			referrer_url: externalEventData.referrer_url,
+			viewport: externalEventData.viewport_width && externalEventData.viewport_height 
+				? `${externalEventData.viewport_width}x${externalEventData.viewport_height}`
+				: 'unknown',
 			timestamp: new Date().toISOString(),
 		});
 
-		// Verify the tracking token to get session and campaign data
-		const tokenPayload = await verifyTrackingToken(externalEventData.token, c.env.TRACKING_JWT_SECRET);
+		// Resolve the short click ID to get session data from CACHE KV
+		const sessionData = await resolveClickId(externalEventData.click_id, c.env);
 
-		if (!tokenPayload) {
+		if (!sessionData) {
 			return c.json(
 				{
 					success: false,
-					error: 'Invalid or expired tracking token',
+					error: 'Invalid or expired click ID',
 				},
 				401,
 			);
 		}
 
-		console.log('✅ Token verified for external event:', {
+		console.log('✅ Click ID resolved for external event:', {
+			click_id: externalEventData.click_id,
 			event_id: externalEventData.event_id,
-			session_id: tokenPayload.sessionId,
-			campaign_id: tokenPayload.campaignId,
+			session_id: sessionData.sessionId,
+			campaign_id: sessionData.campaignId,
 		});
 
 		// Create event data for the queue
@@ -47,27 +54,27 @@ export const externalTrackRoute = new Hono<{ Bindings: Env }>().post('/external-
 			event_type: 'conversion', // External events are typically conversions
 			event_placement: 'external', // Mark as external event
 
-			// Context IDs from token
-			user_id: tokenPayload.userId,
-			campaign_id: tokenPayload.campaignId,
-			session_id: tokenPayload.sessionId,
-			attribution_id: tokenPayload.attributionId || '',
-			workspace_id: tokenPayload.workspaceId,
-			project_id: tokenPayload.projectId,
-			landing_page_id: tokenPayload.landingPageId,
-			ab_test_id: tokenPayload.abTestId || null,
-			ab_test_variant_id: tokenPayload.abTestVariantId || null,
+			// Context IDs from session data
+			user_id: sessionData.userId,
+			campaign_id: sessionData.campaignId,
+			session_id: sessionData.sessionId,
+			attribution_id: sessionData.attributionId,
+			workspace_id: sessionData.workspaceId,
+			project_id: sessionData.projectId,
+			landing_page_id: sessionData.landingPageId,
+			ab_test_id: sessionData.abTestId || null,
+			ab_test_variant_id: sessionData.abTestVariantId || null,
 
 			// Session event sequence - for external events we'll use 0 since we don't track sequences
 			session_event_sequence: 0,
 
-			// Environment info - get from token payload
-			environment: c.env.ENVIRONMENT === 'development' ? 'dev' : c.env.ENVIRONMENT,
-			campaign_environment: tokenPayload.campaignEnvironment,
-			page_url: c.req.header('referer') || 'external',
-			referrer_url: null,
+			// Environment info from session data
+			environment: sessionData.environment,
+			campaign_environment: sessionData.campaignEnvironment,
+			page_url: externalEventData.page_url || c.req.header('referer') || 'external',
+			referrer_url: externalEventData.referrer_url || null,
 
-			// Optional fields - not available for external events
+			// Optional fields - some available from external tracking script
 			form_id: null,
 			clicked_element: null,
 			clicked_url: null,
@@ -75,11 +82,12 @@ export const externalTrackRoute = new Hono<{ Bindings: Env }>().post('/external-
 			dom_ready_time: null,
 			scroll_percentage: null,
 			time_on_page: null,
-			viewport_width: null,
-			viewport_height: null,
+			viewport_width: externalEventData.viewport_width || null,
+			viewport_height: externalEventData.viewport_height || null,
 			metadata: JSON.stringify({
 				source: 'external_tracking_script',
-				token_timestamp: tokenPayload.timestamp,
+				click_id: externalEventData.click_id,
+				session_timestamp: sessionData.timestamp,
 			}),
 		};
 

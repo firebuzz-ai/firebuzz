@@ -110,12 +110,12 @@ export function setupLinkClickTracking({
 		if (isExternalUrl(link.href)) {
 			const { viewport_width, viewport_height } = getViewportDimensions();
 
-			// Get secure tracking token and enhance the external link
+			// Get secure tracking click ID and enhance the external link
 			const originalHref = link.href;
-			const trackingToken = getTrackingToken();
-			const enhancedUrl = appendTrackingToken(link.href, trackingToken);
+			const clickId = getTrackingToken();
+			const enhancedUrl = appendTrackingToken(link.href, clickId);
 
-			// Update the link href with tracking parameters and token
+			// Update the link href with tracking parameters and click ID
 			if (enhancedUrl !== originalHref) {
 				link.href = enhancedUrl;
 				if (debug) {
@@ -124,7 +124,7 @@ export function setupLinkClickTracking({
 						{
 							original: originalHref,
 							enhanced: enhancedUrl,
-							hasToken: !!trackingToken,
+							hasClickId: !!clickId,
 						},
 					);
 				}
@@ -161,7 +161,7 @@ export function setupLinkClickTracking({
 					text: link.textContent?.trim().substring(0, 100) || "",
 					target: link.target || "_self",
 					original_url: originalHref !== enhancedUrl ? originalHref : undefined,
-					has_tracking_token: !!trackingToken,
+					has_click_id: !!clickId,
 				}),
 			});
 

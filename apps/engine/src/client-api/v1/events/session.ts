@@ -1,6 +1,6 @@
 import { initSessionRequestSchema } from "@firebuzz/shared-types/events";
 import { Hono } from "hono";
-import { generateTrackingToken, verifyTrackingToken } from "../../../lib/jwt";
+import { verifyTrackingToken } from "../../../lib/jwt";
 import { getSessionQueueService } from "../../../lib/queue";
 import { parseRequest } from "../../../lib/request";
 import {
@@ -8,6 +8,7 @@ import {
 	getCurrentSession,
 	getCurrentUserId,
 } from "../../../lib/session";
+import { createShortClickId } from "../../../lib/short-tokens";
 import { formatSessionData } from "../../../lib/tinybird";
 import { detectEnvironment } from "../../../utils/environment";
 import { generateUniqueId } from "../../../utils/id-generator";
@@ -81,8 +82,8 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			// Note: Session cookies are set client-side to match landing page domain
 			// user_id and attribution_id cookies are already set by the server on page load
 
-			// Generate tracking token for external link forwarding
-			const trackingToken = await generateTrackingToken(
+			// Create short click ID for external link forwarding
+			const clickId = await createShortClickId(
 				{
 					sessionId: result.session_id || sessionData.session_id,
 					userId: sessionData.user_id,
@@ -93,9 +94,11 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 					landingPageId: sessionData.landing_page_id,
 					abTestId: sessionData.ab_test_id,
 					abTestVariantId: sessionData.ab_test_variant_id,
-					campaignEnvironment: campaignEnvironment, // Use determined campaign environment
+					timestamp: Date.now(),
+					environment: environmentContext.environment,
+					campaignEnvironment: campaignEnvironment,
 				},
-				c.env.TRACKING_JWT_SECRET,
+				c.env,
 			);
 
 			return c.json(
@@ -103,7 +106,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 					success: true,
 					data: {
 						session_id: result.session_id || sessionData.session_id,
-						tracking_token: trackingToken,
+						click_id: clickId,
 						session_duration_minutes: sessionData.session_timeout_minutes,
 					},
 				},
@@ -329,8 +332,8 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				// Don't set cookies server-side during renewal (cross-domain issue)
 				// Instead, return all necessary data for client to set cookies
 
-				// Generate tracking token for the renewed session (including attribution_id)
-				const trackingToken = await generateTrackingToken(
+				// Create short click ID for the renewed session (including attribution_id)
+				const clickId = await createShortClickId(
 					{
 						sessionId: new_session_id,
 						userId: userId,
@@ -341,9 +344,11 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 						landingPageId: landing_page_id,
 						abTestId: oldSession?.abTest?.testId,
 						abTestVariantId: oldSession?.abTest?.variantId,
+						timestamp: Date.now(),
+						environment: environmentContext.environment,
 						campaignEnvironment: environmentContext.campaignEnvironment,
 					},
-					c.env.TRACKING_JWT_SECRET,
+					c.env,
 				);
 
 				// Track renewed session via queue for analytics (fire and forget)
@@ -460,7 +465,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 						success: true,
 						data: {
 							session_id: new_session_id,
-							tracking_token: trackingToken,
+							click_id: clickId,
 							session_duration_minutes: actualSessionDuration,
 							attribution_duration_days: attributionDurationDays,
 							user_id: userId,

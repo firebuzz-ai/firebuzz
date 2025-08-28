@@ -119,11 +119,16 @@ export const sessionValidationResponseSchema = z.object({
 
 // External event tracking request (from track.js)
 export const externalTrackEventRequestSchema = z.object({
-	token: z.string(),
+	click_id: z.string(),
 	event_id: z.string(),
 	event_value: z.number().default(0),
 	event_value_currency: z.string().default("USD"),
 	event_value_type: z.enum(["dynamic", "static"]).default("dynamic"),
+	// Additional context data from external website
+	page_url: z.string().optional(),
+	referrer_url: z.string().nullable().optional(),
+	viewport_width: z.number().nullable().optional(),
+	viewport_height: z.number().nullable().optional(),
 });
 
 // Batch event processing for Tinybird

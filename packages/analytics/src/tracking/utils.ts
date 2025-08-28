@@ -174,11 +174,11 @@ export function appendTrackingParameters(url: string): string {
 }
 
 /**
- * Append tracking token to external URL (secure approach)
+ * Append tracking click ID to external URL (secure approach)
  */
 export function appendTrackingToken(
 	url: string,
-	trackingToken: string | null,
+	clickId: string | null,
 ): string {
 	try {
 		const trackingParams = getTrackingParameters();
@@ -191,9 +191,9 @@ export function appendTrackingToken(
 			}
 		}
 
-		// Add Firebuzz tracking token if available
-		if (trackingToken) {
-			urlObj.searchParams.set("frbzz_token", trackingToken);
+		// Add Firebuzz click ID if available
+		if (clickId) {
+			urlObj.searchParams.set("frbzz_ci", clickId);
 		}
 
 		return urlObj.toString();
