@@ -45,6 +45,7 @@ export function buildCampaignConfig(
 		customEvents: settings.customEvents || [],
 		projectId: campaign.projectId,
 		workspaceId: campaign.workspaceId,
+		ctaLink: settings.ctaLink,
 	};
 
 	// Get all segments connected to traffic node

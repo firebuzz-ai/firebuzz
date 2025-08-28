@@ -67,10 +67,11 @@ export function setupScrollTracking({
 					console.log(`[Analytics] Scroll tracking: ${threshold}%`);
 				}
 
-				const config = getEventConfig("scroll-threshold", eventConfig);
+				const eventId = `scroll-threshold-${threshold}`;
+				const config = getEventConfig(eventId, eventConfig);
 
 				trackEvent({
-					event_id: "scroll-threshold",
+					event_id: eventId,
 					event_type: config?.event_type || "engagement",
 					event_value: config?.event_value,
 					event_value_type: config?.event_value_type || "static",

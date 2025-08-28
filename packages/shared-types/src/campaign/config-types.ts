@@ -72,6 +72,7 @@ export interface CampaignConfig {
 	customEvents: Event[];
 	projectId: string;
 	workspaceId: string;
+	ctaLink?: string;
 }
 
 // Validation result interface

@@ -11,6 +11,7 @@ import {
 	useReactFlow,
 } from "@xyflow/react";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { ValidationStatusIcon } from "../validation-status-icon";
 import type { VariantNode as VariantNodeType } from "./types";
 
 // Helper functions for letter-based variant system
@@ -107,7 +108,8 @@ export const VariantNode = memo(
 					</div>
 					<span className="text-lg font-medium">{title}</span>
 
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center gap-2">
+						<ValidationStatusIcon nodeId={id} />
 						{isControl ? (
 							<Badge variant="outline">Control</Badge>
 						) : (

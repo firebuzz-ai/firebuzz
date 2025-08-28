@@ -15,6 +15,7 @@ import {
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useState } from "react";
+import { ValidationStatusIcon } from "../validation-status-icon";
 import { CampaignNodeIcons } from "./icons";
 import type { SegmentNode, TrafficNode as TrafficNodeType } from "./types";
 
@@ -233,7 +234,8 @@ export const TrafficNode = memo(
 					</div>
 					<span className="text-lg font-medium">{title}</span>
 
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center gap-2">
+						<ValidationStatusIcon nodeId={id} />
 						<Badge variant="outline">All Traffic</Badge>
 					</div>
 				</div>

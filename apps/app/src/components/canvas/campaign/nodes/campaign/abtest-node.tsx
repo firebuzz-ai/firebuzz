@@ -14,6 +14,7 @@ import {
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { ValidationStatusIcon } from "../validation-status-icon";
 import { CampaignNodeIcons } from "./icons";
 import type { ABTestNode as ABTestNodeType, VariantNode } from "./types";
 
@@ -313,7 +314,8 @@ export const ABTestNode = memo(
 					</div>
 					<span className="text-lg font-medium">{title}</span>
 
-					<div className="ml-auto">
+					<div className="ml-auto flex items-center gap-2">
+						<ValidationStatusIcon nodeId={id} />
 						<Badge variant="outline" className="flex gap-1.5 items-center">
 							{data.status
 								? data.status.charAt(0).toUpperCase() + data.status.slice(1)

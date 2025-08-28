@@ -38,12 +38,17 @@ const validateTrafficNode = (
 				field: "defaultLandingPageId",
 			});
 		} else {
-			// Check if it's a lead-generation campaign without form schema first
-			const message =
-				context.campaign.type === "lead-generation" &&
-				!context.hasValidFormSchema
-					? "Campaign must have a valid form schema"
-					: "Create a landing page first";
+			// Prioritize different requirements based on campaign type
+			let message = "Create a landing page first";
+			
+			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+				message = "Campaign must have a valid form schema";
+			} else if (context.campaign.type === "click-through" && 
+					(!context.campaign.campaignSettings?.ctaLink || 
+					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+				message = "Campaign must have a CTA link configured";
+			}
+			
 			validations.push({
 				id: "traffic-no-landing-pages",
 				isValid: false,
@@ -100,12 +105,17 @@ const validateSegmentNode = (
 				field: "primaryLandingPageId",
 			});
 		} else {
-			// Check if it's a lead-generation campaign without form schema first
-			const message =
-				context.campaign.type === "lead-generation" &&
-				!context.hasValidFormSchema
-					? "Campaign must have a valid form schema"
-					: "Create a landing page first";
+			// Prioritize different requirements based on campaign type
+			let message = "Create a landing page first";
+			
+			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+				message = "Campaign must have a valid form schema";
+			} else if (context.campaign.type === "click-through" && 
+					(!context.campaign.campaignSettings?.ctaLink || 
+					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+				message = "Campaign must have a CTA link configured";
+			}
+			
 			validations.push({
 				id: "segment-no-landing-pages",
 				isValid: false,
@@ -258,12 +268,17 @@ const validateVariantNode = (
 				field: "variantId",
 			});
 		} else {
-			// Check if it's a lead-generation campaign without form schema first
-			const message =
-				context.campaign.type === "lead-generation" &&
-				!context.hasValidFormSchema
-					? "Campaign must have a valid form schema"
-					: "Create a landing page first";
+			// Prioritize different requirements based on campaign type
+			let message = "Create a landing page first";
+			
+			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+				message = "Campaign must have a valid form schema";
+			} else if (context.campaign.type === "click-through" && 
+					(!context.campaign.campaignSettings?.ctaLink || 
+					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+				message = "Campaign must have a CTA link configured";
+			}
+			
 			validations.push({
 				id: "variant-no-landing-pages",
 				isValid: false,
@@ -466,6 +481,20 @@ export const getCampaignValidation = query({
 			}
 		}
 
+		// Critical Error 1b: For click-through campaigns, check CTA link requirements (Priority 1)
+		if (campaign.type === "click-through") {
+			if (!campaign.campaignSettings?.ctaLink || campaign.campaignSettings.ctaLink.trim() === "") {
+				criticalErrors.push({
+					id: "campaign-no-cta-link",
+					isValid: false,
+					message: "Campaign must have a CTA link configured",
+					severity: "error",
+					field: "ctaLink",
+					priority: 1,
+				});
+			}
+		}
+
 		// Critical Error 2: Check if campaign has at least one landing page (Priority 2)
 		// Only show this error if form schema is valid (or not required)
 		if (landingPages.length === 0 && hasValidFormSchema) {
@@ -639,6 +668,20 @@ export const getCampaignValidationInternal = internalQuery({
 						priority: 1,
 					});
 				}
+			}
+		}
+
+		// Critical Error 1b: For click-through campaigns, check CTA link requirements (Priority 1)
+		if (campaign.type === "click-through") {
+			if (!campaign.campaignSettings?.ctaLink || campaign.campaignSettings.ctaLink.trim() === "") {
+				criticalErrors.push({
+					id: "campaign-no-cta-link",
+					isValid: false,
+					message: "Campaign must have a CTA link configured",
+					severity: "error",
+					field: "ctaLink",
+					priority: 1,
+				});
 			}
 		}
 

@@ -335,4 +335,5 @@ export const campaignSettingsSchema = z.object({
 	customEvents: z.array(eventSchema).optional(),
 	sessionDurationInMinutes: z.number(),
 	attributionPeriodInDays: z.number(),
+	ctaLink: z.string().url().optional(),
 });
