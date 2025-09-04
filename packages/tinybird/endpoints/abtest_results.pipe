@@ -1,0 +1,89 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters: workspaceId, projectId, periodStart, periodEnd, abTestsPairs (csv of abTestId:primaryGoalId)"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ DateTime64(periodStart, required=True) }} AS period_start,
+        {{ DateTime64(periodEnd, required=True) }} AS period_end,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(abTestsPairs, required=True) }} AS abtests_pairs
+
+NODE abtests
+DESCRIPTION "Explode pairs 'abTestId:primaryGoalId' into rows"
+
+SQL >
+    %
+    SELECT
+      splitByChar(':', pair)[1] AS ab_test_id,
+      splitByChar(':', pair)[2] AS primary_goal_id
+    FROM (
+      SELECT arrayJoin(splitByChar(',', coalesce((SELECT abtests_pairs FROM params), ''))) AS pair
+    )
+
+NODE exposures
+DESCRIPTION "Variant exposures from sessions"
+
+SQL >
+    %
+    SELECT s.ab_test_id, s.ab_test_variant_id, uniqExact(s.session_id) AS exposures
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id IN (SELECT ab_test_id FROM abtests)
+      AND s.timestamp BETWEEN (SELECT period_start FROM params) AND (SELECT period_end FROM params)
+    GROUP BY s.ab_test_id, s.ab_test_variant_id
+
+NODE conversions
+DESCRIPTION "Goal conversions per variant"
+
+SQL >
+    %
+    SELECT s.ab_test_id AS ab_test_id, s.ab_test_variant_id AS ab_test_variant_id,
+           countIf(e.event_id = a.primary_goal_id) AS conversions,
+           sumIf(e.event_value, e.event_id = a.primary_goal_id) AS value
+    FROM events_v1 e
+    ANY LEFT JOIN session_v1 s USING (session_id)
+    ANY LEFT JOIN abtests a ON s.ab_test_id = a.ab_test_id
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp BETWEEN (SELECT period_start FROM params) AND (SELECT period_end FROM params)
+      AND s.ab_test_id IS NOT NULL
+    GROUP BY s.ab_test_id, s.ab_test_variant_id
+
+NODE results
+DESCRIPTION "Combine exposures and conversions; compute CVR and CI"
+
+SQL >
+    %
+    SELECT
+      e.ab_test_id,
+      e.ab_test_variant_id,
+      e.exposures,
+      coalesce(c.conversions, 0) AS conversions,
+      coalesce(c.value, 0) AS value,
+      if(e.exposures = 0, 0.0, coalesce(c.conversions, 0) / e.exposures) AS cvr,
+      -- 95% normal approximation CI for conversion rate
+      if(e.exposures = 0, 0.0, 
+         (coalesce(c.conversions,0)/e.exposures) - 1.96*sqrt((coalesce(c.conversions,0)/e.exposures)*(1 - (coalesce(c.conversions,0)/e.exposures))/e.exposures)) AS cvr_ci_low,
+      if(e.exposures = 0, 0.0, 
+         (coalesce(c.conversions,0)/e.exposures) + 1.96*sqrt((coalesce(c.conversions,0)/e.exposures)*(1 - (coalesce(c.conversions,0)/e.exposures))/e.exposures)) AS cvr_ci_high
+    FROM exposures e
+    LEFT JOIN conversions c USING (ab_test_id, ab_test_variant_id)
+    ORDER BY ab_test_id, cvr DESC
+
+TYPE ENDPOINT
+

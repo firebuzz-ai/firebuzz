@@ -1,0 +1,349 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for timeseries primitive analytics"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ DateTime64(periodStart, required=True) }} AS period_start,
+        {{ DateTime64(periodEnd, required=True) }} AS period_end,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(granularity, 'hour') }} AS granularity,
+        {{ String(eventIds, '') }} AS event_ids
+
+NODE sessions_timeseries
+DESCRIPTION "Session metrics aggregated by granularity buckets"
+
+SQL >
+    %
+    SELECT 
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(s.timestamp)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(s.timestamp)
+            WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(s.timestamp)
+            WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(s.timestamp)
+            ELSE toStartOfHour(s.timestamp)
+        END AS bucket_start,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN addMinutes(toStartOfMinute(s.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN addHours(toStartOfHour(s.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'day' THEN addDays(toStartOfDay(s.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'week' THEN addDays(toMonday(s.timestamp), 7)
+            ELSE addHours(toStartOfHour(s.timestamp), 1)
+        END AS bucket_end,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN formatDateTime(toStartOfMinute(s.timestamp), '%Y-%m-%d %H:%M')
+            WHEN (SELECT granularity FROM params) = 'hour' THEN formatDateTime(toStartOfHour(s.timestamp), '%Y-%m-%d %H:00')
+            WHEN (SELECT granularity FROM params) = 'day' THEN formatDateTime(toStartOfDay(s.timestamp), '%Y-%m-%d')
+            WHEN (SELECT granularity FROM params) = 'week' THEN formatDateTime(toMonday(s.timestamp), '%Y-%m-%d')
+            ELSE formatDateTime(toStartOfHour(s.timestamp), '%Y-%m-%d %H:00')
+        END AS bucket_label,
+        countIf(s.is_returning = 0) AS new_sessions,
+        countIf(s.is_returning = 1) AS returning_sessions,
+        count(*) AS all_sessions,
+        uniqExact(s.user_id) AS users
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.timestamp >= (SELECT period_start FROM params)
+      AND s.timestamp <= (SELECT period_end FROM params)
+    GROUP BY bucket_start, bucket_end, bucket_label
+    ORDER BY bucket_start
+
+NODE parsed_event_ids
+DESCRIPTION "Parse comma-separated event IDs"
+
+SQL >
+    %
+    WITH event_ids_param AS (
+        SELECT coalesce(nullIf((SELECT event_ids FROM params), ''), 'dummy') AS event_ids_value
+    )
+    SELECT arrayJoin(splitByChar(',', event_ids_value)) AS event_id
+    FROM event_ids_param
+    WHERE event_ids_value != 'dummy' AND event_id != ''
+
+NODE events_timeseries
+DESCRIPTION "Event metrics aggregated by granularity buckets"
+
+SQL >
+    %
+    SELECT 
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(e.timestamp)
+            ELSE toStartOfHour(e.timestamp)
+        END AS bucket_start,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN addMinutes(toStartOfMinute(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN addHours(toStartOfHour(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'day' THEN addDays(toStartOfDay(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'week' THEN addDays(toMonday(e.timestamp), 7)
+            ELSE addHours(toStartOfHour(e.timestamp), 1)
+        END AS bucket_end,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN formatDateTime(toStartOfMinute(e.timestamp), '%Y-%m-%d %H:%M')
+            WHEN (SELECT granularity FROM params) = 'hour' THEN formatDateTime(toStartOfHour(e.timestamp), '%Y-%m-%d %H:00')
+            WHEN (SELECT granularity FROM params) = 'day' THEN formatDateTime(toStartOfDay(e.timestamp), '%Y-%m-%d')
+            WHEN (SELECT granularity FROM params) = 'week' THEN formatDateTime(toMonday(e.timestamp), '%Y-%m-%d')
+            ELSE formatDateTime(toStartOfHour(e.timestamp), '%Y-%m-%d %H:00')
+        END AS bucket_label,
+        countIf(e.event_id = 'page-view') AS pageviews,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) 
+              AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        countIf(e.event_id = 'external-link-click') AS external_link_clicks,
+        countIf(e.event_id = 'form-submission') AS form_submissions
+    FROM events_v1 e
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp >= (SELECT period_start FROM params)
+      AND e.timestamp <= (SELECT period_end FROM params)
+    GROUP BY bucket_start, bucket_end, bucket_label
+    ORDER BY bucket_start
+
+NODE session_duration_timeseries
+DESCRIPTION "Session duration and bounce rate by granularity buckets"
+
+SQL >
+    %
+    WITH session_durations AS (
+        SELECT 
+            s.session_id,
+            s.timestamp,
+            CASE 
+                WHEN countIf(e.event_id = 'page-unload') > 0 THEN
+                    maxIf(e.time_on_page, e.event_id = 'page-unload')
+                ELSE
+                    argMax(e.time_on_page, e.session_event_sequence)
+            END AS duration_seconds
+        FROM session_v1 s
+        LEFT JOIN events_v1 e ON (
+            e.session_id = s.session_id
+            AND e.workspace_id = s.workspace_id
+            AND e.project_id = s.project_id
+            AND e.campaign_id = s.campaign_id
+        )
+        WHERE s.workspace_id = (SELECT workspace_id FROM params)
+          AND s.project_id = (SELECT project_id FROM params)
+          AND s.campaign_id = (SELECT campaign_id FROM params)
+          AND s.environment = (SELECT environment FROM params)
+          AND s.campaign_environment = (SELECT campaign_environment FROM params)
+          AND s.timestamp >= (SELECT period_start FROM params) 
+          AND s.timestamp <= (SELECT period_end FROM params)
+        GROUP BY s.session_id, s.timestamp
+    )
+    SELECT 
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(timestamp)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(timestamp)
+            WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(timestamp)
+            WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(timestamp)
+            ELSE toStartOfHour(timestamp)
+        END AS bucket_start,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN addMinutes(toStartOfMinute(timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN addHours(toStartOfHour(timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'day' THEN addDays(toStartOfDay(timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'week' THEN addDays(toMonday(timestamp), 7)
+            ELSE addHours(toStartOfHour(timestamp), 1)
+        END AS bucket_end,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN formatDateTime(toStartOfMinute(timestamp), '%Y-%m-%d %H:%M')
+            WHEN (SELECT granularity FROM params) = 'hour' THEN formatDateTime(toStartOfHour(timestamp), '%Y-%m-%d %H:00')
+            WHEN (SELECT granularity FROM params) = 'day' THEN formatDateTime(toStartOfDay(timestamp), '%Y-%m-%d')
+            WHEN (SELECT granularity FROM params) = 'week' THEN formatDateTime(toMonday(timestamp), '%Y-%m-%d')
+            ELSE formatDateTime(toStartOfHour(timestamp), '%Y-%m-%d %H:00')
+        END AS bucket_label,
+        avg(duration_seconds) AS avg_session_duration,
+        countIf(duration_seconds < 3) AS bounced_sessions,
+        count(*) AS total_sessions_with_duration
+    FROM session_durations
+    WHERE duration_seconds IS NOT NULL
+    GROUP BY bucket_start, bucket_end, bucket_label
+    ORDER BY bucket_start
+
+NODE custom_events_timeseries
+DESCRIPTION "Custom events aggregated by granularity buckets"
+
+SQL >
+    %
+    SELECT 
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(e.timestamp)
+            WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(e.timestamp)
+            ELSE toStartOfHour(e.timestamp)
+        END AS bucket_start,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN addMinutes(toStartOfMinute(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'hour' THEN addHours(toStartOfHour(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'day' THEN addDays(toStartOfDay(e.timestamp), 1)
+            WHEN (SELECT granularity FROM params) = 'week' THEN addDays(toMonday(e.timestamp), 7)
+            ELSE addHours(toStartOfHour(e.timestamp), 1)
+        END AS bucket_end,
+        CASE 
+            WHEN (SELECT granularity FROM params) = 'minute' THEN formatDateTime(toStartOfMinute(e.timestamp), '%Y-%m-%d %H:%M')
+            WHEN (SELECT granularity FROM params) = 'hour' THEN formatDateTime(toStartOfHour(e.timestamp), '%Y-%m-%d %H:00')
+            WHEN (SELECT granularity FROM params) = 'day' THEN formatDateTime(toStartOfDay(e.timestamp), '%Y-%m-%d')
+            WHEN (SELECT granularity FROM params) = 'week' THEN formatDateTime(toMonday(e.timestamp), '%Y-%m-%d')
+            ELSE formatDateTime(toStartOfHour(e.timestamp), '%Y-%m-%d %H:00')
+        END AS bucket_label,
+        e.event_id,
+        count(*) AS event_count,
+        sum(e.event_value) AS event_value_sum
+    FROM events_v1 e
+    ANY INNER JOIN parsed_event_ids p ON e.event_id = p.event_id
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp >= (SELECT period_start FROM params)
+      AND e.timestamp <= (SELECT period_end FROM params)
+    GROUP BY bucket_start, bucket_end, bucket_label, e.event_id
+    ORDER BY bucket_start, e.event_id
+
+NODE time_range_generator
+DESCRIPTION "Generate complete time range based on granularity"
+
+SQL >
+    %
+    WITH 
+    params_expanded AS (
+        SELECT
+            CASE 
+                WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(toDateTime64((SELECT period_start FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(toDateTime64((SELECT period_start FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(toDateTime64((SELECT period_start FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(toDateTime64((SELECT period_start FROM params), 3))
+                ELSE toStartOfHour(toDateTime64((SELECT period_start FROM params), 3))
+            END AS start_time,
+            CASE 
+                WHEN (SELECT granularity FROM params) = 'minute' THEN toStartOfMinute(toDateTime64((SELECT period_end FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'hour' THEN toStartOfHour(toDateTime64((SELECT period_end FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'day' THEN toStartOfDay(toDateTime64((SELECT period_end FROM params), 3))
+                WHEN (SELECT granularity FROM params) = 'week' THEN toMonday(toDateTime64((SELECT period_end FROM params), 3))
+                ELSE toStartOfHour(toDateTime64((SELECT period_end FROM params), 3))
+            END AS end_time,
+            CASE 
+                WHEN (SELECT granularity FROM params) = 'minute' THEN 60
+                WHEN (SELECT granularity FROM params) = 'hour' THEN 3600
+                WHEN (SELECT granularity FROM params) = 'day' THEN 86400
+                WHEN (SELECT granularity FROM params) = 'week' THEN 604800
+                ELSE 3600
+            END AS interval_seconds,
+            (SELECT granularity FROM params) AS granularity_type
+    ),
+    time_buckets AS (
+        SELECT 
+            start_time,
+            end_time,
+            interval_seconds,
+            granularity_type,
+            CASE 
+                WHEN granularity_type = 'minute' THEN toUInt32(dateDiff('minute', start_time, end_time) + 1)
+                WHEN granularity_type = 'hour' THEN toUInt32(dateDiff('hour', start_time, end_time) + 1)
+                WHEN granularity_type = 'day' THEN toUInt32(dateDiff('day', start_time, end_time) + 1)
+                WHEN granularity_type = 'week' THEN toUInt32(dateDiff('week', start_time, end_time) + 1)
+                ELSE toUInt32(dateDiff('hour', start_time, end_time) + 1)
+            END AS bucket_count
+        FROM params_expanded
+    )
+    SELECT 
+        CASE 
+            WHEN tb.granularity_type = 'minute' THEN addMinutes(tb.start_time, n.number)
+            WHEN tb.granularity_type = 'hour' THEN addHours(tb.start_time, n.number)
+            WHEN tb.granularity_type = 'day' THEN addDays(tb.start_time, n.number)
+            WHEN tb.granularity_type = 'week' THEN addDays(tb.start_time, n.number * 7)
+            ELSE addHours(tb.start_time, n.number)
+        END AS bucket_start,
+        CASE 
+            WHEN tb.granularity_type = 'minute' THEN addMinutes(tb.start_time, n.number + 1)
+            WHEN tb.granularity_type = 'hour' THEN addHours(tb.start_time, n.number + 1)
+            WHEN tb.granularity_type = 'day' THEN addDays(tb.start_time, n.number + 1)
+            WHEN tb.granularity_type = 'week' THEN addDays(tb.start_time, (n.number + 1) * 7)
+            ELSE addHours(tb.start_time, n.number + 1)
+        END AS bucket_end,
+        CASE 
+            WHEN tb.granularity_type = 'minute' THEN formatDateTime(addMinutes(tb.start_time, n.number), '%Y-%m-%d %H:%M')
+            WHEN tb.granularity_type = 'hour' THEN formatDateTime(addHours(tb.start_time, n.number), '%Y-%m-%d %H:00')
+            WHEN tb.granularity_type = 'day' THEN formatDateTime(addDays(tb.start_time, n.number), '%Y-%m-%d')
+            WHEN tb.granularity_type = 'week' THEN formatDateTime(addDays(tb.start_time, n.number * 7), '%Y-%m-%d')
+            ELSE formatDateTime(addHours(tb.start_time, n.number), '%Y-%m-%d %H:00')
+        END AS bucket_label
+    FROM time_buckets tb
+    CROSS JOIN numbers(0, 10080) n  -- Max 10080 minutes (7 days), covers all granularities
+    WHERE n.number < tb.bucket_count
+
+NODE response
+DESCRIPTION "Complete timeseries primitives response with full time range"
+
+SQL >
+    %
+    WITH custom_events_grouped AS (
+        SELECT 
+            bucket_start,
+            bucket_end,
+            bucket_label,
+            groupArray(tuple(event_id, event_count, event_value_sum)) AS custom_events
+        FROM custom_events_timeseries
+        GROUP BY bucket_start, bucket_end, bucket_label
+    )
+    SELECT 
+        toString(tr.bucket_start) AS bucket_start,
+        toString(tr.bucket_end) AS bucket_end,
+        toString(tr.bucket_label) AS bucket_label,
+        
+        -- Session metrics (default to 0 if no data)
+        coalesce(s.new_sessions, 0) AS new_sessions,
+        coalesce(s.returning_sessions, 0) AS returning_sessions,
+        coalesce(s.all_sessions, 0) AS all_sessions,
+        coalesce(s.users, 0) AS users,
+        
+        -- Event metrics (default to 0 if no data)
+        coalesce(e.pageviews, 0) AS pageviews,
+        coalesce(e.conversions, 0) AS conversions,
+        coalesce(e.conversion_value_usd, 0) AS conversion_value_usd,
+        coalesce(e.external_link_clicks, 0) AS external_link_clicks,
+        coalesce(e.form_submissions, 0) AS form_submissions,
+        
+        -- Duration metrics (default to 0 if no data)
+        coalesce(d.avg_session_duration, 0) AS avg_session_duration,
+        coalesce(d.bounced_sessions, 0) AS bounced_sessions,
+        coalesce(d.total_sessions_with_duration, 0) AS total_sessions_with_duration,
+        
+        -- Custom events (default to empty array if no data)
+        coalesce(c.custom_events, []) AS custom_events
+        
+    FROM time_range_generator tr
+    LEFT JOIN sessions_timeseries s ON (
+        tr.bucket_label = s.bucket_label
+    )
+    LEFT JOIN events_timeseries e ON (
+        tr.bucket_label = e.bucket_label
+    )
+    LEFT JOIN session_duration_timeseries d ON (
+        tr.bucket_label = d.bucket_label
+    )
+    LEFT JOIN custom_events_grouped c ON (
+        tr.bucket_label = c.bucket_label
+    )
+    ORDER BY tr.bucket_start
+
+TYPE ENDPOINT

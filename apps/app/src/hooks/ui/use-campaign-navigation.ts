@@ -1,7 +1,7 @@
 import { parseAsStringEnum, useQueryStates } from "nuqs";
 
-export type CampaignScreen = 
-	| "overview" 
+export type CampaignScreen =
+	| "overview"
 	| "custom-events"
 	| "traffic"
 	| "segment"

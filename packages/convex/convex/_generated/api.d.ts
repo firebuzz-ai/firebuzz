@@ -8,6 +8,10 @@
  * @module
  */
 
+import type * as collections_analytics_actions from "../collections/analytics/actions.js";
+import type * as collections_analytics_mutations from "../collections/analytics/mutations.js";
+import type * as collections_analytics_queries from "../collections/analytics/queries.js";
+import type * as collections_analytics_utils from "../collections/analytics/utils.js";
 import type * as collections_brands_audiences_mutations from "../collections/brands/audiences/mutations.js";
 import type * as collections_brands_audiences_queries from "../collections/brands/audiences/queries.js";
 import type * as collections_brands_audiences_utils from "../collections/brands/audiences/utils.js";
@@ -170,6 +174,10 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "collections/analytics/actions": typeof collections_analytics_actions;
+  "collections/analytics/mutations": typeof collections_analytics_mutations;
+  "collections/analytics/queries": typeof collections_analytics_queries;
+  "collections/analytics/utils": typeof collections_analytics_utils;
   "collections/brands/audiences/mutations": typeof collections_brands_audiences_mutations;
   "collections/brands/audiences/queries": typeof collections_brands_audiences_queries;
   "collections/brands/audiences/utils": typeof collections_brands_audiences_utils;

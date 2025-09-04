@@ -1,0 +1,133 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for overview analytics"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ DateTime64(periodStart, required=True) }} AS period_start,
+        {{ DateTime64(periodEnd, required=True) }} AS period_end,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment
+
+NODE base_sessions
+DESCRIPTION "All sessions in period with filters"
+
+SQL >
+    %
+    SELECT session_id, timestamp
+    FROM session_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp BETWEEN (SELECT period_start FROM params) AND (SELECT period_end FROM params)
+
+NODE base_events
+DESCRIPTION "All events in period with filters"
+
+SQL >
+    %
+    SELECT e.timestamp, e.session_id, e.event_id, e.event_type, e.event_value
+    FROM events_v1 e
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp BETWEEN (SELECT period_start FROM params) AND (SELECT period_end FROM params)
+
+NODE kpi_cards
+DESCRIPTION "Sessions, Pageviews, Conversions, CTR"
+
+SQL >
+    %
+    WITH s AS (
+      SELECT uniqExact(session_id) AS sessions
+      FROM base_sessions
+    ),
+    pv AS (
+      SELECT count() AS pageviews
+      FROM base_events
+    ),
+    c AS (
+      SELECT countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions
+      FROM base_events
+    )
+    SELECT
+      s.sessions,
+      pv.pageviews,
+      c.conversions,
+      if(s.sessions = 0, 0.0, c.conversions / s.sessions) AS ctr
+    FROM s CROSS JOIN pv CROSS JOIN c
+
+NODE series
+DESCRIPTION "Timeseries for sessions and conversions"
+
+SQL >
+    %
+    WITH buckets AS (
+      SELECT 
+        toStartOfInterval(toDateTime64((SELECT period_start FROM params), 3, 'UTC'), toIntervalHour(1)) AS start_ts,
+        toStartOfInterval(toDateTime64((SELECT period_end FROM params), 3, 'UTC'), toIntervalHour(1)) AS end_ts
+    ),
+    cnt AS (
+      SELECT toUInt64(greatest(0, dateDiff('hour', (SELECT start_ts FROM buckets), (SELECT end_ts FROM buckets))) + 1) AS n
+    ),
+    grid AS (
+      SELECT (SELECT start_ts FROM buckets) + toIntervalHour(toInt64(number)) AS ts
+      FROM system.numbers
+      LIMIT (SELECT n FROM cnt)
+    ),
+    sess AS (
+      SELECT toStartOfInterval(timestamp, INTERVAL 1 HOUR) AS ts, uniqExact(session_id) AS sessions
+      FROM base_sessions
+      GROUP BY ts
+    ),
+    conv AS (
+      SELECT toStartOfInterval(timestamp, INTERVAL 1 HOUR) AS ts, countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions
+      FROM base_events
+      GROUP BY ts
+    )
+    SELECT g.ts AS ts,
+           coalesce(s.sessions, 0) AS sessions,
+           coalesce(c.conversions, 0) AS conversions
+    FROM grid g
+    LEFT JOIN sess s USING (ts)
+    LEFT JOIN conv c USING (ts)
+    ORDER BY g.ts
+
+NODE response
+DESCRIPTION "Bundle KPIs and series in one response"
+
+SQL >
+    %
+    WITH k AS (
+      SELECT sessions, pageviews, conversions, ctr FROM kpi_cards
+    ),
+    st AS (
+      SELECT 
+        groupArray(ts) AS series_ts,
+        groupArray(sessions) AS series_sessions,
+        groupArray(conversions) AS series_conversions
+      FROM series
+    )
+    SELECT 
+      k.sessions,
+      k.pageviews,
+      k.conversions,
+      k.ctr,
+      st.series_ts,
+      st.series_sessions,
+      st.series_conversions
+    FROM k CROSS JOIN st
+
+TYPE ENDPOINT
+

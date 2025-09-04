@@ -1,0 +1,602 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for conversions breakdown analytics"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ DateTime64(periodStart, required=True) }} AS period_start,
+        {{ DateTime64(periodEnd, required=True) }} AS period_end,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(eventIds, '') }} AS event_ids
+
+NODE base_sessions
+DESCRIPTION "Base session data for the specified period"
+
+SQL >
+    %
+    SELECT 
+        session_id,
+        user_id,
+        attribution_id,
+        is_returning,
+        device_type,
+        device_os,
+        browser,
+        is_mobile,
+        country,
+        city,
+        region,
+        continent,
+        coalesce(nullIf(utm_source, ''), 'Direct') AS utm_source,
+        coalesce(nullIf(utm_medium, ''), 'Direct') AS utm_medium,
+        coalesce(nullIf(utm_campaign, ''), 'Direct') AS utm_campaign,
+        coalesce(nullIf(referrer, ''), 'Direct') AS referrer,
+        landing_page_id,
+        ab_test_variant_id,
+        timestamp
+    FROM session_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp >= (SELECT period_start FROM params)
+      AND timestamp <= (SELECT period_end FROM params)
+
+NODE conversion_events
+DESCRIPTION "Conversion events for the specified period"
+
+SQL >
+    %
+    SELECT 
+        e.session_id,
+        e.event_id,
+        e.event_value,
+        e.event_value_currency,
+        e.timestamp,
+        toHour(e.timestamp) AS conversion_hour,
+        toDayOfWeek(e.timestamp) AS conversion_day_of_week
+    FROM events_v1 e
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.event_id = (SELECT conversion_event_id FROM params)
+      AND e.timestamp >= (SELECT period_start FROM params)
+      AND e.timestamp <= (SELECT period_end FROM params)
+
+NODE session_conversions
+DESCRIPTION "Sessions with conversion data joined"
+
+SQL >
+    %
+    SELECT 
+        s.*,
+        c.event_value,
+        c.event_value_currency,
+        c.conversion_hour,
+        c.conversion_day_of_week,
+        CASE WHEN c.session_id IS NOT NULL THEN 1 ELSE 0 END AS has_conversion
+    FROM base_sessions s
+    LEFT JOIN conversion_events c ON s.session_id = c.session_id
+
+NODE device_conversions
+DESCRIPTION "Conversion analysis by device type"
+
+SQL >
+    %
+    SELECT 
+        device_type,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY device_type
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE operating_system_conversions
+DESCRIPTION "Conversion analysis by operating system"
+
+SQL >
+    %
+    SELECT 
+        device_os,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY device_os
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE browser_conversions
+DESCRIPTION "Conversion analysis by browser"
+
+SQL >
+    %
+    SELECT 
+        browser,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY browser
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE geographic_conversions
+DESCRIPTION "Conversion analysis by country"
+
+SQL >
+    %
+    SELECT 
+        country,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY country
+    ORDER BY conversions DESC
+    LIMIT 15
+
+NODE city_conversions
+DESCRIPTION "Conversion analysis by city"
+
+SQL >
+    %
+    SELECT 
+        city,
+        country,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY city, country
+    ORDER BY conversions DESC
+    LIMIT 20
+
+NODE utm_source_conversions
+DESCRIPTION "Conversion analysis by UTM source"
+
+SQL >
+    %
+    SELECT 
+        utm_source,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY utm_source
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE utm_medium_conversions
+DESCRIPTION "Conversion analysis by UTM medium"
+
+SQL >
+    %
+    SELECT 
+        utm_medium,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY utm_medium
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE utm_campaign_conversions
+DESCRIPTION "Conversion analysis by UTM campaign"
+
+SQL >
+    %
+    SELECT 
+        utm_campaign,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    GROUP BY utm_campaign
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE landing_page_conversions
+DESCRIPTION "Conversion analysis by landing page"
+
+SQL >
+    %
+    SELECT 
+        landing_page_id,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    WHERE landing_page_id IS NOT NULL
+    GROUP BY landing_page_id
+    ORDER BY conversions DESC
+    LIMIT 15
+
+NODE hourly_conversions
+DESCRIPTION "Conversion patterns by hour of day"
+
+SQL >
+    %
+    SELECT 
+        conversion_hour AS hour,
+        count(*) AS conversions,
+        uniqExact(user_id) AS converting_users,
+        sumIf(event_value, event_value_currency = 'USD') AS conversion_value_usd,
+        coalesce(avgIf(event_value, event_value_currency = 'USD'), 0) AS avg_conversion_value
+    FROM session_conversions
+    WHERE has_conversion = 1
+    GROUP BY conversion_hour
+    ORDER BY conversion_hour
+
+NODE daily_conversions
+DESCRIPTION "Conversion patterns by day of week"
+
+SQL >
+    %
+    SELECT 
+        conversion_day_of_week AS day_of_week,
+        CASE 
+            WHEN conversion_day_of_week = 1 THEN 'Monday'
+            WHEN conversion_day_of_week = 2 THEN 'Tuesday'
+            WHEN conversion_day_of_week = 3 THEN 'Wednesday'
+            WHEN conversion_day_of_week = 4 THEN 'Thursday'
+            WHEN conversion_day_of_week = 5 THEN 'Friday'
+            WHEN conversion_day_of_week = 6 THEN 'Saturday'
+            WHEN conversion_day_of_week = 7 THEN 'Sunday'
+            ELSE 'Unknown'
+        END AS day_name,
+        count(*) AS conversions,
+        uniqExact(user_id) AS converting_users,
+        sumIf(event_value, event_value_currency = 'USD') AS conversion_value_usd,
+        coalesce(avgIf(event_value, event_value_currency = 'USD'), 0) AS avg_conversion_value
+    FROM session_conversions
+    WHERE has_conversion = 1
+    GROUP BY conversion_day_of_week, day_name
+    ORDER BY conversion_day_of_week
+
+NODE user_type_conversions
+DESCRIPTION "Conversion analysis by user type (new vs returning)"
+
+SQL >
+    %
+    SELECT 
+        CASE 
+            WHEN is_returning = 0 THEN 'New'
+            ELSE 'Returning'
+        END AS user_type,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate
+    FROM session_conversions
+    GROUP BY user_type
+    ORDER BY conversions DESC
+
+NODE value_distribution
+DESCRIPTION "Distribution of conversion values"
+
+SQL >
+    %
+    SELECT 
+        CASE 
+            WHEN event_value = 0 THEN '$0'
+            WHEN event_value <= 10 THEN '$1-10'
+            WHEN event_value <= 50 THEN '$11-50'
+            WHEN event_value <= 100 THEN '$51-100'
+            WHEN event_value <= 500 THEN '$101-500'
+            WHEN event_value <= 1000 THEN '$501-1000'
+            ELSE '$1000+'
+        END AS value_range,
+        count(*) AS conversions,
+        uniqExact(user_id) AS converting_users,
+        sum(event_value) AS total_value,
+        avg(event_value) AS avg_value
+    FROM session_conversions
+    WHERE has_conversion = 1 AND event_value_currency = 'USD'
+    GROUP BY value_range
+    ORDER BY 
+        CASE 
+            WHEN value_range = '$0' THEN 0
+            WHEN value_range = '$1-10' THEN 1
+            WHEN value_range = '$11-50' THEN 2
+            WHEN value_range = '$51-100' THEN 3
+            WHEN value_range = '$101-500' THEN 4
+            WHEN value_range = '$501-1000' THEN 5
+            ELSE 6
+        END
+
+NODE ab_test_conversions
+DESCRIPTION "Conversion analysis by AB test variant"
+
+SQL >
+    %
+    SELECT 
+        ab_test_variant_id,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        sumIf(has_conversion, has_conversion = 1) AS conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
+        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
+        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
+    FROM session_conversions
+    WHERE ab_test_variant_id IS NOT NULL
+    GROUP BY ab_test_variant_id
+    ORDER BY conversions DESC
+    LIMIT 10
+
+NODE conversion_totals
+DESCRIPTION "Total conversion metrics"
+
+SQL >
+    %
+    SELECT 
+        count(*) AS total_sessions,
+        uniqExact(user_id) AS total_users,
+        sumIf(has_conversion, has_conversion = 1) AS total_conversions,
+        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS total_conversion_value,
+        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS overall_conversion_rate
+    FROM session_conversions
+
+NODE response
+DESCRIPTION "Complete conversions breakdown response"
+
+SQL >
+    %
+    WITH 
+    totals_data AS (
+        SELECT 
+            total_sessions, 
+            total_users, 
+            total_conversions,
+            total_conversion_value,
+            overall_conversion_rate
+        FROM conversion_totals
+    ),
+    device_conversions_array AS (
+        SELECT groupArray(tuple(
+            device_type, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS device_conversions FROM device_conversions
+    ),
+    os_conversions_array AS (
+        SELECT groupArray(tuple(
+            device_os, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS operating_system_conversions FROM operating_system_conversions
+    ),
+    browser_conversions_array AS (
+        SELECT groupArray(tuple(
+            browser, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS browser_conversions FROM browser_conversions
+    ),
+    geographic_conversions_array AS (
+        SELECT groupArray(tuple(
+            country, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS geographic_conversions FROM geographic_conversions
+    ),
+    city_conversions_array AS (
+        SELECT groupArray(tuple(
+            city,
+            country, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS city_conversions FROM city_conversions
+    ),
+    utm_source_conversions_array AS (
+        SELECT groupArray(tuple(
+            utm_source, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS utm_source_conversions FROM utm_source_conversions
+    ),
+    utm_medium_conversions_array AS (
+        SELECT groupArray(tuple(
+            utm_medium, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS utm_medium_conversions FROM utm_medium_conversions
+    ),
+    utm_campaign_conversions_array AS (
+        SELECT groupArray(tuple(
+            utm_campaign, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS utm_campaign_conversions FROM utm_campaign_conversions
+    ),
+    landing_page_conversions_array AS (
+        SELECT groupArray(tuple(
+            landing_page_id, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS landing_page_conversions FROM landing_page_conversions
+    ),
+    hourly_conversions_array AS (
+        SELECT groupArray(tuple(
+            hour, 
+            conversions, 
+            converting_users,
+            conversion_value_usd,
+            avg_conversion_value
+        )) AS hourly_conversions FROM hourly_conversions
+    ),
+    daily_conversions_array AS (
+        SELECT groupArray(tuple(
+            day_of_week,
+            day_name, 
+            conversions, 
+            converting_users,
+            conversion_value_usd,
+            avg_conversion_value
+        )) AS daily_conversions FROM daily_conversions
+    ),
+    user_type_conversions_array AS (
+        SELECT groupArray(tuple(
+            user_type, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate
+        )) AS user_type_conversions FROM user_type_conversions
+    ),
+    value_distribution_array AS (
+        SELECT groupArray(tuple(
+            value_range, 
+            conversions, 
+            converting_users,
+            total_value,
+            avg_value
+        )) AS value_distribution FROM value_distribution
+    ),
+    ab_test_conversions_array AS (
+        SELECT groupArray(tuple(
+            ab_test_variant_id, 
+            sessions, 
+            users, 
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS ab_test_conversions FROM ab_test_conversions
+    )
+    SELECT
+        t.total_sessions,
+        t.total_users,
+        t.total_conversions,
+        t.total_conversion_value,
+        t.overall_conversion_rate,
+        coalesce(dc.device_conversions, []) AS device_conversions,
+        coalesce(oc.operating_system_conversions, []) AS operating_system_conversions,
+        coalesce(bc.browser_conversions, []) AS browser_conversions,
+        coalesce(gc.geographic_conversions, []) AS geographic_conversions,
+        coalesce(cc.city_conversions, []) AS city_conversions,
+        coalesce(usc.utm_source_conversions, []) AS utm_source_conversions,
+        coalesce(umc.utm_medium_conversions, []) AS utm_medium_conversions,
+        coalesce(ucc.utm_campaign_conversions, []) AS utm_campaign_conversions,
+        coalesce(lpc.landing_page_conversions, []) AS landing_page_conversions,
+        coalesce(hc.hourly_conversions, []) AS hourly_conversions,
+        coalesce(ddca.daily_conversions, []) AS daily_conversions,
+        coalesce(utc.user_type_conversions, []) AS user_type_conversions,
+        coalesce(vd.value_distribution, []) AS value_distribution,
+        coalesce(atc.ab_test_conversions, []) AS ab_test_conversions
+    FROM totals_data t
+    LEFT JOIN device_conversions_array dc ON 1=1
+    LEFT JOIN os_conversions_array oc ON 1=1
+    LEFT JOIN browser_conversions_array bc ON 1=1
+    LEFT JOIN geographic_conversions_array gc ON 1=1
+    LEFT JOIN city_conversions_array cc ON 1=1
+    LEFT JOIN utm_source_conversions_array usc ON 1=1
+    LEFT JOIN utm_medium_conversions_array umc ON 1=1
+    LEFT JOIN utm_campaign_conversions_array ucc ON 1=1
+    LEFT JOIN landing_page_conversions_array lpc ON 1=1
+    LEFT JOIN hourly_conversions_array hc ON 1=1
+    LEFT JOIN daily_conversions_array ddca ON 1=1
+    LEFT JOIN user_type_conversions_array utc ON 1=1
+    LEFT JOIN value_distribution_array vd ON 1=1
+    LEFT JOIN ab_test_conversions_array atc ON 1=1
+
+TYPE ENDPOINT

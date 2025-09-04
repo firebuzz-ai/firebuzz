@@ -1,4 +1,5 @@
 import { defineSchema } from "convex/server";
+import { analyticsPipesSchema } from "./collections/analytics/schema";
 import { campaignSchema } from "./collections/campaigns/schema";
 import { landingPageMessagesSchema } from "./collections/landingPages/messages/schema";
 import { landingPagesSchema } from "./collections/landingPages/schema";
@@ -84,4 +85,7 @@ export default defineSchema({
 
 	// Helper Tables
 	memoizedDocuments: memoizedDocumentsSchema,
+
+	// Analytics Tables
+	analyticsPipes: analyticsPipesSchema,
 });

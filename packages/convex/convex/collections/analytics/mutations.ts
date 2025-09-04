@@ -1,0 +1,231 @@
+import { ConvexError, v } from "convex/values";
+import { internal } from "../../_generated/api";
+import { internalMutation, mutation } from "../../_generated/server";
+import { ERRORS } from "../../utils/errors";
+import { getCurrentUserWithWorkspace } from "../users/utils";
+import { generateHashKey, normalizePeriodForCaching } from "./utils";
+
+// Internal mutations for CRUD operations
+export const createAnalyticsPipe = internalMutation({
+  args: {
+    queryId: v.union(
+      v.literal("sum-primitives"),
+      v.literal("timeseries-primitives"),
+      v.literal("audience-breakdown"),
+      v.literal("conversions-breakdown")
+    ),
+    campaignId: v.id("campaigns"),
+    workspaceId: v.id("workspaces"),
+    projectId: v.id("projects"),
+    key: v.string(),
+    lastUpdatedAt: v.string(),
+    payload: v.any(),
+    source: v.union(
+      v.literal("firebuzz"),
+      v.literal("facebook"),
+      v.literal("google"),
+      v.literal("twitter"),
+      v.literal("linkedin")
+    ),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db.insert("analyticsPipes", args);
+  },
+});
+
+export const updateAnalyticsPipe = internalMutation({
+  args: {
+    id: v.id("analyticsPipes"),
+    key: v.string(),
+    lastUpdatedAt: v.string(),
+    payload: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const { id, key, lastUpdatedAt, payload } = args;
+    await ctx.db.patch(id, {
+      key,
+      lastUpdatedAt,
+      payload,
+      isRefreshing: false,
+    });
+    return id;
+  },
+});
+
+// Public mutation for revalidating analytics data
+export const revalidateAnalytics = mutation({
+  args: {
+    campaignId: v.id("campaigns"),
+    queries: v.array(
+      v.union(
+        v.object({
+          queryId: v.literal("sum-primitives"),
+          periodStart: v.string(),
+          periodEnd: v.string(),
+          conversionEventId: v.string(),
+          campaignEnvironment: v.union(
+            v.literal("preview"),
+            v.literal("production")
+          ),
+          eventIds: v.optional(v.string()),
+        }),
+        v.object({
+          queryId: v.literal("timeseries-primitives"),
+          periodStart: v.string(),
+          periodEnd: v.string(),
+          conversionEventId: v.string(),
+          campaignEnvironment: v.union(
+            v.literal("preview"),
+            v.literal("production")
+          ),
+          granularity: v.optional(
+            v.union(
+              v.literal("minute"),
+              v.literal("hour"),
+              v.literal("day"),
+              v.literal("week")
+            )
+          ),
+          eventIds: v.optional(v.string()),
+        }),
+        v.object({
+          queryId: v.literal("audience-breakdown"),
+          periodStart: v.string(),
+          periodEnd: v.string(),
+          campaignEnvironment: v.union(
+            v.literal("preview"),
+            v.literal("production")
+          ),
+        }),
+        v.object({
+          queryId: v.literal("conversions-breakdown"),
+          periodStart: v.string(),
+          periodEnd: v.string(),
+          conversionEventId: v.string(),
+          campaignEnvironment: v.union(
+            v.literal("preview"),
+            v.literal("production")
+          ),
+          eventIds: v.optional(v.string()),
+        })
+      )
+    ),
+  },
+  handler: async (ctx, args) => {
+    const user = await getCurrentUserWithWorkspace(ctx);
+    if (!user) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
+
+    // Verify campaign exists and user has access
+    const campaign = await ctx.db.get(args.campaignId);
+    if (!campaign) {
+      throw new ConvexError("Campaign not found");
+    }
+
+    if (campaign.workspaceId !== user.currentWorkspaceId) {
+      throw new ConvexError(ERRORS.UNAUTHORIZED);
+    }
+
+    const results: Array<{
+      query: string;
+      scheduled: boolean;
+      error?: string;
+    }> = [];
+
+    // Schedule actions for each query type
+    for (const queryParams of args.queries) {
+      try {
+        // Create normalized parameters for cache key generation (separate from query parameters)
+        const normalizedParams = { ...queryParams };
+        if ("periodStart" in queryParams && "periodEnd" in queryParams) {
+          const { normalizedPeriodStart, normalizedPeriodEnd } =
+            normalizePeriodForCaching(
+              queryParams.periodStart,
+              queryParams.periodEnd
+            );
+          normalizedParams.periodStart = normalizedPeriodStart;
+          normalizedParams.periodEnd = normalizedPeriodEnd;
+        }
+
+        // Generate hash key using normalized parameters for cache efficiency
+        const currentKey = generateHashKey(
+          JSON.stringify(normalizedParams, Object.keys(normalizedParams).sort())
+        );
+
+        // Get the existing analytics pipe
+        const existingAnalyticsPipe = await ctx.db
+          .query("analyticsPipes")
+          .withIndex("by_campaign_query", (q) =>
+            q
+              .eq("campaignId", args.campaignId)
+              .eq("queryId", queryParams.queryId)
+          )
+          .first();
+
+        let shouldBypassTimeCheck = false;
+
+        if (existingAnalyticsPipe) {
+          // Check if the key has changed (parameters changed)
+          shouldBypassTimeCheck = existingAnalyticsPipe.key !== currentKey;
+
+          console.log("cacheHit", !shouldBypassTimeCheck);
+
+          // Check last updated at (now - 3 minute) only if key hasn't changed
+          if (!shouldBypassTimeCheck) {
+            const lastUpdatedAt = new Date(
+              existingAnalyticsPipe.lastUpdatedAt
+            ).getTime();
+            const threeMinutesAgo = new Date(Date.now() - 180000).getTime();
+
+            if (lastUpdatedAt > threeMinutesAgo) {
+              console.log("Last updated at is less than 3 minutes ago");
+              results.push({
+                query: queryParams.queryId,
+                scheduled: false,
+                error: "Last updated at is less than 1 minute ago",
+              });
+              continue;
+            }
+          }
+
+          await ctx.db.patch(existingAnalyticsPipe._id, { isRefreshing: true });
+        }
+
+        // Check Rate Limit
+        const { ok, retryAfter } = await ctx.runQuery(
+          internal.components.ratelimits.checkLimit,
+          {
+            name: "analyticsQuery",
+          }
+        );
+
+        await ctx.scheduler.runAfter(
+          ok ? 0 : retryAfter,
+          internal.collections.analytics.actions.fetchAnalyticsPipe,
+          {
+            campaignId: args.campaignId,
+            workspaceId: campaign.workspaceId,
+            projectId: campaign.projectId,
+            existingAnalyticsPipeId: existingAnalyticsPipe?._id,
+            params: queryParams,
+          }
+        );
+
+        results.push({
+          query: queryParams.queryId,
+          scheduled: true,
+        });
+      } catch (error) {
+        console.error(`Error scheduling ${queryParams.queryId}:`, error);
+        results.push({
+          query: queryParams.queryId,
+          scheduled: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+
+    return { results };
+  },
+});

@@ -1,0 +1,346 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for primitive analytics with period comparison"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ DateTime64(periodStart, required=True) }} AS period_start,
+        {{ DateTime64(periodEnd, required=True) }} AS period_end,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(eventIds, '') }} AS event_ids
+
+NODE period_calculation
+DESCRIPTION "Calculate current and previous periods"
+
+SQL >
+    %
+    WITH period_duration AS (
+        SELECT dateDiff('second', 
+            toDateTime64((SELECT period_start FROM params), 3, 'UTC'), 
+            toDateTime64((SELECT period_end FROM params), 3, 'UTC')
+        ) AS duration_seconds
+    )
+    SELECT
+        toDateTime64((SELECT period_start FROM params), 3, 'UTC') AS current_start,
+        toDateTime64((SELECT period_end FROM params), 3, 'UTC') AS current_end,
+        toDateTime64((SELECT period_start FROM params), 3, 'UTC') - toIntervalSecond((SELECT duration_seconds FROM period_duration)) AS previous_start,
+        toDateTime64((SELECT period_start FROM params), 3, 'UTC') AS previous_end
+
+NODE parsed_event_ids
+DESCRIPTION "Parse comma-separated event IDs"
+
+SQL >
+    %
+    WITH event_ids_param AS (
+        SELECT coalesce(nullIf((SELECT event_ids FROM params), ''), 'dummy') AS event_ids_value
+    )
+    SELECT arrayJoin(splitByChar(',', event_ids_value)) AS event_id
+    FROM event_ids_param
+    WHERE event_ids_value != 'dummy' AND event_id != ''
+
+NODE current_sessions
+DESCRIPTION "Current period session data"
+
+SQL >
+    %
+    SELECT 
+        session_id,
+        user_id,
+        attribution_id,
+        is_returning,
+        timestamp
+    FROM session_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp BETWEEN (SELECT current_start FROM period_calculation) 
+                        AND (SELECT current_end FROM period_calculation)
+
+NODE previous_sessions
+DESCRIPTION "Previous period session data"
+
+SQL >
+    %
+    SELECT 
+        session_id,
+        user_id,
+        attribution_id,
+        is_returning,
+        timestamp
+    FROM session_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp BETWEEN (SELECT previous_start FROM period_calculation) 
+                        AND (SELECT previous_end FROM period_calculation)
+
+NODE current_events
+DESCRIPTION "Current period event data"
+
+SQL >
+    %
+    SELECT 
+        e.timestamp,
+        e.session_id,
+        e.event_id,
+        e.event_type,
+        e.event_value,
+        e.event_value_currency,
+        e.time_on_page,
+        e.session_event_sequence
+    FROM events_v1 e
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp BETWEEN (SELECT current_start FROM period_calculation) 
+                           AND (SELECT current_end FROM period_calculation)
+
+NODE previous_events
+DESCRIPTION "Previous period event data"
+
+SQL >
+    %
+    SELECT 
+        e.timestamp,
+        e.session_id,
+        e.event_id,
+        e.event_type,
+        e.event_value,
+        e.event_value_currency,
+        e.time_on_page,
+        e.session_event_sequence
+    FROM events_v1 e
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.timestamp BETWEEN (SELECT previous_start FROM period_calculation) 
+                           AND (SELECT previous_end FROM period_calculation)
+
+NODE current_session_metrics
+DESCRIPTION "Current period session primitives"
+
+SQL >
+    %
+    SELECT
+        countIf(is_returning = 0) AS new_sessions,
+        countIf(is_returning = 1) AS returning_sessions,
+        count(*) AS all_sessions,
+        uniqExact(user_id) AS users
+    FROM current_sessions
+
+NODE previous_session_metrics
+DESCRIPTION "Previous period session primitives"
+
+SQL >
+    %
+    SELECT
+        countIf(is_returning = 0) AS new_sessions,
+        countIf(is_returning = 1) AS returning_sessions,
+        count(*) AS all_sessions,
+        uniqExact(user_id) AS users
+    FROM previous_sessions
+
+NODE current_event_metrics
+DESCRIPTION "Current period event primitives"
+
+SQL >
+    %
+    SELECT
+        countIf(event_id = 'page-view') AS pageviews,
+        countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params) 
+              AND event_value_currency = 'USD') AS conversion_value_usd,
+        countIf(event_id = 'external-link-click') AS external_link_clicks,
+        countIf(event_id = 'form-submission') AS form_submissions
+    FROM current_events
+
+NODE previous_event_metrics
+DESCRIPTION "Previous period event primitives"
+
+SQL >
+    %
+    SELECT
+        countIf(event_id = 'page-view') AS pageviews,
+        countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params) 
+              AND event_value_currency = 'USD') AS conversion_value_usd,
+        countIf(event_id = 'external-link-click') AS external_link_clicks,
+        countIf(event_id = 'form-submission') AS form_submissions
+    FROM previous_events
+
+NODE current_session_duration
+DESCRIPTION "Current period session duration and bounce rate"
+
+SQL >
+    %
+    WITH session_durations AS (
+        SELECT 
+            e.session_id,
+            CASE 
+                WHEN countIf(e.event_id = 'page-unload') > 0 THEN
+                    maxIf(e.time_on_page, e.event_id = 'page-unload')
+                ELSE
+                    argMax(e.time_on_page, e.session_event_sequence)
+            END AS duration_seconds
+        FROM current_events e
+        GROUP BY e.session_id
+    )
+    SELECT
+        avg(duration_seconds) AS avg_session_duration,
+        countIf(duration_seconds < 3) AS bounced_sessions,
+        count(*) AS total_sessions_with_duration
+    FROM session_durations
+    WHERE duration_seconds IS NOT NULL
+
+NODE previous_session_duration
+DESCRIPTION "Previous period session duration and bounce rate"
+
+SQL >
+    %
+    WITH session_durations AS (
+        SELECT 
+            e.session_id,
+            CASE 
+                WHEN countIf(e.event_id = 'page-unload') > 0 THEN
+                    maxIf(e.time_on_page, e.event_id = 'page-unload')
+                ELSE
+                    argMax(e.time_on_page, e.session_event_sequence)
+            END AS duration_seconds
+        FROM previous_events e
+        GROUP BY e.session_id
+    )
+    SELECT
+        avg(duration_seconds) AS avg_session_duration,
+        countIf(duration_seconds < 3) AS bounced_sessions,
+        count(*) AS total_sessions_with_duration
+    FROM session_durations
+    WHERE duration_seconds IS NOT NULL
+
+NODE current_custom_events
+DESCRIPTION "Current period custom event aggregations"
+
+SQL >
+    %
+    SELECT
+        e.event_id,
+        count(*) AS event_count,
+        sum(e.event_value) AS event_value_sum
+    FROM current_events e
+    ANY INNER JOIN parsed_event_ids p ON e.event_id = p.event_id
+    GROUP BY e.event_id
+
+NODE previous_custom_events
+DESCRIPTION "Previous period custom event aggregations"
+
+SQL >
+    %
+    SELECT
+        e.event_id,
+        count(*) AS event_count,
+        sum(e.event_value) AS event_value_sum
+    FROM previous_events e
+    ANY INNER JOIN parsed_event_ids p ON e.event_id = p.event_id
+    GROUP BY e.event_id
+
+NODE response
+DESCRIPTION "Complete primitives response with period comparison"
+
+SQL >
+    %
+    WITH current_metrics AS (
+        SELECT 
+            cs.new_sessions,
+            cs.returning_sessions, 
+            cs.all_sessions,
+            cs.users,
+            ce.pageviews,
+            ce.conversions,
+            ce.conversion_value_usd,
+            ce.external_link_clicks,
+            ce.form_submissions,
+            coalesce(cd.avg_session_duration, 0) AS avg_session_duration,
+            coalesce(cd.bounced_sessions, 0) AS bounced_sessions
+        FROM current_session_metrics cs
+        CROSS JOIN current_event_metrics ce
+        LEFT JOIN current_session_duration cd ON 1=1
+    ),
+    previous_metrics AS (
+        SELECT 
+            ps.new_sessions,
+            ps.returning_sessions,
+            ps.all_sessions,
+            ps.users,
+            pe.pageviews,
+            pe.conversions,
+            pe.conversion_value_usd,
+            pe.external_link_clicks,
+            pe.form_submissions,
+            coalesce(pd.avg_session_duration, 0) AS avg_session_duration,
+            coalesce(pd.bounced_sessions, 0) AS bounced_sessions
+        FROM previous_session_metrics ps
+        CROSS JOIN previous_event_metrics pe
+        LEFT JOIN previous_session_duration pd ON 1=1
+    ),
+    custom_events_current AS (
+        SELECT 
+            groupArray(tuple(event_id, event_count, event_value_sum)) AS custom_events
+        FROM current_custom_events
+    ),
+    custom_events_previous AS (
+        SELECT 
+            groupArray(tuple(event_id, event_count, event_value_sum)) AS custom_events
+        FROM previous_custom_events
+    )
+    SELECT 
+        -- Current period metrics
+        c.new_sessions AS current_new_sessions,
+        c.returning_sessions AS current_returning_sessions,
+        c.all_sessions AS current_all_sessions,
+        c.users AS current_users,
+        c.pageviews AS current_pageviews,
+        c.conversions AS current_conversions,
+        c.conversion_value_usd AS current_conversion_value,
+        c.external_link_clicks AS current_external_link_clicks,
+        c.form_submissions AS current_form_submissions,
+        c.avg_session_duration AS current_avg_session_duration,
+        c.bounced_sessions AS current_bounced_sessions,
+        
+        -- Previous period metrics
+        p.new_sessions AS previous_new_sessions,
+        p.returning_sessions AS previous_returning_sessions,
+        p.all_sessions AS previous_all_sessions,
+        p.users AS previous_users,
+        p.pageviews AS previous_pageviews,
+        p.conversions AS previous_conversions,
+        p.conversion_value_usd AS previous_conversion_value,
+        p.external_link_clicks AS previous_external_link_clicks,
+        p.form_submissions AS previous_form_submissions,
+        p.avg_session_duration AS previous_avg_session_duration,
+        p.bounced_sessions AS previous_bounced_sessions,
+        
+        -- Custom events
+        coalesce(cc.custom_events, []) AS current_custom_events,
+        coalesce(cp.custom_events, []) AS previous_custom_events
+        
+    FROM current_metrics c
+    CROSS JOIN previous_metrics p
+    LEFT JOIN custom_events_current cc ON 1=1
+    LEFT JOIN custom_events_previous cp ON 1=1
+
+TYPE ENDPOINT

@@ -34,7 +34,7 @@ export const CodeBlockWithClipboard = ({
 		}, 2000);
 	};
 
-	const lines = code.split('\n');
+	const lines = code.split("\n");
 
 	return (
 		<div className={cn("relative", className)}>
@@ -100,9 +100,7 @@ export const CodeBlockWithClipboard = ({
 									</div>
 									<div className="flex-1">
 										{lines.map((line, index) => (
-											<div key={index}>
-												{line || ' '}
-											</div>
+											<div key={index}>{line || " "}</div>
 										))}
 									</div>
 								</div>

@@ -1,10 +1,10 @@
-import { getContentType } from '@/utils/assets';
-import { Hono } from 'hono';
+import { getContentType } from "@/utils/assets";
+import { Hono } from "hono";
 
 const app = new Hono<{ Bindings: Env }>();
 
 // Static asset route for tracking script
-app.get('/', async (c) => {
+app.get("/", async (c) => {
 	try {
 		// Read the tracking script from the static directory
 		// In a real deployment, this would be served from a CDN or static file server
@@ -21,7 +21,7 @@ app.get('/', async (c) => {
 
   // Configuration
   var CONFIG = {
-    API_BASE_URL: '${c.env.ENVIRONMENT === 'production' ? 'https://engine.frbzz.com' : c.env.ENVIRONMENT === 'preview' ? 'https://engine-preview.frbzz.com' : 'https://engine-dev.frbzz.com'}/client-api/v1/events',
+    API_BASE_URL: '${c.env.ENVIRONMENT === "production" ? "https://engine.frbzz.com" : c.env.ENVIRONMENT === "preview" ? "https://engine-preview.frbzz.com" : "https://engine-dev.frbzz.com"}/client-api/v1/events',
     TOKEN_PARAM: 'frbzz_ci',
     GLOBAL_METHOD: 'frbzztrack',
     MAX_RETRIES: 3,
@@ -230,19 +230,19 @@ app.get('/', async (c) => {
 		return new Response(trackingScript, {
 			status: 200,
 			headers: {
-				'Content-Type': getContentType('js'),
-				'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
-				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Methods': 'GET',
-				'Access-Control-Allow-Headers': 'Content-Type',
+				"Content-Type": getContentType("js"),
+				"Cache-Control": "public, max-age=3600", // Cache for 1 hour
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET",
+				"Access-Control-Allow-Headers": "Content-Type",
 			},
 		});
 	} catch (error) {
-		console.error('Error serving tracking script', error);
+		console.error("Error serving tracking script", error);
 		return c.json(
 			{
 				success: false,
-				error: 'Failed to serve tracking script',
+				error: "Failed to serve tracking script",
 			},
 			500,
 		);

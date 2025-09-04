@@ -291,7 +291,10 @@ export class EventBatchTracker {
 			events: batchItems.map((item) => ({
 				...item.eventData,
 				session_id: sessionId, // Add session_id to each event
-				event_value_currency: item.eventData.event_value_currency || config.defaultCurrency || "USD",
+				event_value_currency:
+					item.eventData.event_value_currency ||
+					config.defaultCurrency ||
+					"USD",
 				page_url: item.eventData.page_url || window.location.href,
 				referrer_url:
 					item.eventData.referrer_url || document.referrer || undefined,

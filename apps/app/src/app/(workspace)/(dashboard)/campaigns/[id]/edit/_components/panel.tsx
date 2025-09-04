@@ -1,9 +1,9 @@
 import type {
-  ABTestNode,
-  AllCampaignNodes,
-  SegmentNode,
-  TrafficNode,
-  VariantNode,
+	ABTestNode,
+	AllCampaignNodes,
+	SegmentNode,
+	TrafficNode,
+	VariantNode,
 } from "@/components/canvas/campaign/nodes/campaign/types";
 import { useCampaignNavigation } from "@/hooks/ui/use-campaign-navigation";
 import type { Doc } from "@firebuzz/convex";
@@ -18,108 +18,108 @@ import { TrafficPanel } from "./panel/screens/traffic-panel";
 import { VariantPanel } from "./panel/screens/variant-panel";
 
 interface PanelProps {
-  campaign?: Doc<"campaigns">;
+	campaign?: Doc<"campaigns">;
 }
 
 export const Panel = ({ campaign }: PanelProps) => {
-  const nodes = useNodes<AllCampaignNodes>();
-  const [{ screen }, setNavigationState] = useCampaignNavigation();
-  const [editEventId, setEditEventId] = useState<string | undefined>(undefined);
+	const nodes = useNodes<AllCampaignNodes>();
+	const [{ screen }, setNavigationState] = useCampaignNavigation();
+	const [editEventId, setEditEventId] = useState<string | undefined>(undefined);
 
-  const selectedNodes = useMemo(
-    () => nodes.filter((node) => node.selected),
-    [nodes]
-  );
+	const selectedNodes = useMemo(
+		() => nodes.filter((node) => node.selected),
+		[nodes],
+	);
 
-  const lastSelectedNode = useMemo(
-    () => selectedNodes[selectedNodes.length - 1],
-    [selectedNodes]
-  );
+	const lastSelectedNode = useMemo(
+		() => selectedNodes[selectedNodes.length - 1],
+		[selectedNodes],
+	);
 
-  if (!campaign || nodes.length === 0) {
-    return (
-      <div className="flex justify-center items-center w-full h-full">
-        <Spinner size="sm" />
-      </div>
-    );
-  }
+	if (!campaign || nodes.length === 0) {
+		return (
+			<div className="flex justify-center items-center w-full h-full">
+				<Spinner size="sm" />
+			</div>
+		);
+	}
 
-  if (!lastSelectedNode || selectedNodes.length === 0) {
-    // No node selected - use URL screen state for panel navigation
-    switch (screen) {
-      case "custom-events":
-        return (
-          <CustomEventsPanel
-            campaign={campaign}
-            onBackToCampaignOverview={() => {
-              setEditEventId(undefined);
-              setNavigationState({ screen: "overview" });
-            }}
-            editEventId={editEventId}
-          />
-        );
-      
-      default:
-        return (
-          <CampaignOverviewPanel
-            campaign={campaign}
-            onNavigateToCustomEvents={(eventId) => {
-              setEditEventId(eventId);
-              setNavigationState({ screen: "custom-events" });
-            }}
-          />
-        );
-    }
-  }
+	if (!lastSelectedNode || selectedNodes.length === 0) {
+		// No node selected - use URL screen state for panel navigation
+		switch (screen) {
+			case "custom-events":
+				return (
+					<CustomEventsPanel
+						campaign={campaign}
+						onBackToCampaignOverview={() => {
+							setEditEventId(undefined);
+							setNavigationState({ screen: "overview" });
+						}}
+						editEventId={editEventId}
+					/>
+				);
 
-  // Handle different node types - use the actual node type, not screen state
-  switch (lastSelectedNode.type) {
-    case "traffic":
-      return (
-        <TrafficPanel
-          key={lastSelectedNode.id}
-          node={lastSelectedNode as TrafficNode}
-          campaign={campaign}
-        />
-      );
-    case "segment":
-      return (
-        <SegmentPanel
-          key={lastSelectedNode.id}
-          node={lastSelectedNode as SegmentNode}
-          campaign={campaign}
-        />
-      );
-    case "ab-test":
-      return (
-        <ABTestPanel
-          key={lastSelectedNode.id}
-          node={lastSelectedNode as ABTestNode}
-          campaign={campaign}
-          onNavigateToCampaignOverview={() => {
-            setEditEventId(undefined);
-            setNavigationState({ screen: "overview" });
-          }}
-        />
-      );
-    case "variant":
-      return (
-        <VariantPanel
-          key={lastSelectedNode.id}
-          node={lastSelectedNode as VariantNode}
-          campaign={campaign}
-        />
-      );
+			default:
+				return (
+					<CampaignOverviewPanel
+						campaign={campaign}
+						onNavigateToCustomEvents={(eventId) => {
+							setEditEventId(eventId);
+							setNavigationState({ screen: "custom-events" });
+						}}
+					/>
+				);
+		}
+	}
 
-    default:
-      return (
-        <CampaignOverviewPanel
-          campaign={campaign}
-          onNavigateToCustomEvents={(eventId) => {
-            setEditEventId(eventId);
-            setNavigationState({ screen: "custom-events" });
-          }}
-        />
-      );
-  }
+	// Handle different node types - use the actual node type, not screen state
+	switch (lastSelectedNode.type) {
+		case "traffic":
+			return (
+				<TrafficPanel
+					key={lastSelectedNode.id}
+					node={lastSelectedNode as TrafficNode}
+					campaign={campaign}
+				/>
+			);
+		case "segment":
+			return (
+				<SegmentPanel
+					key={lastSelectedNode.id}
+					node={lastSelectedNode as SegmentNode}
+					campaign={campaign}
+				/>
+			);
+		case "ab-test":
+			return (
+				<ABTestPanel
+					key={lastSelectedNode.id}
+					node={lastSelectedNode as ABTestNode}
+					campaign={campaign}
+					onNavigateToCampaignOverview={() => {
+						setEditEventId(undefined);
+						setNavigationState({ screen: "overview" });
+					}}
+				/>
+			);
+		case "variant":
+			return (
+				<VariantPanel
+					key={lastSelectedNode.id}
+					node={lastSelectedNode as VariantNode}
+					campaign={campaign}
+				/>
+			);
+
+		default:
+			return (
+				<CampaignOverviewPanel
+					campaign={campaign}
+					onNavigateToCustomEvents={(eventId) => {
+						setEditEventId(eventId);
+						setNavigationState({ screen: "custom-events" });
+					}}
+				/>
+			);
+	}
 };

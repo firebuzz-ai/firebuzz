@@ -8,6 +8,7 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
 	ingestCreditUsage: { kind: "fixed window", rate: 10, period: SECOND },
 	exaSearchAndCrawl: { kind: "fixed window", rate: 5, period: SECOND },
 	formSubmit: { kind: "fixed window", rate: 5, period: SECOND },
+	analyticsQuery: { kind: "fixed window", rate: 20, period: SECOND },
 });
 
 export const checkLimit = internalQuery({
@@ -17,6 +18,7 @@ export const checkLimit = internalQuery({
 			v.literal("firecrawlBatchScrape"),
 			v.literal("ingestCreditUsage"),
 			v.literal("formSubmit"),
+			v.literal("analyticsQuery"),
 		),
 		key: v.optional(v.string()),
 	},

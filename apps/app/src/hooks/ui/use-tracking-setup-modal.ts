@@ -26,8 +26,8 @@ export const createTrackingSetupState = (
 	eventId: string,
 	eventTitle: string,
 	eventPlacement: "internal" | "external",
-	value: number = 1,
-	currency: string = "USD",
+	value = 1,
+	currency = "USD",
 ): string => {
 	return JSON.stringify({
 		eventId,
@@ -42,14 +42,15 @@ export const parseTrackingSetupState = (
 	state: string | null,
 ): TrackingSetupModalState => {
 	if (!state) return null;
-	
+
 	try {
 		const parsed = JSON.parse(state);
 		if (
 			parsed &&
 			typeof parsed.eventId === "string" &&
 			typeof parsed.eventTitle === "string" &&
-			(parsed.eventPlacement === "internal" || parsed.eventPlacement === "external") &&
+			(parsed.eventPlacement === "internal" ||
+				parsed.eventPlacement === "external") &&
 			typeof parsed.value === "number" &&
 			typeof parsed.currency === "string"
 		) {

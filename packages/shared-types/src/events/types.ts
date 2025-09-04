@@ -12,7 +12,9 @@ import type {
 // Infer types from Zod schemas
 export type EventData = z.infer<typeof eventDataSchema>;
 export type TrackEventRequest = z.infer<typeof trackEventRequestSchema>;
-export type ExternalTrackEventRequest = z.infer<typeof externalTrackEventRequestSchema>;
+export type ExternalTrackEventRequest = z.infer<
+	typeof externalTrackEventRequestSchema
+>;
 export type InitSessionRequest = z.infer<typeof initSessionRequestSchema>;
 export type DOSessionState = z.infer<typeof doSessionStateSchema>;
 export type SessionValidationResponse = z.infer<

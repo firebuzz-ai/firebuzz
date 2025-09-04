@@ -1,0 +1,68 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for realtime overview (default: last 30 minutes)"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {% if lookbackMinutes %} {{ Int32(lookbackMinutes) }} {% else %} toInt32(30) {% end %} AS lookback_minutes
+
+NODE recent_sessions
+DESCRIPTION "Sessions started/active in lookback window"
+
+SQL >
+    %
+    SELECT session_id, timestamp, country, device_type
+    FROM session_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp >= now() - toIntervalMinute((SELECT lookback_minutes FROM params))
+
+NODE recent_events
+DESCRIPTION "Events in lookback window"
+
+SQL >
+    %
+    SELECT timestamp, event_id, session_id
+    FROM events_v1
+    WHERE workspace_id = (SELECT workspace_id FROM params)
+      AND project_id = (SELECT project_id FROM params)
+      AND campaign_id = (SELECT campaign_id FROM params)
+      AND environment = (SELECT environment FROM params)
+      AND campaign_environment = (SELECT campaign_environment FROM params)
+      AND timestamp >= now() - toIntervalMinute((SELECT lookback_minutes FROM params))
+
+NODE aggregates
+DESCRIPTION "Active sessions, events, countries, devices"
+
+SQL >
+    %
+    WITH active AS (
+      SELECT uniqExact(session_id) AS active_sessions FROM recent_sessions
+    ),
+    ev AS (
+      SELECT count() AS events FROM recent_events
+    ),
+    countries AS (
+      SELECT arraySort(groupArrayDistinct(country)) AS countries FROM recent_sessions
+    ),
+    devices AS (
+      SELECT arraySort(groupArrayDistinct(device_type)) AS devices FROM recent_sessions
+    )
+    SELECT (SELECT active_sessions FROM active) AS active_sessions,
+           (SELECT events FROM ev) AS events,
+           (SELECT countries FROM countries) AS countries,
+           (SELECT devices FROM devices) AS devices
+
+TYPE ENDPOINT
+

@@ -40,15 +40,20 @@ const validateTrafficNode = (
 		} else {
 			// Prioritize different requirements based on campaign type
 			let message = "Create a landing page first";
-			
-			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+
+			if (
+				context.campaign.type === "lead-generation" &&
+				!context.hasValidFormSchema
+			) {
 				message = "Campaign must have a valid form schema";
-			} else if (context.campaign.type === "click-through" && 
-					(!context.campaign.campaignSettings?.ctaLink || 
-					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+			} else if (
+				context.campaign.type === "click-through" &&
+				(!context.campaign.campaignSettings?.ctaLink ||
+					context.campaign.campaignSettings.ctaLink.trim() === "")
+			) {
 				message = "Campaign must have a CTA link configured";
 			}
-			
+
 			validations.push({
 				id: "traffic-no-landing-pages",
 				isValid: false,
@@ -107,15 +112,20 @@ const validateSegmentNode = (
 		} else {
 			// Prioritize different requirements based on campaign type
 			let message = "Create a landing page first";
-			
-			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+
+			if (
+				context.campaign.type === "lead-generation" &&
+				!context.hasValidFormSchema
+			) {
 				message = "Campaign must have a valid form schema";
-			} else if (context.campaign.type === "click-through" && 
-					(!context.campaign.campaignSettings?.ctaLink || 
-					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+			} else if (
+				context.campaign.type === "click-through" &&
+				(!context.campaign.campaignSettings?.ctaLink ||
+					context.campaign.campaignSettings.ctaLink.trim() === "")
+			) {
 				message = "Campaign must have a CTA link configured";
 			}
-			
+
 			validations.push({
 				id: "segment-no-landing-pages",
 				isValid: false,
@@ -270,15 +280,20 @@ const validateVariantNode = (
 		} else {
 			// Prioritize different requirements based on campaign type
 			let message = "Create a landing page first";
-			
-			if (context.campaign.type === "lead-generation" && !context.hasValidFormSchema) {
+
+			if (
+				context.campaign.type === "lead-generation" &&
+				!context.hasValidFormSchema
+			) {
 				message = "Campaign must have a valid form schema";
-			} else if (context.campaign.type === "click-through" && 
-					(!context.campaign.campaignSettings?.ctaLink || 
-					 context.campaign.campaignSettings.ctaLink.trim() === "")) {
+			} else if (
+				context.campaign.type === "click-through" &&
+				(!context.campaign.campaignSettings?.ctaLink ||
+					context.campaign.campaignSettings.ctaLink.trim() === "")
+			) {
 				message = "Campaign must have a CTA link configured";
 			}
-			
+
 			validations.push({
 				id: "variant-no-landing-pages",
 				isValid: false,
@@ -483,7 +498,10 @@ export const getCampaignValidation = query({
 
 		// Critical Error 1b: For click-through campaigns, check CTA link requirements (Priority 1)
 		if (campaign.type === "click-through") {
-			if (!campaign.campaignSettings?.ctaLink || campaign.campaignSettings.ctaLink.trim() === "") {
+			if (
+				!campaign.campaignSettings?.ctaLink ||
+				campaign.campaignSettings.ctaLink.trim() === ""
+			) {
 				criticalErrors.push({
 					id: "campaign-no-cta-link",
 					isValid: false,
@@ -673,7 +691,10 @@ export const getCampaignValidationInternal = internalQuery({
 
 		// Critical Error 1b: For click-through campaigns, check CTA link requirements (Priority 1)
 		if (campaign.type === "click-through") {
-			if (!campaign.campaignSettings?.ctaLink || campaign.campaignSettings.ctaLink.trim() === "") {
+			if (
+				!campaign.campaignSettings?.ctaLink ||
+				campaign.campaignSettings.ctaLink.trim() === ""
+			) {
 				criticalErrors.push({
 					id: "campaign-no-cta-link",
 					isValid: false,

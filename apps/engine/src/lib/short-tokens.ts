@@ -1,6 +1,6 @@
 /**
  * Short Token Management for External Event Tracking
- * 
+ *
  * Creates short click IDs that reference full session data in CACHE KV storage
  * with 10-day TTL and aggressive caching for immutable session data.
  */
@@ -23,7 +23,7 @@ export interface SessionTokenData {
 /**
  * Generate globally unique short click ID
  * Format: timestamp(base36) + random(4chars) = ~12 characters
- * Example: "m1k2n3p4q5r6" 
+ * Example: "m1k2n3p4q5r6"
  */
 function generateGloballyUniqueClickId(): string {
 	const timestamp = Date.now().toString(36); // ~7-8 chars
@@ -41,7 +41,7 @@ export async function createShortClickId(
 ): Promise<string> {
 	// Generate globally unique click ID
 	const clickId = generateGloballyUniqueClickId();
-	
+
 	const kvData = {
 		...sessionData,
 		createdAt: Date.now(),
@@ -49,18 +49,14 @@ export async function createShortClickId(
 
 	// Store in CACHE KV with session prefix and 10-day TTL
 	// Note: Since session data is immutable, KV will naturally cache aggressively at edge
-	await env.CACHE.put(
-		`session:${clickId}`,
-		JSON.stringify(kvData),
-		{ 
-			expirationTtl: 864000, // 10 days in seconds
-			metadata: { 
-				type: 'session_token',
-				campaignId: sessionData.campaignId,
-				createdAt: Date.now()
-			}
-		}
-	);
+	await env.CACHE.put(`session:${clickId}`, JSON.stringify(kvData), {
+		expirationTtl: 864000, // 10 days in seconds
+		metadata: {
+			type: "session_token",
+			campaignId: sessionData.campaignId,
+			createdAt: Date.now(),
+		},
+	});
 
 	console.log("✅ Short click ID created:", {
 		clickId,
@@ -88,17 +84,17 @@ export async function resolveClickId(
 			type: "json",
 			cacheTtl: 864000, // 10 days edge cache - matches expiration for maximum performance
 		});
-		
+
 		if (!kvData) {
 			console.warn("❌ Click ID not found or expired:", {
 				clickId,
-				kvKey: `session:${clickId}`
+				kvKey: `session:${clickId}`,
 			});
 			return null;
 		}
 
 		const sessionData = kvData as SessionTokenData & { createdAt: number };
-		
+
 		console.log("✅ Click ID resolved:", {
 			clickId,
 			kvKey: `session:${clickId}`,
@@ -110,7 +106,6 @@ export async function resolveClickId(
 		// Return clean session data (remove createdAt)
 		const { createdAt, ...cleanSessionData } = sessionData;
 		return cleanSessionData;
-		
 	} catch (error) {
 		console.error("❌ Error resolving click ID:", error);
 		return null;
@@ -125,7 +120,7 @@ export function createExternalLinkWithClickId(
 	clickId: string,
 ): string {
 	const url = new URL(baseUrl);
-	url.searchParams.set('frbzz_ci', clickId);
+	url.searchParams.set("frbzz_ci", clickId);
 	return url.toString();
 }
 
@@ -138,11 +133,11 @@ export async function cleanupExpiredSessionTokens(
 ): Promise<{ deleted: number; errors: number }> {
 	let deleted = 0;
 	let errors = 0;
-	
+
 	// KV automatically handles TTL expiration, but this can be used for manual cleanup
 	try {
-		const list = await env.CACHE.list({ prefix: 'session:', limit: batchSize });
-		
+		const list = await env.CACHE.list({ prefix: "session:", limit: batchSize });
+
 		for (const key of list.keys) {
 			try {
 				const data = await env.CACHE.get(key.name, "json");
@@ -151,10 +146,10 @@ export async function cleanupExpiredSessionTokens(
 					deleted++;
 					continue;
 				}
-				
+
 				const tokenData = data as { createdAt: number };
 				const age = Date.now() - tokenData.createdAt;
-				
+
 				// If older than 10 days, delete manually
 				if (age > 864000 * 1000) {
 					await env.CACHE.delete(key.name);
@@ -169,6 +164,6 @@ export async function cleanupExpiredSessionTokens(
 		console.error("Error during session token cleanup:", error);
 		errors++;
 	}
-	
+
 	return { deleted, errors };
 }

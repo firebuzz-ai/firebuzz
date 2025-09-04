@@ -64,12 +64,13 @@ export function getTrackingToken(): string | null {
 // Utility Functions
 // ============================================================================
 
-
 /**
  * Detect campaign environment from hostname (client-side detection)
  * This matches the server-side logic in detectCampaignEnvironment()
  */
-function detectCampaignEnvironmentFromHostname(hostname: string): "preview" | "production" {
+function detectCampaignEnvironmentFromHostname(
+	hostname: string,
+): "preview" | "production" {
 	const normalizedHostname = hostname.toLowerCase();
 
 	// Check for preview URL patterns (matching server-side logic)
@@ -268,8 +269,10 @@ async function initializeSession(
 	}
 
 	// Detect campaign environment from current page domain (where user actually is)
-	const currentHostname = typeof window !== "undefined" ? window.location.hostname : "";
-	const currentCampaignEnvironment = detectCampaignEnvironmentFromHostname(currentHostname);
+	const currentHostname =
+		typeof window !== "undefined" ? window.location.hostname : "";
+	const currentCampaignEnvironment =
+		detectCampaignEnvironmentFromHostname(currentHostname);
 
 	const sessionData = {
 		session_id,
@@ -567,7 +570,8 @@ export async function trackEvent(
 	const requestPayload = {
 		session_id: sessionId,
 		...eventData,
-		event_value_currency: eventData.event_value_currency || config.defaultCurrency || "USD",
+		event_value_currency:
+			eventData.event_value_currency || config.defaultCurrency || "USD",
 		page_url: eventData.page_url || window.location.href,
 		referrer_url: eventData.referrer_url || document.referrer || undefined,
 	};
@@ -676,8 +680,10 @@ async function initializeSessionWithoutCookie(
 	}
 
 	// Detect campaign environment from current page domain
-	const currentHostname = typeof window !== "undefined" ? window.location.hostname : "";
-	const currentCampaignEnvironment = detectCampaignEnvironmentFromHostname(currentHostname);
+	const currentHostname =
+		typeof window !== "undefined" ? window.location.hostname : "";
+	const currentCampaignEnvironment =
+		detectCampaignEnvironmentFromHostname(currentHostname);
 
 	const sessionData = {
 		session_id: sessionId,

@@ -96,6 +96,14 @@ export const formatToDateTime64 = (
 	return dateObj.toISOString(); // Returns: 2025-07-08T14:32:45.123Z
 };
 
+export const formatToTinybirdDate = (
+	date: Date | string | number = new Date(),
+) => {
+	// Format for Tinybird DateTime64 - YYYY-MM-DD HH:MM:SS.MMM
+	const dateObj = new Date(date);
+	return dateObj.toISOString().replace("T", " ").replace("Z", "").slice(0, 23); // Returns: 2025-07-08 14:32:45.123
+};
+
 export const formatToInboxTime = (date: Date | string | number) => {
 	// Check if the date is today
 	if (isToday(date)) {
@@ -441,3 +449,16 @@ export function normalizeHex(hex: string): string {
 
 	return `#${cleanHex}`;
 }
+
+/* Currency Operations */
+export {
+	CURRENCY_SYMBOLS,
+	type SupportedCurrency,
+	getCurrencySymbol,
+	getSupportedCurrencies,
+	isSupportedCurrency,
+	formatCurrency,
+	getCurrencyInfo,
+	getCurrencyOptions,
+	getPopularCurrencies,
+} from "./currency";

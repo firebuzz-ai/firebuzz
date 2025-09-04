@@ -33,7 +33,10 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 
 			// Use client-provided campaign environment if available, otherwise detect from hostname
 			let campaignEnvironment: "preview" | "production";
-			if (sessionData.campaign_environment === "preview" || sessionData.campaign_environment === "production") {
+			if (
+				sessionData.campaign_environment === "preview" ||
+				sessionData.campaign_environment === "production"
+			) {
 				campaignEnvironment = sessionData.campaign_environment;
 			} else {
 				// Fallback to hostname-based detection
