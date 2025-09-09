@@ -12,7 +12,6 @@ export interface SessionTokenData {
 	workspaceId: string;
 	projectId: string;
 	landingPageId: string;
-	attributionId: string;
 	abTestId?: string | null;
 	abTestVariantId?: string | null;
 	timestamp: number;
@@ -35,10 +34,7 @@ function generateGloballyUniqueClickId(): string {
  * Create a short click ID and store session data in CACHE KV
  * TTL: 10 days (864000 seconds)
  */
-export async function createShortClickId(
-	sessionData: SessionTokenData,
-	env: Env,
-): Promise<string> {
+export async function createShortClickId(sessionData: SessionTokenData, env: Env): Promise<string> {
 	// Generate globally unique click ID
 	const clickId = generateGloballyUniqueClickId();
 
@@ -52,13 +48,13 @@ export async function createShortClickId(
 	await env.CACHE.put(`session:${clickId}`, JSON.stringify(kvData), {
 		expirationTtl: 864000, // 10 days in seconds
 		metadata: {
-			type: "session_token",
+			type: 'session_token',
 			campaignId: sessionData.campaignId,
 			createdAt: Date.now(),
 		},
 	});
 
-	console.log("✅ Short click ID created:", {
+	console.log('✅ Short click ID created:', {
 		clickId,
 		kvKey: `session:${clickId}`,
 		sessionId: sessionData.sessionId,
@@ -73,20 +69,17 @@ export async function createShortClickId(
  * Resolve short click ID to full session data with aggressive caching
  * Since session data is immutable, we can cache it aggressively
  */
-export async function resolveClickId(
-	clickId: string,
-	env: Env,
-): Promise<SessionTokenData | null> {
+export async function resolveClickId(clickId: string, env: Env): Promise<SessionTokenData | null> {
 	try {
 		// Get from CACHE KV storage with maximum edge caching
 		// cacheTtl = 10 days (864000 seconds) - matches expiration TTL for immutable data
 		const kvData = await env.CACHE.get(`session:${clickId}`, {
-			type: "json",
+			type: 'json',
 			cacheTtl: 864000, // 10 days edge cache - matches expiration for maximum performance
 		});
 
 		if (!kvData) {
-			console.warn("❌ Click ID not found or expired:", {
+			console.warn('❌ Click ID not found or expired:', {
 				clickId,
 				kvKey: `session:${clickId}`,
 			});
@@ -95,7 +88,7 @@ export async function resolveClickId(
 
 		const sessionData = kvData as SessionTokenData & { createdAt: number };
 
-		console.log("✅ Click ID resolved:", {
+		console.log('✅ Click ID resolved:', {
 			clickId,
 			kvKey: `session:${clickId}`,
 			sessionId: sessionData.sessionId,
@@ -107,7 +100,7 @@ export async function resolveClickId(
 		const { createdAt, ...cleanSessionData } = sessionData;
 		return cleanSessionData;
 	} catch (error) {
-		console.error("❌ Error resolving click ID:", error);
+		console.error('❌ Error resolving click ID:', error);
 		return null;
 	}
 }
@@ -115,12 +108,9 @@ export async function resolveClickId(
 /**
  * Create external link with short click ID parameter
  */
-export function createExternalLinkWithClickId(
-	baseUrl: string,
-	clickId: string,
-): string {
+export function createExternalLinkWithClickId(baseUrl: string, clickId: string): string {
 	const url = new URL(baseUrl);
-	url.searchParams.set("frbzz_ci", clickId);
+	url.searchParams.set('frbzz_ci', clickId);
 	return url.toString();
 }
 
@@ -136,11 +126,11 @@ export async function cleanupExpiredSessionTokens(
 
 	// KV automatically handles TTL expiration, but this can be used for manual cleanup
 	try {
-		const list = await env.CACHE.list({ prefix: "session:", limit: batchSize });
+		const list = await env.CACHE.list({ prefix: 'session:', limit: batchSize });
 
 		for (const key of list.keys) {
 			try {
-				const data = await env.CACHE.get(key.name, "json");
+				const data = await env.CACHE.get(key.name, 'json');
 				if (!data) {
 					// Already expired or deleted
 					deleted++;
@@ -156,12 +146,12 @@ export async function cleanupExpiredSessionTokens(
 					deleted++;
 				}
 			} catch (error) {
-				console.error("Error processing session token:", key.name, error);
+				console.error('Error processing session token:', key.name, error);
 				errors++;
 			}
 		}
 	} catch (error) {
-		console.error("Error during session token cleanup:", error);
+		console.error('Error during session token cleanup:', error);
 		errors++;
 	}
 
