@@ -9,7 +9,7 @@ SQL >
     SELECT
         count(DISTINCT session_id) AS total_sessions,
         count(DISTINCT user_id) AS unique_users,
-        count(DISTINCT attribution_id) AS unique_visitors,
+        count(DISTINCT user_id) AS unique_visitors,
         countIf(is_returning = 1) AS returning_visitors,
         countIf(is_returning = 0) AS new_visitors,
         countIf(is_bot = 1) AS bot_sessions,
@@ -79,7 +79,7 @@ SQL >
         utm_campaign,
         count(DISTINCT session_id) AS sessions,
         count(DISTINCT user_id) AS unique_users,
-        count(DISTINCT attribution_id) AS unique_visitors,
+        count(DISTINCT user_id) AS unique_visitors,
         countIf(is_returning = 1) AS returning_visitors,
         round(countIf(is_returning = 1) * 100.0 / count(*), 2) AS return_rate
     FROM session_v1
@@ -143,7 +143,7 @@ SQL >
     SELECT
         referrer,
         count(*) AS session_count,
-        count(DISTINCT attribution_id) AS unique_visitors,
+        count(DISTINCT user_id) AS unique_visitors,
         countIf(is_returning = 1) AS returning_visitors,
         round(countIf(is_returning = 1) * 100.0 / count(*), 2) AS return_rate
     FROM session_v1

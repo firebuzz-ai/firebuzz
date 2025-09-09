@@ -8,8 +8,7 @@ FORWARD_QUERY >
     SELECT 
         timestamp, 
         session_id, 
-        attribution_id, 
-        defaultValueOfTypeName('String') AS user_id, 
+        user_id, 
         project_id, 
         workspace_id, 
         campaign_id, 
@@ -21,14 +20,13 @@ FORWARD_QUERY >
         utm_campaign, 
         utm_term, 
         utm_content, 
+        defaultValueOfTypeName('Nullable(String)') AS ref, 
+        defaultValueOfTypeName('Nullable(String)') AS source, 
         country, 
         city, 
         region, 
         region_code, 
         continent, 
-        latitude, 
-        longitude, 
-        postal_code, 
         timezone, 
         is_eu_country, 
         device_type, 
@@ -36,7 +34,6 @@ FORWARD_QUERY >
         browser, 
         browser_version, 
         is_mobile, 
- 
         connection_type, 
         referrer, 
         user_agent, 
@@ -45,20 +42,17 @@ FORWARD_QUERY >
         bot_score, 
         is_corporate_proxy, 
         is_verified_bot, 
-        ip, 
         is_ssl, 
         domain_type, 
         user_hostname, 
         is_returning, 
-        defaultValueOfTypeName('LowCardinality(String)') AS campaign_environment, 
+        campaign_environment, 
         environment, 
-        uri, 
-        full_uri
+        uri
 
 SCHEMA >
     `timestamp` DateTime64(3, 'UTC') `json:$.timestamp`,
     `session_id` String `json:$.session_id`,
-    `attribution_id` String `json:$.attribution_id`,
     `user_id` String `json:$.user_id`,
     `project_id` String `json:$.project_id`,
     `workspace_id` String `json:$.workspace_id`,
@@ -75,6 +69,8 @@ SCHEMA >
     `utm_campaign` Nullable(String) `json:$.utm_campaign`,
     `utm_term` Nullable(String) `json:$.utm_term`,
     `utm_content` Nullable(String) `json:$.utm_content`,
+    `ref` Nullable(String) `json:$.ref`,
+    `source` Nullable(String) `json:$.source`,
     
     # Geographic data
     `country` LowCardinality(String) `json:$.country`,
@@ -82,9 +78,6 @@ SCHEMA >
     `region` String `json:$.region`,
     `region_code` Nullable(String) `json:$.region_code`,
     `continent` LowCardinality(String) `json:$.continent`,
-    `latitude` Nullable(String) `json:$.latitude`,
-    `longitude` Nullable(String) `json:$.longitude`,
-    `postal_code` Nullable(String) `json:$.postal_code`,
     `timezone` Nullable(String) `json:$.timezone`,
     `is_eu_country` UInt8 `json:$.is_eu_country`,
     
@@ -108,7 +101,6 @@ SCHEMA >
     `is_verified_bot` UInt8 `json:$.is_verified_bot`,
     
     # Network data
-    `ip` String `json:$.ip`,
     `is_ssl` UInt8 `json:$.is_ssl`,
     `domain_type` Nullable(String) `json:$.domain_type`,
     `user_hostname` Nullable(String) `json:$.user_hostname`,
@@ -117,8 +109,7 @@ SCHEMA >
     `is_returning` UInt8 `json:$.is_returning`,
     `campaign_environment` LowCardinality(String) `json:$.campaign_environment`,
     `environment` Nullable(String) `json:$.environment`,
-    `uri` Nullable(String) `json:$.uri`,
-    `full_uri` Nullable(String) `json:$.full_uri`
+    `uri` Nullable(String) `json:$.uri`
 
 ENGINE "MergeTree"
 ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"

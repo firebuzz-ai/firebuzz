@@ -1,0 +1,34 @@
+{
+	"name": "@firebuzz/consent-manager",
+	"version": "0.0.1",
+	"description": "Consent management for Firebuzz platform",
+	"author": "Firebuzz Team",
+	"license": "MIT",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		}
+	},
+	"files": ["dist", "README.md"],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist",
+		"prepublishOnly": "pnpm build"
+	},
+	"devDependencies": {
+		"@types/js-cookie": "^3.0.6",
+		"tsup": "^8.0.0",
+		"typescript": "^5.7.2"
+	},
+	"dependencies": {
+		"js-cookie": "^3.0.5"
+	},
+	"keywords": ["consent", "privacy", "gdpr", "ccpa", "firebuzz"]
+}

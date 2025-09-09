@@ -25,7 +25,6 @@ SQL >
     SELECT 
         session_id,
         user_id,
-        attribution_id,
         is_returning,
         device_type,
         device_os,

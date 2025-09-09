@@ -13,6 +13,7 @@ import { useMemo, useState } from "react";
 import { ABTestPanel } from "./panel/screens/abtest-panel";
 import { CampaignOverviewPanel } from "./panel/screens/campaign-overview-panel";
 import { CustomEventsPanel } from "./panel/screens/custom-events-panel";
+import { GdprAdvancedSettings } from "./panel/screens/gdpr-advanced-settings";
 import { SegmentPanel } from "./panel/screens/segment-panel";
 import { TrafficPanel } from "./panel/screens/traffic-panel";
 import { VariantPanel } from "./panel/screens/variant-panel";
@@ -59,6 +60,24 @@ export const Panel = ({ campaign }: PanelProps) => {
 					/>
 				);
 
+			case "gdpr-settings":
+				return (
+					<GdprAdvancedSettings
+						campaign={campaign}
+						gdprSettings={campaign.campaignSettings?.gdpr || {
+							enabled: true,
+							geoLocation: true,
+							localization: true,
+							includedCountries: [],
+							respectDNT: true,
+						}}
+						onGdprChange={() => {}}
+						onBack={() => {
+							setNavigationState({ screen: "overview" });
+						}}
+					/>
+				);
+
 			default:
 				return (
 					<CampaignOverviewPanel
@@ -66,6 +85,9 @@ export const Panel = ({ campaign }: PanelProps) => {
 						onNavigateToCustomEvents={(eventId) => {
 							setEditEventId(eventId);
 							setNavigationState({ screen: "custom-events" });
+						}}
+						onNavigateToGdprSettings={() => {
+							setNavigationState({ screen: "gdpr-settings" });
 						}}
 					/>
 				);
@@ -118,6 +140,9 @@ export const Panel = ({ campaign }: PanelProps) => {
 					onNavigateToCustomEvents={(eventId) => {
 						setEditEventId(eventId);
 						setNavigationState({ screen: "custom-events" });
+					}}
+					onNavigateToGdprSettings={() => {
+						setNavigationState({ screen: "gdpr-settings" });
 					}}
 				/>
 			);
