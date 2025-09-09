@@ -24,11 +24,16 @@
 	},
 	"devDependencies": {
 		"@types/js-cookie": "^3.0.6",
+		"@types/react": "^18.0.0",
 		"tsup": "^8.0.0",
 		"typescript": "^5.7.2"
 	},
 	"dependencies": {
-		"js-cookie": "^3.0.5"
+		"js-cookie": "^3.0.5",
+		"jotai": "^2.10.3"
+	},
+	"peerDependencies": {
+		"react": ">=18.0.0"
 	},
 	"keywords": ["consent", "privacy", "gdpr", "ccpa", "firebuzz"]
 }

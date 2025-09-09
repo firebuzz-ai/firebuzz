@@ -446,6 +446,31 @@ importers:
         specifier: ^5.7.2
         version: 5.7.3
 
+  packages/consent-manager:
+    dependencies:
+      jotai:
+        specifier: ^2.10.3
+        version: 2.13.1(@babel/template@7.27.2)(@types/react@18.3.24)(react@19.1.1)
+      js-cookie:
+        specifier: ^3.0.5
+        version: 3.0.5
+      react:
+        specifier: '>=18.0.0'
+        version: 19.1.1
+    devDependencies:
+      '@types/js-cookie':
+        specifier: ^3.0.6
+        version: 3.0.6
+      '@types/react':
+        specifier: ^18.0.0
+        version: 18.3.24
+      tsup:
+        specifier: ^8.0.0
+        version: 8.5.0(jiti@1.21.7)(postcss@8.5.6)(typescript@5.7.3)(yaml@2.8.1)
+      typescript:
+        specifier: ^5.7.2
+        version: 5.7.3
+
   packages/convex:
     dependencies:
       '@ai-sdk/azure':
@@ -16887,6 +16912,12 @@ snapshots:
   jotai-history@0.4.3(jotai@2.13.1(@babel/template@7.27.2)(@types/react@19.1.10)(react@19.1.1)):
     dependencies:
       jotai: 2.13.1(@babel/template@7.27.2)(@types/react@19.1.10)(react@19.1.1)
+
+  jotai@2.13.1(@babel/template@7.27.2)(@types/react@18.3.24)(react@19.1.1):
+    optionalDependencies:
+      '@babel/template': 7.27.2
+      '@types/react': 18.3.24
+      react: 19.1.1
 
   jotai@2.13.1(@babel/template@7.27.2)(@types/react@19.1.10)(react@19.1.1):
     optionalDependencies:
