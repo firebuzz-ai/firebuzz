@@ -13,20 +13,13 @@ export type {
 	EventConfig,
 	AnalyticsContextValue,
 	SessionCookieData,
-	AttributionCookieData,
 	UserCookieData,
 } from "./types";
 
-// Utility functions (for advanced usage)
+// Utility functions (for advanced usage)  
 export {
-	getSessionData,
-	getAttributionData,
-	getUserId,
-	getValidSessionId,
-	getAbTestData,
-	isSessionValid,
+	generateTempId,
 	isPreviewEnvironment,
-	getAllCookieData,
 } from "./cookies";
 
 // Environment detection utilities

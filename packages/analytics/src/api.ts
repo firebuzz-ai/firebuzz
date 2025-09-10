@@ -1,11 +1,5 @@
 import { getBatchTracker } from "./batch-tracker";
-import {
-	getAbTestData,
-	getAttributionData,
-	getSessionId,
-	getUserId,
-	getValidSessionId,
-} from "./cookies";
+import { generateTempId } from "./cookies";
 import type {
 	SessionInitResponse,
 	SessionRenewalResponse,
@@ -38,6 +32,7 @@ interface ApiClientConfig {
 
 let globalConfig: ApiClientConfig | null = null;
 let currentClickId: string | null = null;
+let currentSessionData: { userId: string; sessionId: string; campaignId: string } | null = null;
 
 export function configureApiClient(config: ApiClientConfig) {
 	globalConfig = config;
@@ -51,6 +46,23 @@ export function setTrackingToken(clickId: string | undefined) {
 	if (globalConfig?.debug && clickId) {
 		console.log("[Analytics] Click ID stored");
 	}
+}
+
+/**
+ * Set session data from analytics provider
+ */
+export function setSessionData(sessionData: { userId: string; sessionId: string; campaignId: string }) {
+	currentSessionData = sessionData;
+	if (globalConfig?.debug) {
+		console.log("[Analytics] Session data set:", sessionData);
+	}
+}
+
+/**
+ * Get current session data
+ */
+export function getSessionData() {
+	return currentSessionData;
 }
 
 /**
@@ -252,20 +264,12 @@ async function initializeSession(
 	const config = getConfig();
 	const session_id = sessionId || generateUniqueId();
 
-	const userId = getUserId(config.campaignId);
-	const attribution = getAttributionData(config.campaignId);
-	const abTest = getAbTestData(config.campaignId);
+	// Get session data from provider (no cookie reading)
+	const sessionData = getSessionData();
+	const userId = sessionData?.userId || generateTempId("temp-user");
 
-	// For session renewal, if cookies are missing, let the server handle it
-	// The server can generate new user ID and attribution if needed
-	if (!userId && !attribution) {
-		log(
-			"Warning: Both user ID and attribution cookies are missing, server will create new ones",
-		);
-	} else if (!userId) {
-		log("Warning: User ID cookie is missing, server will create new one");
-	} else if (!attribution) {
-		log("Warning: Attribution cookie is missing, server will create new one");
+	if (!sessionData) {
+		log("Warning: No session data available, using temporary ID");
 	}
 
 	// Detect campaign environment from current page domain (where user actually is)
@@ -280,10 +284,9 @@ async function initializeSession(
 		workspace_id: config.workspaceId,
 		project_id: config.projectId,
 		landing_page_id: config.landingPageId,
-		user_id: userId || undefined, // Let server generate if missing
-		attribution_id: attribution?.attributionId || undefined, // Let server generate if missing
-		ab_test_id: abTest?.testId,
-		ab_test_variant_id: abTest?.variantId,
+		user_id: userId,
+		// Attribution removed completely
+		// A/B test data removed (will be handled by session context)
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
 		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
@@ -376,8 +379,8 @@ export async function renewSession(
 			? window.location.pathname.split("/").filter(Boolean)[0]
 			: config.campaignSlug; // Fallback to provided slug
 
-	// Get stored session context for proper renewal data
-	const storedContext = getStoredSessionContext(config.campaignId);
+	// Get session data from provider (no cookie reading)
+	const sessionData = getSessionData();
 
 	const renewalData = {
 		new_session_id: newSessionId,
@@ -385,10 +388,9 @@ export async function renewSession(
 		campaign_slug: campaignSlug, // Auto-detect from URL or use provided
 		workspace_id: config.workspaceId,
 		project_id: config.projectId,
-		landing_page_id: storedContext?.landingPageId || config.landingPageId,
+		landing_page_id: config.landingPageId,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
-		// Include stored session context if available
-		session_context: storedContext,
+		user_id: sessionData?.userId,
 	};
 
 	log("Renewing session:", { oldSessionId, newSessionId, renewalData });
@@ -485,38 +487,7 @@ export async function renewSession(
 			}
 		}
 
-		// 3. Only set attribution cookie if it doesn't exist or if server provided new one
-		if (result.data.attribution_id) {
-			const attributionCookieName = `frbzz_attribution_${config.campaignId}`;
-			const existingAttributionCookie = Cookies.get(attributionCookieName);
-
-			if (!existingAttributionCookie) {
-				// Only set if missing
-				const attributionDurationDays =
-					result.data.attribution_duration_days || 30;
-
-				const attributionCookie = {
-					attributionId: result.data.attribution_id,
-					campaignId: config.campaignId,
-					createdAt: Date.now(),
-				};
-
-				Cookies.set(attributionCookieName, JSON.stringify(attributionCookie), {
-					expires: attributionDurationDays, // Use campaign-configured attribution period
-					secure: true,
-					sameSite: "Lax",
-					path: "/",
-				});
-
-				log(
-					"✅ Attribution cookie set (was missing) with duration:",
-					attributionDurationDays,
-					"days",
-				);
-			} else {
-				log("✅ Attribution cookie already exists, not overwriting");
-			}
-		}
+		// Attribution logic completely removed
 
 		log(
 			"✅ Session renewal complete with duration:",
@@ -554,7 +525,8 @@ export async function trackEvent(
 	}
 
 	// Fall back to single event tracking
-	let sessionId = getValidSessionId(config.campaignId);
+	const sessionData = getSessionData();
+	let sessionId = sessionData?.sessionId;
 
 	if (!sessionId) {
 		log("No valid session ID found, initializing new session");
@@ -663,20 +635,12 @@ async function initializeSessionWithoutCookie(
 ): Promise<SessionInitResponse> {
 	const config = getConfig();
 
-	const userId = getUserId(config.campaignId);
-	const attribution = getAttributionData(config.campaignId);
-	const abTest = getAbTestData(config.campaignId);
+	// Get session data from provider (no cookie reading)
+	const sessionData = getSessionData();
+	const userId = sessionData?.userId || generateTempId("temp-user");
 
-	// For session renewal, if cookies are missing, let the server handle it
-	// The server can generate new user ID and attribution if needed
-	if (!userId && !attribution) {
-		log(
-			"Warning: Both user ID and attribution cookies are missing, server will create new ones",
-		);
-	} else if (!userId) {
-		log("Warning: User ID cookie is missing, server will create new one");
-	} else if (!attribution) {
-		log("Warning: Attribution cookie is missing, server will create new one");
+	if (!sessionData) {
+		log("Warning: No session data available, using temporary ID");
 	}
 
 	// Detect campaign environment from current page domain
@@ -691,10 +655,9 @@ async function initializeSessionWithoutCookie(
 		workspace_id: config.workspaceId,
 		project_id: config.projectId,
 		landing_page_id: config.landingPageId,
-		user_id: userId || undefined, // Let server generate if missing
-		attribution_id: attribution?.attributionId || undefined, // Let server generate if missing
-		ab_test_id: abTest?.testId,
-		ab_test_variant_id: abTest?.variantId,
+		user_id: userId,
+		// Attribution removed completely
+		// A/B test data removed (will be handled by session context)
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
 		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
@@ -732,27 +695,16 @@ export async function initializeAnalytics(): Promise<boolean> {
 	// Try to store session context from server (only works on new sessions/page loads)
 	storeSessionContext(config.campaignId);
 
-	const validSessionId = getValidSessionId(config.campaignId);
-
-	if (validSessionId) {
+	// Get session data from provider (no cookie reading)
+	const sessionData = getSessionData();
+	
+	if (sessionData?.sessionId) {
 		log(
-			"Valid session found, initializing DO without overriding cookie:",
-			validSessionId,
+			"Valid session found from provider, initializing DO:",
+			sessionData.sessionId,
 		);
-		// Call API to ensure DO is initialized, but don't set client-side cookie to preserve server duration
-		const result = await initializeSessionWithoutCookie(validSessionId);
-		return result.success;
-	}
-
-	// Check for expired session ID - we want to initialize DO with it for renewal
-	const expiredSessionId = getSessionId(config.campaignId);
-	if (expiredSessionId) {
-		log(
-			"Expired session found, initializing server for potential renewal:",
-			expiredSessionId,
-		);
-		// Try to initialize with expired session ID - server will handle renewal if needed
-		const result = await initializeSession(expiredSessionId);
+		// Call API to ensure DO is initialized
+		const result = await initializeSessionWithoutCookie(sessionData.sessionId);
 		return result.success;
 	}
 

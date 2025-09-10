@@ -59,7 +59,6 @@ export const externalTrackRoute = new Hono<{ Bindings: Env }>().post('/external-
 			user_id: sessionData.userId,
 			campaign_id: sessionData.campaignId,
 			session_id: sessionData.sessionId,
-
 			workspace_id: sessionData.workspaceId,
 			project_id: sessionData.projectId,
 			landing_page_id: sessionData.landingPageId,

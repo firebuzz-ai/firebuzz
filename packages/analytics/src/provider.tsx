@@ -5,14 +5,13 @@ import {
 	trackEvent as apiTrackEvent,
 	configureApiClient,
 	initializeAnalytics,
+	setSessionData,
 } from "./api";
 import { AnalyticsContextProvider } from "./context";
 import {
-	disableTestMode,
+	generateTempId,
 	enableTestMode,
-	getAllCookieData,
-	getUserId,
-	getValidSessionId,
+	disableTestMode,
 } from "./cookies";
 import { mergeEventConfiguration } from "./event-config";
 import { setupDefaultEventTracking } from "./tracking/default-events";
@@ -24,11 +23,11 @@ import { isWebContainer, shouldDisableAnalytics } from "./utils/environment";
  */
 export function AnalyticsProvider({
 	apiUrl,
-	campaignId,
+	sessionData,
+	consentState,
 	campaignSlug,
 	workspaceId,
 	projectId,
-	landingPageId,
 	customEvents = [],
 	primaryGoal,
 	defaultCurrency = "USD",
@@ -39,22 +38,64 @@ export function AnalyticsProvider({
 	batching,
 	externalLinkBehavior,
 	sessionTimeoutMinutes,
-	mockCookieData,
+	mockData,
 	children,
 }: AnalyticsProviderProps) {
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [sessionId, setSessionId] = useState<string | null>(null);
 	const [userId, setUserId] = useState<string | null>(null);
 
+	// Determine analytics state based on session data and consent
+	const analyticsState = useMemo(() => {
+		// Use test mode data if available
+		if (testMode && mockData) {
+			enableTestMode(mockData);
+			return {
+				userId: mockData.userId || generateTempId("test-user"),
+				sessionId: mockData.sessionId || generateTempId("test-session"),
+				campaignId: mockData.campaignId || sessionData.campaignId,
+				isAnonymous: false,
+				isTestMode: true,
+			};
+		}
+
+		// If no consent to track or no session data, use temporary IDs
+		if (!consentState.shouldTrack || !sessionData) {
+			return {
+				userId: generateTempId("anon-user"),
+				sessionId: generateTempId("anon-session"),
+				campaignId: sessionData?.campaignId || "unknown",
+				isAnonymous: true,
+				isTestMode: false,
+			};
+		}
+
+		// Use real session data
+		return {
+			userId: sessionData.userId,
+			sessionId: sessionData.sessionId,
+			campaignId: sessionData.campaignId,
+			isAnonymous: false,
+			isTestMode: false,
+		};
+	}, [testMode, mockData, consentState, sessionData]);
+
+	// Set session data in API module
+	useEffect(() => {
+		if (analyticsState && enabled) {
+			setSessionData({
+				userId: analyticsState.userId,
+				sessionId: analyticsState.sessionId,
+				campaignId: analyticsState.campaignId,
+			});
+		}
+	}, [analyticsState, enabled]);
+
 	// Setup test mode
 	useEffect(() => {
 		if (testMode) {
-			enableTestMode(mockCookieData);
 			if (debug) {
-				console.log(
-					"[Analytics] Test mode enabled with mock data:",
-					mockCookieData,
-				);
+				console.log("[Analytics] Test mode enabled with data:", analyticsState);
 			}
 		}
 
@@ -63,7 +104,7 @@ export function AnalyticsProvider({
 				disableTestMode();
 			}
 		};
-	}, [testMode, mockCookieData, debug]);
+	}, [testMode, analyticsState, debug]);
 
 	// Configure API client
 	useEffect(() => {
@@ -94,11 +135,11 @@ export function AnalyticsProvider({
 
 		configureApiClient({
 			apiUrl,
-			campaignId,
+			campaignId: analyticsState.campaignId,
 			campaignSlug,
 			workspaceId,
 			projectId,
-			landingPageId,
+			landingPageId: sessionData?.landingPageId,
 			defaultCurrency,
 			debug,
 			sessionTimeoutMinutes,
@@ -108,20 +149,21 @@ export function AnalyticsProvider({
 		if (debug) {
 			console.log("[Analytics] Provider configured with:", {
 				apiUrl,
-				campaignId,
+				analyticsState,
+				consentState,
 				workspaceId,
 				projectId,
-				landingPageId,
-				cookieData: getAllCookieData(campaignId),
+				landingPageId: sessionData?.landingPageId,
 			});
 		}
 	}, [
 		apiUrl,
-		campaignId,
+		analyticsState,
+		consentState,
 		campaignSlug,
 		workspaceId,
 		projectId,
-		landingPageId,
+		sessionData,
 		defaultCurrency,
 		debug,
 		enabled,
@@ -149,6 +191,14 @@ export function AnalyticsProvider({
 			return;
 		}
 
+		// Don't initialize if no consent to track
+		if (!consentState.shouldTrack) {
+			if (debug) {
+				console.log("[Analytics] No consent to track, skipping initialization");
+			}
+			return;
+		}
+
 		let mounted = true;
 
 		async function initialize() {
@@ -162,37 +212,20 @@ export function AnalyticsProvider({
 				}
 
 				if (debug) {
-					console.log("[Analytics] Initializing analytics...");
-				}
-
-				// Try to get existing session
-				const existingSessionId = getValidSessionId(campaignId);
-				const existingUserId = getUserId(campaignId);
-
-				// Always call initializeAnalytics to ensure the server-side session is properly initialized
-				if (debug) {
-					if (existingSessionId && existingUserId) {
-						console.log(
-							"[Analytics] Found existing valid session, re-initializing server:",
-							existingSessionId,
-						);
-					} else {
-						console.log("[Analytics] No valid session found, initializing...");
-					}
+					console.log("[Analytics] Initializing analytics with state:", analyticsState);
 				}
 
 				const success = await initializeAnalytics();
 				if (mounted && success) {
-					const sessionId = getValidSessionId(campaignId);
-					const userId = getUserId(campaignId);
-					setSessionId(sessionId);
-					setUserId(userId);
+					setSessionId(analyticsState.sessionId);
+					setUserId(analyticsState.userId);
 					setIsInitialized(true);
 
 					if (debug) {
 						console.log("[Analytics] Analytics initialized successfully:", {
-							sessionId,
-							userId,
+							sessionId: analyticsState.sessionId,
+							userId: analyticsState.userId,
+							isAnonymous: analyticsState.isAnonymous,
 						});
 					}
 				} else if (mounted) {
@@ -225,43 +258,23 @@ export function AnalyticsProvider({
 		return () => {
 			mounted = false;
 		};
-	}, [campaignId, debug, enabled]);
+	}, [analyticsState, consentState, debug, enabled]);
 
-	// Proactive session validation - check every 5 minutes
+	// Session state updates when analytics state changes
 	useEffect(() => {
-		if (!enabled || !isInitialized) return;
-
-		const checkSession = async () => {
-			const currentSessionId = getValidSessionId(campaignId);
-			if (!currentSessionId && getUserId(campaignId)) {
-				// Session expired but user exists, reinitialize
-				if (debug) {
-					console.log("[Analytics] Session expired, reinitializing...");
-				}
-				try {
-					const success = await initializeAnalytics();
-					if (success) {
-						const newSessionId = getValidSessionId(campaignId);
-						setSessionId(newSessionId);
-						if (debug) {
-							console.log(
-								"[Analytics] Session renewed proactively:",
-								newSessionId,
-							);
-						}
-					}
-				} catch (error) {
-					console.error("[Analytics] Proactive session renewal failed:", error);
-				}
+		if (enabled && isInitialized) {
+			setSessionId(analyticsState.sessionId);
+			setUserId(analyticsState.userId);
+			
+			if (debug) {
+				console.log("[Analytics] Session state updated:", {
+					sessionId: analyticsState.sessionId,
+					userId: analyticsState.userId,
+					isAnonymous: analyticsState.isAnonymous,
+				});
 			}
-		};
-
-		// Check immediately and then every 5 minutes
-		checkSession();
-		const interval = setInterval(checkSession, 5 * 60 * 1000); // 5 minutes
-
-		return () => clearInterval(interval);
-	}, [campaignId, debug, enabled, isInitialized]);
+		}
+	}, [analyticsState, enabled, isInitialized, debug]);
 
 	// Track event handler
 	const handleTrackEvent = useCallback(
@@ -269,6 +282,14 @@ export function AnalyticsProvider({
 			if (!enabled) {
 				if (debug) {
 					console.log("[Analytics] Event tracking disabled, skipping:", params);
+				}
+				return false;
+			}
+
+			// Check consent before tracking
+			if (!consentState.analytics) {
+				if (debug) {
+					console.log("[Analytics] Event blocked - no analytics consent:", params);
 				}
 				return false;
 			}
@@ -285,23 +306,13 @@ export function AnalyticsProvider({
 
 			try {
 				const success = await apiTrackEvent(params);
-
-				// Update session ID in case it was renewed
-				const currentSessionId = getValidSessionId(campaignId);
-				if (currentSessionId && currentSessionId !== sessionId) {
-					setSessionId(currentSessionId);
-					if (debug) {
-						console.log("[Analytics] Session renewed:", currentSessionId);
-					}
-				}
-
 				return success;
 			} catch (error) {
 				console.error("[Analytics] Track event error:", error);
 				return false;
 			}
 		},
-		[enabled, isInitialized, sessionId, campaignId, debug],
+		[enabled, consentState.analytics, isInitialized, debug],
 	);
 
 	// Setup default event tracking

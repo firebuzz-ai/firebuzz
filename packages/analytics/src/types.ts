@@ -21,37 +21,73 @@ export interface TrackEventParams {
 	referrer_url?: string;
 }
 
+// Session data interface (from session context)
+export interface SessionData {
+	userId: string;
+	sessionId: string;
+	campaignId: string;
+	landingPageId?: string;
+	abTestId?: string | null;
+	abTestVariantId?: string | null;
+}
+
+// Consent state interface (from consent manager)
+export interface ConsentState {
+	hasUserInteracted: boolean;
+	analytics: boolean;
+	marketing: boolean;
+	shouldTrack: boolean;
+}
+
 // Analytics Provider configuration
 export interface AnalyticsProviderProps {
 	apiUrl: string; // e.g., "https://engine.firebuzz.com"
-	campaignId: string; // Required to read correct cookies
+	
+	// Session data from session context (required)
+	sessionData: SessionData;
+	
+	// Consent state from consent manager (required)
+	consentState: ConsentState;
+	
+	// Campaign configuration
 	campaignSlug?: string; // Campaign slug for proper config lookup (production)
 	workspaceId: string; // From landing page context
 	projectId: string; // From landing page context
-	landingPageId: string; // Current landing page
-	// Note: abTestId and abTestVariantId are automatically read from cookies
+	
+	// Event configuration
 	customEvents?: EventConfig[]; // Additional custom events
 	primaryGoal: EventConfig; // Primary goal
 	defaultCurrency?: string; // Default currency for events (default: "USD")
 	enableDefaultEvents?: boolean; // Default: true
+	
+	// System configuration
 	enabled?: boolean; // Default: true - disable entire analytics system
 	debug?: boolean; // Console logging
-	testMode?: boolean; // Enable test mode with mock cookies
+	testMode?: boolean; // Enable test mode with mock data
+	
+	// Batching configuration
 	batching?: {
 		enabled?: boolean; // Default: true
 		maxBatchSize?: number; // Default: 10
 		maxWaitTime?: number; // Default: 2000ms
 		debounceTime?: number; // Default: 100ms
 	};
+	
+	// External link behavior
 	externalLinkBehavior?: {
 		openInNewTab?: boolean; // Default: false - force external links to open in new tab
 	};
+	
+	// Session timeout (for internal state management)
 	sessionTimeoutMinutes?: number; // Default: 30 - session timeout in minutes
-	mockCookieData?: {
-		session?: SessionCookieData;
-		attribution?: AttributionCookieData;
+	
+	// Mock data for testing
+	mockData?: {
 		userId?: string;
-	}; // Mock cookie data for testing
+		sessionId?: string;
+		campaignId?: string;
+	};
+	
 	children: React.ReactNode;
 }
 
@@ -65,7 +101,8 @@ export interface EventConfig {
 	isCustom: boolean;
 }
 
-// Cookie data structures
+// Legacy types (kept for compatibility but deprecated)
+/** @deprecated Use SessionData from session context instead */
 export interface SessionCookieData {
 	sessionId: string;
 	campaignId: string;
@@ -75,9 +112,10 @@ export interface SessionCookieData {
 		variantId: string;
 	};
 	createdAt: number;
-	sessionEndsAt?: number; // Recommended addition to engine
+	sessionEndsAt?: number;
 }
 
+/** @deprecated Attribution logic removed */
 export interface AttributionCookieData {
 	attributionId: string;
 	campaignId: string;
@@ -87,6 +125,7 @@ export interface AttributionCookieData {
 	campaign?: string;
 }
 
+/** @deprecated Use SessionData.userId instead */
 export interface UserCookieData {
 	userId: string;
 	createdAt: number;
@@ -120,9 +159,7 @@ export interface SessionRenewalResponse {
 		session_id: string;
 		click_id?: string; // Changed from tracking_token to click_id
 		session_duration_minutes?: number;
-		attribution_duration_days?: number;
 		user_id?: string;
-		attribution_id?: string;
 		ab_test_id?: string;
 		ab_test_variant_id?: string;
 	};
