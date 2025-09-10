@@ -1,12 +1,14 @@
 import { OpenAPIHono } from "@hono/zod-openapi";
 import { hc } from "hono/client";
 import { cors } from "../middleware";
+import { consentRoutes } from "./v1/consent";
 import { eventsRoutes } from "./v1/events";
 import { formSubmitRoute } from "./v1/form/submit";
 import { trackingVerifyRoute } from "./v1/tracking/verify";
 
 const clientApiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 	.use(cors)
+	.route("/consent", consentRoutes)
 	.route("/form/submit", formSubmitRoute)
 	.route("/events", eventsRoutes)
 	.route("/", trackingVerifyRoute);

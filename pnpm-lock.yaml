@@ -457,6 +457,9 @@ importers:
       react:
         specifier: '>=18.0.0'
         version: 19.1.1
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
     devDependencies:
       '@types/js-cookie':
         specifier: ^3.0.6

@@ -30,7 +30,8 @@
 	},
 	"dependencies": {
 		"js-cookie": "^3.0.5",
-		"jotai": "^2.10.3"
+		"jotai": "^2.10.3",
+		"zod": "^3.24.1"
 	},
 	"peerDependencies": {
 		"react": ">=18.0.0"

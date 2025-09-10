@@ -35,6 +35,10 @@
 			"types": "./src/api/client-types.ts",
 			"default": "./src/api/client-types.ts"
 		},
+		"./consent": {
+			"types": "./src/consent/index.ts",
+			"default": "./src/consent/index.ts"
+		},
 		"./events": {
 			"types": "./src/events/index.ts",
 			"default": "./src/events/index.ts"

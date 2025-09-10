@@ -12,6 +12,13 @@
 	},
 
 	// Default environment (local development)
+	"d1_databases": [
+		{
+			"binding": "CONSENT_DB",
+			"database_name": "consent-dev",
+			"database_id": "70de91c3-f021-4329-b089-35fa60510f35"
+		}
+	],
 	"kv_namespaces": [
 		{
 			"binding": "ASSETS",
@@ -94,6 +101,13 @@
 				"ENVIRONMENT": "preview",
 				"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
 			},
+			"d1_databases": [
+				{
+					"binding": "CONSENT_DB",
+					"database_name": "consent-preview",
+					"database_id": "c57c5813-d334-453f-adc9-c1b1fda17a0b"
+				}
+			],
 			"kv_namespaces": [
 				{
 					"binding": "ASSETS",
@@ -170,6 +184,13 @@
 				"ENVIRONMENT": "production",
 				"CLOUDFLARE_ZONE_ID": "a39cc3b77d882712df25e9f0e9a54111"
 			},
+			"d1_databases": [
+				{
+					"binding": "CONSENT_DB",
+					"database_name": "consent-production",
+					"database_id": "48b588ea-2e63-41b7-ad4f-5909e656b107"
+				}
+			],
 			"kv_namespaces": [
 				{
 					"binding": "ASSETS",

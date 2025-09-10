@@ -1,4 +1,9 @@
-import type { ConsentRecord, SessionContext, ConsentPreferences } from "./types";
+import type { SessionContext, ConsentPreferences } from "./types";
+import type { 
+	RecordConsentRequest, 
+	RecordConsentResponse, 
+	ConsentPurposes 
+} from "./types/consent";
 
 export interface ApiConfig {
 	workerEndpoint: string;
@@ -62,39 +67,37 @@ export class ConsentApiClient {
 		preferences: ConsentPreferences,
 		sessionContext: SessionContext
 	): Promise<void> {
-		const consentRecord: ConsentRecord = {
-			userId: sessionContext.userId,
-			sessionId: sessionContext.session.sessionId,
-			workspaceId: this.config.workspaceId,
-			projectId: this.config.projectId,
-			campaignId: this.config.campaignId,
-			preferences,
-			timestamp: Date.now(),
-			version: 1, // Consent version
-			userAgent: navigator.userAgent,
-			countryCode: sessionContext.gdprSettings.countryCode,
-			language: sessionContext.gdprSettings.language,
-			isEU: sessionContext.gdprSettings.isEU,
-			isCalifornian: sessionContext.gdprSettings.isCalifornian,
+		// Convert ConsentPreferences to ConsentPurposes format
+		const purposes: ConsentPurposes = {
+			essential: preferences.necessary,
+			analytics: preferences.analytics,
+			marketing: preferences.marketing,
+			functional: preferences.functional,
 		};
 
-		await this.makeRequest("/api/consent/record", {
-			method: "POST",
-			body: JSON.stringify(consentRecord),
-		});
+		const consentRequest: RecordConsentRequest = {
+			workspace_id: this.config.workspaceId,
+			project_id: this.config.projectId,
+			campaign_id: this.config.campaignId,
+			subject_id: sessionContext.userId,
+			domain: typeof window !== 'undefined' ? window.location.hostname : '',
+			purposes,
+			expires_in_days: 365, // Default 1 year
+		};
 
-		this.log("Consent recorded successfully");
-	}
-
-	async getConsentHistory(userId: string): Promise<ConsentRecord[]> {
-		const response = await this.makeRequest<{ records: ConsentRecord[] }>(
-			`/api/consent/history/${userId}`,
+		const response = await this.makeRequest<RecordConsentResponse>(
+			"/client-api/v1/consent/record", 
 			{
-				method: "GET",
+				method: "POST",
+				body: JSON.stringify(consentRequest),
 			}
 		);
 
-		return response.records;
+		if (!response.success) {
+			throw new Error(response.error || "Failed to record consent");
+		}
+
+		this.log("Consent recorded successfully", response);
 	}
 
 	async updateConsent(
@@ -107,7 +110,8 @@ export class ConsentApiClient {
 		this.log("Consent updated successfully");
 	}
 
-	async revokeConsent(userId: string, sessionContext: SessionContext): Promise<void> {
+	async revokeAllConsent(sessionContext: SessionContext): Promise<void> {
+		// Revoke all non-essential consent
 		const revokedPreferences: ConsentPreferences = {
 			necessary: true, // Can't revoke necessary cookies
 			analytics: false,
@@ -116,19 +120,7 @@ export class ConsentApiClient {
 		};
 
 		await this.recordConsent(revokedPreferences, sessionContext);
-		this.log("Consent revoked successfully");
-	}
-
-	// Health check method
-	async ping(): Promise<boolean> {
-		try {
-			await this.makeRequest("/api/health", {
-				method: "GET",
-			});
-			return true;
-		} catch {
-			return false;
-		}
+		this.log("All consent revoked successfully");
 	}
 }
 
@@ -169,8 +161,7 @@ export const updateConsent = async (
 	await client.updateConsent(preferences, sessionContext);
 };
 
-export const revokeConsent = async (
-	userId: string,
+export const revokeAllConsent = async (
 	sessionContext: SessionContext
 ): Promise<void> => {
 	const client = getApiClient();
@@ -178,5 +169,5 @@ export const revokeConsent = async (
 		throw new Error("API client not configured. Call configureApiClient first.");
 	}
 	
-	await client.revokeConsent(userId, sessionContext);
+	await client.revokeAllConsent(sessionContext);
 };

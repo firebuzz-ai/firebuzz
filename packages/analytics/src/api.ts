@@ -1,5 +1,4 @@
 import { getBatchTracker } from "./batch-tracker";
-import { generateTempId } from "./cookies";
 import type {
 	SessionInitResponse,
 	SessionRenewalResponse,
@@ -266,7 +265,7 @@ async function initializeSession(
 
 	// Get session data from provider (no cookie reading)
 	const sessionData = getSessionData();
-	const userId = sessionData?.userId || generateTempId("temp-user");
+	const userId = sessionData?.userId || generateUniqueId();
 
 	if (!sessionData) {
 		log("Warning: No session data available, using temporary ID");
@@ -278,7 +277,7 @@ async function initializeSession(
 	const currentCampaignEnvironment =
 		detectCampaignEnvironmentFromHostname(currentHostname);
 
-	const sessionData = {
+	const sessionInitData = {
 		session_id,
 		campaign_id: config.campaignId,
 		workspace_id: config.workspaceId,
@@ -291,7 +290,7 @@ async function initializeSession(
 		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
 
-	log("Initializing session:", sessionData);
+	log("Initializing session:", sessionInitData);
 
 	let response: Response;
 	let result: SessionInitResponse;
@@ -302,7 +301,7 @@ async function initializeSession(
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(sessionData),
+				body: JSON.stringify(sessionInitData),
 				credentials: "include", // Include cookies for server to set session cookie
 			},
 		);
@@ -637,7 +636,7 @@ async function initializeSessionWithoutCookie(
 
 	// Get session data from provider (no cookie reading)
 	const sessionData = getSessionData();
-	const userId = sessionData?.userId || generateTempId("temp-user");
+	const userId = sessionData?.userId || generateUniqueId();
 
 	if (!sessionData) {
 		log("Warning: No session data available, using temporary ID");
@@ -649,7 +648,7 @@ async function initializeSessionWithoutCookie(
 	const currentCampaignEnvironment =
 		detectCampaignEnvironmentFromHostname(currentHostname);
 
-	const sessionData = {
+	const sessionRenewalData = {
 		session_id: sessionId,
 		campaign_id: config.campaignId,
 		workspace_id: config.workspaceId,
@@ -662,14 +661,14 @@ async function initializeSessionWithoutCookie(
 		campaign_environment: currentCampaignEnvironment, // Send detected environment
 	};
 
-	log("Initializing DO session without cookie override:", sessionData);
+	log("Initializing DO session without cookie override:", sessionRenewalData);
 
 	const response = await fetch(
 		`${config.apiUrl}/client-api/v1/events/session/init`,
 		{
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(sessionData),
+			body: JSON.stringify(sessionRenewalData),
 			credentials: "include", // Include cookies for server to set session cookie
 		},
 	);

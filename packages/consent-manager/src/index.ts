@@ -3,69 +3,73 @@ export { ConsentProvider, useInitializeConsentFromWindow } from "./provider";
 
 // Hooks
 export {
-	useConsent,
-	useConsentStatus,
-	useConsentModal,
-	useConsentTexts,
-	useConsentBanner,
-	useConsentCategories,
-	useSessionContext,
-	useAnalyticsConsent,
-	useMarketingConsent,
-	useFunctionalConsent,
-	useNecessaryConsent,
+  useAnalyticsConsent,
+  useConsent,
+  useConsentBanner,
+  useConsentCategories,
+  useConsentModal,
+  useConsentStatus,
+  useConsentTexts,
+  useFunctionalConsent,
+  useMarketingConsent,
+  useNecessaryConsent,
+  useSessionContext,
 } from "./hooks";
 
 // Types
 export type {
-	ConsentPreferences,
-	ConsentState,
-	ConsentProviderConfig,
-	ConsentTexts,
-	ConsentContextValue,
-	SessionContext,
-	ConsentRecord,
-	GTMConsentDefaults,
-	GTMConsentUpdate,
+  ConsentContextValue,
+  ConsentPreferences,
+  ConsentProviderConfig,
+  ConsentRecord,
+  ConsentState,
+  ConsentTexts,
+  GTMConsentDefaults,
+  GTMConsentUpdate,
+  SessionContext,
 } from "./types";
 
 // API
 export {
-	ConsentApiClient,
-	configureApiClient,
-	getApiClient,
-	recordConsent,
-	updateConsent,
-	revokeConsent,
+  configureApiClient,
+  ConsentApiClient,
+  getApiClient,
+  recordConsent,
+  revokeAllConsent,
+  updateConsent,
 } from "./api";
 
 // Cookie management
-export { ConsentCookieManager, cookieManager, createCookieManager } from "./cookies";
+export {
+  ConsentCookieManager,
+  cookieManager,
+  createCookieManager,
+} from "./cookies";
 
 // GTM integration
 export {
-	GTMConsentManager,
-	createGTMConsentManager,
-	updateGTMConsent,
-	mapConsentToGTM,
+  createGTMConsentManager,
+  GTMConsentManager,
+  mapConsentToGTM,
+  updateGTMConsent,
 } from "./gtm";
 
 // i18n
 export {
-	getTranslation,
-	getSupportedLanguages,
-	isLanguageSupported,
-	translations,
+  getSupportedLanguages,
+  getTranslation,
+  isLanguageSupported,
+  translations,
 } from "./i18n";
 
 export type { SupportedLanguage, TranslationKey } from "./i18n";
 
 // Configuration
 export {
-	DEFAULT_CONSENT_PREFERENCES,
-	DEFAULT_GTM_CONSENT,
-	DEFAULT_TEXTS,
-	DEFAULT_PROVIDER_CONFIG,
-	COOKIE_NAMES,
-	CONSENT_VERSION,
+  CONSENT_VERSION,
+  COOKIE_NAMES,
+  DEFAULT_CONSENT_PREFERENCES,
+  DEFAULT_GTM_CONSENT,
+  DEFAULT_PROVIDER_CONFIG,
+  DEFAULT_TEXTS,
 } from "./config";
