@@ -33,6 +33,7 @@ export const Panel = ({ campaignId, formId }: PanelProps) => {
 		case "form-settings":
 			return (
 				<FormSettingsView
+					campaignId={campaignId}
 					formId={formId}
 					onScreenChange={handleScreenChange}
 					onFieldSelect={handleFieldSelect}
@@ -62,6 +63,7 @@ export const Panel = ({ campaignId, formId }: PanelProps) => {
 		default:
 			return (
 				<FormSettingsView
+					campaignId={campaignId}
 					formId={formId}
 					onScreenChange={handleScreenChange}
 					onFieldSelect={handleFieldSelect}
