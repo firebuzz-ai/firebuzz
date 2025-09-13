@@ -1,25 +1,25 @@
-import { OpenAPIHono } from '@hono/zod-openapi';
-import { getActiveConsent, recordConsent } from '../../../lib/consent/db';
 import {
 	GetConsentRequestSchema,
 	GetConsentResponseSchema,
 	RecordConsentRequestSchema,
 	RecordConsentResponseSchema,
-} from '@firebuzz/shared-types';
+} from "@firebuzz/shared-types";
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { getActiveConsent, recordConsent } from "../../../lib/consent/db";
 
 const consentRecordRoute = new OpenAPIHono<{ Bindings: Env }>();
 
 // Record consent endpoint
 consentRecordRoute.openapi(
 	{
-		method: 'post',
-		path: '/',
-		summary: 'Record user consent',
-		description: 'Record or update consent preferences for a user',
+		method: "post",
+		path: "/",
+		summary: "Record user consent",
+		description: "Record or update consent preferences for a user",
 		request: {
 			body: {
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: RecordConsentRequestSchema,
 					},
 				},
@@ -27,25 +27,25 @@ consentRecordRoute.openapi(
 		},
 		responses: {
 			200: {
-				description: 'Consent recorded successfully',
+				description: "Consent recorded successfully",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: RecordConsentResponseSchema,
 					},
 				},
 			},
 			400: {
-				description: 'Invalid request',
+				description: "Invalid request",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: RecordConsentResponseSchema,
 					},
 				},
 			},
 			500: {
-				description: 'Internal server error',
+				description: "Internal server error",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: RecordConsentResponseSchema,
 					},
 				},
@@ -54,12 +54,15 @@ consentRecordRoute.openapi(
 	},
 	async (c) => {
 		try {
-			const body = c.req.valid('json');
+			const body = c.req.valid("json");
 			const db = c.env.CONSENT_DB;
 
 			// Extract IP and user agent from request
-			const ip = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || undefined;
-			const user_agent = c.req.header('User-Agent') || undefined;
+			const ip =
+				c.req.header("CF-Connecting-IP") ||
+				c.req.header("X-Forwarded-For") ||
+				undefined;
+			const user_agent = c.req.header("User-Agent") || undefined;
 
 			// Record consent in database
 			const result = await recordConsent(db, {
@@ -68,7 +71,9 @@ consentRecordRoute.openapi(
 				user_agent,
 			});
 
-			const expires_at_iso = result.expires_at ? new Date(result.expires_at * 1000).toISOString() : undefined;
+			const expires_at_iso = result.expires_at
+				? new Date(result.expires_at * 1000).toISOString()
+				: undefined;
 
 			return c.json({
 				success: true,
@@ -76,12 +81,12 @@ consentRecordRoute.openapi(
 				expires_at: expires_at_iso,
 			});
 		} catch (error) {
-			console.error('Error recording consent:', error);
+			console.error("Error recording consent:", error);
 
 			return c.json(
 				{
 					success: false,
-					error: 'Failed to record consent',
+					error: "Failed to record consent",
 				},
 				500,
 			);
@@ -92,34 +97,34 @@ consentRecordRoute.openapi(
 // Get consent endpoint
 consentRecordRoute.openapi(
 	{
-		method: 'get',
-		path: '/',
-		summary: 'Get user consent',
-		description: 'Retrieve current consent preferences for a user',
+		method: "get",
+		path: "/",
+		summary: "Get user consent",
+		description: "Retrieve current consent preferences for a user",
 		request: {
 			query: GetConsentRequestSchema,
 		},
 		responses: {
 			200: {
-				description: 'Consent retrieved successfully',
+				description: "Consent retrieved successfully",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: GetConsentResponseSchema,
 					},
 				},
 			},
 			404: {
-				description: 'Consent not found',
+				description: "Consent not found",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: GetConsentResponseSchema,
 					},
 				},
 			},
 			500: {
-				description: 'Internal server error',
+				description: "Internal server error",
 				content: {
-					'application/json': {
+					"application/json": {
 						schema: GetConsentResponseSchema,
 					},
 				},
@@ -128,16 +133,21 @@ consentRecordRoute.openapi(
 	},
 	async (c) => {
 		try {
-			const query = c.req.valid('query');
+			const query = c.req.valid("query");
 			const db = c.env.CONSENT_DB;
 
-			const consent = await getActiveConsent(db, query.subject_id, query.campaign_id, query.domain);
+			const consent = await getActiveConsent(
+				db,
+				query.subject_id,
+				query.campaign_id,
+				query.domain,
+			);
 
 			if (!consent) {
 				return c.json(
 					{
 						success: false,
-						error: 'No active consent found',
+						error: "No active consent found",
 					},
 					404,
 				);
@@ -159,12 +169,12 @@ consentRecordRoute.openapi(
 				},
 			});
 		} catch (error) {
-			console.error('Error getting consent:', error);
+			console.error("Error getting consent:", error);
 
 			return c.json(
 				{
 					success: false,
-					error: 'Failed to retrieve consent',
+					error: "Failed to retrieve consent",
 				},
 				500,
 			);

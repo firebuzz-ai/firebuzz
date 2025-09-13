@@ -64,13 +64,15 @@ export const Panel = ({ campaign }: PanelProps) => {
 				return (
 					<GdprAdvancedSettings
 						campaign={campaign}
-						gdprSettings={campaign.campaignSettings?.gdpr || {
-							enabled: true,
-							geoLocation: true,
-							localization: true,
-							includedCountries: [],
-							respectDNT: true,
-						}}
+						gdprSettings={
+							campaign.campaignSettings?.gdpr || {
+								enabled: true,
+								geoLocation: true,
+								localization: true,
+								includedCountries: [],
+								respectDNT: true,
+							}
+						}
 						onGdprChange={() => {}}
 						onBack={() => {
 							setNavigationState({ screen: "overview" });

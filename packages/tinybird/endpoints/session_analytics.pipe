@@ -12,7 +12,7 @@ SQL >
         count(DISTINCT user_id) AS unique_visitors,
         countIf(is_returning = 1) AS returning_visitors,
         countIf(is_returning = 0) AS new_visitors,
-        countIf(is_bot = 1) AS bot_sessions,
+        countIf(is_corporate_proxy = 1 OR is_verified_bot = 1) AS bot_sessions,
         countIf(is_mobile = 1) AS mobile_sessions,
         countIf(is_mobile = 0) AS desktop_sessions
     FROM session_v1

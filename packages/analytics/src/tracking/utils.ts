@@ -16,15 +16,34 @@ export function getViewportDimensions() {
 let globalPageStartTime: number | null = null;
 
 /**
+ * Get the actual page start time based on browser navigation timing
+ */
+function getActualPageStartTime(): number {
+	if (globalPageStartTime === null) {
+		// Use navigation timing API to get the actual page load start time
+		if (typeof performance !== "undefined" && performance.timeOrigin) {
+			globalPageStartTime = performance.timeOrigin;
+		} else if (
+			typeof performance !== "undefined" &&
+			performance.timing?.navigationStart
+		) {
+			globalPageStartTime = performance.timing.navigationStart;
+		} else {
+			// Fallback to current time if navigation timing is not available
+			globalPageStartTime = Date.now();
+		}
+	}
+	return globalPageStartTime;
+}
+
+/**
  * Get time on page in seconds
  */
 export function getTimeOnPage(): number {
-	if (globalPageStartTime === null) {
-		globalPageStartTime = Date.now();
-	}
+	const pageStartTime = getActualPageStartTime();
 	const currentTime = Date.now();
-	const timeOnPageMs = Math.max(currentTime - globalPageStartTime, 1000); // At least 1 second
-	return Math.round(timeOnPageMs / 1000); // Return in seconds
+	const timeOnPageMs = Math.max(currentTime - pageStartTime, 100); // Minimum 100ms
+	return Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds, return in seconds
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   configureApiClient,
   initializeAnalytics,
   setSessionData,
+  updateSessionConsent,
 } from "./api";
 import { AnalyticsContextProvider } from "./context";
 import { mergeEventConfiguration } from "./event-config";
@@ -18,18 +19,11 @@ import { generateUniqueId } from "./utils/uuid";
  * Analytics Provider Component
  */
 export function AnalyticsProvider({
-  apiUrl,
-  sessionData,
   consentState,
-  campaignSlug,
-  workspaceId,
-  projectId,
-  landingPageId,
   customEvents = [],
   primaryGoal,
   defaultCurrency = "USD",
   enableDefaultEvents = true,
-  enabled = true,
   debug = false,
   batching,
   externalLinkBehavior,
@@ -40,44 +34,64 @@ export function AnalyticsProvider({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Determine analytics state based on session data and consent
+  // Extract session data from session context (injected by engine)
   const analyticsState = useMemo(() => {
-    // If no consent to track or no session data, use temporary IDs
-    if (!consentState.shouldTrack || !sessionData) {
+    const sessionContext =
+      typeof window !== "undefined"
+        ? window.__FIREBUZZ_SESSION_CONTEXT__
+        : null;
+
+    // Always use session context if available (analytics runs under legitimate interest)
+    if (sessionContext) {
       return {
-        userId: `anon-${generateUniqueId()}`,
-        sessionId: `anon-${generateUniqueId()}`,
-        campaignId: sessionData?.campaignId || "unknown",
-        isAnonymous: true,
+        apiUrl: sessionContext.apiBaseUrl,
+        userId: sessionContext.userId,
+        sessionId: sessionContext.session.sessionId,
+        campaignId: sessionContext.campaignId,
+        workspaceId: sessionContext.workspaceId,
+        projectId: sessionContext.projectId,
+        landingPageId: sessionContext.landingPageId,
+        isAnonymous: false,
         isTestMode: false,
+        enabled: true, // Session context means analytics is enabled
       };
     }
 
-    // Use real session data
+    // No session context means dev environment - analytics disabled
+    if (debug) {
+      console.warn(
+        "[Analytics] No session context found - dev environment detected. Analytics disabled."
+      );
+    }
     return {
-      userId: sessionData.userId,
-      sessionId: sessionData.sessionId,
-      campaignId: sessionData.campaignId,
-      isAnonymous: false,
-      isTestMode: false,
+      apiUrl: "https://engine-dev.frbzz.com", // Dev fallback
+      userId: `anon-${generateUniqueId()}`,
+      sessionId: `anon-${generateUniqueId()}`,
+      campaignId: "unknown",
+      workspaceId: "unknown",
+      projectId: "unknown",
+      landingPageId: undefined,
+      isAnonymous: true,
+      isTestMode: true, // Dev mode
+      enabled: false, // No session context means disabled
     };
-  }, [consentState, sessionData]);
+  }, [debug]);
 
   // Set session data in API module
   useEffect(() => {
-    if (analyticsState && enabled) {
+    if (analyticsState?.enabled) {
       setSessionData({
         userId: analyticsState.userId,
         sessionId: analyticsState.sessionId,
         campaignId: analyticsState.campaignId,
       });
     }
-  }, [analyticsState, enabled]);
+  }, [analyticsState]);
 
   // Configure API client
   useEffect(() => {
     // Check if we should disable analytics based on environment
-    const shouldDisable = !enabled || shouldDisableAnalytics();
+    const shouldDisable = !analyticsState.enabled || shouldDisableAnalytics();
 
     if (shouldDisable) {
       if (debug) {
@@ -86,7 +100,9 @@ export function AnalyticsProvider({
             "[Analytics] Analytics disabled in WebContainer environment"
           );
         } else {
-          console.log("[Analytics] Analytics disabled, skipping configuration");
+          console.log(
+            "[Analytics] Analytics disabled (no session context), skipping configuration"
+          );
         }
       }
       return;
@@ -102,39 +118,31 @@ export function AnalyticsProvider({
     };
 
     configureApiClient({
-      apiUrl,
+      apiUrl: analyticsState.apiUrl,
       campaignId: analyticsState.campaignId,
-      campaignSlug,
-      workspaceId,
-      projectId,
-      landingPageId,
+      workspaceId: analyticsState.workspaceId,
+      projectId: analyticsState.projectId,
+      landingPageId: analyticsState.landingPageId,
       defaultCurrency,
       debug,
       sessionTimeoutMinutes,
       batching: batchingConfig,
     });
 
+    // Update session manager with consent state
+    updateSessionConsent(consentState);
+
     if (debug) {
       console.log("[Analytics] Provider configured with:", {
-        apiUrl,
         analyticsState,
         consentState,
-        workspaceId,
-        projectId,
-        landingPageId,
       });
     }
   }, [
-    apiUrl,
     analyticsState,
     consentState,
-    campaignSlug,
-    workspaceId,
-    projectId,
-    landingPageId,
     defaultCurrency,
     debug,
-    enabled,
     sessionTimeoutMinutes,
     batching,
   ]);
@@ -142,7 +150,7 @@ export function AnalyticsProvider({
   // Initialize analytics
   useEffect(() => {
     // Check if we should disable analytics based on environment
-    const shouldDisable = !enabled || shouldDisableAnalytics();
+    const shouldDisable = !analyticsState.enabled || shouldDisableAnalytics();
 
     if (shouldDisable) {
       if (debug) {
@@ -152,19 +160,24 @@ export function AnalyticsProvider({
           );
         } else {
           console.log(
-            "[Analytics] Analytics disabled, skipping initialization"
+            "[Analytics] Analytics disabled (no session context), skipping initialization"
           );
         }
       }
       return;
     }
 
-    // Don't initialize if no consent to track
-    if (!consentState.shouldTrack) {
-      if (debug) {
-        console.log("[Analytics] No consent to track, skipping initialization");
-      }
-      return;
+    // GDPR Compliance: Always initialize analytics (legitimate interest)
+    // Consent only controls cookie setting, not analytics data collection
+    if (debug) {
+      const consentStatus = consentState.hasUserInteracted
+        ? consentState.preferences.analytics
+          ? "granted"
+          : "rejected"
+        : "not-required";
+      console.log(
+        `[Analytics] Initializing analytics (consent: ${consentStatus}, cookies: ${consentState.preferences.analytics ? "enabled" : "disabled"})`
+      );
     }
 
     let mounted = true;
@@ -229,11 +242,11 @@ export function AnalyticsProvider({
     return () => {
       mounted = false;
     };
-  }, [analyticsState, consentState, debug, enabled]);
+  }, [analyticsState, consentState, debug]);
 
   // Session state updates when analytics state changes
   useEffect(() => {
-    if (enabled && isInitialized) {
+    if (analyticsState.enabled && isInitialized) {
       setSessionId(analyticsState.sessionId);
       setUserId(analyticsState.userId);
 
@@ -245,29 +258,23 @@ export function AnalyticsProvider({
         });
       }
     }
-  }, [analyticsState, enabled, isInitialized, debug]);
+  }, [analyticsState, isInitialized, debug]);
 
   // Track event handler
   const handleTrackEvent = useCallback(
     async (params: TrackEventParams): Promise<boolean> => {
-      if (!enabled) {
-        if (debug) {
-          console.log("[Analytics] Event tracking disabled, skipping:", params);
-        }
-        return false;
-      }
-
-      // Check consent before tracking
-      if (!consentState.analytics) {
+      if (!analyticsState.enabled) {
         if (debug) {
           console.log(
-            "[Analytics] Event blocked - no analytics consent:",
+            "[Analytics] Event tracking disabled (no session context), skipping:",
             params
           );
         }
         return false;
       }
 
+      // GDPR Compliance: Always allow event tracking (legitimate interest)
+      // Consent only controls cookie setting, not data collection
       if (!isInitialized) {
         if (debug) {
           console.warn(
@@ -286,12 +293,12 @@ export function AnalyticsProvider({
         return false;
       }
     },
-    [enabled, consentState.analytics, isInitialized, debug]
+    [analyticsState.enabled, isInitialized, debug]
   );
 
   // Setup default event tracking
   useEffect(() => {
-    if (enabled && isInitialized) {
+    if (analyticsState.enabled && isInitialized) {
       if (debug) {
         console.log("[Analytics] Setting up event tracking...");
       }
@@ -317,7 +324,7 @@ export function AnalyticsProvider({
       return cleanup;
     }
   }, [
-    enabled,
+    analyticsState.enabled,
     isInitialized,
     enableDefaultEvents,
     primaryGoal,

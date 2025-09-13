@@ -1,19 +1,28 @@
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useCallback } from "react";
-import type { ConsentPreferences, ConsentTexts } from "./types";
 import {
-	consentStateAtom,
-	isLoadingAtom,
-	showBannerAtom,
-	showModalAtom,
-	consentTextsAtom,
-	updateConsentAtom,
 	acceptAllConsentAtom,
+	consentStateAtom,
+	consentTextsAtom,
+	isLoadingAtom,
 	rejectAllConsentAtom,
 	resetConsentAtom,
-	shouldSetCookiesAtom,
 	sessionContextAtom,
+	shouldSetCookiesAtom,
+	showBannerAtom,
+	showModalAtom,
+	updateConsentAtom,
 } from "./atoms";
+import type { ConsentPreferences, ConsentTexts } from "./types";
+
+// Utility function to check if DNT is enabled in browser
+const isDNTEnabled = (): boolean => {
+	if (typeof window === "undefined" || typeof navigator === "undefined") {
+		return false;
+	}
+	// DNT can be "1" (enabled), "0" (disabled), or null/undefined (not set)
+	return navigator.doNotTrack === "1";
+};
 
 export interface UseConsentReturn {
 	consentState: ReturnType<typeof useAtomValue<typeof consentStateAtom>>;
@@ -28,6 +37,18 @@ export interface UseConsentReturn {
 	setShowModal: (show: boolean) => void;
 	texts: ConsentTexts;
 	shouldSetCookies: boolean;
+	// GDPR/consent requirement state
+	isConsentRequired: boolean;
+	isEuUser: boolean;
+	isCalifornianUser: boolean;
+	language: string;
+	countryCode: string;
+	// DNT (Do Not Track) state
+	isRespectDNTEnabled: boolean;
+	isDNTEnabled: boolean;
+	// Legal document URLs
+	privacyPolicyUrl?: string;
+	termsOfServiceUrl?: string;
 }
 
 export const useConsent = (): UseConsentReturn => {
@@ -37,7 +58,8 @@ export const useConsent = (): UseConsentReturn => {
 	const [showModal, setShowModal] = useAtom(showModalAtom);
 	const texts = useAtomValue(consentTextsAtom);
 	const shouldSetCookies = useAtomValue(shouldSetCookiesAtom);
-	
+	const sessionContext = useAtomValue(sessionContextAtom);
+
 	const updateConsent = useSetAtom(updateConsentAtom);
 	const acceptAll = useSetAtom(acceptAllConsentAtom);
 	const rejectAll = useSetAtom(rejectAllConsentAtom);
@@ -47,7 +69,7 @@ export const useConsent = (): UseConsentReturn => {
 		(category: keyof ConsentPreferences): boolean => {
 			return consentState?.preferences[category] ?? false;
 		},
-		[consentState]
+		[consentState],
 	);
 
 	return {
@@ -63,6 +85,18 @@ export const useConsent = (): UseConsentReturn => {
 		setShowModal,
 		texts,
 		shouldSetCookies: Boolean(shouldSetCookies),
+		// GDPR/consent requirement state from session context
+		isConsentRequired: sessionContext?.gdprSettings.isRequiredConsent ?? false,
+		isEuUser: sessionContext?.gdprSettings.isEU ?? false,
+		isCalifornianUser: sessionContext?.gdprSettings.isCalifornian ?? false,
+		language: sessionContext?.gdprSettings.language ?? "en-US",
+		countryCode: sessionContext?.gdprSettings.countryCode ?? "US",
+		// DNT (Do Not Track) state
+		isRespectDNTEnabled: sessionContext?.gdprSettings.isRespectDNTEnabled ?? false,
+		isDNTEnabled: isDNTEnabled(),
+		// Legal document URLs
+		privacyPolicyUrl: sessionContext?.gdprSettings.privacyPolicyUrl,
+		termsOfServiceUrl: sessionContext?.gdprSettings.termsOfServiceUrl,
 	};
 };
 
@@ -127,7 +161,7 @@ export const useConsentTexts = (): UseConsentTextsReturn => {
 		(newTexts: ConsentTexts) => {
 			setTexts(newTexts);
 		},
-		[setTexts]
+		[setTexts],
 	);
 
 	return {
@@ -179,7 +213,7 @@ export const useConsentCategories = (): UseConsentCategoriesReturn => {
 		(category: keyof ConsentPreferences, value: boolean) => {
 			updateConsent({ [category]: value });
 		},
-		[updateConsent]
+		[updateConsent],
 	);
 
 	return {
@@ -194,27 +228,8 @@ export const useConsentCategories = (): UseConsentCategoriesReturn => {
 	};
 };
 
-export interface UseSessionContextReturn {
-	sessionContext: ReturnType<typeof useAtomValue<typeof sessionContextAtom>>;
-	isGdprRequired: boolean;
-	isEuUser: boolean;
-	isCalifornianUser: boolean;
-	language: string;
-	countryCode: string;
-}
-
-export const useSessionContext = (): UseSessionContextReturn => {
-	const sessionContext = useAtomValue(sessionContextAtom);
-
-	return {
-		sessionContext,
-		isGdprRequired: sessionContext?.gdprSettings.isRequiredConsent ?? false,
-		isEuUser: sessionContext?.gdprSettings.isEU ?? false,
-		isCalifornianUser: sessionContext?.gdprSettings.isCalifornian ?? false,
-		language: sessionContext?.gdprSettings.language ?? "en-US",
-		countryCode: sessionContext?.gdprSettings.countryCode ?? "US",
-	};
-};
+// Note: useSessionContext has been removed and made internal.
+// Use useConsent hook instead which now includes GDPR state (isConsentRequired, etc.)
 
 // Convenience hook for checking specific consent categories
 export const useAnalyticsConsent = (): boolean => {

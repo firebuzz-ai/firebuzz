@@ -7,10 +7,8 @@ import type {
 import type { Context } from "hono";
 import { type RequestData, parseRequest } from "./request";
 import {
-	type AttributionData,
 	type SessionData,
 	checkExistingSession,
-	createAttribution,
 	generateUniqueId,
 	isReturningUser,
 } from "./session";
@@ -535,7 +533,6 @@ function evaluateBooleanRule(
 export interface CampaignEvaluationWithSession {
 	evaluation: CampaignEvaluationResult;
 	session: SessionData;
-	attribution: AttributionData;
 	isReturning: boolean;
 }
 
@@ -549,27 +546,9 @@ export async function evaluateCampaignWithSession(
 	campaignConfig: CampaignConfig,
 ): Promise<CampaignEvaluationWithSession> {
 	// First check for existing session or create new one
-	const sessionCheck = checkExistingSession(
-		c,
-		campaignConfig.campaignId,
-		campaignConfig,
-	);
+	const sessionCheck = checkExistingSession(c, campaignConfig.campaignId);
 
-	// Get UTM parameters for attribution
-	const url = new URL(c.req.url);
-	const utmSource = url.searchParams.get("utm_source") || undefined;
-	const utmMedium = url.searchParams.get("utm_medium") || undefined;
-
-	// Handle attribution (create or reuse)
-	const attribution =
-		sessionCheck.attributionData ||
-		createAttribution(
-			c,
-			campaignConfig.campaignId,
-			campaignConfig,
-			utmSource,
-			utmMedium,
-		);
+	// Attribution logic removed - handled by analytics package
 
 	// Create session data for evaluation (either existing or new)
 	let session: SessionData;
@@ -585,8 +564,7 @@ export async function evaluateCampaignWithSession(
 			sessionId: generateUniqueId(),
 			campaignId: campaignConfig.campaignId,
 			createdAt: Date.now(),
-			sessionEndsAt:
-				Date.now() + campaignConfig.sessionDurationInMinutes * 60 * 1000,
+			sessionEndsAt: Date.now() + 30 * 60 * 1000, // Default 30 minutes
 		};
 		isReturning = false;
 	}
@@ -610,7 +588,6 @@ export async function evaluateCampaignWithSession(
 	return {
 		evaluation,
 		session,
-		attribution,
 		isReturning,
 	};
 }

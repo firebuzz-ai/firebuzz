@@ -14,39 +14,62 @@ export interface ConsentState {
 
 export interface SessionContext {
 	userId: string;
+	workspaceId: string;
+	projectId: string;
+	campaignId: string;
+	landingPageId?: string;
 	session: {
 		sessionId: string;
-		campaignId: string;
+		abTest?: {
+			testId: string;
+			variantId: string;
+		};
 	};
 	gdprSettings: {
 		isEnabled: boolean;
 		isRequiredConsent: boolean;
+		/* Geo-location */
 		isEU: boolean;
 		isCalifornian: boolean;
 		isIncludedCountry: boolean;
 		isLocalizationEnabled: boolean;
 		countryCode: string;
 		language: string;
+		/* DNT */
 		isRespectDNTEnabled: boolean;
+		/* Legal document URLs */
+		privacyPolicyUrl?: string;
+		termsOfServiceUrl?: string;
 	};
-	campaignEnvironment: "production" | "preview";
-	abTestId?: string | null;
-	abTestVariantId?: string | null;
+	campaignEnvironment: "preview" | "production";
+	apiBaseUrl: string; // Added from engine
+	abTestId: string | null;
+	abTestVariantId: string | null;
+	// Bot detection data from initial page load
+	botDetection: {
+		score: number;
+		corporateProxy: boolean;
+		verifiedBot: boolean;
+	};
+}
+
+export interface TranslationConfig {
+	/** Primary language for the consent manager */
+	language: string;
+	/** Fallback language when primary language is not available */
+	fallbackLanguage?: string;
+	/** Custom translations to override defaults */
+	translations?: Record<string, ConsentTexts>;
 }
 
 export interface ConsentProviderConfig {
-	sessionContext: SessionContext;
-	workerEndpoint?: string;
-	workspaceId?: string;
-	projectId?: string;
-	campaignId?: string;
+	// Note: sessionContext, workerEndpoint, workspaceId, projectId, campaignId are now
+	// automatically extracted from window.__FIREBUZZ_SESSION_CONTEXT__ which is injected by the engine
 	gtm?: {
 		consentDefaults?: Partial<GTMConsentDefaults>;
 	};
-	i18n?: {
-		language?: string;
-		customTranslations?: Partial<ConsentTexts>;
-	};
+	/** Translation configuration */
+	translations: TranslationConfig;
 	cookies?: {
 		domain?: string;
 		secure?: boolean;
@@ -54,7 +77,8 @@ export interface ConsentProviderConfig {
 		expireDays?: number;
 	};
 	debug?: boolean;
-	enabled?: boolean;
+	// Note: Consent manager is now enabled/disabled based on session context presence
+	// If no session context is found, it means we're in dev environment and consent manager will be disabled
 }
 
 export interface GTMConsentDefaults {

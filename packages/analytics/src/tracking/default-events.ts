@@ -85,7 +85,18 @@ const trackedEvents: Array<{
 
 function getPageStartTime(): number {
 	if (globalPageStartTime === null) {
-		globalPageStartTime = Date.now();
+		// Use navigation timing API to get the actual page load start time
+		if (typeof performance !== "undefined" && performance.timeOrigin) {
+			globalPageStartTime = performance.timeOrigin;
+		} else if (
+			typeof performance !== "undefined" &&
+			performance.timing?.navigationStart
+		) {
+			globalPageStartTime = performance.timing.navigationStart;
+		} else {
+			// Fallback to current time if navigation timing is not available
+			globalPageStartTime = Date.now();
+		}
 	}
 	return globalPageStartTime;
 }
@@ -158,14 +169,13 @@ function setupSystemEvents({
 		document.addEventListener("DOMContentLoaded", () => {
 			const domReadyTime = Date.now();
 			const timeOnPageMs = Math.max(domReadyTime - pageStartTime, 100); // Ensure minimum 100ms
-			const timeOnPage = Math.round(timeOnPageMs / 1000);
+			const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 
 			if (debug) {
 				console.log("[Analytics] DOM ready");
 			}
 
 			if (!isEventSent("dom-ready")) {
-				const timeOnPageValue = Math.max(timeOnPage, 1);
 				markEventAsSent("dom-ready", "system", 1, timeOnPageValue, debug);
 				trackEvent({
 					event_id: "dom-ready",
@@ -192,14 +202,13 @@ function setupSystemEvents({
 		// DOM is already ready
 		const domReadyTime = Date.now();
 		const timeOnPageMs = Math.max(domReadyTime - pageStartTime, 100);
-		const timeOnPage = Math.round(timeOnPageMs / 1000);
+		const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 
 		if (debug) {
 			console.log("[Analytics] DOM ready (already loaded)");
 		}
 
 		if (!isEventSent("dom-ready")) {
-			const timeOnPageValue = Math.max(timeOnPage, 1);
 			markEventAsSent("dom-ready", "system", 1, timeOnPageValue, debug);
 			trackEvent({
 				event_id: "dom-ready",
@@ -228,14 +237,13 @@ function setupSystemEvents({
 		// Page is already loaded
 		const loadTime = Date.now();
 		const timeOnPageMs = Math.max(loadTime - pageStartTime, 100);
-		const timeOnPage = Math.round(timeOnPageMs / 1000);
+		const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 
 		if (debug) {
 			console.log("[Analytics] Page load (already complete)");
 		}
 
 		if (!isEventSent("page-load")) {
-			const timeOnPageValue = Math.max(timeOnPage, 1);
 			markEventAsSent("page-load", "system", 1, timeOnPageValue, debug);
 			trackEvent({
 				event_id: "page-load",
@@ -262,14 +270,13 @@ function setupSystemEvents({
 		window.addEventListener("load", () => {
 			const loadTime = Date.now();
 			const timeOnPageMs = Math.max(loadTime - pageStartTime, 100);
-			const timeOnPage = Math.round(timeOnPageMs / 1000);
+			const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 
 			if (debug) {
 				console.log("[Analytics] Page load complete");
 			}
 
 			if (!isEventSent("page-load")) {
-				const timeOnPageValue = Math.max(timeOnPage, 1);
 				markEventAsSent("page-load", "system", 1, timeOnPageValue, debug);
 				trackEvent({
 					event_id: "page-load",
@@ -323,13 +330,11 @@ function setupPageviewTracking({
 	const pageStartTime = getPageStartTime();
 	const currentTime = Date.now();
 	const timeOnPageMs = Math.max(currentTime - pageStartTime, 100); // Ensure minimum 100ms
-	const timeOnPage = Math.round(timeOnPageMs / 1000);
+	const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 
 	if (debug) {
 		console.log("[Analytics] Tracking pageview");
 	}
-
-	const timeOnPageValue = Math.max(timeOnPage, 1); // At least 1 second, but use actual time
 	const config = getEventConfig("page-view", eventConfig);
 
 	markEventAsSent(
@@ -378,14 +383,12 @@ function setupPageUnloadTracking({
 		const pageStartTime = getPageStartTime();
 		const currentTime = Date.now();
 		const timeOnPageMs = Math.max(currentTime - pageStartTime, 100);
-		const timeOnPage = Math.round(timeOnPageMs / 1000);
+		const timeOnPageValue = Math.ceil(timeOnPageMs / 1000); // Use ceil to avoid 0 seconds
 		const config = getEventConfig("page-unload", eventConfig);
 
 		if (debug) {
 			console.log("[Analytics] Tracking page unload");
 		}
-
-		const timeOnPageValue = Math.max(timeOnPage, 1);
 		markEventAsSent(
 			"page-unload",
 			config?.event_type || "system",

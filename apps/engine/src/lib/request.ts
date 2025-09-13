@@ -112,7 +112,7 @@ export interface RequestData {
  * @param c Hono context containing the request
  * @returns Comprehensive request data object with all parsed information
  */
-export function parseRequest(c: Context): RequestData {
+export function parseRequest(c: Context<{ Bindings: Env }>): RequestData {
 	const headers = c.req.header();
 	const cf = c.req.raw.cf;
 	const url = new URL(c.req.url);
@@ -172,12 +172,13 @@ export function parseRequest(c: Context): RequestData {
 
 	// Parse Firebuzz-specific data
 	const firebuzz: FirebuzzData = {
-		environment: headers["x-environment"] || null,
+		environment:
+			c.env.ENVIRONMENT === "development" ? "dev" : c.env.ENVIRONMENT,
 		isCampaign: headers["x-firebuzz-campaign"] === "true",
-		domainType: headers["x-firebuzz-domain-type"] || null,
+		domainType: url.hostname.includes("frbzz.com") ? "project" : "custom",
 		projectId: headers["x-project-id"] || null,
 		workspaceId: headers["x-workspace-id"] || null,
-		userHostname: headers["x-user-hostname"] || null,
+		userHostname: headers["x-user-hostname"] || url.hostname,
 		uri: headers["x-uri"] || null,
 		fullUri: headers["x-full-uri"] || null,
 		realIp: headers["x-real-ip"] || null,

@@ -80,11 +80,29 @@ export function detectCampaignEnvironment(
 		/^preview\.frbzz\.com$/,
 		/^preview-dev\.frbzz\.com$/,
 		/^preview-preview\.frbzz\.com$/,
+		/^preview\.firebuzz\.dev$/,
+		/^preview-dev\.firebuzz\.dev$/,
+		/^preview-preview\.firebuzz\.dev$/,
 	];
 
 	for (const pattern of previewPatterns) {
 		if (pattern.test(normalizedHostname)) {
 			return "preview";
+		}
+	}
+
+	// Check for local development patterns (localhost, 127.0.0.1, dev servers)
+	const localDevelopmentPatterns = [
+		/^localhost(:\d+)?$/,
+		/^127\.0\.0\.1(:\d+)?$/,
+		/^192\.168\.\d+\.\d+(:\d+)?$/, // Local network IPs
+		/^10\.\d+\.\d+\.\d+(:\d+)?$/, // Private network IPs
+		/^172\.\d+\.\d+\.\d+(:\d+)?$/, // Private network IPs
+	];
+
+	for (const pattern of localDevelopmentPatterns) {
+		if (pattern.test(normalizedHostname)) {
+			return "preview"; // Treat local development as preview
 		}
 	}
 

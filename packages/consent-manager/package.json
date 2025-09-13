@@ -1,6 +1,6 @@
 {
 	"name": "@firebuzz/consent-manager",
-	"version": "0.0.1",
+	"version": "0.2.14",
 	"description": "Consent management for Firebuzz platform",
 	"author": "Firebuzz Team",
 	"license": "MIT",
@@ -14,7 +14,10 @@
 			"require": "./dist/index.js"
 		}
 	},
-	"files": ["dist", "README.md"],
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
@@ -36,5 +39,11 @@
 	"peerDependencies": {
 		"react": ">=18.0.0"
 	},
-	"keywords": ["consent", "privacy", "gdpr", "ccpa", "firebuzz"]
+	"keywords": [
+		"consent",
+		"privacy",
+		"gdpr",
+		"ccpa",
+		"firebuzz"
+	]
 }

@@ -47,7 +47,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				campaign_id TEXT NOT NULL,
 				workspace_id TEXT NOT NULL,
 				project_id TEXT NOT NULL,
-				attribution_id TEXT NOT NULL,
+				attribution_id TEXT NULL,
 				landing_page_id TEXT NOT NULL,
 				ab_test_id TEXT NULL,
 				ab_test_variant_id TEXT NULL,
@@ -122,7 +122,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				campaignId: sessionRow.campaign_id as string,
 				workspaceId: sessionRow.workspace_id as string,
 				projectId: sessionRow.project_id as string,
-				attributionId: sessionRow.attribution_id as string,
 				landingPageId: sessionRow.landing_page_id as string,
 				abTestId: sessionRow.ab_test_id as string,
 				abTestVariantId: sessionRow.ab_test_variant_id as string,
@@ -164,17 +163,16 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			this.sql.exec(
 				`INSERT INTO session_state (
 					id, session_id, user_id, campaign_id, workspace_id, project_id,
-					attribution_id, landing_page_id, ab_test_id, ab_test_variant_id,
+					landing_page_id, ab_test_id, ab_test_variant_id,
 					event_sequence, last_activity, session_timeout, created_at,
 					is_expired, environment, campaign_environment
-				) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT(id) DO UPDATE SET
 					session_id = excluded.session_id,
 					user_id = excluded.user_id,
 					campaign_id = excluded.campaign_id,
 					workspace_id = excluded.workspace_id,
 					project_id = excluded.project_id,
-					attribution_id = excluded.attribution_id,
 					landing_page_id = excluded.landing_page_id,
 					ab_test_id = excluded.ab_test_id,
 					ab_test_variant_id = excluded.ab_test_variant_id,
@@ -190,7 +188,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				session.campaignId,
 				session.workspaceId,
 				session.projectId,
-				session.attributionId,
 				session.landingPageId,
 				session.abTestId,
 				session.abTestVariantId,
@@ -231,7 +228,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				campaignId: sessionData.campaign_id,
 				workspaceId: sessionData.workspace_id,
 				projectId: sessionData.project_id,
-				attributionId: sessionData.attribution_id,
 				landingPageId: sessionData.landing_page_id,
 				abTestId: sessionData.ab_test_id,
 				abTestVariantId: sessionData.ab_test_variant_id,
@@ -320,7 +316,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				user_id: this.currentSession.userId,
 				campaign_id: this.currentSession.campaignId,
 				session_id: this.currentSession.sessionId,
-				attribution_id: this.currentSession.attributionId,
 				workspace_id: this.currentSession.workspaceId,
 				project_id: this.currentSession.projectId,
 				landing_page_id: this.currentSession.landingPageId,
@@ -342,9 +337,9 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				// Metadata
 				metadata: eventRequest.metadata,
 
-				// Environment
+				// Environment - use from event request if available, otherwise from session
 				environment: this.currentSession.environment,
-				campaign_environment: this.currentSession.campaignEnvironment,
+				campaign_environment: eventRequest.campaign_environment || this.currentSession.campaignEnvironment,
 				page_url: eventRequest.page_url || "",
 				referrer_url: eventRequest.referrer_url,
 			};
@@ -552,7 +547,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			const sessionQueueData = formatSessionData({
 				timestamp: new Date().toISOString(),
 				sessionId: this.currentSession.sessionId,
-				attributionId: this.currentSession.attributionId,
 				userId: this.currentSession.userId,
 				projectId: this.currentSession.projectId,
 				workspaceId: this.currentSession.workspaceId,
@@ -575,7 +569,6 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 						| "preview",
 					environment: this.currentSession.environment,
 					uri: contextData.session.uri,
-					fullUri: contextData.session.fullUri,
 				},
 			});
 

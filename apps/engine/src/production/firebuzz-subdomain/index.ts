@@ -2,10 +2,8 @@ import { evaluateGDPRSettings } from '@/lib/gdpr';
 import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 import { Hono } from 'hono';
 import { evaluateCampaign } from '../../lib/campaign';
-import { getSessionQueueService } from '../../lib/queue';
 import { parseRequest } from '../../lib/request';
 import { ensureSession } from '../../lib/session';
-import { formatSessionData } from '../../lib/tinybird';
 import { getContentType } from '../../utils/assets';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -30,7 +28,7 @@ app.get('/:campaignSlug', async (c) => {
 	const gdprSettings = evaluateGDPRSettings(c, config.gdpr);
 
 	// Ensure session and attribution; then evaluate with that session
-	const { session, userId, isReturningUser, isExistingSession } = await ensureSession(c, config);
+	const { session, userId, isExistingSession } = await ensureSession(c, config);
 	const evaluation = evaluateCampaign(c, config, session, isExistingSession);
 
 	// Parse request data for session tracking (will be used later)
@@ -109,86 +107,32 @@ app.get('/:campaignSlug', async (c) => {
 		const sessionContext = {
 			abTestId: abTestId,
 			abTestVariantId: abTestVariantId,
+			workspaceId: config.workspaceId,
+			projectId: config.projectId,
+			campaignId: config.campaignId,
+			landingPageId,
 			userId,
 			session,
 			gdprSettings,
 			campaignEnvironment: 'production',
+			// Base API URL based on worker environment
+			apiBaseUrl:
+				c.env.ENVIRONMENT === 'production'
+					? 'https://engine.frbzz.com'
+					: c.env.ENVIRONMENT === 'preview'
+						? 'https://engine-preview.frbzz.com'
+						: 'https://engine-dev.frbzz.com',
+			// Bot detection data from initial page load
+			botDetection: {
+				score: requestData.bot?.score || 0,
+				corporateProxy: requestData.bot?.corporateProxy || false,
+				verifiedBot: requestData.bot?.verifiedBot || false,
+			},
 		};
 
 		// Inject session context into HTML for client-side access
 		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
 		finalHtml = html.replace('</head>', `${contextScript}</head>`);
-	}
-
-	// Track session via queue for batching and throttling (only for new sessions)
-	if (!isExistingSession && requestData.firebuzz.projectId && requestData.firebuzz.workspaceId) {
-		// Fire and forget - enqueue session without blocking response
-		c.executionCtx.waitUntil(
-			(async () => {
-				try {
-					const queueService = getSessionQueueService(c.env);
-					const sessionData = formatSessionData({
-						timestamp: new Date().toISOString(),
-						sessionId: session.sessionId,
-						userId: userId,
-						projectId: requestData.firebuzz.projectId || '',
-						workspaceId: requestData.firebuzz.workspaceId || '',
-						campaignId: config.campaignId,
-						landingPageId: landingPageId,
-						abTestId: abTestId,
-						abTestVariantId: abTestVariantId,
-						utm: {
-							source: requestData.params.utm.utm_source,
-							medium: requestData.params.utm.utm_medium,
-							campaign: requestData.params.utm.utm_campaign,
-							term: requestData.params.utm.utm_term,
-							content: requestData.params.utm.utm_content,
-						},
-						geo: {
-							country: requestData.geo.country,
-							city: requestData.geo.city,
-							region: requestData.geo.region,
-							regionCode: requestData.geo.regionCode,
-							continent: requestData.geo.continent,
-							timezone: requestData.geo.timezone,
-							isEUCountry: requestData.geo.isEUCountry,
-						},
-						device: {
-							type: requestData.device.type,
-							os: requestData.device.os,
-							browser: requestData.device.browser,
-							browserVersion: requestData.device.browserVersion,
-							isMobile: requestData.device.isMobile,
-							connectionType: requestData.device.connectionType,
-						},
-						traffic: {
-							referrer: requestData.traffic.referrer,
-							userAgent: requestData.traffic.userAgent,
-						},
-						localization: {
-							language: requestData.localization.language,
-						},
-						bot: requestData.bot,
-						network: {
-							isSSL: requestData.firebuzz.isSSL,
-							domainType: requestData.firebuzz.domainType,
-							userHostname: requestData.firebuzz.userHostname,
-						},
-						session: {
-							isReturning: isReturningUser,
-							campaignEnvironment: 'production',
-							environment: requestData.firebuzz.environment,
-							uri: requestData.firebuzz.uri,
-						},
-					});
-
-					await queueService.enqueue(sessionData);
-				} catch (error) {
-					console.error('Failed to enqueue session:', error);
-					// Don't fail the request if tracking fails
-				}
-			})(),
-		);
 	}
 
 	// Serve the HTML

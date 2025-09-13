@@ -1,60 +1,44 @@
 "use client";
 
-import { AnalyticsProvider } from "@firebuzz/analytics";
-import { useConsent, useSessionContext } from "@firebuzz/consent-manager";
 import type { AnalyticsProviderProps } from "@firebuzz/analytics";
+import { AnalyticsProvider } from "@firebuzz/analytics";
+import { useConsent } from "@firebuzz/consent-manager";
 
-interface AnalyticsBridgeProps extends Omit<AnalyticsProviderProps, "sessionData" | "consentState"> {
+interface AnalyticsBridgeProps
+  extends Omit<AnalyticsProviderProps, "consentState"> {
   children: React.ReactNode;
 }
 
 /**
- * Bridge component that connects analytics with consent and session context.
- * This component automatically provides session data and consent state to the analytics provider.
- * 
+ * Bridge component that connects analytics with consent manager.
+ * Session data is now automatically extracted from window.__FIREBUZZ_SESSION_CONTEXT__
+ * which is injected by the engine. All session data (workspace, project, campaign IDs,
+ * API URL, etc.) are extracted from session context automatically.
+ *
  * Templates should copy this component and customize as needed.
- * 
+ *
  * Usage:
  * ```tsx
  * <AnalyticsBridge
- *   apiUrl="https://engine.firebuzz.com"
- *   workspaceId="workspace_123"
- *   projectId="project_456"
  *   primaryGoal={{ event_id: "conversion", event_type: "conversion", event_value: 100, event_value_type: "static", isCustom: false }}
  * >
  *   <YourApp />
  * </AnalyticsBridge>
  * ```
  */
-export function AnalyticsBridge({
-  children,
-  ...props
-}: AnalyticsBridgeProps) {
-  const { sessionContext } = useSessionContext();
+export function AnalyticsBridge({ children, ...props }: AnalyticsBridgeProps) {
   const { consentState } = useConsent();
 
-  // Don't render until we have session context and consent state
-  if (!sessionContext || !consentState) {
+  // Don't render until we have consent state
+  if (!consentState) {
     return <>{children}</>;
   }
 
-  // Extract session data from session context
-  const sessionData = {
-    userId: sessionContext.session.userId,
-    sessionId: sessionContext.session.sessionId,
-    campaignId: sessionContext.session.campaignId,
-    landingPageId: sessionContext.session.landingPageId,
-    abTestId: sessionContext.session.abTestId,
-    abTestVariantId: sessionContext.session.abTestVariantId,
-  };
+  const analyticsProps = {
+    ...props,
+    consentState,
+    children,
+  } satisfies AnalyticsProviderProps;
 
-  return (
-    <AnalyticsProvider
-      sessionData={sessionData}
-      consentState={consentState}
-      {...props}
-    >
-      {children}
-    </AnalyticsProvider>
-  );
+  return <AnalyticsProvider {...analyticsProps} />;
 }

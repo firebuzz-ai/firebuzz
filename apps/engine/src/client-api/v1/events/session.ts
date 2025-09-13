@@ -1,16 +1,14 @@
-import { initSessionRequestSchema } from '@firebuzz/shared-types/events';
-import { Hono } from 'hono';
-import { verifyTrackingToken } from '../../../lib/jwt';
-import { getSessionQueueService } from '../../../lib/queue';
-import { parseRequest } from '../../../lib/request';
-import { getCurrentSession, getCurrentUserId } from '../../../lib/session';
-import { createShortClickId } from '../../../lib/short-tokens';
-import { formatSessionData } from '../../../lib/tinybird';
-import { detectEnvironment } from '../../../utils/environment';
-import { generateUniqueId } from '../../../utils/id-generator';
+import { initSessionRequestSchema } from "@firebuzz/shared-types/events";
+import { Hono } from "hono";
+import { verifyTrackingToken } from "../../../lib/jwt";
+import { getCurrentSession, getCurrentUserId } from "../../../lib/session";
+import { createShortClickId } from "../../../lib/short-tokens";
+import { detectEnvironment } from "../../../utils/environment";
+import { generateUniqueId } from "../../../utils/id-generator";
+import { trackSession } from "./session/track";
 
 export const sessionRoutes = new Hono<{ Bindings: Env }>()
-	.post('/session/init', async (c) => {
+	.post("/session/init", async (c) => {
 		try {
 			const body = await c.req.json();
 			const sessionData = initSessionRequestSchema.parse(body);
@@ -21,25 +19,17 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				return c.json(
 					{
 						success: false,
-						error: 'Session ID is required',
+						error: "Session ID is required",
 					},
 					400,
 				);
 			}
 
-			// Use client-provided campaign environment if available, otherwise detect from hostname
-			let campaignEnvironment: 'preview' | 'production';
-			if (sessionData.campaign_environment === 'preview' || sessionData.campaign_environment === 'production') {
-				campaignEnvironment = sessionData.campaign_environment;
-			} else {
-				// Fallback to hostname-based detection
-				const hostname = c.req.header('host') || '';
-				const environmentContext = detectEnvironment(hostname, c.env);
-				campaignEnvironment = environmentContext.campaignEnvironment;
-			}
+			// Always use campaign environment from session context (authoritative source)
+			const campaignEnvironment = sessionData.campaign_environment || "production";
 
 			// Get engine environment from hostname (for internal tracking)
-			const hostname = c.req.header('host') || '';
+			const hostname = c.req.header("host") || "";
 			const environmentContext = detectEnvironment(hostname, c.env);
 
 			// For init endpoint, user_id and attribution_id are required
@@ -48,7 +38,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				return c.json(
 					{
 						success: false,
-						error: 'Missing required user_id or attribution_id',
+						error: "Missing required user_id or attribution_id",
 					},
 					400,
 				);
@@ -69,7 +59,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				return c.json(
 					{
 						success: false,
-						error: result.error || 'Failed to initialize session',
+						error: result.error || "Failed to initialize session",
 					},
 					400,
 				);
@@ -108,17 +98,18 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				200,
 			);
 		} catch (error) {
-			console.error('Initialize session error:', error);
+			console.error("Initialize session error:", error);
 			return c.json(
 				{
 					success: false,
-					error: error instanceof Error ? error.message : 'Internal server error',
+					error:
+						error instanceof Error ? error.message : "Internal server error",
 				},
 				500,
 			);
 		}
 	})
-	.post('/session/validate', async (c) => {
+	.post("/session/validate", async (c) => {
 		try {
 			const body = await c.req.json();
 			const { session_id } = body;
@@ -131,15 +122,16 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			const result = await eventTracker.validateSession(session_id);
 
 			if (!result.success) {
-				const reason = result.error === 'Session not found' ? 'not_found' : 'expired';
+				const reason =
+					result.error === "Session not found" ? "not_found" : "expired";
 
 				// When session is expired, generate new session ID for renewal
-				if (result.error === 'Session expired') {
+				if (result.error === "Session expired") {
 					const newSessionId = generateUniqueId();
 					return c.json(
 						{
 							valid: false,
-							reason: 'expired',
+							reason: "expired",
 							new_session_id: newSessionId, // Provide new session ID
 						},
 						200,
@@ -158,23 +150,23 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			return c.json(
 				{
 					valid: true,
-					reason: 'valid',
+					reason: "valid",
 					session: result.session,
 				},
 				200,
 			);
 		} catch (error) {
-			console.error('Validate session error:', error);
+			console.error("Validate session error:", error);
 			return c.json(
 				{
 					valid: false,
-					reason: 'error',
+					reason: "error",
 				},
 				200,
 			);
 		}
 	})
-	.post('/session/flush', async (c) => {
+	.post("/session/flush", async (c) => {
 		try {
 			const body = await c.req.json();
 			const { session_id } = body;
@@ -190,9 +182,9 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				return c.json(
 					{
 						success: false,
-						error: result.error || 'Failed to flush events',
+						error: result.error || "Failed to flush events",
 					},
-					result.error === 'Session not found' ? 404 : 400,
+					result.error === "Session not found" ? 404 : 400,
 				);
 			}
 
@@ -204,17 +196,18 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				200,
 			);
 		} catch (error) {
-			console.error('Flush events error:', error);
+			console.error("Flush events error:", error);
 			return c.json(
 				{
 					success: false,
-					error: error instanceof Error ? error.message : 'Internal server error',
+					error:
+						error instanceof Error ? error.message : "Internal server error",
 				},
 				500,
 			);
 		}
 	})
-	.post('/session/renew', async (c) => {
+	.post("/session/renew", async (c) => {
 		try {
 			const body = await c.req.json();
 			const {
@@ -225,13 +218,48 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				project_id,
 				landing_page_id,
 				session_timeout_minutes = 30,
-				session_context,
+				user_id,
+				original_hostname,
 			} = body;
 
-			// Detect environment based on hostname
-			const hostname = c.req.header('host') || '';
-			const environmentContext = detectEnvironment(hostname, c.env);
-			const isPreview = environmentContext.campaignEnvironment === 'preview';
+			// Validate required parameters
+			if (
+				!new_session_id ||
+				!campaign_id ||
+				!workspace_id ||
+				!project_id ||
+				!landing_page_id
+			) {
+				console.error("Session renewal validation failed:", {
+					new_session_id: !!new_session_id,
+					campaign_id: !!campaign_id,
+					workspace_id: !!workspace_id,
+					project_id: !!project_id,
+					landing_page_id: !!landing_page_id,
+					campaign_slug: !!campaign_slug,
+					user_id: !!user_id,
+				});
+				return c.json(
+					{
+						success: false,
+						error:
+							"Missing required parameters: new_session_id, campaign_id, workspace_id, project_id, and landing_page_id are required",
+					},
+					400,
+				);
+			}
+
+			// Detect environment based on original hostname (where user actually is) or fallback to request hostname
+			const detectionHostname = original_hostname || c.req.header("host") || "";
+			const environmentContext = detectEnvironment(detectionHostname, c.env);
+
+			console.log("Session renewal environment detection:", {
+				original_hostname,
+				request_hostname: c.req.header("host"),
+				detection_hostname: detectionHostname,
+				detected_environment: environmentContext,
+			});
+			const isPreview = environmentContext.campaignEnvironment === "preview";
 
 			// Get campaign config to use correct session and attribution duration
 			let campaignConfig: {
@@ -243,12 +271,15 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 
 			if (isPreview) {
 				// For preview, we can look up by campaign ID directly
-				campaignConfig = await c.env.CAMPAIGN.get(`campaign:preview:${campaign_id}`, {
-					type: 'json',
-				});
+				campaignConfig = await c.env.CAMPAIGN.get(
+					`campaign:preview:${campaign_id}`,
+					{
+						type: "json",
+					},
+				);
 			} else {
 				// For production, use origin header + campaign slug from request
-				const origin = c.req.header('origin') || '';
+				const origin = c.req.header("origin") || "";
 
 				if (origin && campaign_slug) {
 					try {
@@ -257,7 +288,7 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 						const campaignKey = `campaign:${landingPageHostname}:${campaign_slug}`;
 
 						campaignConfig = await c.env.CAMPAIGN.get(campaignKey, {
-							type: 'json',
+							type: "json",
 						});
 					} catch (_error) {
 						// Silently fail - fallback to default durations
@@ -274,15 +305,33 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				}
 			}
 
-			// Get user/attribution data from existing cookies (may be expired/missing)
-			let userId = getCurrentUserId(c, campaign_id, isPreview);
+			// Use provided user_id from request (client should send existing user ID)
+			let userId = user_id;
+
+			// Fallback: try to get from cookies if not provided (backward compatibility)
+			if (!userId) {
+				userId = getCurrentUserId(c, campaign_id, isPreview);
+				console.log(
+					"Session renewal: No user_id provided, attempted cookie fallback:",
+					{
+						found_userId: userId || "NONE",
+						note: "Cross-domain cookies don't work, client should send user_id",
+					},
+				);
+			} else {
+				console.log("Session renewal: Using provided user_id:", userId);
+			}
 
 			// Try to get AB test data from old session cookie
 			const oldSession = getCurrentSession(c, campaign_id);
 
-			// Generate new IDs if cookies are missing/expired
+			// Generate new ID only as last resort
 			if (!userId) {
 				userId = generateUniqueId();
+				console.log(
+					"Session renewal: No user ID provided or found, generating new:",
+					userId,
+				);
 			}
 
 			// Initialize new DO session
@@ -304,6 +353,13 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			};
 
 			// Initialize DO session
+			console.log("Attempting to initialize DO session for renewal:", {
+				session_id: new_session_id,
+				campaign_id,
+				workspace_id,
+				project_id,
+				user_id: userId,
+			});
 			const result = await eventTracker.initSession(sessionData);
 
 			if (result.success) {
@@ -328,105 +384,8 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 					c.env,
 				);
 
-				// Track renewed session via queue for analytics (fire and forget)
-				c.executionCtx.waitUntil(
-					(async () => {
-						try {
-							const queueService = getSessionQueueService(c.env);
-
-							// Use stored session context if available, otherwise fall back to API request data
-							if (session_context) {
-								// Use the original session context from localStorage
-								const sessionQueueData = formatSessionData({
-									timestamp: new Date().toISOString(),
-									sessionId: new_session_id,
-									userId: userId,
-									projectId: project_id,
-									workspaceId: workspace_id,
-									campaignId: campaign_id,
-									landingPageId: session_context.landingPageId,
-									abTestId: session_context.abTestId,
-									abTestVariantId: session_context.abTestVariantId,
-									utm: session_context.utm,
-									geo: session_context.geo,
-									device: session_context.device,
-									traffic: session_context.traffic,
-									localization: session_context.localization,
-									bot: session_context.bot,
-									network: session_context.network,
-									session: {
-										isReturning: true, // Renewal means it's a returning session
-										campaignEnvironment: session_context.session.campaignEnvironment,
-										environment: session_context.session.environment,
-										uri: session_context.session.uri,
-									},
-								});
-								await queueService.enqueue(sessionQueueData);
-							} else {
-								// Fallback to API request data (the old way)
-								const requestData = parseRequest(c);
-								const sessionQueueData = formatSessionData({
-									timestamp: new Date().toISOString(),
-									sessionId: new_session_id,
-									userId: userId,
-									projectId: project_id,
-									workspaceId: workspace_id,
-									campaignId: campaign_id,
-									landingPageId: landing_page_id, // Use the correct landing page ID from session
-									abTestId: oldSession?.abTest?.testId || null,
-									abTestVariantId: oldSession?.abTest?.variantId || null,
-									utm: {
-										source: requestData.params.utm.utm_source,
-										medium: requestData.params.utm.utm_medium,
-										campaign: requestData.params.utm.utm_campaign,
-										term: requestData.params.utm.utm_term,
-										content: requestData.params.utm.utm_content,
-									},
-									geo: {
-										country: requestData.geo.country,
-										city: requestData.geo.city,
-										region: requestData.geo.region,
-										regionCode: requestData.geo.regionCode,
-										continent: requestData.geo.continent,
-
-										timezone: requestData.geo.timezone,
-										isEUCountry: requestData.geo.isEUCountry,
-									},
-									device: {
-										type: requestData.device.type,
-										os: requestData.device.os,
-										browser: requestData.device.browser,
-										browserVersion: requestData.device.browserVersion,
-										isMobile: requestData.device.isMobile,
-										connectionType: requestData.device.connectionType,
-									},
-									traffic: {
-										referrer: requestData.traffic.referrer,
-										userAgent: requestData.traffic.userAgent,
-									},
-									localization: {
-										language: requestData.localization.language,
-									},
-									bot: requestData.bot,
-									network: {
-										isSSL: requestData.firebuzz.isSSL,
-										domainType: requestData.firebuzz.domainType,
-										userHostname: requestData.firebuzz.userHostname,
-									},
-									session: {
-										isReturning: true, // Renewal means it's a returning session
-										campaignEnvironment: environmentContext.campaignEnvironment,
-										environment: requestData.firebuzz.environment,
-										uri: requestData.firebuzz.uri,
-									},
-								});
-								await queueService.enqueue(sessionQueueData);
-							}
-						} catch (error) {
-							console.error('Failed to queue renewed session data:', error);
-						}
-					})(),
-				);
+				// Session tracking is now handled by analytics package via /session/track endpoint
+				// This eliminates duplicate session records
 
 				return c.json(
 					{
@@ -445,25 +404,31 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				);
 			}
 
+			console.error("Session renewal DO initialization failed:", {
+				session_id: new_session_id,
+				do_result: result,
+				error: result.error,
+			});
 			return c.json(
 				{
 					success: false,
-					error: 'Failed to renew session',
+					error: result.error || "Failed to renew session",
 				},
 				400,
 			);
 		} catch (error) {
-			console.error('Session renewal error:', error);
+			console.error("Session renewal error:", error);
 			return c.json(
 				{
 					success: false,
-					error: error instanceof Error ? error.message : 'Internal server error',
+					error:
+						error instanceof Error ? error.message : "Internal server error",
 				},
 				500,
 			);
 		}
 	})
-	.post('/session/verify-token', async (c) => {
+	.post("/session/verify-token", async (c) => {
 		try {
 			const body = await c.req.json();
 			const { token } = body;
@@ -472,20 +437,23 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				return c.json(
 					{
 						success: false,
-						error: 'Token is required',
+						error: "Token is required",
 					},
 					400,
 				);
 			}
 
 			// Verify the tracking token
-			const payload = await verifyTrackingToken(token, c.env.TRACKING_JWT_SECRET);
+			const payload = await verifyTrackingToken(
+				token,
+				c.env.TRACKING_JWT_SECRET,
+			);
 
 			if (!payload) {
 				return c.json(
 					{
 						success: false,
-						error: 'Invalid or expired token',
+						error: "Invalid or expired token",
 					},
 					401,
 				);
@@ -511,13 +479,15 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 				200,
 			);
 		} catch (error) {
-			console.error('Token verification error:', error);
+			console.error("Token verification error:", error);
 			return c.json(
 				{
 					success: false,
-					error: error instanceof Error ? error.message : 'Internal server error',
+					error:
+						error instanceof Error ? error.message : "Internal server error",
 				},
 				500,
 			);
 		}
-	});
+	})
+	.post("/session/track", trackSession);

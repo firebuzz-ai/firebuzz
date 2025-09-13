@@ -1,11 +1,11 @@
 import { zodToConvex } from "convex-helpers/server/zod";
 import {
-  campaignSettingsSchema,
-  edgeSchema,
-  eventSchema,
-  gdprSchema,
-  nodeSchema,
-  viewportSchema,
+	campaignSettingsSchema,
+	edgeSchema,
+	eventSchema,
+	gdprSchema,
+	nodeSchema,
+	viewportSchema,
 } from "./schemas";
 
 // Convert Zod schemas to Convex validators

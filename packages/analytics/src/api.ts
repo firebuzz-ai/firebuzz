@@ -1,5 +1,8 @@
 import { getBatchTracker } from "./batch-tracker";
+import SessionManager from "./session-manager";
 import type {
+	ConsentState,
+	FirebuzzSessionContext,
 	SessionInitResponse,
 	SessionRenewalResponse,
 	TrackEventParams,
@@ -14,10 +17,9 @@ import { generateUniqueId } from "./utils/uuid";
 interface ApiClientConfig {
 	apiUrl: string;
 	campaignId: string;
-	campaignSlug?: string; // Add campaign slug for proper config lookup
 	workspaceId: string;
 	projectId: string;
-	landingPageId: string;
+	landingPageId?: string; // Can be undefined
 	defaultCurrency?: string; // Default currency for events
 	debug?: boolean;
 	sessionTimeoutMinutes?: number;
@@ -31,10 +33,44 @@ interface ApiClientConfig {
 
 let globalConfig: ApiClientConfig | null = null;
 let currentClickId: string | null = null;
-let currentSessionData: { userId: string; sessionId: string; campaignId: string } | null = null;
+let currentSessionData: {
+	userId: string;
+	sessionId: string;
+	campaignId: string;
+} | null = null;
+let globalSessionManager: SessionManager | null = null;
 
 export function configureApiClient(config: ApiClientConfig) {
 	globalConfig = config;
+
+	// Initialize session manager
+	if (typeof window !== "undefined") {
+		const environment = detectCampaignEnvironmentFromHostname(
+			window.location.hostname,
+		);
+		globalSessionManager = new SessionManager({
+			campaignId: config.campaignId,
+			apiUrl: config.apiUrl,
+			environment: environment === "production" ? "production" : "preview",
+			debug: config.debug,
+		});
+	}
+}
+
+/**
+ * Get the global session manager instance
+ */
+export function getSessionManager(): SessionManager | null {
+	return globalSessionManager;
+}
+
+/**
+ * Update session manager with consent state
+ */
+export function updateSessionConsent(consentState: ConsentState): void {
+	if (globalSessionManager) {
+		globalSessionManager.updateConsentState(consentState);
+	}
 }
 
 /**
@@ -50,7 +86,11 @@ export function setTrackingToken(clickId: string | undefined) {
 /**
  * Set session data from analytics provider
  */
-export function setSessionData(sessionData: { userId: string; sessionId: string; campaignId: string }) {
+export function setSessionData(sessionData: {
+	userId: string;
+	sessionId: string;
+	campaignId: string;
+}) {
 	currentSessionData = sessionData;
 	if (globalConfig?.debug) {
 		console.log("[Analytics] Session data set:", sessionData);
@@ -58,9 +98,15 @@ export function setSessionData(sessionData: { userId: string; sessionId: string;
 }
 
 /**
- * Get current session data
+ * Get current session data - now uses SessionManager
  */
 export function getSessionData() {
+	// First try session manager (preferred)
+	if (globalSessionManager) {
+		return globalSessionManager.getCurrentSession();
+	}
+
+	// Fallback to legacy session data
 	return currentSessionData;
 }
 
@@ -69,6 +115,209 @@ export function getSessionData() {
  */
 export function getTrackingToken(): string | null {
 	return currentClickId;
+}
+
+// ============================================================================
+// Session Tracking Functions
+// ============================================================================
+
+/**
+ * Track session to analytics backend (Tinybird)
+ * This replaces the server-side session tracking to ensure proper client context
+ */
+async function trackSession(
+	sessionId: string,
+	_userId: string,
+	isRenewal = false,
+): Promise<boolean> {
+	const config = getConfig();
+	if (!config) {
+		log("No analytics config available for session tracking");
+		return false;
+	}
+
+	try {
+		// Get complete client-side context
+		const _sessionData = getSessionData();
+		const currentHostname =
+			typeof window !== "undefined" ? window.location.hostname : "";
+		// Get basic session context (no geo/device data needed - comes from server)
+		const sessionContext: FirebuzzSessionContext | null =
+			typeof window !== "undefined"
+				? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+				: null;
+
+		// Use session context environment if available, otherwise detect from hostname
+		const currentCampaignEnvironment =
+			sessionContext?.campaignEnvironment || 
+			detectCampaignEnvironmentFromHostname(currentHostname);
+
+		// Extract UTM parameters from current URL
+		const urlParams = new URLSearchParams(window.location.search);
+		const utm = {
+			source: urlParams.get("utm_source"),
+			medium: urlParams.get("utm_medium"),
+			campaign: urlParams.get("utm_campaign"),
+			term: urlParams.get("utm_term"),
+			content: urlParams.get("utm_content"),
+		};
+
+		// Get referrer information
+		const referrer =
+			typeof document !== "undefined" ? document.referrer || null : null;
+		const userAgent =
+			typeof navigator !== "undefined" ? navigator.userAgent : "";
+		const language =
+			typeof navigator !== "undefined" ? navigator.language : "en-US";
+
+		// Extract ref and source parameters from URL
+		const ref = urlParams.get("ref");
+		const source = urlParams.get("source");
+
+		// Enhanced client-side detection
+		const isMobile =
+			typeof window !== "undefined"
+				? /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+						userAgent,
+					)
+				: false;
+		const isSSL =
+			typeof window !== "undefined"
+				? window.location.protocol === "https:"
+				: true;
+
+		// Device OS detection
+		let deviceOS = "";
+		let browser = "";
+		let browserVersion = "";
+
+		if (typeof navigator !== "undefined") {
+			// OS detection
+			if (userAgent.includes("Windows")) deviceOS = "Windows";
+			else if (userAgent.includes("Mac")) deviceOS = "macOS";
+			else if (userAgent.includes("Linux")) deviceOS = "Linux";
+			else if (userAgent.includes("Android")) deviceOS = "Android";
+			else if (userAgent.includes("iPhone") || userAgent.includes("iPad"))
+				deviceOS = "iOS";
+			else deviceOS = "Unknown";
+
+			// Browser detection
+			if (userAgent.includes("Chrome") && !userAgent.includes("Edge")) {
+				browser = "Chrome";
+				const match = userAgent.match(/Chrome\/(\d+)/);
+				browserVersion = match?.[1] || "";
+			} else if (userAgent.includes("Firefox")) {
+				browser = "Firefox";
+				const match = userAgent.match(/Firefox\/(\d+)/);
+				browserVersion = match?.[1] || "";
+			} else if (
+				userAgent.includes("Safari") &&
+				!userAgent.includes("Chrome")
+			) {
+				browser = "Safari";
+				const match = userAgent.match(/Version\/(\d+)/);
+				browserVersion = match?.[1] || "";
+			} else if (userAgent.includes("Edge")) {
+				browser = "Edge";
+				const match = userAgent.match(/Edge\/(\d+)/);
+				browserVersion = match?.[1] || "";
+			} else {
+				browser = "Unknown";
+			}
+		}
+
+		// Get actual timezone
+		const timezone =
+			typeof Intl !== "undefined"
+				? Intl.DateTimeFormat().resolvedOptions().timeZone
+				: "UTC";
+
+		// Get current URI
+		const uri = typeof window !== "undefined" ? window.location.pathname : "";
+
+		// Session context should always exist - if not, we can't track
+		if (!sessionContext) {
+			log("❌ No session context available for tracking - skipping");
+			return false;
+		}
+
+		const trackingData = {
+			timestamp: new Date().toISOString(),
+			session_id: sessionId,
+			user_id: sessionContext.userId,
+			project_id: sessionContext.projectId,
+			workspace_id: sessionContext.workspaceId,
+			campaign_id: sessionContext.campaignId,
+			landing_page_id: sessionContext.landingPageId,
+			// AB test data from session context
+			ab_test_id: sessionContext.abTestId || null,
+			ab_test_variant_id: sessionContext.abTestVariantId || null,
+			// UTM parameters
+			utm_source: utm.source,
+			utm_medium: utm.medium,
+			utm_campaign: utm.campaign,
+			utm_term: utm.term,
+			utm_content: utm.content,
+			// Ref and source parameters
+			ref: ref,
+			source: source,
+			// Traffic data
+			referrer: referrer,
+			user_agent: userAgent,
+			language: language,
+			// Device data (client-side detection)
+			device_os: deviceOS,
+			browser: browser,
+			browser_version: browserVersion,
+			is_mobile: isMobile ? 1 : 0,
+			connection_type: "unknown",
+			// Geographic data (will be populated server-side by engine)
+			country: "Unknown", // Server will override with Cloudflare data
+			city: "Unknown", // Server will override with Cloudflare data
+			region: "Unknown", // Server will override with Cloudflare data
+			region_code: null, // Server will override with Cloudflare data
+			continent: "Unknown", // Server will override with Cloudflare data
+			timezone: timezone,
+			is_eu_country: 0, // Server will override with Cloudflare data
+			// Bot detection (from initial page load context)
+			bot_score: sessionContext?.botDetection?.score || null,
+			is_corporate_proxy: sessionContext?.botDetection?.corporateProxy ? 1 : 0,
+			is_verified_bot: sessionContext?.botDetection?.verifiedBot ? 1 : 0,
+			// Environment data
+			user_hostname: currentHostname,
+			campaign_environment: currentCampaignEnvironment,
+			domain_type: "custom", // Server will override with correct domain type
+			is_ssl: isSSL ? 1 : 0,
+			uri: uri,
+			// Session type
+			is_renewal: isRenewal ? 1 : 0,
+		};
+
+		// Send to analytics tracking endpoint
+		const response = await fetch(
+			`${config.apiUrl}/client-api/v1/events/session/track`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(trackingData),
+				credentials: "include",
+			},
+		);
+
+		if (response.ok) {
+			log(
+				isRenewal
+					? "Session renewal tracked successfully"
+					: "New session tracked successfully",
+			);
+			return true;
+		}
+		log("Failed to track session:", response.status);
+		return false;
+	} catch (error) {
+		console.error("Session tracking error:", error);
+		return false;
+	}
 }
 
 // ============================================================================
@@ -118,139 +367,6 @@ export function getConfig(): ApiClientConfig {
 }
 
 // ============================================================================
-// Session Context Storage
-// ============================================================================
-
-interface StoredSessionContext {
-	landingPageId: string;
-	abTestId: string | null;
-	abTestVariantId: string | null;
-	utm: {
-		source?: string;
-		medium?: string;
-		campaign?: string;
-		term?: string;
-		content?: string;
-	};
-	geo: {
-		country: string | null;
-		city: string | null;
-		region: string | null;
-		regionCode: string | null;
-		continent: string | null;
-		latitude: string | null;
-		longitude: string | null;
-		postalCode: string | null;
-		timezone: string | null;
-		isEUCountry: boolean;
-	};
-	device: {
-		type: string;
-		os: string;
-		browser: string;
-		browserVersion: string | null;
-		isMobile: boolean;
-		connectionType: string;
-	};
-	traffic: {
-		referrer: string | null;
-		userAgent: string;
-	};
-	localization: {
-		language: string | null;
-		languages: string[];
-	};
-	bot: {
-		corporateProxy: boolean;
-		verifiedBot: boolean;
-		score: number;
-	} | null;
-	network: {
-		ip: string | null;
-		isSSL: boolean;
-		domainType: string | null;
-		userHostname: string | null;
-	};
-	session: {
-		isReturning: boolean;
-		campaignEnvironment: string;
-		environment: string | null;
-		uri: string | null;
-		fullUri: string | null;
-	};
-}
-
-/**
- * Store session context from server-injected global variable
- */
-function storeSessionContext(campaignId: string): boolean {
-	try {
-		// Check if we're in a browser
-		if (typeof window === "undefined" || typeof localStorage === "undefined") {
-			return false;
-		}
-
-		// Check for server-injected session context
-		// The server will inject this via a script tag: window.__FIREBUZZ_SESSION_CONTEXT__
-		const globalContext = (
-			window as { __FIREBUZZ_SESSION_CONTEXT__?: StoredSessionContext }
-		).__FIREBUZZ_SESSION_CONTEXT__;
-
-		if (!globalContext) {
-			log("No session context found from server");
-			return false;
-		}
-
-		const sessionContext: StoredSessionContext = globalContext;
-
-		// Store in localStorage
-		localStorage.setItem(
-			`firebuzz_session_context_${campaignId}`,
-			JSON.stringify(sessionContext),
-		);
-		log("Session context stored successfully", sessionContext);
-
-		// Clean up global variable
-		(
-			window as { __FIREBUZZ_SESSION_CONTEXT__?: StoredSessionContext }
-		).__FIREBUZZ_SESSION_CONTEXT__ = undefined;
-
-		return true;
-	} catch (error) {
-		log("Failed to store session context:", error);
-		return false;
-	}
-}
-
-/**
- * Get stored session context from localStorage
- */
-function getStoredSessionContext(
-	campaignId: string,
-): StoredSessionContext | null {
-	try {
-		if (typeof localStorage === "undefined") {
-			return null;
-		}
-
-		const stored = localStorage.getItem(
-			`firebuzz_session_context_${campaignId}`,
-		);
-		if (!stored) {
-			log("No stored session context found");
-			return null;
-		}
-
-		const context = JSON.parse(stored) as StoredSessionContext;
-		log("Retrieved stored session context", context);
-		return context;
-	} catch (error) {
-		log("Failed to retrieve stored session context:", error);
-		return null;
-	}
-}
-
-// ============================================================================
 // API Methods
 // ============================================================================
 
@@ -265,30 +381,55 @@ async function initializeSession(
 
 	// Get session data from provider (no cookie reading)
 	const sessionData = getSessionData();
-	const userId = sessionData?.userId || generateUniqueId();
+	// NEVER generate user ID here - should always come from session context
+	const userId = sessionData?.userId;
 
-	if (!sessionData) {
-		log("Warning: No session data available, using temporary ID");
+	if (!sessionData || !userId) {
+		log(
+			"Error: No session data or user ID available - cannot initialize session",
+		);
+		return { success: false, error: "Missing session context data" };
 	}
 
-	// Detect campaign environment from current page domain (where user actually is)
+	// Get session context data (primary source of truth)
+	const sessionContext: FirebuzzSessionContext | null =
+		typeof window !== "undefined"
+			? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+			: null;
+
 	const currentHostname =
 		typeof window !== "undefined" ? window.location.hostname : "";
-	const currentCampaignEnvironment =
-		detectCampaignEnvironmentFromHostname(currentHostname);
+
+
+	// Session context should always exist in preview/production - if not, we're in dev
+	if (!sessionContext) {
+		throw new Error(
+			"[Analytics] Session context not found - analytics disabled in dev environment",
+		);
+	}
 
 	const sessionInitData = {
 		session_id,
-		campaign_id: config.campaignId,
-		workspace_id: config.workspaceId,
-		project_id: config.projectId,
-		landing_page_id: config.landingPageId,
-		user_id: userId,
-		// Attribution removed completely
-		// A/B test data removed (will be handled by session context)
+		campaign_id: sessionContext.campaignId,
+		workspace_id: sessionContext.workspaceId,
+		project_id: sessionContext.projectId,
+		landing_page_id: sessionContext.landingPageId,
+		user_id: sessionContext.userId,
+		// Include AB test data from session context
+		ab_test_id: sessionContext.abTestId || undefined,
+		ab_test_variant_id: sessionContext.abTestVariantId || undefined,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
-		campaign_environment: currentCampaignEnvironment, // Send detected environment
+		campaign_environment: sessionContext.campaignEnvironment,
+		is_ephemeral: !globalSessionManager?.shouldSetCookies(), // GDPR compliance flag
 	};
+
+	// Debug logging for the session init data
+	if (config.debug) {
+		console.log("[Analytics] Session init data from context:", {
+			...sessionInitData,
+			hostname: currentHostname,
+		});
+	}
 
 	log("Initializing session:", sessionInitData);
 
@@ -320,41 +461,40 @@ async function initializeSession(
 
 	log("Session init result:", result);
 
-	// If successful, create session cookie on client-side (server can't set cross-domain cookies)
+	// Only create session cookie if consent allows (handled by SessionManager)
 	if (result.success && result.data?.session_id) {
-		// Use session duration from server response (includes campaign settings)
-		const sessionDurationMinutes =
-			result.data.session_duration_minutes ||
-			config.sessionTimeoutMinutes ||
-			30;
+		// Session cookies are now handled by SessionManager based on consent
+		// This ensures GDPR compliance and proper ephemeral/persistent mode switching
+		if (globalSessionManager) {
+			// Get session context for AB test data
+			const sessionContext: FirebuzzSessionContext | null =
+				typeof window !== "undefined"
+					? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+					: null;
 
-		const sessionCookie = {
-			sessionId: result.data.session_id,
-			campaignId: config.campaignId,
-			createdAt: Date.now(),
-			sessionEndsAt: Date.now() + sessionDurationMinutes * 60 * 1000,
-		};
+			// Let SessionManager handle cookie setting based on consent state
+			const sessionData = {
+				userId: result.data.user_id || userId || generateUniqueId(),
+				sessionId: result.data.session_id,
+				campaignId: config.campaignId,
+				landingPageId: config.landingPageId,
+				// Use server response first, fall back to session context
+				abTestId: result.data.ab_test_id || sessionContext?.abTestId || null,
+				abTestVariantId:
+					result.data.ab_test_variant_id ||
+					sessionContext?.abTestVariantId ||
+					null,
+			};
 
-		// Import Cookies if not already imported
-		const Cookies = (await import("js-cookie")).default;
-
-		// Set session cookie on client-side
-		Cookies.set(
-			`frbzz_session_${config.campaignId}`,
-			JSON.stringify(sessionCookie),
-			{
-				expires: sessionDurationMinutes / (24 * 60), // Convert minutes to days
-				secure: true,
-				sameSite: "Lax",
-				path: "/",
-			},
-		);
-
-		log(
-			"✅ Session cookie set client-side with duration:",
-			sessionDurationMinutes,
-			"minutes",
-		);
+			// SessionManager will only set cookies if consent allows
+			if (globalSessionManager.shouldSetCookies()) {
+				globalSessionManager.setSessionCookie(sessionData);
+				globalSessionManager.setUserIdCookie(sessionData.userId);
+				log("✅ Session cookies set via SessionManager (consent given)");
+			} else {
+				log("✅ Session initialized in ephemeral mode (no consent/cookies)");
+			}
+		}
 	}
 
 	// Debug: Check what cookies are actually available after API call
@@ -363,6 +503,9 @@ async function initializeSession(
 	return result;
 }
 
+// Track in-flight renewal to prevent duplicates
+let pendingRenewal: Promise<SessionRenewalResponse> | null = null;
+
 /**
  * Renew an expired session
  */
@@ -370,26 +513,79 @@ export async function renewSession(
 	oldSessionId: string,
 	newSessionId: string,
 ): Promise<SessionRenewalResponse> {
+	// Prevent duplicate renewals for the same session
+	if (pendingRenewal) {
+		log("Session renewal already in progress, waiting for existing renewal...");
+		return await pendingRenewal;
+	}
+
+	// Set the pending renewal promise
+	pendingRenewal = performSessionRenewal(oldSessionId, newSessionId);
+
+	try {
+		const result = await pendingRenewal;
+		return result;
+	} finally {
+		// Clear the pending renewal
+		pendingRenewal = null;
+	}
+}
+
+async function performSessionRenewal(
+	oldSessionId: string,
+	newSessionId: string,
+): Promise<SessionRenewalResponse> {
 	const config = getConfig();
 
 	// Extract campaign slug from URL path (e.g., "/campaign-slug" -> "campaign-slug")
+	// This is used by server to look up campaign config for session duration settings
 	const campaignSlug =
 		typeof window !== "undefined"
-			? window.location.pathname.split("/").filter(Boolean)[0]
-			: config.campaignSlug; // Fallback to provided slug
+			? window.location.pathname.split("/").filter(Boolean)[0] || undefined
+			: undefined;
 
 	// Get session data from provider (no cookie reading)
 	const sessionData = getSessionData();
 
+	// Try to get existing user ID from session data or cookie
+	let userId = sessionData?.userId;
+	if (!userId && globalSessionManager) {
+		userId = globalSessionManager.getUserIdCookie() || undefined;
+	}
+
+	// Always try to send existing user ID to prevent regeneration
+	if (!userId) {
+		log("Warning: No existing user ID found - this will create a new user");
+	} else {
+		log("Found existing user ID for renewal:", userId);
+	}
+
+	// Get session context for renewal
+	const sessionContext: FirebuzzSessionContext | null =
+		typeof window !== "undefined"
+			? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+			: null;
+
+	// Session context should always exist - if not, we can't renew
+	if (!sessionContext) {
+		return {
+			success: false,
+			error: "Session context not available for renewal",
+		};
+	}
+
 	const renewalData = {
 		new_session_id: newSessionId,
-		campaign_id: config.campaignId,
+		campaign_id: sessionContext.campaignId,
 		campaign_slug: campaignSlug, // Auto-detect from URL or use provided
-		workspace_id: config.workspaceId,
-		project_id: config.projectId,
-		landing_page_id: config.landingPageId,
+		workspace_id: sessionContext.workspaceId,
+		project_id: sessionContext.projectId,
+		landing_page_id: sessionContext.landingPageId,
 		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
-		user_id: sessionData?.userId,
+		user_id: sessionContext.userId,
+		// Send original hostname for proper environment detection
+		original_hostname:
+			typeof window !== "undefined" ? window.location.hostname : undefined,
 	};
 
 	log("Renewing session:", { oldSessionId, newSessionId, renewalData });
@@ -420,79 +616,42 @@ export async function renewSession(
 		setTrackingToken(result.data.click_id);
 	}
 
-	// If successful, create all cookies on client-side (server can't set cross-domain cookies)
+	// Handle session renewal cookies via SessionManager (GDPR compliant)
 	if (result.success && result.data?.session_id) {
-		// Use session duration from server response (includes campaign settings)
-		const sessionDurationMinutes =
-			result.data.session_duration_minutes ||
-			config.sessionTimeoutMinutes ||
-			30;
+		if (globalSessionManager) {
+			// Get current session data to preserve AB test assignments
+			const currentSession = globalSessionManager.getCurrentSession();
 
-		// Import Cookies if not already imported
-		const Cookies = (await import("js-cookie")).default;
+			// Create session data for SessionManager
+			const sessionData = {
+				userId: result.data.user_id || userId || generateUniqueId(),
+				sessionId: result.data.session_id,
+				campaignId: config.campaignId,
+				landingPageId: config.landingPageId,
+				// Preserve existing AB test assignments or use server response
+				abTestId: result.data.ab_test_id || currentSession?.abTestId || null,
+				abTestVariantId:
+					result.data.ab_test_variant_id ||
+					currentSession?.abTestVariantId ||
+					null,
+			};
 
-		// Determine if this is a preview environment by checking domain
-		const isPreview =
-			typeof window !== "undefined" &&
-			(window.location.hostname.includes("preview") ||
-				window.location.hostname.includes("engine-dev"));
+			// SessionManager will only set cookies if consent allows
+			if (globalSessionManager.shouldSetCookies()) {
+				globalSessionManager.setSessionCookie(sessionData);
 
-		// 1. Always set session cookie (this expires and triggers renewal)
-		const sessionCookie = {
-			sessionId: result.data.session_id,
-			campaignId: config.campaignId,
-			createdAt: Date.now(),
-			sessionEndsAt: Date.now() + sessionDurationMinutes * 60 * 1000,
-		};
+				// Only set user cookie if we have a new one from server
+				if (result.data.user_id) {
+					globalSessionManager.setUserIdCookie(result.data.user_id);
+				}
 
-		Cookies.set(
-			`frbzz_session_${config.campaignId}`,
-			JSON.stringify(sessionCookie),
-			{
-				expires: sessionDurationMinutes / (24 * 60), // Convert minutes to days
-				secure: true,
-				sameSite: "Lax",
-				path: "/",
-			},
-		);
-
-		// 2. Only set user cookie if it doesn't exist or if server provided new one
-		if (result.data.user_id) {
-			// Use correct cookie naming: preview uses campaign prefix, production doesn't
-			const userCookieName = isPreview
-				? `frbzz_uid_${config.campaignId}`
-				: "frbzz_uid";
-
-			// Check if user cookie already exists and is valid
-			const existingUserCookie = Cookies.get(userCookieName);
-
-			if (!existingUserCookie) {
-				// Only set if missing
-				const userCookie = {
-					userId: result.data.user_id,
-					createdAt: Date.now(),
-				};
-
-				Cookies.set(userCookieName, JSON.stringify(userCookie), {
-					expires: 400, // 400 days
-					secure: true,
-					sameSite: "Lax",
-					path: "/",
-				});
-
-				log("✅ User cookie set (was missing):", result.data.user_id);
+				log(
+					"✅ Session renewal cookies set via SessionManager (consent given)",
+				);
 			} else {
-				log("✅ User cookie already exists, not overwriting");
+				log("✅ Session renewed in ephemeral mode (no consent/cookies)");
 			}
 		}
-
-		// Attribution logic completely removed
-
-		log(
-			"✅ Session renewal complete with duration:",
-			sessionDurationMinutes,
-			"minutes",
-		);
 	}
 
 	log("Session renewal result:", result);
@@ -537,6 +696,12 @@ export async function trackEvent(
 		sessionId = initResult.data!.session_id;
 	}
 
+	// Get session context for campaign environment
+	const sessionContext: FirebuzzSessionContext | null =
+		typeof window !== "undefined"
+			? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+			: null;
+
 	// Attempt to track event
 	const requestPayload = {
 		session_id: sessionId,
@@ -545,6 +710,7 @@ export async function trackEvent(
 			eventData.event_value_currency || config.defaultCurrency || "USD",
 		page_url: eventData.page_url || window.location.href,
 		referrer_url: eventData.referrer_url || document.referrer || undefined,
+		campaign_environment: sessionContext?.campaignEnvironment || "production",
 	};
 
 	log("🚀 Sending event to API:", {
@@ -626,88 +792,115 @@ async function trackEventOnce(
 	return false;
 }
 
-/**
- * Initialize session DO without setting client-side cookie (preserves server cookie)
- */
-async function initializeSessionWithoutCookie(
-	sessionId: string,
-): Promise<SessionInitResponse> {
-	const config = getConfig();
-
-	// Get session data from provider (no cookie reading)
-	const sessionData = getSessionData();
-	const userId = sessionData?.userId || generateUniqueId();
-
-	if (!sessionData) {
-		log("Warning: No session data available, using temporary ID");
-	}
-
-	// Detect campaign environment from current page domain
-	const currentHostname =
-		typeof window !== "undefined" ? window.location.hostname : "";
-	const currentCampaignEnvironment =
-		detectCampaignEnvironmentFromHostname(currentHostname);
-
-	const sessionRenewalData = {
-		session_id: sessionId,
-		campaign_id: config.campaignId,
-		workspace_id: config.workspaceId,
-		project_id: config.projectId,
-		landing_page_id: config.landingPageId,
-		user_id: userId,
-		// Attribution removed completely
-		// A/B test data removed (will be handled by session context)
-		session_timeout_minutes: config.sessionTimeoutMinutes || 30,
-		campaign_environment: currentCampaignEnvironment, // Send detected environment
-	};
-
-	log("Initializing DO session without cookie override:", sessionRenewalData);
-
-	const response = await fetch(
-		`${config.apiUrl}/client-api/v1/events/session/init`,
-		{
-			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify(sessionRenewalData),
-			credentials: "include", // Include cookies for server to set session cookie
-		},
-	);
-
-	const result = await response.json();
-
-	// Store tracking token if provided, but DON'T set session cookie
-	if (result.success && result.data?.click_id) {
-		setTrackingToken(result.data.click_id);
-	}
-
-	log("DO session init result (no cookie override):", result);
-
-	return result;
-}
+// Prevent duplicate initializations
+let isInitializing = false;
+let initializationPromise: Promise<boolean> | null = null;
 
 /**
- * Initialize analytics session on page load
+ * Initialize analytics and create session using SessionManager
  */
 export async function initializeAnalytics(): Promise<boolean> {
-	const config = getConfig();
-
-	// Try to store session context from server (only works on new sessions/page loads)
-	storeSessionContext(config.campaignId);
-
-	// Get session data from provider (no cookie reading)
-	const sessionData = getSessionData();
-	
-	if (sessionData?.sessionId) {
-		log(
-			"Valid session found from provider, initializing DO:",
-			sessionData.sessionId,
-		);
-		// Call API to ensure DO is initialized
-		const result = await initializeSessionWithoutCookie(sessionData.sessionId);
-		return result.success;
+	// Return existing initialization if already in progress
+	if (isInitializing && initializationPromise) {
+		log("Analytics initialization already in progress, waiting...");
+		return await initializationPromise;
 	}
 
-	log("No session found, initializing completely new session");
-	const result = await initializeSession();
-	return result.success;
+	const config = getConfig();
+	if (!config) {
+		log("Analytics not configured");
+		return false;
+	}
+
+	if (!globalSessionManager) {
+		log("SessionManager not initialized");
+		return false;
+	}
+
+	// Set initialization lock
+	isInitializing = true;
+	initializationPromise = performInitialization();
+
+	try {
+		const result = await initializationPromise;
+		return result;
+	} finally {
+		// Clear lock after completion
+		isInitializing = false;
+		initializationPromise = null;
+	}
+}
+
+async function performInitialization(): Promise<boolean> {
+	try {
+		if (!globalSessionManager) {
+			console.error("Session manager not initialized");
+			return false;
+		}
+
+		// Check for existing session first
+		let sessionData = globalSessionManager.getCurrentSession();
+
+		if (!sessionData) {
+			// Initialize new session using userId from session context (if available)
+			const existingUserId = currentSessionData?.userId;
+			const result =
+				await globalSessionManager.initializeSession(existingUserId);
+			if (result.success) {
+				sessionData = result.sessionData;
+				// Update legacy session data for compatibility
+				currentSessionData = {
+					userId: sessionData.userId,
+					sessionId: sessionData.sessionId,
+					campaignId: sessionData.campaignId,
+				};
+
+				// Track new session creation to analytics
+				await trackSession(sessionData.sessionId, sessionData.userId, false);
+			} else {
+				return false;
+			}
+		} else {
+			// Validate existing session
+			const isValid = await globalSessionManager.validateSession(
+				sessionData.sessionId,
+			);
+			if (!isValid) {
+				// Renew expired session
+				const newSessionId = generateUniqueId();
+				const renewResult = await renewSession(
+					sessionData.sessionId,
+					newSessionId,
+				);
+				if (renewResult.success && renewResult.data?.session_id) {
+					// Update session data with renewed session
+					sessionData = {
+						userId: sessionData.userId,
+						sessionId: renewResult.data.session_id,
+						campaignId: sessionData.campaignId,
+						landingPageId: sessionData.landingPageId,
+						abTestId: sessionData.abTestId,
+						abTestVariantId: sessionData.abTestVariantId,
+					};
+					// Update legacy session data for compatibility
+					currentSessionData = {
+						userId: sessionData.userId,
+						sessionId: sessionData.sessionId,
+						campaignId: sessionData.campaignId,
+					};
+
+					// Track session renewal to analytics
+					await trackSession(sessionData.sessionId, sessionData.userId, true);
+				} else {
+					return false;
+				}
+			}
+		}
+
+		log("Analytics initialized successfully with session:", sessionData);
+		return true;
+	} catch (error) {
+		log("Analytics initialization failed:", error);
+		return false;
+	}
 }

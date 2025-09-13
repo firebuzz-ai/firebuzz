@@ -1,8 +1,8 @@
-import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
-import type { Context } from 'hono';
-import { getCookie } from 'hono/cookie';
-import { generateUniqueId, generateUserId } from '../utils/id-generator';
-import { parseRequest } from './request';
+import type { CampaignConfig } from "@firebuzz/shared-types/campaign";
+import type { Context } from "hono";
+import { getCookie } from "hono/cookie";
+import { generateUniqueId, generateUserId } from "../utils/id-generator";
+import { parseRequest } from "./request";
 
 // Re-export for compatibility
 export { generateUniqueId };
@@ -11,7 +11,7 @@ export { generateUniqueId };
 // Constants
 // ============================================================================
 
-export const COOKIE_PREFIX = 'frbzz_';
+export const COOKIE_PREFIX = "frbzz_";
 
 // Environment-aware cookie helpers
 const getUserIdCookie = (campaignId?: string, isPreview = false) => {
@@ -21,7 +21,8 @@ const getUserIdCookie = (campaignId?: string, isPreview = false) => {
 	}
 	return `${COOKIE_PREFIX}uid`;
 };
-const getSessionCookie = (campaignId: string) => `${COOKIE_PREFIX}session_${campaignId}`;
+const getSessionCookie = (campaignId: string) =>
+	`${COOKIE_PREFIX}session_${campaignId}`;
 
 // ============================================================================
 // Types
@@ -66,7 +67,11 @@ export interface EnsureSessionResult {
  * Ensure user has a persistent user ID cookie
  * This cookie persists for 2 years and is used to identify returning users
  */
-export async function ensureUserId(c: Context, campaignId: string, isPreview = false): Promise<string> {
+export async function ensureUserId(
+	c: Context,
+	campaignId: string,
+	isPreview = false,
+): Promise<string> {
 	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
 	const userData = parseCookieValue<UserData>(userCookie);
 	const parsedRequest = parseRequest(c);
@@ -79,8 +84,8 @@ export async function ensureUserId(c: Context, campaignId: string, isPreview = f
 	// Create new user ID
 	const userId = await generateUserId(
 		campaignId,
-		parsedRequest.firebuzz.realIp || '',
-		parsedRequest.traffic.userAgent || '',
+		parsedRequest.firebuzz.realIp || "",
+		parsedRequest.traffic.userAgent || "",
 	);
 
 	return userId;
@@ -91,7 +96,11 @@ export async function ensureUserId(c: Context, campaignId: string, isPreview = f
  * A returning user is someone who has visited before (has a user ID cookie)
  * regardless of session state
  */
-export function isReturningUser(c: Context, campaignId?: string, isPreview = false): boolean {
+export function isReturningUser(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): boolean {
 	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
 	const userData = parseCookieValue<UserData>(userCookie);
 	return userData !== null && userData.userId !== undefined;
@@ -123,7 +132,10 @@ export function encodeCookieValue(data: unknown): string {
 /**
  * Check for existing session and determine if user is returning
  */
-export function checkExistingSession(c: Context, campaignId: string): SessionResult {
+export function checkExistingSession(
+	c: Context,
+	campaignId: string,
+): SessionResult {
 	// Get existing cookies (campaign-scoped)
 	const sessionCookie = getCookie(c, getSessionCookie(campaignId));
 
@@ -157,7 +169,10 @@ export function checkExistingSession(c: Context, campaignId: string): SessionRes
 /**
  * Create a new session for the user
  */
-export function createSession(campaignId: string, sessionDurationInMinutes: number): SessionData {
+export function createSession(
+	campaignId: string,
+	sessionDurationInMinutes: number,
+): SessionData {
 	const sessionId = generateUniqueId();
 	const now = Date.now();
 
@@ -201,7 +216,11 @@ export async function ensureSession(
 ): Promise<EnsureSessionResult> {
 	// First ensure user has a persistent user ID
 	const userId = await ensureUserId(c, campaignConfig.campaignId, isPreview);
-	const isReturningUserFlag = isReturningUser(c, campaignConfig.campaignId, isPreview);
+	const isReturningUserFlag = isReturningUser(
+		c,
+		campaignConfig.campaignId,
+		isPreview,
+	);
 
 	const sessionCheck = checkExistingSession(c, campaignConfig.campaignId);
 
@@ -269,7 +288,10 @@ export function handleSession(
 /**
  * Get current session data from cookies for a specific campaign
  */
-export function getCurrentSession(c: Context, campaignId: string): SessionData | null {
+export function getCurrentSession(
+	c: Context,
+	campaignId: string,
+): SessionData | null {
 	const sessionCookie = getCookie(c, getSessionCookie(campaignId));
 	return parseCookieValue<SessionData>(sessionCookie);
 }
@@ -277,10 +299,28 @@ export function getCurrentSession(c: Context, campaignId: string): SessionData |
 /**
  * Get current user ID from cookies
  */
-export function getCurrentUserId(c: Context, campaignId?: string, isPreview = false): string | null {
-	const userCookie = getCookie(c, getUserIdCookie(campaignId, isPreview));
+export function getCurrentUserId(
+	c: Context,
+	campaignId?: string,
+	isPreview = false,
+): string | null {
+	const cookieName = getUserIdCookie(campaignId, isPreview);
+	const userCookie = getCookie(c, cookieName);
 	const userData = parseCookieValue<UserData>(userCookie);
-	return userData?.userId || null;
+	const userId = userData?.userId || null;
+
+	// Debug logging for user ID cookie reading
+	console.log("getCurrentUserId debug:", {
+		campaignId,
+		isPreview,
+		expected_cookie_name: cookieName,
+		raw_cookie_value: userCookie || "NOT FOUND",
+		parsed_userData: userData || "FAILED TO PARSE",
+		final_userId: userId || "NO USER ID",
+		all_cookies: c.req.header("cookie") || "NO COOKIES IN REQUEST",
+	});
+
+	return userId;
 }
 
 /**

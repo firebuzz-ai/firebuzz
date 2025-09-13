@@ -1,194 +1,352 @@
 "use client";
 
-import { Provider } from "jotai";
-import { useAtom, useSetAtom } from "jotai";
-import { useEffect, useMemo } from "react";
+import { Provider, useAtom, useSetAtom } from "jotai";
+import * as React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { configureApiClient, recordConsent } from "./api";
 import {
-	sessionContextAtom,
-	consentTextsAtom,
-	createInitialConsentStateAtom,
-	consentStateAtom,
-	isLoadingAtom,
+  consentStateAtom,
+  consentTextsAtom,
+  createInitialConsentStateAtom,
+  isLoadingAtom,
+  lastRecordedConsentAtom,
+  sessionContextAtom,
 } from "./atoms";
 import { createCookieManager } from "./cookies";
 import { createGTMConsentManager } from "./gtm";
-import { getTranslation } from "./i18n";
-import type { ConsentProviderConfig, ConsentPreferences } from "./types";
-import { DEFAULT_PROVIDER_CONFIG } from "./config";
+import { resolveTranslation } from "./i18n";
+import type { ConsentProviderConfig } from "./types";
 
 interface ConsentProviderProps extends ConsentProviderConfig {
-	children: React.ReactNode;
+  children: React.ReactNode;
 }
 
-function ConsentProviderInner({ children, ...userConfig }: ConsentProviderProps) {
-	// Merge user config with defaults
-	const config = {
-		...DEFAULT_PROVIDER_CONFIG,
-		...userConfig,
-		// Extract values from session context as fallbacks
-		workspaceId: userConfig.workspaceId || userConfig.sessionContext?.gdprSettings?.countryCode || DEFAULT_PROVIDER_CONFIG.workspaceId,
-		projectId: userConfig.projectId || DEFAULT_PROVIDER_CONFIG.projectId,
-		campaignId: userConfig.campaignId || userConfig.sessionContext?.session?.campaignId || DEFAULT_PROVIDER_CONFIG.campaignId,
-	};
-	const [sessionContext, setSessionContext] = useAtom(sessionContextAtom);
-	const [consentState, setConsentState] = useAtom(consentStateAtom);
-	const [isLoading, setIsLoading] = useAtom(isLoadingAtom);
-	const setTexts = useSetAtom(consentTextsAtom);
-	const createInitialState = useSetAtom(createInitialConsentStateAtom);
+function ConsentProviderInner({
+  children,
+  ...userConfig
+}: ConsentProviderProps) {
+  // Use state to track session context instead of useMemo to avoid dependency issues
+  const [config, setConfig] = useState(() => {
+    const windowSessionContext =
+      typeof window !== "undefined"
+        ? window.__FIREBUZZ_SESSION_CONTEXT__
+        : null;
 
-	// Initialize cookie manager with config and session context
-	const cookieManager = useMemo(
-		() => createCookieManager(config.cookies, sessionContext || undefined),
-		[config.cookies, sessionContext]
-	);
+    if (userConfig.debug) {
+      console.log(
+        "[Consent Manager] Initial config creation - windowSessionContext:",
+        windowSessionContext ? "found" : "not found"
+      );
+      if (windowSessionContext) {
+        console.log(
+          "[Consent Manager] Session context structure:",
+          JSON.stringify(windowSessionContext, null, 2)
+        );
+      }
+    }
 
-	// Initialize GTM consent manager if configured
-	const gtmManager = useMemo(() => {
-		if (!config.gtm) return null;
-		
-		return createGTMConsentManager(
-			config.gtm.consentDefaults,
-			config.debug
-		);
-	}, [config.gtm, config.debug]);
+    return {
+      ...userConfig,
+      // Extract values from session context
+      sessionContext: windowSessionContext,
+      workerEndpoint: windowSessionContext?.apiBaseUrl,
+      workspaceId: windowSessionContext?.workspaceId,
+      projectId: windowSessionContext?.projectId,
+      campaignId: windowSessionContext?.campaignId,
+      debug: userConfig.debug ?? false,
+      enabled: true, // Always enabled, behavior controlled by session context
+    };
+  });
 
-	// Initialize API client
-	useEffect(() => {
-		if (config.workerEndpoint) {
-			configureApiClient({
-				workerEndpoint: config.workerEndpoint,
-				workspaceId: config.workspaceId,
-				projectId: config.projectId,
-				campaignId: config.campaignId,
-				debug: config.debug,
-			});
-		}
-	}, [config]);
+  // Check for session context updates (for cases where it's set after component mount)
+  useEffect(() => {
+    let intervalId: number | undefined;
 
-	// Set session context
-	useEffect(() => {
-		setSessionContext(config.sessionContext);
-	}, [config.sessionContext, setSessionContext]);
+    const handleSessionReady = () => {
+      const windowSessionContext =
+        typeof window !== "undefined"
+          ? window.__FIREBUZZ_SESSION_CONTEXT__
+          : null;
 
-	// Initialize texts based on language and custom translations
-	useEffect(() => {
-		const language = config.i18n?.language || config.sessionContext.gdprSettings.language;
-		const texts = getTranslation(language, config.i18n?.customTranslations);
-		setTexts(texts);
-	}, [config.i18n, config.sessionContext.gdprSettings.language, setTexts]);
+      if (userConfig.debug) {
+        console.log("[Consent Manager] Polling session context:", {
+          windowSessionContext: windowSessionContext ? "found" : "not found",
+          configSessionContext: config.sessionContext ? "found" : "not found",
+          shouldUpdate: windowSessionContext && !config.sessionContext,
+        });
+      }
 
-	// Create initial consent state when session context is available
-	useEffect(() => {
-		if (sessionContext) {
-			createInitialState();
-		}
-	}, [sessionContext, createInitialState]);
+      if (windowSessionContext && !config.sessionContext) {
+        if (userConfig.debug) {
+          console.log(
+            "[Consent Manager] Session context found after mount, updating config"
+          );
+        }
+        setConfig((prev) => ({
+          ...prev,
+          sessionContext: windowSessionContext,
+          workerEndpoint: windowSessionContext.apiBaseUrl,
+          workspaceId: windowSessionContext.workspaceId,
+          projectId: windowSessionContext.projectId,
+          campaignId: windowSessionContext.campaignId,
+        }));
 
-	// Set default consent when session context and GTM manager are available
-	useEffect(() => {
-		if (sessionContext && gtmManager) {
-			// Only set default consent if GDPR is enabled and consent is required
-			if (sessionContext.gdprSettings.isEnabled && sessionContext.gdprSettings.isRequiredConsent) {
-				gtmManager.setDefaultConsent();
-			}
-		}
-	}, [sessionContext, gtmManager]);
+        // Clear the interval once we find session context
+        if (intervalId) clearInterval(intervalId);
+      }
+    };
 
-	// Load existing consent from cookies
-	useEffect(() => {
-		if (!sessionContext) return;
+    // Check immediately
+    handleSessionReady();
 
-		const existingConsent = cookieManager.getConsentCookie();
-		if (existingConsent) {
-			setConsentState(existingConsent);
-		}
-	}, [sessionContext, cookieManager, setConsentState]);
+    // If no session context found, poll for it
+    if (!config.sessionContext && typeof window !== "undefined") {
+      intervalId = window.setInterval(handleSessionReady, 50); // Check every 50ms for up to a few seconds
 
-	// Handle consent changes - update cookies, GTM, and API
-	useEffect(() => {
-		if (!consentState || !sessionContext || isLoading) return;
+      // Clear after 2 seconds to avoid infinite polling
+      setTimeout(() => {
+        if (intervalId) clearInterval(intervalId);
+      }, 2000);
+    }
 
-		const handleConsentChange = async () => {
-			try {
-				setIsLoading(true);
+    // Also listen for session ready event
+    if (typeof window !== "undefined") {
+      window.addEventListener("firebuzz-session-ready", handleSessionReady);
+      return () => {
+        window.removeEventListener(
+          "firebuzz-session-ready",
+          handleSessionReady
+        );
+        if (intervalId) clearInterval(intervalId);
+      };
+    }
+  }, [config.sessionContext, userConfig.debug]);
 
-				// Update cookies based on consent
-				cookieManager.setConsentCookie(consentState);
-				cookieManager.manageCookiesBasedOnConsent(
-					consentState.preferences,
-					sessionContext
-				);
+  const [sessionContext, setSessionContext] = useAtom(sessionContextAtom);
+  const [consentState, setConsentState] = useAtom(consentStateAtom);
+  const [lastRecordedConsent, setLastRecordedConsent] = useAtom(lastRecordedConsentAtom);
+  const setIsLoading = useSetAtom(isLoadingAtom);
+  const setTexts = useSetAtom(consentTextsAtom);
+  const createInitialState = useSetAtom(createInitialConsentStateAtom);
+  
+  // Track if consent state change is from initial cookie load (should not trigger API call)
+  const isInitialLoadRef = useRef(true);
 
-				// Update GTM consent mode
-				if (gtmManager) {
-					gtmManager.updateConsent(consentState.preferences);
-				}
+  // Initialize cookie manager with config and session context
+  const cookieManager = useMemo(
+    () => createCookieManager(config.cookies, sessionContext || undefined),
+    [config.cookies, sessionContext]
+  );
 
-				// Record consent to API if user has interacted
-				if (consentState.hasUserInteracted) {
-					try {
-						await recordConsent(consentState.preferences, sessionContext);
-					} catch (error) {
-						if (config.debug) {
-							console.error("Failed to record consent:", error);
-						}
-						// Don't throw - consent should still work if API fails
-					}
-				}
-			} catch (error) {
-				if (config.debug) {
-					console.error("Error handling consent change:", error);
-				}
-			} finally {
-				setIsLoading(false);
-			}
-		};
+  // Initialize GTM consent manager if configured
+  const gtmManager = useMemo(() => {
+    if (!config.gtm) return null;
 
-		handleConsentChange();
-	}, [
-		consentState,
-		sessionContext,
-		isLoading,
-		cookieManager,
-		gtmManager,
-		config.debug,
-		setIsLoading,
-	]);
+    return createGTMConsentManager(config.gtm.consentDefaults, config.debug);
+  }, [config.gtm, config.debug]);
 
-	// Don't render children until we have session context
-	if (!sessionContext) {
-		return null;
-	}
+  // Initialize API client
+  useEffect(() => {
+    if (
+      config.workerEndpoint &&
+      config.workspaceId &&
+      config.projectId &&
+      config.campaignId
+    ) {
+      configureApiClient({
+        workerEndpoint: config.workerEndpoint,
+        workspaceId: config.workspaceId,
+        projectId: config.projectId,
+        campaignId: config.campaignId,
+        debug: config.debug,
+      });
+    }
+  }, [config]);
 
-	// If consent management is disabled, just render children
-	if (
-		!config.enabled ||
-		!sessionContext.gdprSettings.isEnabled ||
-		!sessionContext.gdprSettings.isRequiredConsent
-	) {
-		return <>{children}</>;
-	}
+  // Set session context
+  useEffect(() => {
+    if (config.sessionContext) {
+      setSessionContext(config.sessionContext);
+    }
+  }, [config.sessionContext, setSessionContext]);
 
-	return <>{children}</>;
+  // Initialize texts based on language configuration and GDPR localization settings
+  useEffect(() => {
+    const gdprSettings = config.sessionContext?.gdprSettings;
+    const isLocalizationEnabled = gdprSettings?.isLocalizationEnabled ?? true; // Default to enabled
+
+    // Determine language based on localization settings
+    const language = isLocalizationEnabled
+      ? // Use server-detected language when localization is enabled
+        gdprSettings?.language || config.translations.language || "en"
+      : // Use configured language when localization is disabled
+        config.translations.language || "en";
+
+    const texts = resolveTranslation(
+      language,
+      config.translations.translations,
+      config.translations.fallbackLanguage
+    );
+
+    if (config.debug) {
+      console.log(
+        `[Consent Manager] Localization ${isLocalizationEnabled ? "enabled" : "disabled"}, using language: ${language}`
+      );
+    }
+
+    setTexts(texts);
+  }, [
+    config.translations,
+    config.sessionContext?.gdprSettings,
+    config.debug,
+    setTexts,
+  ]);
+
+  // Create initial consent state
+  // In dev mode (no session context): Still create state for UI functionality
+  // In real mode (with session context): Create state with proper GDPR settings
+  useEffect(() => {
+    // Always create initial state for UI to work
+    createInitialState();
+  }, [createInitialState]);
+
+  // Set default consent when session context and GTM manager are available
+  useEffect(() => {
+    if (sessionContext && gtmManager) {
+      // Only set default consent if GDPR is enabled and consent is required
+      if (
+        sessionContext.gdprSettings.isEnabled &&
+        sessionContext.gdprSettings.isRequiredConsent
+      ) {
+        gtmManager.setDefaultConsent();
+      }
+    }
+  }, [sessionContext, gtmManager]);
+
+  // Load existing consent from cookies
+  // Works in both dev and real environments for state persistence
+  useEffect(() => {
+    const existingConsent = cookieManager.getConsentCookie();
+    if (existingConsent) {
+      setConsentState(existingConsent);
+      // Also set this as last recorded consent to prevent duplicate API calls
+      // when the same consent is loaded from cookies
+      if (sessionContext) {
+        setLastRecordedConsent({
+          preferences: { ...existingConsent.preferences },
+          timestamp: existingConsent.timestamp,
+          userId: sessionContext.userId,
+        });
+      }
+    }
+    // Mark initial load as complete after first run
+    isInitialLoadRef.current = false;
+  }, [cookieManager, setConsentState, sessionContext, setLastRecordedConsent]);
+
+  // Handle consent changes - update cookies, GTM, and API
+  useEffect(() => {
+    if (!consentState) return;
+
+    const handleConsentChange = async () => {
+      try {
+        setIsLoading(true);
+
+        // GDPR Compliance Note:
+        // - Consent controls cookie setting only, not analytics data collection
+        // - Analytics runs under legitimate interest regardless of consent
+        // - Session/user cookies are only set when explicit consent is given
+        // - Analytics package handles ephemeral tracking when no consent
+
+        // Always update consent cookie for state persistence
+        cookieManager.setConsentCookie(consentState);
+
+        // In dev environment, skip API and GTM but cookie is already set above
+        if (!sessionContext) {
+          if (config.debug) {
+            console.log(
+              "[Consent Manager] Dev mode: State saved, API/GTM skipped"
+            );
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Update GTM consent mode
+        if (gtmManager) {
+          gtmManager.updateConsent(consentState.preferences);
+        }
+
+        // Record consent to API if user has interacted, session context is available,
+        // this is not the initial load, and preferences have actually changed since last API call
+        if (consentState.hasUserInteracted && sessionContext && !isInitialLoadRef.current) {
+          // Check if consent preferences have changed since last API call
+          const preferencesChanged = !lastRecordedConsent ||
+            lastRecordedConsent.userId !== sessionContext.userId ||
+            JSON.stringify(lastRecordedConsent.preferences) !== JSON.stringify(consentState.preferences);
+
+          if (preferencesChanged) {
+            try {
+              await recordConsent(consentState.preferences, sessionContext);
+              
+              // Update last recorded consent to prevent future duplicates
+              setLastRecordedConsent({
+                preferences: { ...consentState.preferences },
+                timestamp: Date.now(),
+                userId: sessionContext.userId,
+              });
+
+              if (config.debug) {
+                console.log("[Consent Manager] Consent successfully recorded to API");
+              }
+            } catch (error) {
+              if (config.debug) {
+                console.error("Failed to record consent:", error);
+              }
+              // Don't throw - consent should still work if API fails
+            }
+          } else {
+            if (config.debug) {
+              console.log("[Consent Manager] Consent unchanged - skipping API call");
+            }
+          }
+        }
+      } catch (error) {
+        if (config.debug) {
+          console.error("Error handling consent change:", error);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    handleConsentChange();
+  }, [
+    consentState,
+    sessionContext,
+    lastRecordedConsent,
+    setLastRecordedConsent,
+    cookieManager,
+    gtmManager,
+    config.debug,
+    setIsLoading,
+  ]);
+
+  // Always render children - consent manager should work in all environments
+  // When no session context: cookie banner works, GTM works, but API calls are skipped
+  // When session context exists: full functionality including API calls
+  if (!config.sessionContext && config.debug) {
+    console.log(
+      "[Consent Manager] Running in template/dev mode - API calls disabled, UI functionality enabled"
+    );
+  }
+
+  return <>{children}</>;
 }
 
 export function ConsentProvider(props: ConsentProviderProps) {
-	return (
-		<Provider>
-			<ConsentProviderInner {...props} />
-		</Provider>
-	);
-}
-
-// Hook to initialize consent manager with session context from window
-export function useInitializeConsentFromWindow() {
-	const setSessionContext = useSetAtom(sessionContextAtom);
-
-	useEffect(() => {
-		// Try to get session context from window
-		if (typeof window !== "undefined" && window.__FIREBUZZ_SESSION_CONTEXT__) {
-			setSessionContext(window.__FIREBUZZ_SESSION_CONTEXT__);
-		}
-	}, [setSessionContext]);
+  return (
+    <Provider>
+      <ConsentProviderInner {...props} />
+    </Provider>
+  );
 }

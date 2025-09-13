@@ -1,5 +1,8 @@
 // Normalize periods for caching - rounds to 3-minute intervals
-export function normalizePeriodForCaching(periodStart: string, periodEnd: string): {
+export function normalizePeriodForCaching(
+	periodStart: string,
+	periodEnd: string,
+): {
 	normalizedPeriodStart: string;
 	normalizedPeriodEnd: string;
 } {
@@ -11,10 +14,12 @@ export function normalizePeriodForCaching(periodStart: string, periodEnd: string
 	const endDate = new Date(periodEnd);
 
 	// Round start date down to nearest cache interval
-	const normalizedStartMs = Math.floor(startDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
-	
+	const normalizedStartMs =
+		Math.floor(startDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
+
 	// Round end date up to nearest cache interval
-	const normalizedEndMs = Math.ceil(endDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
+	const normalizedEndMs =
+		Math.ceil(endDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
 
 	return {
 		normalizedPeriodStart: new Date(normalizedStartMs).toISOString(),

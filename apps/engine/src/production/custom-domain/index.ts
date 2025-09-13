@@ -1,10 +1,9 @@
 import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 import { Hono } from 'hono';
 import { evaluateCampaign } from '../../lib/campaign';
-import { getSessionQueueService } from '../../lib/queue';
+import { evaluateGDPRSettings } from '../../lib/gdpr';
 import { parseRequest } from '../../lib/request';
-import { ensureSession, updateSessionWithVariant } from '../../lib/session';
-import { formatSessionData } from '../../lib/tinybird';
+import { ensureSession } from '../../lib/session';
 import { getContentType } from '../../utils/assets';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -24,8 +23,11 @@ app.get('/:campaignSlug', async (c) => {
 		return c.redirect('/utility/campaign-not-found');
 	}
 
-	// Ensure session and attribution; then evaluate with that session
-	const { session, userId, isReturningUser, isExistingSession } = ensureSession(c, config);
+	// Get GDPR Settings (same as other routes)
+	const gdprSettings = evaluateGDPRSettings(c, config.gdpr);
+
+	// Ensure session; then evaluate with that session
+	const { session, userId, isExistingSession } = await ensureSession(c, config);
 	const evaluation = evaluateCampaign(c, config, session, isExistingSession);
 
 	// Parse request data for session tracking (will be used later)
@@ -66,8 +68,8 @@ app.get('/:campaignSlug', async (c) => {
 			}
 		}
 
-		// Persist selected or fallback variant into session and update cookie via helper
-		updateSessionWithVariant(c, session, evaluation.abTest.id, variantId);
+		// Persist selected variant into session (no cookie setting in engine)
+		session.abTest = { testId: evaluation.abTest.id, variantId: variantId };
 
 		// Capture AB test data for session tracking
 		abTestId = evaluation.abTest.id;
@@ -76,11 +78,6 @@ app.get('/:campaignSlug', async (c) => {
 		// Get the selected variant
 		const selectedVariant = evaluation.abTest.variants.find((v) => v.id === variantId);
 		landingPageId = selectedVariant?.landingPageId || evaluation.matchedSegment?.primaryLandingPageId;
-
-		// Add AB test tracking headers
-		c.header('X-AB-Test', evaluation.abTest.id);
-		c.header('X-AB-Variant', variantId);
-		c.header('X-AB-Test-Status', evaluation.abTest.status);
 	} else if (evaluation.landingPageId) {
 		// Regular segment or default scenario
 		landingPageId = evaluation.landingPageId;
@@ -103,90 +100,42 @@ app.get('/:campaignSlug', async (c) => {
 		return c.redirect('/utility/landing-not-found');
 	}
 
-	// Add tracking headers for analytics
-	if (evaluation.segmentId) {
-		c.header('X-Segment-Id', evaluation.segmentId);
-	}
-	c.header('X-Evaluation-Type', evaluation.type);
-	c.header('X-Session-Id', session.sessionId);
-	c.header('X-User-Id', userId);
-	c.header('X-Is-Returning-User', isReturningUser ? 'true' : 'false');
-	c.header('X-Is-Existing-Session', isExistingSession ? 'true' : 'false');
+	// Store session context for analytics package (only for new sessions) - same as other routes
+	let finalHtml = html;
+	if (!isExistingSession) {
+		const sessionContext = {
+			abTestId: abTestId,
+			abTestVariantId: abTestVariantId,
+			userId,
+			session,
+			workspaceId: config.workspaceId,
+			projectId: config.projectId,
+			campaignId: config.campaignId,
+			landingPageId,
+			gdprSettings,
+			campaignEnvironment: 'production',
+			// Base API URL based on worker environment
+			apiBaseUrl:
+				c.env.ENVIRONMENT === 'production'
+					? 'https://engine.frbzz.com'
+					: c.env.ENVIRONMENT === 'preview'
+						? 'https://engine-preview.frbzz.com'
+						: 'https://engine-dev.frbzz.com',
+			// Bot detection data from initial page load
+			botDetection: {
+				score: requestData.bot?.score || 0,
+				corporateProxy: requestData.bot?.corporateProxy || false,
+				verifiedBot: requestData.bot?.verifiedBot || false,
+			},
+		};
 
-	// Track session via queue for batching and throttling (only for new sessions)
-	if (!isExistingSession && requestData.firebuzz.projectId && requestData.firebuzz.workspaceId) {
-		// Fire and forget - enqueue session without blocking response
-		c.executionCtx.waitUntil(
-			(async () => {
-				try {
-					const queueService = getSessionQueueService(c.env);
-					const sessionData = formatSessionData({
-						timestamp: new Date().toISOString(),
-						sessionId: session.sessionId,
-						userId: userId,
-						projectId: requestData.firebuzz.projectId || '',
-						workspaceId: requestData.firebuzz.workspaceId || '',
-						campaignId: config.campaignId,
-						landingPageId: landingPageId,
-						abTestId: abTestId,
-						abTestVariantId: abTestVariantId,
-						utm: {
-							source: requestData.params.utm.utm_source,
-							medium: requestData.params.utm.utm_medium,
-							campaign: requestData.params.utm.utm_campaign,
-							term: requestData.params.utm.utm_term,
-							content: requestData.params.utm.utm_content,
-						},
-						geo: {
-							country: requestData.geo.country,
-							city: requestData.geo.city,
-							region: requestData.geo.region,
-							regionCode: requestData.geo.regionCode,
-							continent: requestData.geo.continent,
-							timezone: requestData.geo.timezone,
-							isEUCountry: requestData.geo.isEUCountry,
-						},
-						device: {
-							type: requestData.device.type,
-							os: requestData.device.os,
-							browser: requestData.device.browser,
-							browserVersion: requestData.device.browserVersion,
-							isMobile: requestData.device.isMobile,
-							connectionType: requestData.device.connectionType,
-						},
-						traffic: {
-							referrer: requestData.traffic.referrer,
-							userAgent: requestData.traffic.userAgent,
-						},
-						localization: {
-							language: requestData.localization.language,
-							languages: requestData.localization.languages,
-						},
-						bot: requestData.bot,
-						network: {
-							isSSL: requestData.firebuzz.isSSL,
-							domainType: requestData.firebuzz.domainType,
-							userHostname: requestData.firebuzz.userHostname,
-						},
-						session: {
-							isReturning: isReturningUser,
-							campaignEnvironment: 'production',
-							environment: requestData.firebuzz.environment,
-							uri: requestData.firebuzz.uri,
-						},
-					});
-
-					await queueService.enqueue(sessionData);
-				} catch (error) {
-					console.error('Failed to enqueue session:', error);
-					// Don't fail the request if tracking fails
-				}
-			})(),
-		);
+		// Inject session context into HTML for client-side access
+		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
+		finalHtml = html.replace('</head>', `${contextScript}</head>`);
 	}
 
 	// Serve the HTML
-	return c.html(html);
+	return c.html(finalHtml);
 });
 
 // Assets Route for landing pages (CSS/JS) - MUST BE BEFORE WILDCARD

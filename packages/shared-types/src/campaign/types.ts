@@ -1,36 +1,36 @@
 import type { z } from "zod";
 import type {
-  abTestNodeDataSchema,
-  abTestVariantSchema,
-  campaignNodeTypesSchema,
-  campaignSettingsSchema,
-  connectionValidatorSchema,
-  edgeChangeValidatorSchema,
-  edgeDataSchema,
-  edgeSchema,
-  eventSchema,
-  filterOperatorSchema,
-  formFieldNodeSchema,
-  formNodeDataSchema,
-  formNodeTypesSchema,
-  gdprSchema,
-  nodeChangeValidatorSchema,
-  nodeDataSchema,
-  nodeSchema,
-  noteNodeDataSchema,
-  ruleTypeIdSchema,
-  ruleValueTypeSchema,
-  segmentNodeDataSchema,
-  segmentRuleSchema,
-  trafficNodeDataSchema,
-  trafficWeightEdgeDataSchema,
-  translationModeSchema,
-  validationItemSchema,
-  validationResultSchema,
-  validationSeveritySchema,
-  variantNodeDataSchema,
-  viewportChangeValidatorSchema,
-  viewportSchema,
+	abTestNodeDataSchema,
+	abTestVariantSchema,
+	campaignNodeTypesSchema,
+	campaignSettingsSchema,
+	connectionValidatorSchema,
+	edgeChangeValidatorSchema,
+	edgeDataSchema,
+	edgeSchema,
+	eventSchema,
+	filterOperatorSchema,
+	formFieldNodeSchema,
+	formNodeDataSchema,
+	formNodeTypesSchema,
+	gdprSchema,
+	nodeChangeValidatorSchema,
+	nodeDataSchema,
+	nodeSchema,
+	noteNodeDataSchema,
+	ruleTypeIdSchema,
+	ruleValueTypeSchema,
+	segmentNodeDataSchema,
+	segmentRuleSchema,
+	trafficNodeDataSchema,
+	trafficWeightEdgeDataSchema,
+	translationModeSchema,
+	validationItemSchema,
+	validationResultSchema,
+	validationSeveritySchema,
+	variantNodeDataSchema,
+	viewportChangeValidatorSchema,
+	viewportSchema,
 } from "./schemas";
 
 // Inferred types from schemas
@@ -62,7 +62,7 @@ export type NodeChangeValidator = z.infer<typeof nodeChangeValidatorSchema>;
 export type EdgeChangeValidator = z.infer<typeof edgeChangeValidatorSchema>;
 export type ConnectionValidator = z.infer<typeof connectionValidatorSchema>;
 export type ViewportChangeValidator = z.infer<
-  typeof viewportChangeValidatorSchema
+	typeof viewportChangeValidatorSchema
 >;
 
 // Validation types

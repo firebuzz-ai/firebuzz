@@ -1,6 +1,42 @@
 import { campaignConfiguration } from "@/configuration/campaign";
 import { z } from "zod";
 
+// Session context interface (matches analytics package)
+export interface FirebuzzSessionContext {
+	abTestId: string | null;
+	abTestVariantId: string | null;
+	userId: string;
+	workspaceId: string;
+	projectId: string;
+	campaignId: string;
+	landingPageId?: string;
+	session: {
+		sessionId: string;
+		abTest?: {
+			testId: string;
+			variantId: string;
+		};
+	};
+	gdprSettings: {
+		enabled: boolean;
+		consentRequired: boolean;
+	};
+	campaignEnvironment: "preview" | "production";
+	apiBaseUrl: string;
+	botDetection: {
+		score: number;
+		corporateProxy: boolean;
+		verifiedBot: boolean;
+	};
+}
+
+// Window interface extension for session context
+declare global {
+	interface Window {
+		__FIREBUZZ_SESSION_CONTEXT__?: FirebuzzSessionContext;
+	}
+}
+
 // API Response Types (matching the endpoint schemas)
 const submitFormResponseSchema = z.object({
   success: z.boolean(),
@@ -25,9 +61,9 @@ export type SubmitFormResponse = z.infer<typeof submitFormResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
 // Form submission data type (form fields only)
 export type FormSubmissionData = Record<string, string | number | boolean>;
-// Extended form data with optional test flag
+// Extended form data with campaign environment
 export type FormSubmissionPayload = FormSubmissionData & {
-  isTest?: boolean;
+  campaignEnvironment?: "preview" | "production";
 };
 
 // API Client Result Types
@@ -47,12 +83,20 @@ export interface ApiError {
 export type ApiResult<T = unknown> = ApiSuccess<T> | ApiError;
 
 class FormApiClient {
-  private config: { baseUrl: string };
+  private getSessionContext(): FirebuzzSessionContext | null {
+    return typeof window !== "undefined"
+      ? window.__FIREBUZZ_SESSION_CONTEXT__ || null
+      : null;
+  }
 
-  constructor({ baseUrl }: { baseUrl: string }) {
-    this.config = {
-      baseUrl,
-    };
+  private getApiUrl(): string {
+    const sessionContext = this.getSessionContext();
+    return sessionContext?.apiBaseUrl || campaignConfiguration.apiUrl;
+  }
+
+  private getCampaignEnvironment(): "preview" | "production" {
+    const sessionContext = this.getSessionContext();
+    return sessionContext?.campaignEnvironment || "production";
   }
 
   /**
@@ -63,14 +107,23 @@ class FormApiClient {
     data: FormSubmissionPayload
   ): Promise<ApiResult<SubmitFormResponse["data"]>> {
     try {
+      const apiUrl = this.getApiUrl();
+      const campaignEnvironment = data.campaignEnvironment || this.getCampaignEnvironment();
+      
+      // Prepare submission payload with campaign environment
+      const submissionPayload = {
+        ...data,
+        campaignEnvironment,
+      };
+
       const response = await fetch(
-        `${this.config.baseUrl}/client-api/v1/form/submit/${formId}`,
+        `${apiUrl}/client-api/v1/form/submit/${formId}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify(submissionPayload),
         }
       );
 
@@ -173,6 +226,4 @@ class FormApiClient {
 /**
  * Default API client instance
  */
-export const formApiClient = new FormApiClient({
-  baseUrl: campaignConfiguration.apiUrl,
-});
+export const formApiClient = new FormApiClient();

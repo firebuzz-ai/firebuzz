@@ -14,6 +14,9 @@ interface GDPRSettingsEvaluation {
 	language: string;
 	/* DNT */
 	isRespectDNTEnabled: boolean;
+	/* URLs */
+	privacyPolicyUrl?: string;
+	termsOfServiceUrl?: string;
 }
 
 /**
@@ -51,5 +54,7 @@ export function evaluateGDPRSettings(
 		isLocalizationEnabled,
 		language: parsedRequest.localization.language ?? 'en-US',
 		countryCode: parsedRequest.geo.country ?? 'US',
+		privacyPolicyUrl: settings.privacyPolicyUrl,
+		termsOfServiceUrl: settings.termsOfServiceUrl,
 	};
 }

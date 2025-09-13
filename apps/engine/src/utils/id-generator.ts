@@ -16,20 +16,20 @@ export function generateUniqueId(): string {
 export async function generateUserId(
 	campaignId: string,
 	ipAddress: string,
-	userAgent: string
+	userAgent: string,
 ): Promise<string> {
-	const today = new Date().toISOString().split('T')[0];
+	const today = new Date().toISOString().split("T")[0];
 	const dailySalt = `salt-${today}`;
 	const combinedString = `${dailySalt}${campaignId}${ipAddress}${userAgent}`;
-	
+
 	const encoder = new TextEncoder();
 	const data = encoder.encode(combinedString);
-	const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+	const hashBuffer = await crypto.subtle.digest("SHA-256", data);
 	const hashArray = new Uint8Array(hashBuffer);
 	const hashHex = Array.from(hashArray)
-		.map(b => b.toString(16).padStart(2, '0'))
-		.join('');
-	
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+
 	return hashHex;
 }
 
@@ -40,7 +40,10 @@ export async function generateUserId(
  * Where t = timestamp, 7 = version, x = random, y = variant bits
  */
 function generateUUIDv7(timestamp: Date = new Date()): string {
-	const serializedTimestamp = timestamp.valueOf().toString(16).padStart(12, '0');
+	const serializedTimestamp = timestamp
+		.valueOf()
+		.toString(16)
+		.padStart(12, "0");
 	const baseUUID = crypto.randomUUID();
 	return `${serializedTimestamp.slice(0, 8)}-${serializedTimestamp.slice(8, 12)}-7${baseUUID.slice(15)}`;
 }

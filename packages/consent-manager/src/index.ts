@@ -1,5 +1,5 @@
 // Main exports
-export { ConsentProvider, useInitializeConsentFromWindow } from "./provider";
+export { ConsentProvider } from "./provider";
 
 // Hooks
 export {
@@ -13,7 +13,6 @@ export {
   useFunctionalConsent,
   useMarketingConsent,
   useNecessaryConsent,
-  useSessionContext,
 } from "./hooks";
 
 // Types
@@ -27,6 +26,7 @@ export type {
   GTMConsentDefaults,
   GTMConsentUpdate,
   SessionContext,
+  TranslationConfig,
 } from "./types";
 
 // API
@@ -56,9 +56,11 @@ export {
 
 // i18n
 export {
-  getSupportedLanguages,
-  getTranslation,
-  isLanguageSupported,
+  createTranslation,
+  getAllLanguages,
+  getBuiltInLanguages,
+  hasLanguage,
+  resolveTranslation,
   translations,
 } from "./i18n";
 
@@ -70,6 +72,4 @@ export {
   COOKIE_NAMES,
   DEFAULT_CONSENT_PREFERENCES,
   DEFAULT_GTM_CONSENT,
-  DEFAULT_PROVIDER_CONFIG,
-  DEFAULT_TEXTS,
 } from "./config";

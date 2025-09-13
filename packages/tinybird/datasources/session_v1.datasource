@@ -38,7 +38,6 @@ FORWARD_QUERY >
         referrer, 
         user_agent, 
         language, 
-        is_bot, 
         bot_score, 
         is_corporate_proxy, 
         is_verified_bot, 
@@ -95,7 +94,6 @@ SCHEMA >
     `language` Nullable(String) `json:$.language`,
     
     # Bot detection
-    `is_bot` UInt8 `json:$.is_bot`,
     `bot_score` Nullable(Float32) `json:$.bot_score`,
     `is_corporate_proxy` UInt8 `json:$.is_corporate_proxy`,
     `is_verified_bot` UInt8 `json:$.is_verified_bot`,

@@ -335,6 +335,8 @@ export const gdprSchema = z.object({
   localization: z.boolean(),
   includedCountries: z.array(z.string()).optional(),
   respectDNT: z.boolean(),
+  privacyPolicyUrl: z.string().optional(),
+  termsOfServiceUrl: z.string().optional(),
 });
 
 // Campaign settings schema

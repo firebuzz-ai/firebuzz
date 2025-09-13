@@ -8,12 +8,12 @@ export { AnalyticsProvider } from "./provider";
 
 // Types
 export type {
-  AnalyticsContextValue,
-  AnalyticsProviderProps,
-  EventConfig,
-  SessionCookieData,
-  TrackEventParams,
-  UserCookieData,
+	AnalyticsContextValue,
+	AnalyticsProviderProps,
+	EventConfig,
+	SessionCookieData,
+	TrackEventParams,
+	UserCookieData,
 } from "./types";
 
 // Environment detection utilities

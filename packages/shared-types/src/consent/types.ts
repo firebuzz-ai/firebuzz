@@ -3,11 +3,12 @@ import type { ConsentPurposes } from "./schemas";
 // Consent status enum
 export const ConsentStatus = {
 	ACTIVE: "active",
-	WITHDRAWN: "withdrawn", 
+	WITHDRAWN: "withdrawn",
 	EXPIRED: "expired",
 } as const;
 
-export type ConsentStatusType = typeof ConsentStatus[keyof typeof ConsentStatus];
+export type ConsentStatusType =
+	(typeof ConsentStatus)[keyof typeof ConsentStatus];
 
 // Database consent record
 export interface ConsentRecord {
@@ -28,7 +29,8 @@ export interface ConsentRecord {
 }
 
 // Consent with parsed purposes
-export interface ConsentRecordWithPurposes extends Omit<ConsentRecord, 'purposes'> {
+export interface ConsentRecordWithPurposes
+	extends Omit<ConsentRecord, "purposes"> {
 	purposes: ConsentPurposes;
 }
 

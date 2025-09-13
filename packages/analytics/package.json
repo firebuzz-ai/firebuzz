@@ -1,6 +1,6 @@
 {
 	"name": "@firebuzz/analytics",
-	"version": "1.1.1",
+	"version": "1.4.13",
 	"description": "Analytics tracking for Firebuzz landing pages",
 	"author": "Firebuzz Team",
 	"license": "MIT",
@@ -14,7 +14,10 @@
 			"require": "./dist/index.js"
 		}
 	},
-	"files": ["dist", "README.md"],
+	"files": [
+		"dist",
+		"README.md"
+	],
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
@@ -38,7 +41,13 @@
 		"tsup": "^8.0.0",
 		"typescript": "^5.7.2"
 	},
-	"keywords": ["analytics", "tracking", "firebuzz", "landing-pages", "react"],
+	"keywords": [
+		"analytics",
+		"tracking",
+		"firebuzz",
+		"landing-pages",
+		"react"
+	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/firebuzz/analytics.git"

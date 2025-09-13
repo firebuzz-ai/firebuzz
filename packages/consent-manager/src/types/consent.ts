@@ -4,11 +4,12 @@ import { z } from "zod";
 // Consent status enum
 export const ConsentStatus = {
 	ACTIVE: "active",
-	WITHDRAWN: "withdrawn", 
+	WITHDRAWN: "withdrawn",
 	EXPIRED: "expired",
 } as const;
 
-export type ConsentStatusType = typeof ConsentStatus[keyof typeof ConsentStatus];
+export type ConsentStatusType =
+	(typeof ConsentStatus)[keyof typeof ConsentStatus];
 
 // Consent purposes schema
 export const ConsentPurposesSchema = z.object({
@@ -39,7 +40,8 @@ export interface ConsentRecord {
 }
 
 // Consent with parsed purposes
-export interface ConsentRecordWithPurposes extends Omit<ConsentRecord, 'purposes'> {
+export interface ConsentRecordWithPurposes
+	extends Omit<ConsentRecord, "purposes"> {
 	purposes: ConsentPurposes;
 }
 

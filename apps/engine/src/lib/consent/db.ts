@@ -1,6 +1,14 @@
-import type { ConsentPurposes, ConsentRecord, ConsentRecordWithPurposes } from '@firebuzz/shared-types';
-import { ConsentStatus, parseConsentPurposes, stringifyConsentPurposes } from '@firebuzz/shared-types';
-import { generateUniqueId } from '../../utils/id-generator';
+import type {
+	ConsentPurposes,
+	ConsentRecord,
+	ConsentRecordWithPurposes,
+} from "@firebuzz/shared-types";
+import {
+	ConsentStatus,
+	parseConsentPurposes,
+	stringifyConsentPurposes,
+} from "@firebuzz/shared-types";
+import { generateUniqueId } from "../../utils/id-generator";
 
 /**
  * Record or update consent for a subject
@@ -20,7 +28,9 @@ export async function recordConsent(
 	},
 ): Promise<{ consent_id: string; expires_at: number | null }> {
 	const now = Math.floor(Date.now() / 1000);
-	const expires_at = params.expires_in_days ? now + params.expires_in_days * 24 * 60 * 60 : null;
+	const expires_at = params.expires_in_days
+		? now + params.expires_in_days * 24 * 60 * 60
+		: null;
 
 	// First, mark any existing active consent as withdrawn for this subject/campaign/domain
 	await db
@@ -31,7 +41,14 @@ export async function recordConsent(
 		WHERE subject_id = ? AND campaign_id = ? AND domain = ? AND status = ?
 	`,
 		)
-		.bind(ConsentStatus.WITHDRAWN, now, params.subject_id, params.campaign_id, params.domain, ConsentStatus.ACTIVE)
+		.bind(
+			ConsentStatus.WITHDRAWN,
+			now,
+			params.subject_id,
+			params.campaign_id,
+			params.domain,
+			ConsentStatus.ACTIVE,
+		)
 		.run();
 
 	// Create new consent record
@@ -78,8 +95,8 @@ export async function getActiveConsent(
 	domain?: string,
 ): Promise<ConsentRecordWithPurposes | null> {
 	const query = domain
-		? 'SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? AND domain = ? AND status = ? ORDER BY created_at DESC LIMIT 1'
-		: 'SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? AND status = ? ORDER BY created_at DESC LIMIT 1';
+		? "SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? AND domain = ? AND status = ? ORDER BY created_at DESC LIMIT 1"
+		: "SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? AND status = ? ORDER BY created_at DESC LIMIT 1";
 
 	const params = domain
 		? [subject_id, campaign_id, domain, ConsentStatus.ACTIVE]
@@ -120,12 +137,25 @@ export async function withdrawConsent(
 	const now = Math.floor(Date.now() / 1000);
 
 	const query = domain
-		? 'UPDATE consents SET status = ?, updated_at = ? WHERE subject_id = ? AND campaign_id = ? AND domain = ? AND status = ?'
-		: 'UPDATE consents SET status = ?, updated_at = ? WHERE subject_id = ? AND campaign_id = ? AND status = ?';
+		? "UPDATE consents SET status = ?, updated_at = ? WHERE subject_id = ? AND campaign_id = ? AND domain = ? AND status = ?"
+		: "UPDATE consents SET status = ?, updated_at = ? WHERE subject_id = ? AND campaign_id = ? AND status = ?";
 
 	const params = domain
-		? [ConsentStatus.WITHDRAWN, now, subject_id, campaign_id, domain, ConsentStatus.ACTIVE]
-		: [ConsentStatus.WITHDRAWN, now, subject_id, campaign_id, ConsentStatus.ACTIVE];
+		? [
+				ConsentStatus.WITHDRAWN,
+				now,
+				subject_id,
+				campaign_id,
+				domain,
+				ConsentStatus.ACTIVE,
+			]
+		: [
+				ConsentStatus.WITHDRAWN,
+				now,
+				subject_id,
+				campaign_id,
+				ConsentStatus.ACTIVE,
+			];
 
 	const result = await db
 		.prepare(query)
@@ -138,7 +168,10 @@ export async function withdrawConsent(
 /**
  * Mark expired consents (internal helper)
  */
-async function expireConsent(db: D1Database, consent_id: string): Promise<void> {
+async function expireConsent(
+	db: D1Database,
+	consent_id: string,
+): Promise<void> {
 	const now = Math.floor(Date.now() / 1000);
 
 	await db
@@ -163,10 +196,12 @@ export async function getConsentHistory(
 	limit = 50,
 ): Promise<ConsentRecordWithPurposes[]> {
 	const query = campaign_id
-		? 'SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? ORDER BY created_at DESC LIMIT ?'
-		: 'SELECT * FROM consents WHERE subject_id = ? ORDER BY created_at DESC LIMIT ?';
+		? "SELECT * FROM consents WHERE subject_id = ? AND campaign_id = ? ORDER BY created_at DESC LIMIT ?"
+		: "SELECT * FROM consents WHERE subject_id = ? ORDER BY created_at DESC LIMIT ?";
 
-	const params = campaign_id ? [subject_id, campaign_id, limit] : [subject_id, limit];
+	const params = campaign_id
+		? [subject_id, campaign_id, limit]
+		: [subject_id, limit];
 
 	const results = await db
 		.prepare(query)

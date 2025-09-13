@@ -372,17 +372,26 @@ const conversionsBreakdownResponseSchema = z.object({
 			z.number(), // conversions
 			z.number(), // converting_users
 			z.number(), // conversion_value_usd
-			z.number().nullable().transform((val) => val ?? 0), // avg_conversion_value
+			z
+				.number()
+				.nullable()
+				.transform((val) => val ?? 0), // avg_conversion_value
 		]),
 	),
 	daily_conversions: z.array(
 		z.tuple([
 			z.number(), // day_of_week
-			z.string().nullable().transform((val) => val ?? ""), // day_name
+			z
+				.string()
+				.nullable()
+				.transform((val) => val ?? ""), // day_name
 			z.number(), // conversions
 			z.number(), // converting_users
 			z.number(), // conversion_value_usd
-			z.number().nullable().transform((val) => val ?? 0), // avg_conversion_value
+			z
+				.number()
+				.nullable()
+				.transform((val) => val ?? 0), // avg_conversion_value
 		]),
 	),
 	user_type_conversions: z.array(

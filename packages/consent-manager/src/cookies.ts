@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
-import type { ConsentState, ConsentPreferences, SessionContext } from "./types";
 import { COOKIE_NAMES, DEFAULT_COOKIE_CONFIG } from "./config";
+import type { ConsentState, SessionContext } from "./types";
 
 interface CookieConfig {
 	domain?: string;
@@ -18,12 +18,15 @@ export class ConsentCookieManager {
 			...DEFAULT_COOKIE_CONFIG,
 			...config,
 		};
-		
+
 		// Determine environment
 		if (!sessionContext) {
 			this.environment = "dev";
 		} else {
-			this.environment = sessionContext.campaignEnvironment === "production" ? "production" : "preview";
+			this.environment =
+				sessionContext.campaignEnvironment === "production"
+					? "production"
+					: "preview";
 		}
 	}
 
@@ -41,14 +44,6 @@ export class ConsentCookieManager {
 		return this.environment !== "dev";
 	}
 
-	private getUserIdCookieName(campaignId?: string): string {
-		// In preview mode, scope user ID by campaign to prevent cross-customer collisions
-		if (this.environment === "preview" && campaignId) {
-			return `${COOKIE_NAMES.USER_ID}_${campaignId}`;
-		}
-		return COOKIE_NAMES.USER_ID;
-	}
-
 	setConsentCookie(consentState: ConsentState): void {
 		const cookieValue = {
 			preferences: consentState.preferences,
@@ -60,7 +55,7 @@ export class ConsentCookieManager {
 		Cookies.set(
 			COOKIE_NAMES.CONSENT,
 			JSON.stringify(cookieValue),
-			this.getCookieOptions()
+			this.getCookieOptions(),
 		);
 	}
 
@@ -81,103 +76,19 @@ export class ConsentCookieManager {
 		});
 	}
 
-	setUserIdCookie(userId: string, campaignId?: string): void {
-		if (!this.shouldSetCookies()) return;
+	// Session and user ID cookie management removed - handled by analytics package
 
-		const cookieName = this.getUserIdCookieName(campaignId);
-		Cookies.set(
-			cookieName,
-			userId,
-			this.getCookieOptions(365) // 1 year
-		);
-	}
+	// Cookie management based on consent removed - analytics package handles session cookies
 
-	getUserIdCookie(campaignId?: string): string | null {
-		const cookieName = this.getUserIdCookieName(campaignId);
-		return Cookies.get(cookieName) || null;
-	}
-
-	removeUserIdCookie(campaignId?: string): void {
-		const cookieName = this.getUserIdCookieName(campaignId);
-		Cookies.remove(cookieName, {
-			domain: this.config.domain,
-		});
-	}
-
-	setSessionCookie(campaignId: string, sessionData: unknown): void {
-		if (!this.shouldSetCookies()) return;
-
-		const cookieName = COOKIE_NAMES.SESSION(campaignId);
-		
-		// Session cookie expires in 30 minutes
-		const thirtyMinutesInDays = 30 / (24 * 60); // 30 minutes as fraction of a day
-		
-		Cookies.set(
-			cookieName,
-			JSON.stringify(sessionData),
-			this.getCookieOptions(thirtyMinutesInDays)
-		);
-	}
-
-	getSessionCookie(campaignId: string): unknown | null {
-		const cookieName = COOKIE_NAMES.SESSION(campaignId);
-		const cookie = Cookies.get(cookieName);
-		
-		if (!cookie) return null;
-
-		try {
-			return JSON.parse(cookie);
-		} catch {
-			return null;
-		}
-	}
-
-	removeSessionCookie(campaignId: string): void {
-		const cookieName = COOKIE_NAMES.SESSION(campaignId);
-		Cookies.remove(cookieName, {
-			domain: this.config.domain,
-		});
-	}
-
-	manageCookiesBasedOnConsent(
-		preferences: ConsentPreferences,
-		sessionContext: SessionContext
-	): void {
-		// Always allow necessary cookies (but respect environment)
-		if (preferences.necessary && this.shouldSetCookies()) {
-			this.setUserIdCookie(sessionContext.userId, sessionContext.session.campaignId);
-			this.setSessionCookie(sessionContext.session.campaignId, sessionContext.session);
-		}
-
-		// Remove cookies if consent is withdrawn
-		if (!preferences.necessary) {
-			this.removeUserIdCookie(sessionContext.session.campaignId);
-			this.removeSessionCookie(sessionContext.session.campaignId);
-		}
-
-		// Analytics cookies are typically handled by GTM
-		// Marketing cookies are typically handled by third-party scripts
-		// Functional cookies would be managed here if needed
-	}
-
-	clearAllConsentCookies(campaignId?: string): void {
+	clearAllConsentCookies(): void {
 		this.removeConsentCookie();
-		this.removeUserIdCookie(campaignId);
-		
-		if (campaignId) {
-			this.removeSessionCookie(campaignId);
-		}
-		
-		// Clear any other consent-related cookies
+
+		// Note: Session/user cookies are managed by analytics package
+		// But we still clean up any existing firebuzz cookies for safety
 		const allCookies = Cookies.get();
-		
+
 		for (const cookieName of Object.keys(allCookies)) {
-			// Remove any firebuzz session cookies
-			if (cookieName.startsWith("frbzz_session_")) {
-				Cookies.remove(cookieName, { domain: this.config.domain });
-			}
-			
-			// Remove any other consent-related cookies
+			// Remove any firebuzz cookies (analytics package should handle its own cleanup)
 			if (cookieName.startsWith("frbzz_")) {
 				Cookies.remove(cookieName, { domain: this.config.domain });
 			}
@@ -225,8 +136,10 @@ export class ConsentCookieManager {
 }
 
 // Export utility functions
-export const createCookieManager = (config?: Partial<CookieConfig>, sessionContext?: SessionContext) => 
-	new ConsentCookieManager(config, sessionContext);
+export const createCookieManager = (
+	config?: Partial<CookieConfig>,
+	sessionContext?: SessionContext,
+) => new ConsentCookieManager(config, sessionContext);
 
 // Default singleton instance (without session context)
 export const cookieManager = new ConsentCookieManager();

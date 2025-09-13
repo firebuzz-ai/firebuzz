@@ -89,16 +89,14 @@ export const fetchAnalyticsPipe = internalAction({
 
 			// Create normalized parameters for cache key generation (separate from query parameters)
 			const normalizedParams = { ...params };
-			if ('periodStart' in params && 'periodEnd' in params) {
-				const { normalizedPeriodStart, normalizedPeriodEnd } = normalizePeriodForCaching(
-					params.periodStart,
-					params.periodEnd
-				);
+			if ("periodStart" in params && "periodEnd" in params) {
+				const { normalizedPeriodStart, normalizedPeriodEnd } =
+					normalizePeriodForCaching(params.periodStart, params.periodEnd);
 				normalizedParams.periodStart = normalizedPeriodStart;
 				normalizedParams.periodEnd = normalizedPeriodEnd;
 			}
 
-			// Generate hash key using normalized parameters for cache efficiency  
+			// Generate hash key using normalized parameters for cache efficiency
 			const key = generateHashKey(
 				JSON.stringify(normalizedParams, Object.keys(normalizedParams).sort()),
 			);

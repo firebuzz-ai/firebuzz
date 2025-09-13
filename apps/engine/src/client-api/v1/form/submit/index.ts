@@ -1,10 +1,10 @@
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 
 // Error Response Schema
 const errorResponses = {
 	400: {
 		content: {
-			"application/json": {
+			'application/json': {
 				schema: z.object({
 					success: z.literal(false),
 					message: z.string(),
@@ -12,40 +12,40 @@ const errorResponses = {
 				}),
 			},
 		},
-		description: "Bad Request - Validation failed or wrong payload",
+		description: 'Bad Request - Validation failed or wrong payload',
 	},
 	404: {
 		content: {
-			"application/json": {
+			'application/json': {
 				schema: z.object({
 					success: z.literal(false),
-					message: z.literal("Form not found"),
+					message: z.literal('Form not found'),
 				}),
 			},
 		},
-		description: "Form not found",
+		description: 'Form not found',
 	},
 	429: {
 		content: {
-			"application/json": {
+			'application/json': {
 				schema: z.object({
 					success: z.literal(false),
-					message: z.literal("Rate limit exceeded"),
+					message: z.literal('Rate limit exceeded'),
 				}),
 			},
 		},
-		description: "Rate limit exceeded",
+		description: 'Rate limit exceeded',
 	},
 	500: {
 		content: {
-			"application/json": {
+			'application/json': {
 				schema: z.object({
 					success: z.literal(false),
-					message: z.literal("Internal Server Error"),
+					message: z.literal('Internal Server Error'),
 				}),
 			},
 		},
-		description: "Internal Server Error",
+		description: 'Internal Server Error',
 	},
 };
 
@@ -55,20 +55,20 @@ const formFieldSchema = z.object({
 	title: z.string(),
 	placeholder: z.string().optional(),
 	description: z.string().optional(),
-	type: z.enum(["string", "number", "boolean"]),
+	type: z.enum(['string', 'number', 'boolean']),
 	inputType: z.enum([
-		"text",
-		"number",
-		"checkbox",
-		"radio",
-		"select",
-		"textarea",
-		"date",
-		"time",
-		"email",
-		"url",
-		"tel",
-		"password",
+		'text',
+		'number',
+		'checkbox',
+		'radio',
+		'select',
+		'textarea',
+		'date',
+		'time',
+		'email',
+		'url',
+		'tel',
+		'password',
 	]),
 	required: z.boolean(),
 	unique: z.boolean(),
@@ -97,7 +97,7 @@ export const submitFormParamsSchema = z.object({
 
 export const submitFormBodySchema = z.record(z.string(), z.any()).and(
 	z.object({
-		isTest: z.boolean().optional(),
+		campaignEnvironment: z.enum(['preview', 'production']).optional(),
 	}),
 );
 
@@ -115,9 +115,7 @@ export const submitFormResponseSchema = z.object({
 });
 
 // Helper function to convert form schema to Zod schema
-function createZodSchemaFromFormFields(
-	fields: z.infer<typeof formFieldSchema>[],
-): z.ZodSchema {
+function createZodSchemaFromFormFields(fields: z.infer<typeof formFieldSchema>[]): z.ZodSchema {
 	const schemaObject: Record<string, z.ZodSchema> = {};
 
 	for (const field of fields) {
@@ -125,19 +123,19 @@ function createZodSchemaFromFormFields(
 
 		// Create base schema based on type
 		switch (field.type) {
-			case "string":
+			case 'string':
 				fieldSchema = z.string();
 				// Add specific validations based on inputType
-				if (field.inputType === "email") {
-					fieldSchema = z.string().email("Invalid email format");
-				} else if (field.inputType === "url") {
-					fieldSchema = z.string().url("Invalid URL format");
+				if (field.inputType === 'email') {
+					fieldSchema = z.string().email('Invalid email format');
+				} else if (field.inputType === 'url') {
+					fieldSchema = z.string().url('Invalid URL format');
 				}
 				break;
-			case "number":
+			case 'number':
 				fieldSchema = z.coerce.number();
 				break;
-			case "boolean":
+			case 'boolean':
 				fieldSchema = z.coerce.boolean();
 				break;
 			default:
@@ -162,13 +160,13 @@ function createZodSchemaFromFormFields(
 }
 
 const submitFormRoute = createRoute({
-	path: "/{formId}",
-	method: "post",
+	path: '/{formId}',
+	method: 'post',
 	request: {
 		params: submitFormParamsSchema,
 		body: {
 			content: {
-				"application/json": {
+				'application/json': {
 					schema: submitFormBodySchema,
 				},
 			},
@@ -177,11 +175,11 @@ const submitFormRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				"application/json": {
+				'application/json': {
 					schema: submitFormResponseSchema,
 				},
 			},
-			description: "Form submitted successfully",
+			description: 'Form submitted successfully',
 		},
 		...errorResponses,
 	},
@@ -191,28 +189,27 @@ const app = new OpenAPIHono<{ Bindings: Env }>();
 
 export const formSubmitRoute = app
 	.openapi(submitFormRoute, async (c) => {
-		const { formId } = c.req.valid("param");
-		const submissionData = c.req.valid("json");
-		const origin = c.req.header("origin");
-		const isPreview =
-			origin?.includes("preview.frbzz.com") ||
-			origin?.includes("preview-dev.frbzz.com") ||
-			origin?.includes("preview-preview.frbzz.com");
+		const { formId } = c.req.valid('param');
+		const submissionData = c.req.valid('json');
+
+		// Extract campaign environment from submission data instead of hostname detection
+		const campaignEnvironment = submissionData.campaignEnvironment || 'production';
+		const isPreview = campaignEnvironment === 'preview';
+
+		// Extract campaign environment and form data
+		const { campaignEnvironment: _, ...formData } = submissionData;
 
 		try {
 			// Get form config from KV store
-			const configResult = await c.env.CAMPAIGN.get(
-				`form:${isPreview ? "preview" : "production"}:${formId}`,
-				{
-					type: "json",
-				},
-			);
+			const configResult = await c.env.CAMPAIGN.get(`form:${isPreview ? 'preview' : 'production'}:${formId}`, {
+				type: 'json',
+			});
 
 			if (!configResult) {
 				return c.json(
 					{
 						success: false as const,
-						message: "Form not found" as const,
+						message: 'Form not found' as const,
 					},
 					404,
 				);
@@ -221,8 +218,7 @@ export const formSubmitRoute = app
 			// Parse and validate the config
 			const config = formConfigSchema.parse(configResult);
 
-			// Extract isTest flag from submission data
-			const { ...formData } = submissionData;
+			// Form data already extracted above (excluding sessionContext and campaignEnvironment)
 
 			// Create Zod schema from form fields
 			const validationSchema = createZodSchemaFromFormFields(config.schema);
@@ -234,14 +230,14 @@ export const formSubmitRoute = app
 				// Format validation errors
 				const validationErrors: Record<string, string> = {};
 				for (const issue of validationResult.error.issues) {
-					const path = issue.path.join(".");
+					const path = issue.path.join('.');
 					validationErrors[path] = issue.message;
 				}
 
 				return c.json(
 					{
 						success: false as const,
-						message: "Validation failed",
+						message: 'Validation failed',
 						errors: validationErrors,
 					},
 					400,
@@ -251,20 +247,23 @@ export const formSubmitRoute = app
 			// Validation passed - now submit to Convex
 			const convexUrl = c.env.CONVEX_HTTP_URL;
 			if (!convexUrl) {
-				throw new Error("CONVEX_URL not configured");
+				throw new Error('CONVEX_URL not configured');
 			}
 
+			// Prepare submission payload with campaign environment
+			const convexPayload = {
+				formId,
+				data: validationResult.data,
+				campaignEnvironment,
+			};
+
 			const convexResponse = await fetch(`${convexUrl}/form/submit`, {
-				method: "POST",
+				method: 'POST',
 				headers: {
-					"Content-Type": "application/json",
-					Authorization: c.env.SERVICE_TOKEN || "",
+					'Content-Type': 'application/json',
+					Authorization: c.env.SERVICE_TOKEN || '',
 				},
-				body: JSON.stringify({
-					formId,
-					data: validationResult.data,
-					isTest: isPreview,
-				}),
+				body: JSON.stringify(convexPayload),
 			});
 
 			// Handle different response status codes from Convex
@@ -276,7 +275,7 @@ export const formSubmitRoute = app
 					return c.json(
 						{
 							success: true,
-							message: "Form submitted successfully",
+							message: 'Form submitted successfully',
 							data: {
 								formId,
 								campaignId: config.campaignId,
@@ -290,7 +289,7 @@ export const formSubmitRoute = app
 					return c.json(
 						{
 							success: false as const,
-							message: "Internal Server Error" as const,
+							message: 'Internal Server Error' as const,
 						},
 						500,
 					);
@@ -298,7 +297,7 @@ export const formSubmitRoute = app
 					return c.json(
 						{
 							success: false as const,
-							message: "Form not found" as const,
+							message: 'Form not found' as const,
 						},
 						404,
 					);
@@ -306,7 +305,7 @@ export const formSubmitRoute = app
 					return c.json(
 						{
 							success: false as const,
-							message: "Invalid submission data",
+							message: 'Invalid submission data',
 						},
 						400,
 					);
@@ -314,43 +313,39 @@ export const formSubmitRoute = app
 					return c.json(
 						{
 							success: false as const,
-							message: "Rate limit exceeded" as const,
+							message: 'Rate limit exceeded' as const,
 						},
 						429,
 					);
 				default:
-					console.error(
-						"Unexpected Convex response:",
-						convexResponse.status,
-						await convexResponse.text(),
-					);
+					console.error('Unexpected Convex response:', convexResponse.status, await convexResponse.text());
 					return c.json(
 						{
 							success: false as const,
-							message: "Internal Server Error" as const,
+							message: 'Internal Server Error' as const,
 						},
 						500,
 					);
 			}
 		} catch (error) {
-			console.error("Form submission error:", error);
+			console.error('Form submission error:', error);
 			return c.json(
 				{
 					success: false as const,
-					message: "Internal Server Error" as const,
+					message: 'Internal Server Error' as const,
 				},
 				500,
 			);
 		}
 	})
-	.options("*", (c) => {
-		return c.text("", {
+	.options('*', (c) => {
+		return c.text('', {
 			status: 200,
 			headers: {
-				"Access-Control-Allow-Origin": "*",
-				"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-				"Access-Control-Allow-Headers": "Content-Type, Authorization",
-				"Access-Control-Max-Age": "86400",
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+				'Access-Control-Max-Age': '86400',
 			},
 		});
 	});

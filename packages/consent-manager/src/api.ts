@@ -1,8 +1,8 @@
-import type { SessionContext, ConsentPreferences } from "./types";
-import type { 
-	RecordConsentRequest, 
-	RecordConsentResponse, 
-	ConsentPurposes 
+import type { ConsentPreferences, SessionContext } from "./types";
+import type {
+	ConsentPurposes,
+	RecordConsentRequest,
+	RecordConsentResponse,
 } from "./types/consent";
 
 export interface ApiConfig {
@@ -28,10 +28,10 @@ export class ConsentApiClient {
 
 	private async makeRequest<T>(
 		endpoint: string,
-		options: RequestInit = {}
+		options: RequestInit = {},
 	): Promise<T> {
 		const url = `${this.config.workerEndpoint}${endpoint}`;
-		
+
 		const defaultHeaders = {
 			"Content-Type": "application/json",
 		};
@@ -53,9 +53,9 @@ export class ConsentApiClient {
 				throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 			}
 
-			const data = await response.json() as T;
+			const data = (await response.json()) as T;
 			this.log("Response received:", data);
-			
+
 			return data;
 		} catch (error) {
 			this.log("Request failed:", error);
@@ -65,7 +65,7 @@ export class ConsentApiClient {
 
 	async recordConsent(
 		preferences: ConsentPreferences,
-		sessionContext: SessionContext
+		sessionContext: SessionContext,
 	): Promise<void> {
 		// Convert ConsentPreferences to ConsentPurposes format
 		const purposes: ConsentPurposes = {
@@ -80,17 +80,17 @@ export class ConsentApiClient {
 			project_id: this.config.projectId,
 			campaign_id: this.config.campaignId,
 			subject_id: sessionContext.userId,
-			domain: typeof window !== 'undefined' ? window.location.hostname : '',
+			domain: typeof window !== "undefined" ? window.location.hostname : "",
 			purposes,
 			expires_in_days: 365, // Default 1 year
 		};
 
 		const response = await this.makeRequest<RecordConsentResponse>(
-			"/client-api/v1/consent/record", 
+			"/client-api/v1/consent/record",
 			{
 				method: "POST",
 				body: JSON.stringify(consentRequest),
-			}
+			},
 		);
 
 		if (!response.success) {
@@ -102,7 +102,7 @@ export class ConsentApiClient {
 
 	async updateConsent(
 		preferences: ConsentPreferences,
-		sessionContext: SessionContext
+		sessionContext: SessionContext,
 	): Promise<void> {
 		// For updates, we just record a new consent entry
 		// The backend will handle versioning and history
@@ -139,35 +139,48 @@ export const getApiClient = (): ConsentApiClient | null => {
 // Utility functions for external usage
 export const recordConsent = async (
 	preferences: ConsentPreferences,
-	sessionContext: SessionContext
+	sessionContext: SessionContext,
 ): Promise<void> => {
 	const client = getApiClient();
 	if (!client) {
-		throw new Error("API client not configured. Call configureApiClient first.");
+		// Silently skip if API client is not configured (no session context)
+		// This is expected in development/template environments
+		console.warn(
+			"[Consent Manager] API client not configured - skipping consent recording. This is normal in development environments.",
+		);
+		return;
 	}
-	
+
 	await client.recordConsent(preferences, sessionContext);
 };
 
 export const updateConsent = async (
 	preferences: ConsentPreferences,
-	sessionContext: SessionContext
+	sessionContext: SessionContext,
 ): Promise<void> => {
 	const client = getApiClient();
 	if (!client) {
-		throw new Error("API client not configured. Call configureApiClient first.");
+		// Silently skip if API client is not configured (no session context)
+		console.warn(
+			"[Consent Manager] API client not configured - skipping consent update. This is normal in development environments.",
+		);
+		return;
 	}
-	
+
 	await client.updateConsent(preferences, sessionContext);
 };
 
 export const revokeAllConsent = async (
-	sessionContext: SessionContext
+	sessionContext: SessionContext,
 ): Promise<void> => {
 	const client = getApiClient();
 	if (!client) {
-		throw new Error("API client not configured. Call configureApiClient first.");
+		// Silently skip if API client is not configured (no session context)
+		console.warn(
+			"[Consent Manager] API client not configured - skipping consent revocation. This is normal in development environments.",
+		);
+		return;
 	}
-	
+
 	await client.revokeAllConsent(sessionContext);
 };
