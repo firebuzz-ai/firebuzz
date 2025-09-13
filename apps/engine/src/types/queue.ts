@@ -1,5 +1,7 @@
 import type { EventData } from "@firebuzz/shared-types/events";
-import type { SessionData } from "../lib/tinybird";
+import type { SessionData, TrafficData } from "../lib/tinybird";
+
+// Traffic data type matching the traffic.datasource schema
 
 export interface SessionQueueMessage {
 	type: "session";
@@ -15,7 +17,14 @@ export interface EventQueueMessage {
 	timestamp: string;
 }
 
-export type QueueMessage = SessionQueueMessage | EventQueueMessage;
+export interface TrafficQueueMessage {
+	type: "traffic";
+	data: TrafficData;
+	retryCount?: number;
+	timestamp: string;
+}
+
+export type QueueMessage = SessionQueueMessage | EventQueueMessage | TrafficQueueMessage;
 
 export interface BatchProcessingResult {
 	successful: number;
@@ -31,6 +40,15 @@ export interface EventBatchProcessingResult {
 	failed: number;
 	errors: Array<{
 		eventId: string;
+		error: string;
+	}>;
+}
+
+export interface TrafficBatchProcessingResult {
+	successful: number;
+	failed: number;
+	errors: Array<{
+		requestId: string;
 		error: string;
 	}>;
 }

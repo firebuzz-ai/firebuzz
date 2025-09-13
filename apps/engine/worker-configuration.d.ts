@@ -26,6 +26,7 @@ declare namespace Cloudflare {
 		CONSENT_DB: D1Database;
 		SESSION_QUEUE: Queue;
 		EVENT_QUEUE: Queue;
+		TRAFFIC_QUEUE: Queue;
 	}
 }
 interface Env extends Cloudflare.Env {}

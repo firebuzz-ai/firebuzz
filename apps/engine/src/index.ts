@@ -58,6 +58,7 @@ app.get("/", async (c) => {
 import { handleEventQueue } from "./queue/event-consumer";
 // Import and re-export queue handlers directly
 import { handleSessionQueue } from "./queue/session-consumer";
+import { handleTrafficQueue } from "./queue/traffic-consumer";
 
 // Export the Durable Object classes
 export { ABTestDurableObject } from "./durable-objects/ab-test";
@@ -78,6 +79,8 @@ export default {
 			await handleSessionQueue(batch, env);
 		} else if (queueName.includes("event-ingestion")) {
 			await handleEventQueue(batch, env);
+		} else if (queueName.includes("traffic-ingestion")) {
+			await handleTrafficQueue(batch, env);
 		} else {
 			console.error(`Unknown queue: ${queueName}`);
 			// Acknowledge all messages to prevent infinite retry

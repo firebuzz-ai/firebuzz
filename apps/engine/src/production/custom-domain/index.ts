@@ -2,8 +2,10 @@ import type { CampaignConfig } from '@firebuzz/shared-types/campaign';
 import { Hono } from 'hono';
 import { evaluateCampaign } from '../../lib/campaign';
 import { evaluateGDPRSettings } from '../../lib/gdpr';
+import { getTrafficQueueService } from '../../lib/queue';
 import { parseRequest } from '../../lib/request';
 import { ensureSession } from '../../lib/session';
+import { transformRequestToTrafficData } from '../../lib/tinybird';
 import { getContentType } from '../../utils/assets';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -32,6 +34,8 @@ app.get('/:campaignSlug', async (c) => {
 
 	// Parse request data for session tracking (will be used later)
 	const requestData = parseRequest(c);
+
+	console.log('Request data:', requestData);
 
 	// Determine landing page ID based on evaluation type
 	let landingPageId: string | undefined;
@@ -133,6 +137,25 @@ app.get('/:campaignSlug', async (c) => {
 		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
 		finalHtml = html.replace('</head>', `${contextScript}</head>`);
 	}
+
+	// Queue traffic data for observability (non-blocking)
+	c.executionCtx.waitUntil(
+		(async () => {
+			try {
+				const trafficQueueService = getTrafficQueueService(c.env);
+				const trafficData = transformRequestToTrafficData(requestData, {
+					workspaceId: config.workspaceId,
+					projectId: config.projectId,
+					campaignId: config.campaignId,
+					landingPageId,
+				});
+				await trafficQueueService.enqueue(trafficData);
+			} catch (error) {
+				console.error('Failed to queue traffic data:', error);
+				// Don't throw - this shouldn't affect the response
+			}
+		})(),
+	);
 
 	// Serve the HTML
 	return c.html(finalHtml);

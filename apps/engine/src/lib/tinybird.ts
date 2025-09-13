@@ -1,8 +1,9 @@
-import { env } from "cloudflare:workers";
-import { Tinybird } from "@chronark/zod-bird";
-import type { EventData } from "@firebuzz/shared-types/events";
-import { eventDataSchema } from "@firebuzz/shared-types/events";
-import { z } from "zod";
+import { Tinybird } from '@chronark/zod-bird';
+import type { EventData } from '@firebuzz/shared-types/events';
+import { eventDataSchema } from '@firebuzz/shared-types/events';
+import { env } from 'cloudflare:workers';
+import { z } from 'zod';
+import type { RequestData } from './request';
 
 // Initialize Tinybird client with global env
 // We use cloudflare:workers env for runtime singleton initialization
@@ -56,7 +57,7 @@ const sessionSchema = z.object({
 	language: z.string().nullable().optional(),
 
 	// Bot detection
-	bot_score: z.number().nullable().optional(),
+	bot_score: z.number(),
 	is_corporate_proxy: z.number().min(0).max(1),
 	is_verified_bot: z.number().min(0).max(1),
 
@@ -74,18 +75,74 @@ const sessionSchema = z.object({
 
 // Build ingest endpoint for sessions
 export const ingestSession = tinybird.buildIngestEndpoint({
-	datasource: "session_v1",
+	datasource: 'session_v1',
 	event: sessionSchema,
+});
+
+// Traffic Schema based on traffic_v1.datasource
+const trafficSchema = z.object({
+	timestamp: z.string().datetime(),
+	request_id: z.string(),
+	workspace_id: z.string().nullish(),
+	project_id: z.string().nullish(),
+	campaign_id: z.string().nullish(),
+	landing_page_id: z.string().nullish(),
+
+	// Geographic data (nested structure matching JSON paths)
+	geo: z.object({
+		city: z.string().nullish(),
+		continent: z.string().nullish(),
+		country: z.string().nullish(),
+		is_eu_country: z.number().min(0).max(1),
+		latitude: z.string().nullish(),
+		longitude: z.string().nullish(),
+		region: z.string().nullish(),
+		region_code: z.string().nullish(),
+		timezone: z.string().nullish(),
+	}),
+
+	// Device data (nested structure matching JSON paths)
+	device: z.object({
+		type: z.string(),
+		os: z.string(),
+		browser: z.string(),
+		browser_version: z.string().nullish(),
+		is_mobile: z.number().min(0).max(1),
+		connection_type: z.string(),
+	}),
+
+	// Localization data (nested structure matching JSON paths)
+	localization: z.object({
+		language: z.string().nullish(),
+	}),
+
+	// Traffic data (nested structure matching JSON paths)
+	traffic: z.object({
+		referrer: z.string().nullish(),
+		user_agent: z.string(),
+	}),
+
+	// Bot detection (flat structure matching JSON paths from session schema)
+	bot_score: z.number(),
+	is_corporate_proxy: z.number().min(0).max(1),
+	is_verified_bot: z.number().min(0).max(1),
 });
 
 // Build ingest endpoint for events
 export const ingestEvent = tinybird.buildIngestEndpoint({
-	datasource: "events_v1",
+	datasource: 'events_v1',
 	event: eventDataSchema,
+});
+
+// Build ingest endpoint for traffic
+export const ingestTraffic = tinybird.buildIngestEndpoint({
+	datasource: 'traffic_v1',
+	event: trafficSchema,
 });
 
 // Type exports
 export type SessionData = z.infer<typeof sessionSchema>;
+export type TrafficData = z.infer<typeof trafficSchema>;
 
 // Helper to get current timestamp in DateTime64 format
 function getDateTime64(): string {
@@ -93,84 +150,46 @@ function getDateTime64(): string {
 }
 
 /**
- * Send batch of sessions to Tinybird using NDJSON format
- * This is more efficient than individual requests
+ * Send batch of sessions to Tinybird using zod-bird endpoint
+ * This uses the properly validated endpoint instead of direct fetch
  */
 export async function batchIngestSessions(
 	sessions: SessionData[],
-	env: Pick<Env, "TINYBIRD_BASE_URL" | "TINYBIRD_TOKEN">,
 ): Promise<{
 	successful_rows: number;
 	quarantined_rows: number;
 	errors?: string[];
-	rateLimitHeaders?: {
-		limit?: string;
-		remaining?: string;
-		reset?: string;
-		retryAfter?: string;
-	};
 }> {
 	if (sessions.length === 0) {
 		return { successful_rows: 0, quarantined_rows: 0 };
 	}
 
-	// Format as NDJSON (newline-delimited JSON)
-	const ndjson = sessions.map((session) => JSON.stringify(session)).join("\n");
+	console.log(`🚀 Sending session batch to Tinybird: ${sessions.length} sessions`);
 
-	// Calculate payload size for monitoring
-	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
+	let successful_rows = 0;
+	let quarantined_rows = 0;
+	const errors: string[] = [];
 
-	// Warn if payload is large
-	if (payloadSizeMB > 5) {
-		console.warn(
-			`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${sessions.length} sessions`,
-		);
+	// Process sessions in batches (zod-bird may have individual limits)
+	for (const session of sessions) {
+		try {
+			await ingestSession(session);
+			successful_rows++;
+		} catch (error) {
+			console.error('Failed to ingest session:', error);
+			errors.push(`Session ${session.session_id}: ${error}`);
+			quarantined_rows++;
+		}
 	}
 
-	const response = await fetch(
-		`${env.TINYBIRD_BASE_URL}/v0/events?name=session_v1&wait=true`,
-		{
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
-				"Content-Type": "application/x-ndjson",
-			},
-			body: ndjson,
-		},
+	console.log(
+		`✅ Session batch processed: ${successful_rows} successful, ${quarantined_rows} quarantined`,
 	);
 
-	// Extract rate limit headers for monitoring
-	const rateLimitHeaders = {
-		limit: response.headers.get("X-RateLimit-Limit") || undefined,
-		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
-		reset: response.headers.get("X-RateLimit-Reset") || undefined,
-		retryAfter: response.headers.get("Retry-After") || undefined,
-	};
-
-	// Handle rate limiting
-	if (response.status === 429) {
-		const retryAfter = rateLimitHeaders.retryAfter || "60";
-		throw new Error(
-			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
-				`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
-		);
-	}
-
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(
-			`Tinybird batch ingestion failed: ${response.status} - ${errorText}`,
-		);
-	}
-
-	const result = await response.json<{
-		successful_rows: number;
-		quarantined_rows: number;
-	}>();
-
 	return {
-		...result,
-		rateLimitHeaders,
+		successful_rows,
+		quarantined_rows,
+		errors: errors.length > 0 ? errors : undefined,
 	};
 }
 
@@ -180,7 +199,7 @@ export async function batchIngestSessions(
  */
 export async function batchIngestEvents(
 	events: EventData[],
-	env: Pick<Env, "TINYBIRD_BASE_URL" | "TINYBIRD_TOKEN">,
+	env: Pick<Env, 'TINYBIRD_BASE_URL' | 'TINYBIRD_TOKEN'>,
 ): Promise<{
 	successful_rows: number;
 	quarantined_rows: number;
@@ -196,7 +215,7 @@ export async function batchIngestEvents(
 		return { successful_rows: 0, quarantined_rows: 0 };
 	}
 
-	console.log("📤 Preparing events for Tinybird ingestion:", {
+	console.log('📤 Preparing events for Tinybird ingestion:', {
 		event_count: events.length,
 		event_details: events.map((e) => ({
 			event_id: e.event_id,
@@ -209,41 +228,36 @@ export async function batchIngestEvents(
 	});
 
 	// Format as NDJSON (newline-delimited JSON)
-	const ndjson = events.map((event) => JSON.stringify(event)).join("\n");
+	const ndjson = events.map((event) => JSON.stringify(event)).join('\n');
 
 	// Calculate payload size for monitoring
 	const payloadSizeMB = new Blob([ndjson]).size / (1024 * 1024);
 
 	// Warn if payload is large
 	if (payloadSizeMB > 5) {
-		console.warn(
-			`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${events.length} events`,
-		);
+		console.warn(`Large batch payload: ${payloadSizeMB.toFixed(2)}MB for ${events.length} events`);
 	}
 
-	const response = await fetch(
-		`${env.TINYBIRD_BASE_URL}/v0/events?name=events_v1&wait=true`,
-		{
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
-				"Content-Type": "application/x-ndjson",
-			},
-			body: ndjson,
+	const response = await fetch(`${env.TINYBIRD_BASE_URL}/v0/events?name=events_v1&wait=true`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${env.TINYBIRD_TOKEN}`,
+			'Content-Type': 'application/x-ndjson',
 		},
-	);
+		body: ndjson,
+	});
 
 	// Extract rate limit headers for monitoring
 	const rateLimitHeaders = {
-		limit: response.headers.get("X-RateLimit-Limit") || undefined,
-		remaining: response.headers.get("X-RateLimit-Remaining") || undefined,
-		reset: response.headers.get("X-RateLimit-Reset") || undefined,
-		retryAfter: response.headers.get("Retry-After") || undefined,
+		limit: response.headers.get('X-RateLimit-Limit') || undefined,
+		remaining: response.headers.get('X-RateLimit-Remaining') || undefined,
+		reset: response.headers.get('X-RateLimit-Reset') || undefined,
+		retryAfter: response.headers.get('Retry-After') || undefined,
 	};
 
 	// Handle rate limiting
 	if (response.status === 429) {
-		const retryAfter = rateLimitHeaders.retryAfter || "60";
+		const retryAfter = rateLimitHeaders.retryAfter || '60';
 		throw new Error(
 			`Rate limited by Tinybird. Retry after ${retryAfter} seconds. ` +
 				`Limit: ${rateLimitHeaders.limit}, Remaining: ${rateLimitHeaders.remaining}`,
@@ -252,9 +266,7 @@ export async function batchIngestEvents(
 
 	if (!response.ok) {
 		const errorText = await response.text();
-		throw new Error(
-			`Tinybird event batch ingestion failed: ${response.status} - ${errorText}`,
-		);
+		throw new Error(`Tinybird event batch ingestion failed: ${response.status} - ${errorText}`);
 	}
 
 	const result = await response.json<{
@@ -262,7 +274,7 @@ export async function batchIngestEvents(
 		quarantined_rows: number;
 	}>();
 
-	console.log("✅ Tinybird ingestion result:", {
+	console.log('✅ Tinybird ingestion result:', {
 		successful_rows: result.successful_rows,
 		quarantined_rows: result.quarantined_rows,
 		rate_limit_headers: rateLimitHeaders,
@@ -367,11 +379,11 @@ export async function trackSession(params: {
 		utm_content: requestData.params.utm.utm_content ?? null,
 
 		// Geographic
-		country: requestData.geo.country || "Unknown",
-		city: requestData.geo.city || "Unknown",
-		region: requestData.geo.region || "Unknown",
+		country: requestData.geo.country || 'Unknown',
+		city: requestData.geo.city || 'Unknown',
+		region: requestData.geo.region || 'Unknown',
 		region_code: requestData.geo.regionCode ?? null,
-		continent: requestData.geo.continent || "Unknown",
+		continent: requestData.geo.continent || 'Unknown',
 		timezone: requestData.geo.timezone ?? null,
 		is_eu_country: requestData.geo.isEUCountry ? 1 : 0,
 
@@ -388,8 +400,8 @@ export async function trackSession(params: {
 		user_agent: requestData.traffic.userAgent,
 		language: requestData.localization.language ?? null,
 
-		// Bot detection
-		bot_score: requestData.bot?.score ?? null,
+		// Bot detection - provide default score of 0 if missing
+		bot_score: requestData.bot?.score ?? 0,
 		is_corporate_proxy: requestData.bot?.corporateProxy ? 1 : 0,
 		is_verified_bot: requestData.bot?.verifiedBot ? 1 : 0,
 
@@ -400,7 +412,7 @@ export async function trackSession(params: {
 
 		// Session metadata
 		is_returning: params.isReturningUser ? 1 : 0,
-		campaign_environment: "production",
+		campaign_environment: 'production',
 		environment: requestData.firebuzz.environment ?? null,
 		uri: requestData.firebuzz.uri ?? null,
 	};
@@ -408,7 +420,7 @@ export async function trackSession(params: {
 	try {
 		await ingestSession(sessionData);
 	} catch (error) {
-		console.error("Failed to track session:", error);
+		console.error('Failed to track session:', error);
 		// Don't throw - we don't want tracking failures to break the request
 	}
 }
@@ -469,7 +481,7 @@ export function formatSessionData(data: {
 	};
 	session: {
 		isReturning: boolean;
-		campaignEnvironment: "production" | "preview";
+		campaignEnvironment: 'production' | 'preview';
 		environment: string | null;
 		uri: string | null;
 	};
@@ -495,11 +507,11 @@ export function formatSessionData(data: {
 		source: data.source ?? null,
 
 		// Geographic
-		country: data.geo.country || "Unknown",
-		city: data.geo.city || "Unknown",
-		region: data.geo.region || "Unknown",
+		country: data.geo.country || 'Unknown',
+		city: data.geo.city || 'Unknown',
+		region: data.geo.region || 'Unknown',
 		region_code: data.geo.regionCode ?? null,
-		continent: data.geo.continent || "Unknown",
+		continent: data.geo.continent || 'Unknown',
 		timezone: data.geo.timezone ?? null,
 		is_eu_country: data.geo.isEUCountry ? 1 : 0,
 
@@ -516,8 +528,8 @@ export function formatSessionData(data: {
 		user_agent: data.traffic.userAgent,
 		language: data.localization.language ?? null,
 
-		// Bot detection
-		bot_score: data.bot?.score ?? null,
+		// Bot detection - provide default score of 0 if missing
+		bot_score: data.bot?.score ?? 0,
 		is_corporate_proxy: data.bot?.corporateProxy ? 1 : 0,
 		is_verified_bot: data.bot?.verifiedBot ? 1 : 0,
 
@@ -531,5 +543,124 @@ export function formatSessionData(data: {
 		campaign_environment: data.session.campaignEnvironment,
 		environment: data.session.environment ?? null,
 		uri: data.session.uri ?? null,
+	};
+}
+
+
+/**
+ * Transform RequestData to TrafficData for ingestion
+ * Generates unique request_id and adds context information
+ */
+export function transformRequestToTrafficData(
+	requestData: RequestData,
+	context: {
+		workspaceId?: string | null;
+		projectId?: string | null;
+		campaignId?: string | null;
+		landingPageId?: string | null;
+	} = {},
+): TrafficData {
+	// Generate unique request ID
+	const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+	return {
+		timestamp: new Date().toISOString(),
+		request_id: requestId,
+		workspace_id: context.workspaceId || null,
+		project_id: context.projectId || null,
+		campaign_id: context.campaignId || null,
+		landing_page_id: context.landingPageId || null,
+
+		// Transform geographic data
+		geo: {
+			city: requestData.geo.city,
+			continent: requestData.geo.continent,
+			country: requestData.geo.country,
+			is_eu_country: requestData.geo.isEUCountry ? 1 : 0, // Convert boolean to UInt8
+			latitude: requestData.geo.latitude,
+			longitude: requestData.geo.longitude,
+			region: requestData.geo.region,
+			region_code: requestData.geo.regionCode,
+			timezone: requestData.geo.timezone,
+		},
+
+		// Transform device data
+		device: {
+			type: requestData.device.type,
+			os: requestData.device.os,
+			browser: requestData.device.browser,
+			browser_version: requestData.device.browserVersion,
+			is_mobile: requestData.device.isMobile ? 1 : 0, // Convert boolean to UInt8
+			connection_type: requestData.device.connectionType,
+		},
+
+		// Transform localization data
+		localization: {
+			language: requestData.localization.language,
+		},
+
+		// Transform traffic data
+		traffic: {
+			referrer: requestData.traffic.referrer,
+			user_agent: requestData.traffic.userAgent,
+		},
+
+		// Bot detection data - convert booleans to UInt8 (0/1) for Tinybird (flat structure like session)
+		// Add logging to debug bot score issues
+		bot_score: (() => {
+			console.log('🤖 Bot data debug:', {
+				hasBot: !!requestData.bot,
+				botScore: requestData.bot?.score,
+				rawBotData: requestData.bot
+			});
+			// Bot score should always be 0-100, provide default if missing
+			return requestData.bot?.score ?? 0;
+		})(),
+		is_corporate_proxy: requestData.bot?.corporateProxy ? 1 : 0,
+		is_verified_bot: requestData.bot?.verifiedBot ? 1 : 0,
+	};
+}
+
+/**
+ * Send batch of traffic data to Tinybird using zod-bird endpoint
+ * This uses the properly validated endpoint instead of direct fetch
+ */
+export async function batchIngestTraffic(
+	trafficRecords: TrafficData[],
+): Promise<{
+	successful_rows: number;
+	quarantined_rows: number;
+	errors?: string[];
+}> {
+	if (trafficRecords.length === 0) {
+		return { successful_rows: 0, quarantined_rows: 0 };
+	}
+
+	console.log(`🚀 Sending traffic batch to Tinybird: ${trafficRecords.length} records`);
+
+	let successful_rows = 0;
+	let quarantined_rows = 0;
+	const errors: string[] = [];
+
+	// Process records in batches (zod-bird may have individual limits)
+	for (const record of trafficRecords) {
+		try {
+			await ingestTraffic(record);
+			successful_rows++;
+		} catch (error) {
+			console.error('Failed to ingest traffic record:', error);
+			errors.push(`Record ${record.request_id}: ${error}`);
+			quarantined_rows++;
+		}
+	}
+
+	console.log(
+		`✅ Traffic batch processed: ${successful_rows} successful, ${quarantined_rows} quarantined`,
+	);
+
+	return {
+		successful_rows,
+		quarantined_rows,
+		errors: errors.length > 0 ? errors : undefined,
 	};
 }

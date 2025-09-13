@@ -1,0 +1,53 @@
+TOKEN read_write READ
+TOKEN read_write APPEND
+TOKEN read_only READ
+
+DESCRIPTION "Stores traffic and request data for observability including device info, geographic data, and network details"
+
+FORWARD_QUERY >
+  SELECT timestamp, request_id, workspace_id, project_id, campaign_id, landing_page_id, city, continent, country, is_eu_country, latitude, longitude, region, region_code, timezone, device_type, device_os, browser, browser_version, is_mobile, connection_type, language, referrer, user_agent, COALESCE(bot_score, 0) AS bot_score, is_corporate_proxy, is_verified_bot
+
+SCHEMA >
+    `timestamp` DateTime64(3, 'UTC') `json:$.timestamp`,
+    `request_id` String `json:$.request_id`,
+    `workspace_id` Nullable(String) `json:$.workspace_id`,
+    `project_id` Nullable(String) `json:$.project_id`,
+    `campaign_id` Nullable(String) `json:$.campaign_id`,
+    `landing_page_id` Nullable(String) `json:$.landing_page_id`,
+
+    # Geographic data
+    `city` Nullable(String) `json:$.geo.city`,
+    `continent` Nullable(String) `json:$.geo.continent`,
+    `country` Nullable(String) `json:$.geo.country`,
+    `is_eu_country` UInt8 `json:$.geo.is_eu_country`,
+    `latitude` Nullable(String) `json:$.geo.latitude`,
+    `longitude` Nullable(String) `json:$.geo.longitude`,
+    `region` Nullable(String) `json:$.geo.region`,
+    `region_code` Nullable(String) `json:$.geo.region_code`,
+    `timezone` Nullable(String) `json:$.geo.timezone`,
+
+    # Device data (server-side only)
+    `device_type` LowCardinality(String) `json:$.device.type`,
+    `device_os` LowCardinality(String) `json:$.device.os`,
+    `browser` LowCardinality(String) `json:$.device.browser`,
+    `browser_version` Nullable(String) `json:$.device.browser_version`,
+    `is_mobile` UInt8 `json:$.device.is_mobile`,
+    `connection_type` LowCardinality(String) `json:$.device.connection_type`,
+
+    # Localization data
+    `language` Nullable(String) `json:$.localization.language`,
+
+    # Traffic data
+    `referrer` Nullable(String) `json:$.traffic.referrer`,
+    `user_agent` String `json:$.traffic.user_agent`,
+
+    # Bot detection
+    `bot_score` Float32 `json:$.bot_score`,
+    `is_corporate_proxy` UInt8 `json:$.is_corporate_proxy`,
+    `is_verified_bot` UInt8 `json:$.is_verified_bot`
+
+
+ENGINE "MergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(timestamp)"
+ENGINE_SORTING_KEY "timestamp, request_id"
+ENGINE_TTL "toDate(timestamp) + INTERVAL 12 MONTH"

@@ -46,6 +46,10 @@
 			{
 				"queue": "event-ingestion",
 				"binding": "EVENT_QUEUE"
+			},
+			{
+				"queue": "traffic-ingestion",
+				"binding": "TRAFFIC_QUEUE"
 			}
 		],
 		"consumers": [
@@ -62,6 +66,13 @@
 				"max_batch_timeout": 3,
 				"max_retries": 3,
 				"dead_letter_queue": "event-ingestion-dlq"
+			},
+			{
+				"queue": "traffic-ingestion",
+				"max_batch_size": 100,
+				"max_batch_timeout": 5,
+				"max_retries": 3,
+				"dead_letter_queue": "traffic-ingestion-dlq"
 			}
 		]
 	},
@@ -135,6 +146,10 @@
 					{
 						"queue": "event-ingestion-preview",
 						"binding": "EVENT_QUEUE"
+					},
+					{
+						"queue": "traffic-ingestion-preview",
+						"binding": "TRAFFIC_QUEUE"
 					}
 				],
 				"consumers": [
@@ -151,6 +166,13 @@
 						"max_batch_timeout": 3,
 						"max_retries": 3,
 						"dead_letter_queue": "event-ingestion-preview-dlq"
+					},
+					{
+						"queue": "traffic-ingestion-preview",
+						"max_batch_size": 100,
+						"max_batch_timeout": 5,
+						"max_retries": 3,
+						"dead_letter_queue": "traffic-ingestion-preview-dlq"
 					}
 				]
 			},
@@ -218,6 +240,10 @@
 					{
 						"queue": "event-ingestion-production",
 						"binding": "EVENT_QUEUE"
+					},
+					{
+						"queue": "traffic-ingestion-production",
+						"binding": "TRAFFIC_QUEUE"
 					}
 				],
 				"consumers": [
@@ -234,6 +260,13 @@
 						"max_batch_timeout": 3,
 						"max_retries": 3,
 						"dead_letter_queue": "event-ingestion-production-dlq"
+					},
+					{
+						"queue": "traffic-ingestion-production",
+						"max_batch_size": 100,
+						"max_batch_timeout": 5,
+						"max_retries": 3,
+						"dead_letter_queue": "traffic-ingestion-production-dlq"
 					}
 				]
 			},
