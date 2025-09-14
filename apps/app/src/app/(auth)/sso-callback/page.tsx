@@ -3,6 +3,11 @@
 import { AuthenticateWithRedirectCallback } from "@clerk/nextjs";
 
 export default function SSOCallbackPage() {
-	// For standard OAuth flows (sign-in/sign-up), use the default callback
-	return <AuthenticateWithRedirectCallback signInUrl="/" signUpUrl="/new" />;
+  // For standard OAuth flows (sign-in/sign-up), use the default callback
+  return (
+    <AuthenticateWithRedirectCallback
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+    />
+  );
 }
