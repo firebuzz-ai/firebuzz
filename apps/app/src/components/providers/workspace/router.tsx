@@ -4,7 +4,6 @@ import { useProject } from "@/hooks/auth/use-project";
 import { useSubscription } from "@/hooks/auth/use-subscription";
 import { useUser } from "@/hooks/auth/use-user";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useUser as useClerkUser } from "@clerk/nextjs";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -35,7 +34,6 @@ export const useRouterContext = () => {
 
 export const RouterProvider = ({ children }: { children: React.ReactNode }) => {
 	const { isLoading: isUserLoading, isAuthenticated } = useUser();
-	const { isLoaded: isClerkLoaded } = useClerkUser();
 	const {
 		currentWorkspace,
 		workspaces,
@@ -56,11 +54,6 @@ export const RouterProvider = ({ children }: { children: React.ReactNode }) => {
 
 	// Routing Checks (ONBOARDING, WORKSPACE SELECTION, PROJECT SELECTION, NEW USER FLOW)
 	const handleRoutingChecks = useCallback(async () => {
-		// Wait for Clerk to load first
-		if (!isClerkLoaded) {
-			return;
-		}
-
 		// Check if user is authenticated
 		if (!isAuthenticated && !isUserLoading) {
 			router.push("/sign-in");
@@ -155,7 +148,6 @@ export const RouterProvider = ({ children }: { children: React.ReactNode }) => {
 		// All checks passed, mark as done
 		setIsCheckDone(true);
 	}, [
-		isClerkLoaded,
 		isAuthenticated,
 		isUserLoading,
 		isWorkspaceLoading,
