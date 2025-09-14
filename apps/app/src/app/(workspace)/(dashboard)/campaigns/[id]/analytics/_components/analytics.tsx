@@ -10,68 +10,68 @@ import { Panel } from "./panel";
 import { CampaignAnalyticsOverview } from "./screens/overview";
 
 interface AnalyticsProps {
-	id: string;
-	rightPanelSize: number;
+  id: string;
+  rightPanelSize: number;
 }
 
 export const Analytics = ({ id, rightPanelSize }: AnalyticsProps) => {
-	const searchParams = useSearchParams();
-	const currentScreen = searchParams.get("screen") || "overview";
+  const searchParams = useSearchParams();
+  const currentScreen = searchParams.get("screen") || "overview";
 
-	const {
-		data: campaign,
-		isPending: isLoading,
-		isError,
-	} = useCachedRichQuery(
-		api.collections.campaigns.queries.getById,
-		id
-			? {
-					id: id as Id<"campaigns">,
-				}
-			: "skip",
-	);
+  const {
+    data: campaign,
+    isPending: isLoading,
+    isError,
+  } = useCachedRichQuery(
+    api.collections.campaigns.queries.getById,
+    id
+      ? {
+          id: id as Id<"campaigns">,
+        }
+      : "skip"
+  );
 
-	if (isLoading) {
-		return (
-			<div className="flex justify-center items-center w-full h-full">
-				<Spinner size="sm" />
-			</div>
-		);
-	}
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center w-full h-full">
+        <Spinner size="sm" />
+      </div>
+    );
+  }
 
-	if (isError) {
-		return <div>Error</div>;
-	}
+  if (isError) {
+    return <div>Error</div>;
+  }
 
-	if (!campaign) {
-		return notFound();
-	}
+  if (!campaign) {
+    return notFound();
+  }
 
-	const renderScreen = () => {
-		switch (currentScreen) {
-			case "overview":
-				return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
-			case "realtime":
-				return <div className="p-6">Real-time Screen (Coming Soon)</div>;
-			case "abtests":
-				return <div className="p-6">A/B Tests Screen (Coming Soon)</div>;
-			default:
-				return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
-		}
-	};
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case "overview":
+        return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
+      case "realtime":
+        return <div className="p-6">Real-time Screen (Coming Soon)</div>;
+      case "abtests":
+        return <div className="p-6">A/B Tests Screen (Coming Soon)</div>;
+      default:
+        return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
+    }
+  };
 
-	return (
-		<>
-			<TwoPanelsProvider
-				rightPanelSizeFromCookie={rightPanelSize}
-				id="campaign-analytics"
-				isRightPanelClosable={false}
-			>
-				<FlowLayout>{renderScreen()}</FlowLayout>
-				<PanelLayout>
-					<Panel campaign={campaign} />
-				</PanelLayout>
-			</TwoPanelsProvider>
-		</>
-	);
+  return (
+    <>
+      <TwoPanelsProvider
+        rightPanelSizeFromCookie={rightPanelSize}
+        id="campaign-analytics"
+        isRightPanelClosable={true}
+      >
+        <FlowLayout>{renderScreen()}</FlowLayout>
+        <PanelLayout>
+          <Panel />
+        </PanelLayout>
+      </TwoPanelsProvider>
+    </>
+  );
 };

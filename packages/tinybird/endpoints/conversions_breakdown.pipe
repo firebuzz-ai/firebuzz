@@ -22,7 +22,7 @@ DESCRIPTION "Base session data for the specified period"
 
 SQL >
     %
-    SELECT 
+    SELECT
         session_id,
         user_id,
         is_returning,
@@ -50,60 +50,44 @@ SQL >
       AND timestamp >= (SELECT period_start FROM params)
       AND timestamp <= (SELECT period_end FROM params)
 
-NODE conversion_events
-DESCRIPTION "Conversion events for the specified period"
+NODE all_events
+DESCRIPTION "All events for the period (matching sum_primitives logic)"
 
 SQL >
     %
-    SELECT 
+    SELECT
+        e.timestamp,
         e.session_id,
         e.event_id,
+        e.event_type,
         e.event_value,
-        e.event_value_currency,
-        e.timestamp,
-        toHour(e.timestamp) AS conversion_hour,
-        toDayOfWeek(e.timestamp) AS conversion_day_of_week
+        e.event_value_currency
     FROM events_v1 e
     WHERE e.workspace_id = (SELECT workspace_id FROM params)
       AND e.project_id = (SELECT project_id FROM params)
       AND e.campaign_id = (SELECT campaign_id FROM params)
       AND e.environment = (SELECT environment FROM params)
       AND e.campaign_environment = (SELECT campaign_environment FROM params)
-      AND e.event_id = (SELECT conversion_event_id FROM params)
       AND e.timestamp >= (SELECT period_start FROM params)
       AND e.timestamp <= (SELECT period_end FROM params)
-
-NODE session_conversions
-DESCRIPTION "Sessions with conversion data joined"
-
-SQL >
-    %
-    SELECT 
-        s.*,
-        c.event_value,
-        c.event_value_currency,
-        c.conversion_hour,
-        c.conversion_day_of_week,
-        CASE WHEN c.session_id IS NOT NULL THEN 1 ELSE 0 END AS has_conversion
-    FROM base_sessions s
-    LEFT JOIN conversion_events c ON s.session_id = c.session_id
 
 NODE device_conversions
 DESCRIPTION "Conversion analysis by device type"
 
 SQL >
     %
-    SELECT 
-        device_type,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY device_type
+    SELECT
+        s.device_type,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.device_type
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -112,17 +96,18 @@ DESCRIPTION "Conversion analysis by operating system"
 
 SQL >
     %
-    SELECT 
-        device_os,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY device_os
+    SELECT
+        s.device_os,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.device_os
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -131,17 +116,18 @@ DESCRIPTION "Conversion analysis by browser"
 
 SQL >
     %
-    SELECT 
-        browser,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY browser
+    SELECT
+        s.browser,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.browser
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -150,17 +136,18 @@ DESCRIPTION "Conversion analysis by country"
 
 SQL >
     %
-    SELECT 
-        country,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY country
+    SELECT
+        s.country,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.country
     ORDER BY conversions DESC
     LIMIT 15
 
@@ -169,18 +156,19 @@ DESCRIPTION "Conversion analysis by city"
 
 SQL >
     %
-    SELECT 
-        city,
-        country,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY city, country
+    SELECT
+        s.city,
+        s.country,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.city, s.country
     ORDER BY conversions DESC
     LIMIT 20
 
@@ -189,17 +177,18 @@ DESCRIPTION "Conversion analysis by UTM source"
 
 SQL >
     %
-    SELECT 
-        utm_source,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY utm_source
+    SELECT
+        s.utm_source,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.utm_source
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -208,17 +197,18 @@ DESCRIPTION "Conversion analysis by UTM medium"
 
 SQL >
     %
-    SELECT 
-        utm_medium,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY utm_medium
+    SELECT
+        s.utm_medium,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.utm_medium
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -227,17 +217,18 @@ DESCRIPTION "Conversion analysis by UTM campaign"
 
 SQL >
     %
-    SELECT 
-        utm_campaign,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    GROUP BY utm_campaign
+    SELECT
+        s.utm_campaign,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    GROUP BY s.utm_campaign
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -246,18 +237,19 @@ DESCRIPTION "Conversion analysis by landing page"
 
 SQL >
     %
-    SELECT 
-        landing_page_id,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    WHERE landing_page_id IS NOT NULL
-    GROUP BY landing_page_id
+    SELECT
+        s.landing_page_id,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE s.landing_page_id IS NOT NULL
+    GROUP BY s.landing_page_id
     ORDER BY conversions DESC
     LIMIT 15
 
@@ -266,59 +258,62 @@ DESCRIPTION "Conversion patterns by hour of day"
 
 SQL >
     %
-    SELECT 
-        conversion_hour AS hour,
-        count(*) AS conversions,
-        uniqExact(user_id) AS converting_users,
-        sumIf(event_value, event_value_currency = 'USD') AS conversion_value_usd,
-        coalesce(avgIf(event_value, event_value_currency = 'USD'), 0) AS avg_conversion_value
-    FROM session_conversions
-    WHERE has_conversion = 1
-    GROUP BY conversion_hour
-    ORDER BY conversion_hour
+    SELECT
+        toHour(e.timestamp) AS hour,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS avg_conversion_value
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE e.event_id = (SELECT conversion_event_id FROM params)
+    GROUP BY toHour(e.timestamp)
+    ORDER BY hour
 
 NODE daily_conversions
 DESCRIPTION "Conversion patterns by day of week"
 
 SQL >
     %
-    SELECT 
-        conversion_day_of_week AS day_of_week,
-        CASE 
-            WHEN conversion_day_of_week = 1 THEN 'Monday'
-            WHEN conversion_day_of_week = 2 THEN 'Tuesday'
-            WHEN conversion_day_of_week = 3 THEN 'Wednesday'
-            WHEN conversion_day_of_week = 4 THEN 'Thursday'
-            WHEN conversion_day_of_week = 5 THEN 'Friday'
-            WHEN conversion_day_of_week = 6 THEN 'Saturday'
-            WHEN conversion_day_of_week = 7 THEN 'Sunday'
+    SELECT
+        toDayOfWeek(e.timestamp) AS day_of_week,
+        CASE
+            WHEN toDayOfWeek(e.timestamp) = 1 THEN 'Monday'
+            WHEN toDayOfWeek(e.timestamp) = 2 THEN 'Tuesday'
+            WHEN toDayOfWeek(e.timestamp) = 3 THEN 'Wednesday'
+            WHEN toDayOfWeek(e.timestamp) = 4 THEN 'Thursday'
+            WHEN toDayOfWeek(e.timestamp) = 5 THEN 'Friday'
+            WHEN toDayOfWeek(e.timestamp) = 6 THEN 'Saturday'
+            WHEN toDayOfWeek(e.timestamp) = 7 THEN 'Sunday'
             ELSE 'Unknown'
         END AS day_name,
-        count(*) AS conversions,
-        uniqExact(user_id) AS converting_users,
-        sumIf(event_value, event_value_currency = 'USD') AS conversion_value_usd,
-        coalesce(avgIf(event_value, event_value_currency = 'USD'), 0) AS avg_conversion_value
-    FROM session_conversions
-    WHERE has_conversion = 1
-    GROUP BY conversion_day_of_week, day_name
-    ORDER BY conversion_day_of_week
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS avg_conversion_value
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE e.event_id = (SELECT conversion_event_id FROM params)
+    GROUP BY toDayOfWeek(e.timestamp), day_name
+    ORDER BY day_of_week
 
 NODE user_type_conversions
 DESCRIPTION "Conversion analysis by user type (new vs returning)"
 
 SQL >
     %
-    SELECT 
-        CASE 
-            WHEN is_returning = 0 THEN 'New'
+    SELECT
+        CASE
+            WHEN s.is_returning = 0 THEN 'New'
             ELSE 'Returning'
         END AS user_type,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate
-    FROM session_conversions
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
     GROUP BY user_type
     ORDER BY conversions DESC
 
@@ -327,25 +322,26 @@ DESCRIPTION "Distribution of conversion values"
 
 SQL >
     %
-    SELECT 
-        CASE 
-            WHEN event_value = 0 THEN '$0'
-            WHEN event_value <= 10 THEN '$1-10'
-            WHEN event_value <= 50 THEN '$11-50'
-            WHEN event_value <= 100 THEN '$51-100'
-            WHEN event_value <= 500 THEN '$101-500'
-            WHEN event_value <= 1000 THEN '$501-1000'
+    SELECT
+        CASE
+            WHEN e.event_value = 0 THEN '$0'
+            WHEN e.event_value <= 10 THEN '$1-10'
+            WHEN e.event_value <= 50 THEN '$11-50'
+            WHEN e.event_value <= 100 THEN '$51-100'
+            WHEN e.event_value <= 500 THEN '$101-500'
+            WHEN e.event_value <= 1000 THEN '$501-1000'
             ELSE '$1000+'
         END AS value_range,
-        count(*) AS conversions,
-        uniqExact(user_id) AS converting_users,
-        sum(event_value) AS total_value,
-        avg(event_value) AS avg_value
-    FROM session_conversions
-    WHERE has_conversion = 1 AND event_value_currency = 'USD'
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS total_value,
+        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS avg_value
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD'
     GROUP BY value_range
-    ORDER BY 
-        CASE 
+    ORDER BY
+        CASE
             WHEN value_range = '$0' THEN 0
             WHEN value_range = '$1-10' THEN 1
             WHEN value_range = '$11-50' THEN 2
@@ -360,18 +356,19 @@ DESCRIPTION "Conversion analysis by AB test variant"
 
 SQL >
     %
-    SELECT 
-        ab_test_variant_id,
-        count(*) AS sessions,
-        uniqExact(user_id) AS users,
-        sumIf(has_conversion, has_conversion = 1) AS conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS conversion_value_usd,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS conversion_rate,
-        countIf(is_returning = 0 AND has_conversion = 1) AS new_user_conversions,
-        countIf(is_returning = 1 AND has_conversion = 1) AS returning_user_conversions
-    FROM session_conversions
-    WHERE ab_test_variant_id IS NOT NULL
-    GROUP BY ab_test_variant_id
+    SELECT
+        s.ab_test_variant_id,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE s.ab_test_variant_id IS NOT NULL
+    GROUP BY s.ab_test_variant_id
     ORDER BY conversions DESC
     LIMIT 10
 
@@ -380,24 +377,25 @@ DESCRIPTION "Total conversion metrics"
 
 SQL >
     %
-    SELECT 
-        count(*) AS total_sessions,
-        uniqExact(user_id) AS total_users,
-        sumIf(has_conversion, has_conversion = 1) AS total_conversions,
-        sumIf(event_value, has_conversion = 1 AND event_value_currency = 'USD') AS total_conversion_value,
-        round((sumIf(has_conversion, has_conversion = 1) * 100.0) / count(*), 2) AS overall_conversion_rate
-    FROM session_conversions
+    SELECT
+        count(DISTINCT s.session_id) AS total_sessions,
+        uniqExact(s.user_id) AS total_users,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS total_conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS total_conversion_value,
+        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS overall_conversion_rate
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
 
 NODE response
 DESCRIPTION "Complete conversions breakdown response"
 
 SQL >
     %
-    WITH 
+    WITH
     totals_data AS (
-        SELECT 
-            total_sessions, 
-            total_users, 
+        SELECT
+            total_sessions,
+            total_users,
             total_conversions,
             total_conversion_value,
             overall_conversion_rate
@@ -405,9 +403,9 @@ SQL >
     ),
     device_conversions_array AS (
         SELECT groupArray(tuple(
-            device_type, 
-            sessions, 
-            users, 
+            device_type,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -417,9 +415,9 @@ SQL >
     ),
     os_conversions_array AS (
         SELECT groupArray(tuple(
-            device_os, 
-            sessions, 
-            users, 
+            device_os,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -429,9 +427,9 @@ SQL >
     ),
     browser_conversions_array AS (
         SELECT groupArray(tuple(
-            browser, 
-            sessions, 
-            users, 
+            browser,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -441,9 +439,9 @@ SQL >
     ),
     geographic_conversions_array AS (
         SELECT groupArray(tuple(
-            country, 
-            sessions, 
-            users, 
+            country,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -454,9 +452,9 @@ SQL >
     city_conversions_array AS (
         SELECT groupArray(tuple(
             city,
-            country, 
-            sessions, 
-            users, 
+            country,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -466,9 +464,9 @@ SQL >
     ),
     utm_source_conversions_array AS (
         SELECT groupArray(tuple(
-            utm_source, 
-            sessions, 
-            users, 
+            utm_source,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -478,9 +476,9 @@ SQL >
     ),
     utm_medium_conversions_array AS (
         SELECT groupArray(tuple(
-            utm_medium, 
-            sessions, 
-            users, 
+            utm_medium,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -490,9 +488,9 @@ SQL >
     ),
     utm_campaign_conversions_array AS (
         SELECT groupArray(tuple(
-            utm_campaign, 
-            sessions, 
-            users, 
+            utm_campaign,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -502,9 +500,9 @@ SQL >
     ),
     landing_page_conversions_array AS (
         SELECT groupArray(tuple(
-            landing_page_id, 
-            sessions, 
-            users, 
+            landing_page_id,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
@@ -514,8 +512,8 @@ SQL >
     ),
     hourly_conversions_array AS (
         SELECT groupArray(tuple(
-            hour, 
-            conversions, 
+            hour,
+            conversions,
             converting_users,
             conversion_value_usd,
             avg_conversion_value
@@ -524,8 +522,8 @@ SQL >
     daily_conversions_array AS (
         SELECT groupArray(tuple(
             day_of_week,
-            day_name, 
-            conversions, 
+            day_name,
+            conversions,
             converting_users,
             conversion_value_usd,
             avg_conversion_value
@@ -533,9 +531,9 @@ SQL >
     ),
     user_type_conversions_array AS (
         SELECT groupArray(tuple(
-            user_type, 
-            sessions, 
-            users, 
+            user_type,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate
@@ -543,8 +541,8 @@ SQL >
     ),
     value_distribution_array AS (
         SELECT groupArray(tuple(
-            value_range, 
-            conversions, 
+            value_range,
+            conversions,
             converting_users,
             total_value,
             avg_value
@@ -552,9 +550,9 @@ SQL >
     ),
     ab_test_conversions_array AS (
         SELECT groupArray(tuple(
-            ab_test_variant_id, 
-            sessions, 
-            users, 
+            ab_test_variant_id,
+            sessions,
+            users,
             conversions,
             conversion_value_usd,
             conversion_rate,
