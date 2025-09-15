@@ -94,14 +94,20 @@ const realtimeOverviewParamsSchema = z.object({
 		z.literal("preview"),
 	]),
 	campaignEnvironment: z.union([z.literal("preview"), z.literal("production")]),
+	conversionEventId: z.string(),
 	lookbackMinutes: z.number().optional(),
 });
 
 const realtimeOverviewResponseSchema = z.object({
 	active_sessions: z.number(),
 	events: z.number(),
+	conversions: z.number(),
+	conversion_value: z.number(),
 	countries: z.array(z.string()),
 	devices: z.array(z.string()),
+	top_landing_pages: z.array(z.string()),
+	traffic_sources: z.array(z.string()),
+	top_events: z.array(z.string()),
 });
 
 const abTestResultsParamsSchema = z.object({
@@ -275,6 +281,7 @@ const audienceBreakdownResponseSchema = z.object({
 		]),
 	),
 	utm_sources: z.array(audienceSegmentSchema),
+	sources: z.array(audienceSegmentSchema),
 	utm_mediums: z.array(audienceSegmentSchema),
 	utm_campaigns: z.array(audienceSegmentSchema),
 	referrers: z.array(audienceSegmentSchema),

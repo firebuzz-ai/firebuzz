@@ -13,6 +13,7 @@ export const createAnalyticsPipe = internalMutation({
 			v.literal("timeseries-primitives"),
 			v.literal("audience-breakdown"),
 			v.literal("conversions-breakdown"),
+			v.literal("realtime-overview"),
 		),
 		campaignId: v.id("campaigns"),
 		workspaceId: v.id("workspaces"),
@@ -108,6 +109,16 @@ export const revalidateAnalytics = mutation({
 					),
 					eventIds: v.optional(v.string()),
 				}),
+				v.object({
+					queryId: v.literal("realtime-overview"),
+					periodStart: v.string(),
+					periodEnd: v.string(),
+					conversionEventId: v.string(),
+					campaignEnvironment: v.union(
+						v.literal("preview"),
+						v.literal("production"),
+					),
+				}),
 			),
 		),
 	},
@@ -174,19 +185,28 @@ export const revalidateAnalytics = mutation({
 
 					console.log("cacheHit", !shouldBypassTimeCheck);
 
-					// Check last updated at (now - 3 minute) only if key hasn't changed
+					// Check last updated at with different TTL based on query type
 					if (!shouldBypassTimeCheck) {
 						const lastUpdatedAt = new Date(
 							existingAnalyticsPipe.lastUpdatedAt,
 						).getTime();
-						const threeMinutesAgo = new Date(Date.now() - 180000).getTime();
 
-						if (lastUpdatedAt > threeMinutesAgo) {
-							console.log("Last updated at is less than 3 minutes ago");
+						// Use shorter cache TTL for realtime queries
+						const cacheTTL = queryParams.queryId === "realtime-overview"
+							? 15000  // 15 seconds for realtime data
+							: 180000; // 3 minutes for other analytics
+
+						const cacheExpiryTime = new Date(Date.now() - cacheTTL).getTime();
+
+						if (lastUpdatedAt > cacheExpiryTime) {
+							const ttlDescription = queryParams.queryId === "realtime-overview"
+								? "15 seconds"
+								: "3 minutes";
+							console.log(`Last updated at is less than ${ttlDescription} ago`);
 							results.push({
 								query: queryParams.queryId,
 								scheduled: false,
-								error: "Last updated at is less than 1 minute ago",
+								error: `Last updated at is less than ${ttlDescription} ago`,
 							});
 							continue;
 						}

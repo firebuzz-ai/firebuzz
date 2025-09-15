@@ -9,6 +9,7 @@ const queryBaseSchema = v.object({
 		v.literal("timeseries-primitives"),
 		v.literal("audience-breakdown"),
 		v.literal("conversions-breakdown"),
+		v.literal("realtime-overview"),
 	),
 	campaignId: v.id("campaigns"),
 	workspaceId: v.id("workspaces"),
@@ -106,6 +107,7 @@ export const audienceBreakdownSchema = v.object({
 		countries: v.array(v.array(v.union(v.string(), v.number()))),
 		cities: v.array(v.array(v.union(v.string(), v.number()))),
 		utm_sources: v.array(v.array(v.union(v.string(), v.number()))),
+		sources: v.array(v.array(v.union(v.string(), v.number()))),
 		utm_mediums: v.array(v.array(v.union(v.string(), v.number()))),
 		utm_campaigns: v.array(v.array(v.union(v.string(), v.number()))),
 		referrers: v.array(v.array(v.union(v.string(), v.number()))),
@@ -146,6 +148,22 @@ export const conversionsBreakdownSchema = v.object({
 	}),
 });
 
+export const realtimeOverviewSchema = v.object({
+	...queryBaseSchema.fields,
+	queryId: v.literal("realtime-overview"),
+	payload: v.object({
+		active_sessions: v.number(),
+		events: v.number(),
+		conversions: v.number(),
+		conversion_value: v.number(),
+		countries: v.array(v.string()),
+		devices: v.array(v.string()),
+		top_landing_pages: v.array(v.string()),
+		traffic_sources: v.array(v.string()),
+		top_events: v.array(v.string()),
+	}),
+});
+
 export const analyticsPipesSchema = defineTable(
 	v.union(
 		// Sum Primitives query
@@ -156,6 +174,8 @@ export const analyticsPipesSchema = defineTable(
 		audienceBreakdownSchema,
 		// Conversions Breakdown query
 		conversionsBreakdownSchema,
+		// Realtime Overview query
+		realtimeOverviewSchema,
 	),
 )
 	.index("by_campaign_query", ["campaignId", "queryId"])

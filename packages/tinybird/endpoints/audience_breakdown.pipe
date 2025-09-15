@@ -36,6 +36,12 @@ SQL >
         coalesce(nullIf(utm_medium, ''), 'Direct') AS utm_medium,
         coalesce(nullIf(utm_campaign, ''), 'Direct') AS utm_campaign,
         coalesce(nullIf(referrer, ''), 'Direct') AS referrer,
+        CASE
+            WHEN nullIf(source, '') IS NOT NULL THEN source
+            WHEN nullIf(ref, '') IS NOT NULL THEN ref
+            WHEN nullIf(utm_source, '') IS NOT NULL THEN utm_source
+            ELSE 'Direct'
+        END AS unified_source,
         landing_page_id,
         ab_test_variant_id,
         toHour(timestamp) AS hour_of_day,
@@ -144,6 +150,22 @@ SQL >
         countIf(is_returning = 1) AS returning_sessions
     FROM base_sessions
     GROUP BY utm_source
+    ORDER BY sessions DESC
+    LIMIT 10
+
+NODE sources
+DESCRIPTION "Sessions breakdown by unified source (source > ref > utm_source > direct)"
+
+SQL >
+    %
+    SELECT
+        unified_source AS source,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        countIf(is_returning = 0) AS new_sessions,
+        countIf(is_returning = 1) AS returning_sessions
+    FROM base_sessions
+    GROUP BY unified_source
     ORDER BY sessions DESC
     LIMIT 10
 
@@ -367,6 +389,16 @@ SQL >
             round((sessions * 100.0) / (SELECT total_sessions FROM totals_data), 2)
         )) AS utm_sources FROM utm_sources
     ),
+    sources_array AS (
+        SELECT groupArray(tuple(
+            source,
+            sessions,
+            users,
+            new_sessions,
+            returning_sessions,
+            round((sessions * 100.0) / (SELECT total_sessions FROM totals_data), 2)
+        )) AS sources FROM sources
+    ),
     utm_mediums_array AS (
         SELECT groupArray(tuple(
             utm_medium, 
@@ -455,6 +487,7 @@ SQL >
         coalesce(co.countries, []) AS countries,
         coalesce(ci.cities, []) AS cities,
         coalesce(us.utm_sources, []) AS utm_sources,
+        coalesce(s.sources, []) AS sources,
         coalesce(um.utm_mediums, []) AS utm_mediums,
         coalesce(uc.utm_campaigns, []) AS utm_campaigns,
         coalesce(rf.referrers, []) AS referrers,
@@ -470,6 +503,7 @@ SQL >
     LEFT JOIN countries_array co ON 1=1
     LEFT JOIN cities_array ci ON 1=1
     LEFT JOIN utm_sources_array us ON 1=1
+    LEFT JOIN sources_array s ON 1=1
     LEFT JOIN utm_mediums_array um ON 1=1
     LEFT JOIN utm_campaigns_array uc ON 1=1
     LEFT JOIN referrers_array rf ON 1=1

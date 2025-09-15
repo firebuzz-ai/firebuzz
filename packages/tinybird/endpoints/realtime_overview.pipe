@@ -12,6 +12,7 @@ SQL >
         {{ String(campaignId, required=True) }} AS campaign_id,
         {{ String(environment, required=True) }} AS environment,
         {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
         {% if lookbackMinutes %} {{ Int32(lookbackMinutes) }} {% else %} toInt32(30) {% end %} AS lookback_minutes
 
 NODE recent_sessions
@@ -19,7 +20,7 @@ DESCRIPTION "Sessions started/active in lookback window"
 
 SQL >
     %
-    SELECT session_id, timestamp, country, device_type
+    SELECT session_id, timestamp, country, device_type, landing_page_id, utm_source, ref, source
     FROM session_v1
     WHERE workspace_id = (SELECT workspace_id FROM params)
       AND project_id = (SELECT project_id FROM params)
@@ -33,7 +34,7 @@ DESCRIPTION "Events in lookback window"
 
 SQL >
     %
-    SELECT timestamp, event_id, session_id
+    SELECT timestamp, event_id, session_id, event_value, event_value_currency, event_type
     FROM events_v1
     WHERE workspace_id = (SELECT workspace_id FROM params)
       AND project_id = (SELECT project_id FROM params)
@@ -43,7 +44,7 @@ SQL >
       AND timestamp >= now() - toIntervalMinute((SELECT lookback_minutes FROM params))
 
 NODE aggregates
-DESCRIPTION "Active sessions, events, countries, devices"
+DESCRIPTION "Active sessions, events, conversions, countries, devices"
 
 SQL >
     %
@@ -51,18 +52,46 @@ SQL >
       SELECT uniqExact(session_id) AS active_sessions FROM recent_sessions
     ),
     ev AS (
-      SELECT count() AS events FROM recent_events
+      SELECT countIf(event_type != 'system') AS events FROM recent_events
+    ),
+    conversions AS (
+      SELECT
+        countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversion_count,
+        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params) AND event_value_currency = 'USD') AS conversion_value
+      FROM recent_events
     ),
     countries AS (
       SELECT arraySort(groupArrayDistinct(country)) AS countries FROM recent_sessions
     ),
     devices AS (
       SELECT arraySort(groupArrayDistinct(device_type)) AS devices FROM recent_sessions
+    ),
+    top_pages AS (
+      SELECT topK(5)(landing_page_id) AS top_landing_pages FROM recent_sessions WHERE landing_page_id IS NOT NULL
+    ),
+    traffic_sources AS (
+      SELECT arraySort(groupArrayDistinct(
+        CASE
+          WHEN utm_source IS NOT NULL THEN utm_source
+          WHEN ref IS NOT NULL THEN ref
+          WHEN source IS NOT NULL THEN source
+          ELSE 'direct'
+        END
+      )) AS sources FROM recent_sessions
+    ),
+    top_events AS (
+      SELECT topK(5)(event_id) AS top_event_ids FROM recent_events
+      WHERE event_type != 'system'
     )
     SELECT (SELECT active_sessions FROM active) AS active_sessions,
            (SELECT events FROM ev) AS events,
+           (SELECT conversion_count FROM conversions) AS conversions,
+           (SELECT conversion_value FROM conversions) AS conversion_value,
            (SELECT countries FROM countries) AS countries,
-           (SELECT devices FROM devices) AS devices
+           (SELECT devices FROM devices) AS devices,
+           (SELECT top_landing_pages FROM top_pages) AS top_landing_pages,
+           (SELECT sources FROM traffic_sources) AS traffic_sources,
+           (SELECT top_event_ids FROM top_events) AS top_events
 
 TYPE ENDPOINT
 

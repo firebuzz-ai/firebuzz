@@ -5,6 +5,7 @@ import { internalAction } from "../../_generated/server";
 import {
   getAudienceBreakdown,
   getConversionsBreakdown,
+  getRealtimeOverview,
   getSumPrimitives,
   getTimeseriesPrimitives,
 } from "../../lib/tinybird";
@@ -66,12 +67,22 @@ const conversionsBreakdownParamsSchema = v.object({
   eventIds: eventIdsSchema,
 });
 
+// Realtime Overview Query Params
+const realtimeOverviewParamsSchema = v.object({
+  queryId: v.literal("realtime-overview"),
+  periodStart: periodStartSchema,
+  periodEnd: periodEndSchema,
+  conversionEventId: conversionEventIdSchema,
+  campaignEnvironment: campaignEnvironmentSchema,
+});
+
 // Union of all query params
 const queryParamsSchema = v.union(
   sumPrimitivesParamsSchema,
   timeseriesPrimitivesParamsSchema,
   audienceBreakdownParamsSchema,
-  conversionsBreakdownParamsSchema
+  conversionsBreakdownParamsSchema,
+  realtimeOverviewParamsSchema
 );
 
 export const fetchAnalyticsPipe = internalAction({
@@ -91,7 +102,10 @@ export const fetchAnalyticsPipe = internalAction({
       const normalizedParams = { ...params };
       if ("periodStart" in params && "periodEnd" in params) {
         const { normalizedPeriodStart, normalizedPeriodEnd } =
-          normalizePeriodForCaching(params.periodStart, params.periodEnd);
+          normalizePeriodForCaching(
+            params.periodStart,
+            params.periodEnd
+          );
         normalizedParams.periodStart = normalizedPeriodStart;
         normalizedParams.periodEnd = normalizedPeriodEnd;
       }
@@ -158,6 +172,7 @@ export const fetchAnalyticsPipe = internalAction({
         countries: Array<[string, number, number, number, number, number]>;
         cities: Array<[string, string, number, number, number, number, number]>;
         utm_sources: Array<[string, number, number, number, number, number]>;
+        sources: Array<[string, number, number, number, number, number]>;
         utm_mediums: Array<[string, number, number, number, number, number]>;
         utm_campaigns: Array<[string, number, number, number, number, number]>;
         referrers: Array<[string, number, number, number, number, number]>;
@@ -230,11 +245,24 @@ export const fetchAnalyticsPipe = internalAction({
         >;
       };
 
+      type RealtimeOverviewData = {
+        active_sessions: number;
+        events: number;
+        conversions: number;
+        conversion_value: number;
+        countries: string[];
+        devices: string[];
+        top_landing_pages: string[];
+        traffic_sources: string[];
+        top_events: string[];
+      };
+
       let data:
         | SumPrimitivesData
         | TimeseriesData
         | AudienceBreakdownData
-        | ConversionsBreakdownData;
+        | ConversionsBreakdownData
+        | RealtimeOverviewData;
 
       if (params.queryId === "sum-primitives") {
         const response = await getSumPrimitives({
@@ -323,6 +351,32 @@ export const fetchAnalyticsPipe = internalAction({
         const singleData = response.data[0];
         if (!singleData) {
           throw new Error("No data returned from conversions breakdown");
+        }
+        data = singleData;
+      } else if (params.queryId === "realtime-overview") {
+
+        // Calculate lookback minutes from periodStart and periodEnd
+        const periodStartTime = new Date(params.periodStart).getTime();
+        const periodEndTime = new Date(params.periodEnd).getTime();
+        const lookbackMinutes = Math.round((periodEndTime - periodStartTime) / (1000 * 60));
+
+        const response = await getRealtimeOverview({
+          workspaceId,
+          projectId,
+          campaignId,
+          environment: (process.env.ENVIRONMENT || "dev") as
+            | "dev"
+            | "production"
+            | "preview",
+          campaignEnvironment: params.campaignEnvironment,
+          conversionEventId: params.conversionEventId,
+          lookbackMinutes: Math.max(1, lookbackMinutes), // Ensure at least 1 minute
+        });
+
+        // Handle single row response from realtime overview
+        const singleData = response.data[0];
+        if (!singleData) {
+          throw new Error("No data returned from realtime overview");
         }
         data = singleData;
       } else {

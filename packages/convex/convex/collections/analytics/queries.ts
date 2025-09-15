@@ -14,6 +14,7 @@ export const getByQueryId = internalQuery({
 			v.literal("timeseries-primitives"),
 			v.literal("audience-breakdown"),
 			v.literal("conversions-breakdown"),
+			v.literal("realtime-overview"),
 		),
 	},
 	handler: async (ctx, args) => {
@@ -160,6 +161,33 @@ export const getConversionsBreakdown = query({
 	},
 });
 
+// Public query for fetching realtime overview analytics data
+export const getRealtimeOverview = query({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		await verifyCampaignAccess(ctx, args.campaignId);
+
+		const result = await ctx.db
+			.query("analyticsPipes")
+			.withIndex("by_campaign_query", (q) =>
+				q.eq("campaignId", args.campaignId).eq("queryId", "realtime-overview"),
+			)
+			.first();
+
+		if (!result) {
+			return null;
+		}
+
+		// Type assertion since we know this is realtime-overview
+		return result as Extract<
+			Doc<"analyticsPipes">,
+			{ queryId: "realtime-overview" }
+		>;
+	},
+});
+
 // Query to get analytics data by workspace for admin purposes
 export const getByWorkspace = query({
 	args: {
@@ -239,6 +267,9 @@ export const getAllCampaignAnalytics = query({
 		const conversionsBreakdown = allResults.find(
 			(r) => r.queryId === "conversions-breakdown",
 		);
+		const realtimeOverview = allResults.find(
+			(r) => r.queryId === "realtime-overview",
+		);
 
 		return {
 			sumPrimitives: sumPrimitives as Extract<
@@ -256,6 +287,10 @@ export const getAllCampaignAnalytics = query({
 			conversionsBreakdown: conversionsBreakdown as Extract<
 				Doc<"analyticsPipes">,
 				{ queryId: "conversions-breakdown" }
+			> | null,
+			realtimeOverview: realtimeOverview as Extract<
+				Doc<"analyticsPipes">,
+				{ queryId: "realtime-overview" }
 			> | null,
 		};
 	},

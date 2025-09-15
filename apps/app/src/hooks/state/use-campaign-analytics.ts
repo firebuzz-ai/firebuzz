@@ -122,6 +122,12 @@ export function useCampaignAnalytics({
     shouldFetchAnalytics ? { campaignId } : "skip"
   );
 
+  // Query realtime overview analytics data
+  const realtimeOverviewQuery = useCachedQuery(
+    api.collections.analytics.queries.getRealtimeOverview,
+    shouldFetchAnalytics ? { campaignId } : "skip"
+  );
+
   // Query all landing pages for the campaign
   const landingPagesQuery = useCachedQuery(
     api.collections.landingPages.queries.getByCampaignId,
@@ -157,10 +163,17 @@ export function useCampaignAnalytics({
       if (currentScreen === "overview") {
         // Get conversion event ID from campaign settings
         const conversionEventId =
-          campaign.campaignSettings?.primaryGoal?.id ??
+          campaign.campaignSettings?.primaryGoal?.id ||
           (campaign.type === "lead-generation"
             ? "form-submission"
             : "external-link-click");
+
+        // Ensure conversionEventId is never undefined
+        if (!conversionEventId) {
+          console.error("No conversion event ID found, using fallback");
+          throw new Error("Unable to determine conversion event ID for analytics");
+        }
+
 
         // Overview screen uses sum-primitives and timeseries-primitives queries
         queries.push({
@@ -222,6 +235,19 @@ export function useCampaignAnalytics({
             ?.map((event) => event.id)
             .join(","), // Optional string field for custom events
         });
+
+        // Add realtime overview query (use last 30 minutes)
+        const now = new Date();
+        const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+        queries.push({
+          queryId: "realtime-overview" as const,
+          periodStart: thirtyMinutesAgo.toISOString(),
+          periodEnd: now.toISOString(),
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+        });
       }
 
       // Future screens can add more queries here
@@ -278,6 +304,7 @@ export function useCampaignAnalytics({
       timeseriesPrimitives: timeseriesPrimitivesQuery,
       audienceBreakdown: audienceBreakdownQuery,
       conversionsBreakdown: conversionsBreakdownQuery,
+      realtimeOverview: realtimeOverviewQuery,
       landingPages: landingPagesQuery,
     };
   }, [
@@ -285,6 +312,7 @@ export function useCampaignAnalytics({
     timeseriesPrimitivesQuery,
     audienceBreakdownQuery,
     conversionsBreakdownQuery,
+    realtimeOverviewQuery,
     landingPagesQuery,
   ]);
 

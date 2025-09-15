@@ -23,7 +23,7 @@ const OAuthSignIn = () => {
       await signIn.authenticateWithRedirect({
         strategy,
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/campaigns",
+        redirectUrlComplete: "/",
       });
     } catch (error) {
       console.log(error);
