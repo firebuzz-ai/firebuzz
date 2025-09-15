@@ -20,7 +20,14 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import { Check, Link, Loader2, Plus, Settings, X } from "@firebuzz/ui/icons/lucide";
+import {
+	Check,
+	Link,
+	Loader2,
+	Plus,
+	Settings,
+	X,
+} from "@firebuzz/ui/icons/lucide";
 import { cn, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
@@ -74,9 +81,9 @@ export const FormSettingsView = ({
 	const [successRedirectState, setSuccessRedirectState] = useState<
 		"idle" | "updating" | "success" | "error"
 	>("idle");
-	const [successRedirectError, setSuccessRedirectError] = useState<string | null>(
-		null,
-	);
+	const [successRedirectError, setSuccessRedirectError] = useState<
+		string | null
+	>(null);
 
 	// Get campaign data for GDPR settings
 	const campaign = useQuery(api.collections.campaigns.queries.getById, {
@@ -159,7 +166,10 @@ export const FormSettingsView = ({
 
 		// Success redirect URL comes from form node data
 		setSuccessRedirectUrl(currentFormSettings.successRedirectUrl || "");
-	}, [campaign?.campaignSettings?.gdpr, currentFormSettings.successRedirectUrl]);
+	}, [
+		campaign?.campaignSettings?.gdpr,
+		currentFormSettings.successRedirectUrl,
+	]);
 
 	// URL validation function
 	const validateUrl = (url: string): string | null => {
@@ -227,7 +237,9 @@ export const FormSettingsView = ({
 			const errorMessage =
 				error instanceof Error ? error.message : "Failed to update URL";
 			setPrivacyPolicyError(errorMessage);
-			setPrivacyPolicyUrl(campaign?.campaignSettings?.gdpr?.privacyPolicyUrl || "");
+			setPrivacyPolicyUrl(
+				campaign?.campaignSettings?.gdpr?.privacyPolicyUrl || "",
+			);
 		}
 	};
 
@@ -249,7 +261,8 @@ export const FormSettingsView = ({
 		}
 
 		// If URL hasn't changed, do nothing
-		const currentUrl = campaign?.campaignSettings?.gdpr?.termsOfServiceUrl || "";
+		const currentUrl =
+			campaign?.campaignSettings?.gdpr?.termsOfServiceUrl || "";
 		if (trimmedUrl === currentUrl) {
 			setTermsOfServiceState("idle");
 			return;
@@ -282,7 +295,9 @@ export const FormSettingsView = ({
 			const errorMessage =
 				error instanceof Error ? error.message : "Failed to update URL";
 			setTermsOfServiceError(errorMessage);
-			setTermsOfServiceUrl(campaign?.campaignSettings?.gdpr?.termsOfServiceUrl || "");
+			setTermsOfServiceUrl(
+				campaign?.campaignSettings?.gdpr?.termsOfServiceUrl || "",
+			);
 		}
 	};
 
@@ -532,12 +547,10 @@ export const FormSettingsView = ({
 						{/* Legal Document URLs */}
 						<div className="space-y-4">
 							<div>
-								<h4 className="text-sm font-medium">
-									Legal Document URLs
-								</h4>
+								<h4 className="text-sm font-medium">Legal Document URLs</h4>
 								<p className="mt-1 text-xs text-muted-foreground">
-									Provide links to your privacy policy and terms of service
-									for compliance
+									Provide links to your privacy policy and terms of service for
+									compliance
 								</p>
 							</div>
 

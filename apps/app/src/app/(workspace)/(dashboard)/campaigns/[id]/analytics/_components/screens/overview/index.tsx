@@ -105,6 +105,7 @@ export const CampaignAnalyticsOverview = ({
 					isPreview={isPreview}
 					setIsPreview={setIsPreview}
 					onRevalidate={handleRevalidate}
+					currentScreen="overview"
 				/>
 				<div className="flex flex-col justify-center items-center py-12 space-y-4">
 					<div className="text-center">
@@ -130,6 +131,7 @@ export const CampaignAnalyticsOverview = ({
 				setIsPreview={setIsPreview}
 				onRevalidate={handleRevalidate}
 				isRevalidating={data.sumPrimitives?.isRefreshing}
+				currentScreen="overview"
 			/>
 
 			<div className="overflow-y-auto pt-3 pb-6 mt-3 space-y-6 max-h-full">

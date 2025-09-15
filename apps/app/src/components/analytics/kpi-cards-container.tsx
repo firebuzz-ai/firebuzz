@@ -21,6 +21,8 @@ interface KPIConfig {
 		maximumFractionDigits?: number;
 	};
 	isPercentage?: boolean; // For conversion rate calculation
+	hideInRealtime?: boolean; // Hide this KPI in realtime mode
+	showOnlyInRealtime?: boolean; // Show this KPI only in realtime mode
 }
 
 // Utility type to extract payload type based on queryId
@@ -59,7 +61,7 @@ function getTrend(
 }
 
 // Create overview KPIs dynamically based on campaign settings
-function createOverviewKPIs(campaignSettings?: CampaignSettings): KPIConfig[] {
+function createOverviewKPIs(campaignSettings?: CampaignSettings, isRealtime?: boolean): KPIConfig[] {
 	// Get conversion goal direction from primary goal or default to "up"
 	const getGoalDirection = (): "up" | "down" => {
 		return campaignSettings?.primaryGoal?.direction || "up";
@@ -70,14 +72,23 @@ function createOverviewKPIs(campaignSettings?: CampaignSettings): KPIConfig[] {
 		campaignSettings?.primaryGoal?.currency,
 	);
 
-	return [
+	const allKPIs = [
 		{
 			id: "all_sessions",
-			title: "Sessions",
+			title: isRealtime ? "Active Sessions" : "Sessions",
 			icon: Eye,
 			getCurrentValue: (payload) => payload.current_all_sessions,
 			getPreviousValue: (payload) => payload.previous_all_sessions,
 			primaryGoalDirection: "up",
+		},
+		{
+			id: "pageviews",
+			title: "Events",
+			icon: Eye,
+			getCurrentValue: (payload) => payload.current_pageviews,
+			getPreviousValue: (payload) => payload.previous_pageviews,
+			primaryGoalDirection: "up",
+			showOnlyInRealtime: true,
 		},
 		{
 			id: "conversions",
@@ -109,6 +120,7 @@ function createOverviewKPIs(campaignSettings?: CampaignSettings): KPIConfig[] {
 			formatOptions: {
 				maximumFractionDigits: 1,
 			},
+			hideInRealtime: true,
 		},
 		{
 			id: "conversion_value",
@@ -124,6 +136,13 @@ function createOverviewKPIs(campaignSettings?: CampaignSettings): KPIConfig[] {
 			},
 		},
 	];
+
+	// Filter KPIs based on realtime mode
+	if (isRealtime) {
+		return allKPIs.filter(kpi => !kpi.hideInRealtime);
+	} else {
+		return allKPIs.filter(kpi => !kpi.showOnlyInRealtime);
+	}
 }
 
 interface KPICardsContainerProps {
@@ -131,6 +150,7 @@ interface KPICardsContainerProps {
 	source: Doc<"analyticsPipes">["source"];
 	campaignSettings?: CampaignSettings;
 	className?: string;
+	isRealtime?: boolean;
 }
 
 export const KPICardsContainer = ({
@@ -138,9 +158,10 @@ export const KPICardsContainer = ({
 	campaignSettings,
 	className,
 	source,
+	isRealtime = false,
 }: KPICardsContainerProps) => {
 	// Create KPIs dynamically based on campaign settings
-	const kpisToShow = createOverviewKPIs(campaignSettings);
+	const kpisToShow = createOverviewKPIs(campaignSettings, isRealtime);
 
 	return (
 		<div
@@ -179,13 +200,14 @@ export const KPICardsContainer = ({
 						previousValue={previousValue ?? 0}
 						source={source}
 						icon={kpi.icon}
-						changePercent={
+						changePercent={isRealtime ? undefined : (
 							kpi.isPercentage ? percentageChange : percentageChange / 100
-						}
-						trend={trend}
+						)}
+						trend={isRealtime ? "neutral" : trend}
 						suffix={kpi.suffix}
 						prefix={kpi.prefix}
 						formatOptions={kpi.formatOptions}
+						isRealtime={isRealtime}
 					/>
 				);
 			})}

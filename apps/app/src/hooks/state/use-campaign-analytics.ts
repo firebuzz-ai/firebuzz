@@ -15,7 +15,7 @@ export const ANALYTICS_PERIODS = {
 export type AnalyticsPeriod = keyof typeof ANALYTICS_PERIODS;
 
 // Screen types - extensible for future screens
-export type AnalyticsScreen = "overview";
+export type AnalyticsScreen = "overview" | "realtime";
 
 // Hook configuration
 interface UseCampaignAnalyticsConfig {
@@ -30,7 +30,7 @@ export function useCampaignAnalytics({
     period: parseAsStringLiteral(
       Object.keys(ANALYTICS_PERIODS) as AnalyticsPeriod[]
     ),
-    screen: parseAsStringLiteral(["overview"] as const),
+    screen: parseAsStringLiteral(["overview", "realtime"] as const),
     isPreview: parseAsBoolean,
   });
 
@@ -152,15 +152,17 @@ export function useCampaignAnalytics({
     setQueryStates({ isPreview: newIsPreview });
   };
 
-  // Revalidate function - hardcoded for current screens
+  // Revalidate function - screen-specific queries
   const revalidate = useCallback(async () => {
-    if (!shouldFetchAnalytics || !periodDates || !campaign) return;
+    if (!shouldFetchAnalytics || !campaign) return;
 
     try {
       const queries = [];
 
       // Add queries based on current screen
       if (currentScreen === "overview") {
+        // Overview screen requires periodDates
+        if (!periodDates) return;
         // Get conversion event ID from campaign settings
         const conversionEventId =
           campaign.campaignSettings?.primaryGoal?.id ||
@@ -171,9 +173,10 @@ export function useCampaignAnalytics({
         // Ensure conversionEventId is never undefined
         if (!conversionEventId) {
           console.error("No conversion event ID found, using fallback");
-          throw new Error("Unable to determine conversion event ID for analytics");
+          throw new Error(
+            "Unable to determine conversion event ID for analytics"
+          );
         }
-
 
         // Overview screen uses sum-primitives and timeseries-primitives queries
         queries.push({
@@ -235,8 +238,22 @@ export function useCampaignAnalytics({
             ?.map((event) => event.id)
             .join(","), // Optional string field for custom events
         });
+      } else if (currentScreen === "realtime") {
+        // Realtime screen only needs realtime-overview query
+        const conversionEventId =
+          campaign.campaignSettings?.primaryGoal?.id ||
+          (campaign.type === "lead-generation"
+            ? "form-submission"
+            : "external-link-click");
 
-        // Add realtime overview query (use last 30 minutes)
+        if (!conversionEventId) {
+          console.error("No conversion event ID found for realtime");
+          throw new Error(
+            "Unable to determine conversion event ID for realtime analytics"
+          );
+        }
+
+        // Use last 30 minutes for realtime data
         const now = new Date();
         const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
         queries.push({
@@ -251,7 +268,7 @@ export function useCampaignAnalytics({
       }
 
       // Future screens can add more queries here
-      // if (currentScreen === "funnel") {
+      // if (currentScreen === "abtests") {
       //   queries.push({ ... });
       // }
 
@@ -276,20 +293,59 @@ export function useCampaignAnalytics({
     revalidateAnalyticsMutation,
   ]);
 
-  // Auto-revalidate when period changes
+  // Auto-revalidate when period changes or screen changes with different intervals
   useEffect(() => {
     // Only revalidate if we have everything we need and the campaign is published
-    if (shouldFetchAnalytics && periodDates && campaign?.isPublished) {
-      // Add a small delay to avoid too many revalidations during rapid period changes
-      const timeoutId = setTimeout(() => {
-        revalidate().catch((error) => {
-          console.error("Auto-revalidation failed:", error);
-        });
-      }, 300);
+    if (shouldFetchAnalytics && campaign?.isPublished) {
+      // For realtime screen, period changes don't matter, but we need to start auto-refresh
+      if (currentScreen === "realtime") {
+        // Initial load
+        const initialTimeoutId = setTimeout(() => {
+          revalidate().catch((error) => {
+            console.error("Initial realtime revalidation failed:", error);
+          });
+        }, 300);
 
-      return () => clearTimeout(timeoutId);
+        // Auto-refresh every 30 seconds for realtime
+        const intervalId = setInterval(() => {
+          revalidate().catch((error) => {
+            console.error("Realtime auto-revalidation failed:", error);
+          });
+        }, 30000); // 30 seconds
+
+        return () => {
+          clearTimeout(initialTimeoutId);
+          clearInterval(intervalId);
+        };
+      }
+      if (periodDates) {
+        // For overview screen, revalidate when period changes
+        const initialTimeoutId = setTimeout(() => {
+          revalidate().catch((error) => {
+            console.error("Auto-revalidation failed:", error);
+          });
+        }, 300);
+
+        // Auto-refresh every 3 minutes for overview
+        const intervalId = setInterval(() => {
+          revalidate().catch((error) => {
+            console.error("Overview auto-revalidation failed:", error);
+          });
+        }, 180000); // 3 minutes
+
+        return () => {
+          clearTimeout(initialTimeoutId);
+          clearInterval(intervalId);
+        };
+      }
     }
-  }, [shouldFetchAnalytics, periodDates, campaign?.isPublished, revalidate]);
+  }, [
+    shouldFetchAnalytics,
+    periodDates,
+    campaign?.isPublished,
+    currentScreen,
+    revalidate,
+  ]);
 
   // Loading states
   const isLoading = useMemo(() => {

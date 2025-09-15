@@ -7,31 +7,31 @@ import { ThemeProvider } from "./theme";
 const clerkEnv = envClerk();
 
 export const AppProviders = ({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) => {
-  return (
-    <ClerkProvider
-      signInForceRedirectUrl="/campaigns"
-      signUpForceRedirectUrl="/new"
-      signInFallbackRedirectUrl="/campaigns"
-      signUpFallbackRedirectUrl="/new"
-      publishableKey={clerkEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-      dynamic
-    >
-      <NuqsProvider>
-        <ConvexClientProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <TooltipProvider>{children}</TooltipProvider>
-          </ThemeProvider>
-        </ConvexClientProvider>
-      </NuqsProvider>
-    </ClerkProvider>
-  );
+	return (
+		<ClerkProvider
+			signInForceRedirectUrl="/campaigns"
+			signUpForceRedirectUrl="/new"
+			signInFallbackRedirectUrl="/campaigns"
+			signUpFallbackRedirectUrl="/new"
+			publishableKey={clerkEnv.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+			dynamic
+		>
+			<NuqsProvider>
+				<ConvexClientProvider>
+					<ThemeProvider
+						attribute="class"
+						defaultTheme="dark"
+						enableSystem
+						disableTransitionOnChange
+					>
+						<TooltipProvider>{children}</TooltipProvider>
+					</ThemeProvider>
+				</ConvexClientProvider>
+			</NuqsProvider>
+		</ClerkProvider>
+	);
 };

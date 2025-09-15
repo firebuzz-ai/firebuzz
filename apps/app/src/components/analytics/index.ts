@@ -1,3 +1,3 @@
 export { KPICard } from "./kpi-card";
 export { KPICardsContainer } from "./kpi-cards-container";
-export { RealtimeOverview } from "./realtime-overview";
+export { HorizontalBarChart } from "./horizontal-bar-chart";
