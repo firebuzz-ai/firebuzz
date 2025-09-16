@@ -68,6 +68,8 @@ interface HorizontalBarChartProps {
   showTrend?: boolean;
   isRealtime?: boolean;
   maxItems?: number;
+  iconMapping?: Record<string, string>;
+  barColor?: string;
 }
 
 export const HorizontalBarChart = ({
@@ -81,6 +83,8 @@ export const HorizontalBarChart = ({
   showTrend = true,
   isRealtime = false,
   maxItems = 5,
+  iconMapping,
+  barColor = "hsl(var(--brand))",
 }: HorizontalBarChartProps) => {
   // Transform and limit data
   const chartData = useMemo((): HorizontalBarChartData[] => {
@@ -115,6 +119,22 @@ export const HorizontalBarChart = ({
   // Calculate total value for trend calculation
   const totalValue = useMemo(() => {
     return chartData.reduce((sum, item) => sum + item.value, 0);
+  }, [chartData]);
+
+  // Calculate appropriate bar radius based on data
+  const barRadius = useMemo(() => {
+    if (!chartData.length) return 2;
+
+    const maxValue = Math.max(...chartData.map(d => d.value));
+    const minValue = Math.min(...chartData.map(d => d.value));
+
+    // If all values are very small or there's a big difference between min/max,
+    // use a smaller radius to prevent visual issues
+    if (maxValue === 0 || (minValue === 0 && maxValue > 0)) {
+      return 4;
+    }
+
+    return 8; // Full radius for normal cases
   }, [chartData]);
 
   if (isLoading) {
@@ -194,9 +214,9 @@ export const HorizontalBarChart = ({
             />
             <Bar
               dataKey="value"
-              radius={8}
+              radius={barRadius}
               maxBarSize={30}
-              style={{ fill: "hsl(var(--brand))" }}
+              style={{ fill: barColor }}
             >
               <LabelList
                 dataKey="name"
@@ -224,8 +244,8 @@ export const HorizontalBarChart = ({
                     payload?.originalEvent || payload?.payload?.originalEvent;
 
                   if (!iconSource) {
-                    // Map display names back to icon names for default events
-                    const displayNameToIcon: Record<string, string> = {
+                    // Use provided icon mapping or default mapping
+                    const defaultIconMapping: Record<string, string> = {
                       "page view": "eye",
                       "form submission": "text-cursor-input",
                       "external link click": "mouse-pointer-click",
@@ -234,7 +254,8 @@ export const HorizontalBarChart = ({
                       "scroll threshold (75)": "percent",
                       "scroll threshold (100)": "percent",
                     };
-                    iconSource = displayNameToIcon[source] || source;
+                    const mapping = iconMapping || defaultIconMapping;
+                    iconSource = mapping[source] || source;
                   }
 
                   const hasIcon = hasTrafficSourceIcon(iconSource);
@@ -292,7 +313,7 @@ export const HorizontalBarChart = ({
         <div className="flex justify-between items-center px-6 py-4 text-sm border-t">
           <div className="flex-col gap-2 items-start">
             <div className="flex gap-1 font-medium leading-none">
-              <span className="font-medium text-brand">
+              <span className="font-medium text-emerald-500">
                 {capitalizeFirstLetter(topItem.name)}
               </span>{" "}
               {isRealtime ? "is most active" : "is the top"}{" "}

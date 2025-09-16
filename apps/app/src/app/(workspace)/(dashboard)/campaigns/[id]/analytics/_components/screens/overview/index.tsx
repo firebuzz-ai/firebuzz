@@ -134,36 +134,43 @@ export const CampaignAnalyticsOverview = ({
         currentScreen="overview"
       />
 
-      <div className="overflow-y-auto pt-3 pb-6 mt-3 space-y-6 max-h-full">
-        {/* KPI Cards */}
-        <KPICardsContainer
-          payload={data.sumPrimitives.payload}
-          source={data.sumPrimitives.source}
-          campaignSettings={campaign?.campaignSettings}
-        />
-
-        {/* Sessions & Conversions Chart */}
-        <TimeSeriesChartWrapper
-          timeseriesData={data.timeseriesPrimitives}
-          isLoading={isLoading}
-          granularity="day"
-          isCumulative
-          title="Sessions & Conversions Trend"
-          description="Total sessions and conversions over time"
-        />
-
-        {/* Additional Analytics Charts */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          {/* Top 5 Traffic Sources */}
-          <OverviewTrafficSourcesChart audienceData={data.audienceBreakdown} />
-
-          {/* Top Converting Landing Pages */}
-          <LandingPagesList
-            conversionsData={data.conversionsBreakdown}
-            landingPagesData={data.landingPages}
-            isLoading={isLoading}
+      <div className="flex overflow-hidden relative flex-col max-h-full">
+        {/* Gradient background - Top */}
+        <div className="absolute top-0 right-0 left-0 z-10 h-6 bg-gradient-to-b to-transparent from-background" />
+        <div className="overflow-y-auto relative py-6 space-y-6 max-h-full">
+          {/* KPI Cards */}
+          <KPICardsContainer
+            payload={data.sumPrimitives.payload}
+            source={data.sumPrimitives.source}
+            campaignSettings={campaign?.campaignSettings}
           />
+
+          {/* Sessions & Conversions Chart */}
+          <TimeSeriesChartWrapper
+            timeseriesData={data.timeseriesPrimitives}
+            isLoading={isLoading}
+            granularity="day"
+            isCumulative
+            title="Sessions & Conversions Trend"
+            description="Total sessions and conversions over time"
+            source={data.timeseriesPrimitives?.source}
+          />
+
+          {/* Additional Analytics Charts */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Top 5 Traffic Sources */}
+            <OverviewTrafficSourcesChart audienceData={data.audienceBreakdown} />
+
+            {/* Top Converting Landing Pages */}
+            <LandingPagesList
+              conversionsData={data.conversionsBreakdown}
+              landingPagesData={data.landingPages}
+              isLoading={isLoading}
+            />
+          </div>
         </div>
+        {/* Gradient background - Bottom */}
+        <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
       </div>
     </div>
   );

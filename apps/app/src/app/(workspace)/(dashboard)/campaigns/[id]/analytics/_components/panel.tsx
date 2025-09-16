@@ -1,5 +1,5 @@
 import { Button } from "@firebuzz/ui/components/ui/button";
-import { BarChart3, Clock, TestTube } from "@firebuzz/ui/icons/lucide";
+import { BarChart3, Clock, TestTube, Users } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
@@ -15,6 +15,12 @@ const screens = [
 		label: "Real-time",
 		icon: Clock,
 		description: "Live data for real-time insights",
+	},
+	{
+		id: "audience",
+		label: "Audience",
+		icon: Users,
+		description: "Detailed audience demographics and behavior",
 	},
 	{
 		id: "abtests",

@@ -9,6 +9,7 @@ import { notFound, useSearchParams } from "next/navigation";
 import { Panel } from "./panel";
 import { CampaignAnalyticsOverview } from "./screens/overview";
 import { CampaignAnalyticsRealtime } from "./screens/realtime";
+import { CampaignAnalyticsAudience } from "./screens/audience";
 
 interface AnalyticsProps {
 	id: string;
@@ -54,6 +55,8 @@ export const Analytics = ({ id, rightPanelSize }: AnalyticsProps) => {
 				return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
 			case "realtime":
 				return <CampaignAnalyticsRealtime campaignId={id as Id<"campaigns">} />;
+			case "audience":
+				return <CampaignAnalyticsAudience campaignId={id as Id<"campaigns">} />;
 			case "abtests":
 				return <div className="p-6">A/B Tests Screen (Coming Soon)</div>;
 			default:

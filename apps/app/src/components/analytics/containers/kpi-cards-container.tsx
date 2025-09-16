@@ -1,5 +1,5 @@
 import type { LucideIcon } from "@firebuzz/ui/icons/lucide";
-import { Banknote, Eye, Target, TrendingUp } from "@firebuzz/ui/icons/lucide";
+import { Banknote, Eye, Target, TrendingUp, Users } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { getCurrencySymbol } from "@firebuzz/utils";
 
@@ -157,12 +157,48 @@ function createOverviewKPIs(
   return allKPIs.filter((kpi) => !kpi.showOnlyInRealtime);
 }
 
+// Create custom KPIs for specific screens like audience
+function createCustomKPIs(customKPIs: CustomKPI[]): KPIConfig[] {
+  const iconMap: Record<string, LucideIcon> = {
+    users: Users,
+    sessions: Eye,
+    new_sessions: TrendingUp,
+    returning_sessions: Target,
+  };
+
+  return customKPIs.map(customKPI => ({
+    id: customKPI.id,
+    title: customKPI.title,
+    icon: iconMap[customKPI.id] || Eye,
+    getCurrentValue: (payload: SumPrimitivesPayload) => payload[customKPI.field] as number,
+    getPreviousValue: (payload: SumPrimitivesPayload) => {
+      // Map current fields to previous fields
+      const previousFieldMap: Record<string, keyof SumPrimitivesPayload> = {
+        current_users: "previous_users",
+        current_all_sessions: "previous_all_sessions",
+        current_new_sessions: "previous_new_sessions",
+        current_returning_sessions: "previous_returning_sessions",
+      };
+      const previousField = previousFieldMap[customKPI.field as string];
+      return previousField ? (payload[previousField] as number) : 0;
+    },
+    primaryGoalDirection: "up" as const,
+  }));
+}
+
+interface CustomKPI {
+  id: string;
+  title: string;
+  field: keyof SumPrimitivesPayload;
+}
+
 interface KPICardsContainerProps {
   payload: SumPrimitivesPayload;
   source: Doc<"analyticsPipes">["source"];
   campaignSettings?: CampaignSettings;
   className?: string;
   isRealtime?: boolean;
+  customKPIs?: CustomKPI[];
 }
 
 export const KPICardsContainer = ({
@@ -171,9 +207,10 @@ export const KPICardsContainer = ({
   className,
   source,
   isRealtime = false,
+  customKPIs,
 }: KPICardsContainerProps) => {
-  // Create KPIs dynamically based on campaign settings
-  const kpisToShow = createOverviewKPIs(campaignSettings, isRealtime);
+  // Create KPIs dynamically based on campaign settings or use custom KPIs
+  const kpisToShow = customKPIs ? createCustomKPIs(customKPIs) : createOverviewKPIs(campaignSettings, isRealtime);
 
   return (
     <div

@@ -280,6 +280,9 @@ const audienceBreakdownResponseSchema = z.object({
 			z.number(), // percentage
 		]),
 	),
+	continents: z.array(audienceSegmentSchema),
+	languages: z.array(audienceSegmentSchema),
+	timezones: z.array(audienceSegmentSchema),
 	utm_sources: z.array(audienceSegmentSchema),
 	sources: z.array(audienceSegmentSchema),
 	utm_mediums: z.array(audienceSegmentSchema),
