@@ -2,6 +2,7 @@ import {
 	VerticalStackedBarChart,
 	type VerticalStackedBarChartData,
 } from "@/components/analytics/charts/vertical-stacked-bar-chart";
+import { capitalizeFirstLetter } from "@firebuzz/utils";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
@@ -73,9 +74,33 @@ export const AudienceActiveDaysChart = ({
 			data={chartData}
 			title="Most Active Days"
 			description="New vs returning sessions by day of week"
+			dataKeys={[
+				{ key: "newSessions", label: "New", color: "hsl(142 71% 45%)" },
+				{ key: "returningSessions", label: "Returning", color: "hsl(var(--brand))" },
+			]}
 			source={timeseriesData?.source}
 			showTrend={chartData.length > 0}
 			maxItems={7}
+			trendFormatter={(data, dataKeys) => {
+				if (!data || data.length === 0) return null;
+				const topDay = data.reduce((max, day) => {
+					const dayTotal = day.newSessions + day.returningSessions;
+					const maxTotal = max.newSessions + max.returningSessions;
+					return dayTotal > maxTotal ? day : max;
+				});
+				const total = topDay.newSessions + topDay.returningSessions;
+				return {
+					text: (
+						<>
+							<span className="font-medium text-emerald-500">
+								{capitalizeFirstLetter(topDay.name)}
+							</span>{" "}
+							had most sessions
+						</>
+					),
+					subtitle: `${total.toLocaleString()} sessions (${topDay.newSessions.toLocaleString()} new, ${topDay.returningSessions.toLocaleString()} returning)`
+				};
+			}}
 		/>
 	);
 };

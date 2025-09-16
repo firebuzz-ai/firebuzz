@@ -210,7 +210,7 @@ export const HorizontalBarChart = ({
             />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent />}
             />
             <Bar
               dataKey="value"

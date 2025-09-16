@@ -8,6 +8,7 @@ import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { toast } from "@firebuzz/ui/lib/utils";
+import { AudienceEngagementTrendsChart } from "./charts/audience-engagement-trends-chart";
 import { OverviewTrafficSourcesChart } from "./charts/overview-traffic-sources-chart";
 
 interface CampaignAnalyticsOverviewProps {
@@ -145,21 +146,31 @@ export const CampaignAnalyticsOverview = ({
             campaignSettings={campaign?.campaignSettings}
           />
 
-          {/* Sessions & Conversions Chart */}
-          <TimeSeriesChartWrapper
-            timeseriesData={data.timeseriesPrimitives}
-            isLoading={isLoading}
-            granularity="day"
-            isCumulative
-            title="Sessions & Conversions Trend"
-            description="Total sessions and conversions over time"
-            source={data.timeseriesPrimitives?.source}
-          />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {" "}
+            {/* Sessions & Conversions Chart */}
+            <TimeSeriesChartWrapper
+              timeseriesData={data.timeseriesPrimitives}
+              isLoading={isLoading}
+              granularity="day"
+              isCumulative
+              title="Sessions & Conversions Trend"
+              description="Total sessions and conversions over time"
+              source={data.timeseriesPrimitives?.source}
+            />
+            {/* Session Quality Trend - Full Width */}
+            <AudienceEngagementTrendsChart
+              timeseriesData={data.timeseriesPrimitives}
+              isLoading={isLoading}
+            />
+          </div>
 
           {/* Additional Analytics Charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Top 5 Traffic Sources */}
-            <OverviewTrafficSourcesChart audienceData={data.audienceBreakdown} />
+            <OverviewTrafficSourcesChart
+              audienceData={data.audienceBreakdown}
+            />
 
             {/* Top Converting Landing Pages */}
             <LandingPagesList

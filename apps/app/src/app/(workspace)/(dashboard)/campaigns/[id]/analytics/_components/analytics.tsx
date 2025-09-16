@@ -1,24 +1,22 @@
 "use client";
 
-import { FlowLayout } from "@/components/layouts/two-panels/panels/campaign/flow";
-import { PanelLayout } from "@/components/layouts/two-panels/panels/campaign/panel";
-import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { notFound, useSearchParams } from "next/navigation";
-import { Panel } from "./panel";
+import { notFound } from "next/navigation";
+import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
+import { AnalyticsSidebar } from "./analytics-sidebar";
 import { CampaignAnalyticsOverview } from "./screens/overview";
 import { CampaignAnalyticsRealtime } from "./screens/realtime";
 import { CampaignAnalyticsAudience } from "./screens/audience";
 
 interface AnalyticsProps {
 	id: string;
-	rightPanelSize: number;
 }
 
-export const Analytics = ({ id, rightPanelSize }: AnalyticsProps) => {
-	const searchParams = useSearchParams();
-	const currentScreen = searchParams.get("screen") || "overview";
+export const Analytics = ({ id }: AnalyticsProps) => {
+	const { screen: currentScreen } = useCampaignAnalytics({
+		campaignId: id as Id<"campaigns">,
+	});
 
 	const {
 		data: campaign,
@@ -57,7 +55,7 @@ export const Analytics = ({ id, rightPanelSize }: AnalyticsProps) => {
 				return <CampaignAnalyticsRealtime campaignId={id as Id<"campaigns">} />;
 			case "audience":
 				return <CampaignAnalyticsAudience campaignId={id as Id<"campaigns">} />;
-			case "abtests":
+			case "ab-tests":
 				return <div className="p-6">A/B Tests Screen (Coming Soon)</div>;
 			default:
 				return <CampaignAnalyticsOverview campaignId={id as Id<"campaigns">} />;
@@ -65,17 +63,11 @@ export const Analytics = ({ id, rightPanelSize }: AnalyticsProps) => {
 	};
 
 	return (
-		<>
-			<TwoPanelsProvider
-				rightPanelSizeFromCookie={rightPanelSize}
-				id="campaign-analytics"
-				isRightPanelClosable={true}
-			>
-				<FlowLayout>{renderScreen()}</FlowLayout>
-				<PanelLayout>
-					<Panel />
-				</PanelLayout>
-			</TwoPanelsProvider>
-		</>
+		<div className="flex h-full w-full">
+			<div className="flex-1 overflow-hidden">
+				{renderScreen()}
+			</div>
+			<AnalyticsSidebar campaignId={id as Id<"campaigns">} />
+		</div>
 	);
 };

@@ -11,7 +11,7 @@ import { AudienceActiveDaysChart } from "./charts/audience-active-days-chart";
 import { AudienceCitiesChart } from "./charts/audience-cities-chart";
 import { AudienceContinentsChart } from "./charts/audience-continents-chart";
 import { AudienceDevicesChart } from "./charts/audience-devices-chart";
-import { AudienceEngagementTrendsChart } from "./charts/audience-engagement-trends-chart";
+import { AudienceHourlyActivityChart } from "./charts/audience-hourly-activity-chart";
 import { AudienceLanguagesChart } from "./charts/audience-languages-chart";
 import { AudienceOperatingSystemsChart } from "./charts/audience-operating-systems-chart";
 import { AudienceTimezonesChart } from "./charts/audience-timezones-chart";
@@ -274,8 +274,16 @@ export const CampaignAnalyticsAudience = ({
             <AudienceCitiesChart audienceData={data.audienceBreakdown} />
           </div>
 
-          {/* Active Days - Full Width */}
-          <AudienceActiveDaysChart timeseriesData={data.timeseriesPrimitives} />
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Active Days */}
+            <AudienceActiveDaysChart
+              timeseriesData={data.timeseriesPrimitives}
+            />
+            {/* Hourly Activity */}
+            <AudienceHourlyActivityChart
+              audienceData={data.audienceBreakdown}
+            />
+          </div>
 
           {/* Audience Breakdown Charts */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -296,12 +304,6 @@ export const CampaignAnalyticsAudience = ({
               audienceData={data.audienceBreakdown}
             />
           </div>
-
-          {/* Session Quality Trend - Full Width */}
-          <AudienceEngagementTrendsChart
-            timeseriesData={data.timeseriesPrimitives}
-            isLoading={isLoading}
-          />
         </div>
         {/* Gradient background - Bottom */}
         <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
