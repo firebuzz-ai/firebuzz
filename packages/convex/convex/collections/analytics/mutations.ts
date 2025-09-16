@@ -192,16 +192,18 @@ export const revalidateAnalytics = mutation({
 						).getTime();
 
 						// Use shorter cache TTL for realtime queries
-						const cacheTTL = queryParams.queryId === "realtime-overview"
-							? 15000  // 15 seconds for realtime data
-							: 180000; // 3 minutes for other analytics
+						const cacheTTL =
+							queryParams.queryId === "realtime-overview"
+								? 15000 // 15 seconds for realtime data
+								: 180000; // 3 minutes for other analytics
 
 						const cacheExpiryTime = new Date(Date.now() - cacheTTL).getTime();
 
 						if (lastUpdatedAt > cacheExpiryTime) {
-							const ttlDescription = queryParams.queryId === "realtime-overview"
-								? "15 seconds"
-								: "3 minutes";
+							const ttlDescription =
+								queryParams.queryId === "realtime-overview"
+									? "15 seconds"
+									: "3 minutes";
 							console.log(`Last updated at is less than ${ttlDescription} ago`);
 							results.push({
 								query: queryParams.queryId,

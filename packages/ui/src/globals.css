@@ -66,6 +66,11 @@
 		--chart-3: oklch(0.7628 0.1495 54.04);
 		--chart-4: oklch(0.7851 0.1347 54.49);
 		--chart-5: oklch(0.809 0.1176 55.55);
+
+		/* Map colors */
+		--map-sea: 220 20% 92%; /* Light blue for oceans/seas */
+		--map-country: 60 9% 96%; /* Slightly darker than background-subtle */
+		--map-country-alt: 45 15% 94%; /* Alternative country color for variation */
 	}
 
 	.dark {
@@ -132,6 +137,11 @@
 		--chart-3: oklch(0.7628 0.1495 54.04);
 		--chart-4: oklch(0.7851 0.1347 54.49);
 		--chart-5: oklch(0.809 0.1176 55.55);
+
+		/* Map colors */
+		--map-sea: 210 20% 6%; /* Dark blue for oceans/seas */
+		--map-country: 30 7% 8%; /* Slightly lighter than muted */
+		--map-country-alt: 45 10% 10%; /* Alternative country color for variation */
 	}
 }
 

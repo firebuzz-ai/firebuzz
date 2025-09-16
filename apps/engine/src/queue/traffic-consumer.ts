@@ -1,5 +1,5 @@
-import { logQueueMetrics, trackRateLimiting } from "../lib/monitoring";
-import { batchIngestTraffic, type TrafficData } from "../lib/tinybird";
+import { logQueueMetrics } from "../lib/monitoring";
+import { type TrafficData, batchIngestTraffic } from "../lib/tinybird";
 import type {
 	TrafficBatchProcessingResult,
 	TrafficQueueMessage,
@@ -148,7 +148,9 @@ export async function handleTrafficQueue(
 			);
 		} else {
 			// Too many retries, send to DLQ
-			console.error(`Traffic message exceeded retry limit, sending to DLQ: ${error}`);
+			console.error(
+				`Traffic message exceeded retry limit, sending to DLQ: ${error}`,
+			);
 			message.ack(); // Acknowledge to remove from queue
 		}
 	}
@@ -165,8 +167,14 @@ export async function handleTrafficQueue(
 		processingTimeMs,
 		errors: [
 			// Transform traffic errors to match sessionId format expected by QueueMetrics
-			...result.errors.map(error => ({ sessionId: error.requestId, error: error.error })),
-			...parseErrors.map(error => ({ sessionId: error.requestId, error: error.error }))
+			...result.errors.map((error) => ({
+				sessionId: error.requestId,
+				error: error.error,
+			})),
+			...parseErrors.map((error) => ({
+				sessionId: error.requestId,
+				error: error.error,
+			})),
 		],
 	});
 }

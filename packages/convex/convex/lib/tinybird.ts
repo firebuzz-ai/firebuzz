@@ -103,11 +103,11 @@ const realtimeOverviewResponseSchema = z.object({
 	events: z.number(),
 	conversions: z.number(),
 	conversion_value: z.number(),
-	countries: z.array(z.string()),
-	devices: z.array(z.string()),
-	top_landing_pages: z.array(z.string()),
-	traffic_sources: z.array(z.string()),
-	top_events: z.array(z.string()),
+	countries: z.array(z.tuple([z.string(), z.number()])), // [country, session_count]
+	devices: z.array(z.tuple([z.string(), z.number()])), // [device_type, session_count]
+	top_landing_pages: z.array(z.tuple([z.string(), z.number()])), // [landing_page_id, session_count]
+	traffic_sources: z.array(z.tuple([z.string(), z.number()])), // [source, session_count]
+	top_events: z.array(z.tuple([z.string(), z.number()])), // [event_id, event_count]
 });
 
 const abTestResultsParamsSchema = z.object({

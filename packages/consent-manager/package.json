@@ -14,10 +14,7 @@
 			"require": "./dist/index.js"
 		}
 	},
-	"files": [
-		"dist",
-		"README.md"
-	],
+	"files": ["dist", "README.md"],
 	"scripts": {
 		"build": "tsup",
 		"dev": "tsup --watch",
@@ -39,11 +36,5 @@
 	"peerDependencies": {
 		"react": ">=18.0.0"
 	},
-	"keywords": [
-		"consent",
-		"privacy",
-		"gdpr",
-		"ccpa",
-		"firebuzz"
-	]
+	"keywords": ["consent", "privacy", "gdpr", "ccpa", "firebuzz"]
 }

@@ -44,7 +44,7 @@ SQL >
       AND timestamp >= now() - toIntervalMinute((SELECT lookback_minutes FROM params))
 
 NODE aggregates
-DESCRIPTION "Active sessions, events, conversions, countries, devices"
+DESCRIPTION "Active sessions, events, conversions, countries, devices with fixed priority"
 
 SQL >
     %
@@ -61,27 +61,62 @@ SQL >
       FROM recent_events
     ),
     countries AS (
-      SELECT arraySort(groupArrayDistinct(country)) AS countries FROM recent_sessions
+      SELECT groupArray(tuple(country, count)) AS countries
+      FROM (
+        SELECT country, uniqExact(session_id) AS count
+        FROM recent_sessions
+        WHERE country IS NOT NULL AND country != ''
+        GROUP BY country
+        ORDER BY count DESC
+      )
     ),
     devices AS (
-      SELECT arraySort(groupArrayDistinct(device_type)) AS devices FROM recent_sessions
+      SELECT groupArray(tuple(device_type, count)) AS devices
+      FROM (
+        SELECT device_type, uniqExact(session_id) AS count
+        FROM recent_sessions
+        WHERE device_type IS NOT NULL AND device_type != ''
+        GROUP BY device_type
+        ORDER BY count DESC
+      )
     ),
     top_pages AS (
-      SELECT topK(5)(landing_page_id) AS top_landing_pages FROM recent_sessions WHERE landing_page_id IS NOT NULL
+      SELECT groupArray(tuple(landing_page_id, count)) AS top_landing_pages
+      FROM (
+        SELECT landing_page_id, uniqExact(session_id) AS count
+        FROM recent_sessions
+        WHERE landing_page_id IS NOT NULL
+        GROUP BY landing_page_id
+        ORDER BY count DESC
+        LIMIT 5
+      )
     ),
     traffic_sources AS (
-      SELECT arraySort(groupArrayDistinct(
-        CASE
-          WHEN utm_source IS NOT NULL THEN utm_source
-          WHEN ref IS NOT NULL THEN ref
-          WHEN source IS NOT NULL THEN source
-          ELSE 'direct'
-        END
-      )) AS sources FROM recent_sessions
+      SELECT groupArray(tuple(source, count)) AS sources
+      FROM (
+        SELECT
+          CASE
+            WHEN source IS NOT NULL AND source != '' THEN source
+            WHEN ref IS NOT NULL AND ref != '' THEN ref
+            WHEN utm_source IS NOT NULL AND utm_source != '' THEN utm_source
+            ELSE 'Direct'
+          END AS source,
+          uniqExact(session_id) AS count
+        FROM recent_sessions
+        GROUP BY source
+        ORDER BY count DESC
+      )
     ),
     top_events AS (
-      SELECT topK(5)(event_id) AS top_event_ids FROM recent_events
-      WHERE event_type != 'system'
+      SELECT groupArray(tuple(event_id, count)) AS top_events
+      FROM (
+        SELECT event_id, count(*) AS count
+        FROM recent_events
+        WHERE event_type != 'system'
+        GROUP BY event_id
+        ORDER BY count DESC
+        LIMIT 5
+      )
     )
     SELECT (SELECT active_sessions FROM active) AS active_sessions,
            (SELECT events FROM ev) AS events,
@@ -91,7 +126,7 @@ SQL >
            (SELECT devices FROM devices) AS devices,
            (SELECT top_landing_pages FROM top_pages) AS top_landing_pages,
            (SELECT sources FROM traffic_sources) AS traffic_sources,
-           (SELECT top_event_ids FROM top_events) AS top_events
+           (SELECT top_events FROM top_events) AS top_events
 
 TYPE ENDPOINT
 

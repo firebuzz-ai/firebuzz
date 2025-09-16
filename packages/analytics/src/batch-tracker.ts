@@ -209,7 +209,8 @@ export class EventBatchTracker {
 				page_url: item.eventData.page_url || window.location.href,
 				referrer_url:
 					item.eventData.referrer_url || document.referrer || undefined,
-				campaign_environment: sessionContext?.campaignEnvironment || "production",
+				campaign_environment:
+					sessionContext?.campaignEnvironment || "production",
 			})),
 		};
 
@@ -304,7 +305,8 @@ export class EventBatchTracker {
 				page_url: item.eventData.page_url || window.location.href,
 				referrer_url:
 					item.eventData.referrer_url || document.referrer || undefined,
-				campaign_environment: sessionContext?.campaignEnvironment || "production",
+				campaign_environment:
+					sessionContext?.campaignEnvironment || "production",
 			})),
 		};
 

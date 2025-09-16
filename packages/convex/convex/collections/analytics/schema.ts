@@ -156,11 +156,11 @@ export const realtimeOverviewSchema = v.object({
 		events: v.number(),
 		conversions: v.number(),
 		conversion_value: v.number(),
-		countries: v.array(v.string()),
-		devices: v.array(v.string()),
-		top_landing_pages: v.array(v.string()),
-		traffic_sources: v.array(v.string()),
-		top_events: v.array(v.string()),
+		countries: v.array(v.array(v.union(v.string(), v.number()))),
+		devices: v.array(v.array(v.union(v.string(), v.number()))),
+		top_landing_pages: v.array(v.array(v.union(v.string(), v.number()))),
+		traffic_sources: v.array(v.array(v.union(v.string(), v.number()))),
+		top_events: v.array(v.array(v.union(v.string(), v.number()))),
 	}),
 });
 

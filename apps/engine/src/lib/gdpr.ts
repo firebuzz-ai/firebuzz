@@ -1,6 +1,6 @@
-import type { CampaignConfig } from '@firebuzz/shared-types';
-import type { Context } from 'hono';
-import { parseRequest } from './request';
+import type { CampaignConfig } from "@firebuzz/shared-types";
+import type { Context } from "hono";
+import { parseRequest } from "./request";
 
 interface GDPRSettingsEvaluation {
 	isEnabled: boolean;
@@ -25,7 +25,7 @@ interface GDPRSettingsEvaluation {
  */
 export function evaluateGDPRSettings(
 	c: Context,
-	settings: CampaignConfig['gdpr'],
+	settings: CampaignConfig["gdpr"],
 	_isPreview = false,
 ): GDPRSettingsEvaluation {
 	const isEnabled = settings.enabled;
@@ -37,8 +37,11 @@ export function evaluateGDPRSettings(
 
 	// Geo-location
 	const isEU = parsedRequest.geo.isEUCountry;
-	const isCalifornian = parsedRequest.geo.country === 'US' && parsedRequest.geo.regionCode === 'CA';
-	const isIncludedCountry = Boolean(settings.includedCountries?.includes(parsedRequest.geo.country || ''));
+	const isCalifornian =
+		parsedRequest.geo.country === "US" && parsedRequest.geo.regionCode === "CA";
+	const isIncludedCountry = Boolean(
+		settings.includedCountries?.includes(parsedRequest.geo.country || ""),
+	);
 
 	return {
 		isEnabled,
@@ -52,8 +55,8 @@ export function evaluateGDPRSettings(
 		isIncludedCountry,
 		isRespectDNTEnabled,
 		isLocalizationEnabled,
-		language: parsedRequest.localization.language ?? 'en-US',
-		countryCode: parsedRequest.geo.country ?? 'US',
+		language: parsedRequest.localization.language ?? "en-US",
+		countryCode: parsedRequest.geo.country ?? "US",
 		privacyPolicyUrl: settings.privacyPolicyUrl,
 		termsOfServiceUrl: settings.termsOfServiceUrl,
 	};

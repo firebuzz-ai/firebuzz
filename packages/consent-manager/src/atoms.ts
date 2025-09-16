@@ -1,9 +1,6 @@
 import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import {
-	CONSENT_VERSION,
-	DEFAULT_CONSENT_PREFERENCES,
-} from "./config";
+import { CONSENT_VERSION, DEFAULT_CONSENT_PREFERENCES } from "./config";
 import type { ConsentState, ConsentTexts, SessionContext } from "./types";
 
 export const sessionContextAtom = atom<SessionContext | null>(null);
@@ -64,10 +61,7 @@ export const showBannerAtom = atom((get) => {
 
 	// Don't show banner if DNT is enabled and we respect it
 	// (DNT means user doesn't want to be tracked, so no need to ask)
-	if (
-		sessionContext.gdprSettings.isRespectDNTEnabled &&
-		isDNTEnabled()
-	) {
+	if (sessionContext.gdprSettings.isRespectDNTEnabled && isDNTEnabled()) {
 		return false;
 	}
 
@@ -84,14 +78,16 @@ export const showModalAtom = atom(false);
 export const consentTextsAtom = atom<ConsentTexts>({
 	banner: {
 		title: "We value your privacy",
-		description: "This site uses cookies to improve your browsing experience, analyze site traffic, and show personalized content.",
+		description:
+			"This site uses cookies to improve your browsing experience, analyze site traffic, and show personalized content.",
 		acceptAll: "Accept All",
 		rejectAll: "Reject All",
 		manageCookies: "Customize",
 	},
 	modal: {
 		title: "Privacy Settings",
-		description: "Choose which cookies you want to accept. You can change these settings at any time.",
+		description:
+			"Choose which cookies you want to accept. You can change these settings at any time.",
 		save: "Save Preferences",
 		acceptAll: "Accept All",
 		rejectAll: "Reject All",
@@ -100,19 +96,23 @@ export const consentTextsAtom = atom<ConsentTexts>({
 	categories: {
 		necessary: {
 			title: "Strictly Necessary",
-			description: "These cookies are essential for the website to function properly. They cannot be disabled.",
+			description:
+				"These cookies are essential for the website to function properly. They cannot be disabled.",
 		},
 		analytics: {
 			title: "Analytics",
-			description: "These cookies help us understand how visitors interact with our website by collecting and reporting information.",
+			description:
+				"These cookies help us understand how visitors interact with our website by collecting and reporting information.",
 		},
 		marketing: {
 			title: "Marketing",
-			description: "These cookies are used to deliver advertisements more relevant to you and your interests.",
+			description:
+				"These cookies are used to deliver advertisements more relevant to you and your interests.",
 		},
 		functional: {
 			title: "Functional",
-			description: "These cookies enhance functionality and personalization, such as videos and live chats.",
+			description:
+				"These cookies enhance functionality and personalization, such as videos and live chats.",
 		},
 	},
 	footer: {
@@ -159,7 +159,8 @@ export const createInitialConsentStateAtom = atom(null, (get, set) => {
 	if (currentState) return;
 
 	// Check if we should respect DNT
-	const shouldRespectDNT = sessionContext?.gdprSettings?.isRespectDNTEnabled ?? false;
+	const shouldRespectDNT =
+		sessionContext?.gdprSettings?.isRespectDNTEnabled ?? false;
 	const dntEnabled = isDNTEnabled();
 
 	// Create initial state for both dev and real environments

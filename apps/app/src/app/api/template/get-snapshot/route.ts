@@ -1,7 +1,7 @@
-import { snapshot } from "@webcontainer/snapshot";
-import type { NextRequest } from "next/server";
 import * as fs from "node:fs/promises";
 import path from "node:path";
+import { snapshot } from "@webcontainer/snapshot";
+import type { NextRequest } from "next/server";
 
 // Define a type for our file system structure
 interface FileContent {

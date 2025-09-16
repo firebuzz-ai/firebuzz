@@ -26,7 +26,8 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			}
 
 			// Always use campaign environment from session context (authoritative source)
-			const campaignEnvironment = sessionData.campaign_environment || "production";
+			const campaignEnvironment =
+				sessionData.campaign_environment || "production";
 
 			// Get engine environment from hostname (for internal tracking)
 			const hostname = c.req.header("host") || "";

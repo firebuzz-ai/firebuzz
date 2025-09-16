@@ -1,4 +1,4 @@
-import { logQueueMetrics, trackRateLimiting } from "../lib/monitoring";
+import { logQueueMetrics } from "../lib/monitoring";
 import type { SessionData } from "../lib/tinybird";
 import { batchIngestSessions } from "../lib/tinybird";
 import type {

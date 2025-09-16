@@ -339,7 +339,9 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 
 				// Environment - use from event request if available, otherwise from session
 				environment: this.currentSession.environment,
-				campaign_environment: eventRequest.campaign_environment || this.currentSession.campaignEnvironment,
+				campaign_environment:
+					eventRequest.campaign_environment ||
+					this.currentSession.campaignEnvironment,
 				page_url: eventRequest.page_url || "",
 				referrer_url: eventRequest.referrer_url,
 			};

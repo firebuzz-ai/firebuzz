@@ -1,7 +1,4 @@
-import type {
-	ConsentPreferences,
-	GTMConsentDefaults,
-} from "./types";
+import type { ConsentPreferences, GTMConsentDefaults } from "./types";
 
 export const CONSENT_VERSION = 1;
 
@@ -33,4 +30,3 @@ export const DEFAULT_GTM_CONSENT: GTMConsentDefaults = {
 	security_storage: "granted",
 	wait_for_update: 500,
 };
-

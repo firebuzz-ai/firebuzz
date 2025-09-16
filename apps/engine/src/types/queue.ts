@@ -24,7 +24,10 @@ export interface TrafficQueueMessage {
 	timestamp: string;
 }
 
-export type QueueMessage = SessionQueueMessage | EventQueueMessage | TrafficQueueMessage;
+export type QueueMessage =
+	| SessionQueueMessage
+	| EventQueueMessage
+	| TrafficQueueMessage;
 
 export interface BatchProcessingResult {
 	successful: number;

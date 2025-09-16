@@ -149,7 +149,7 @@ async function trackSession(
 
 		// Use session context environment if available, otherwise detect from hostname
 		const currentCampaignEnvironment =
-			sessionContext?.campaignEnvironment || 
+			sessionContext?.campaignEnvironment ||
 			detectCampaignEnvironmentFromHostname(currentHostname);
 
 		// Extract UTM parameters from current URL
@@ -399,7 +399,6 @@ async function initializeSession(
 
 	const currentHostname =
 		typeof window !== "undefined" ? window.location.hostname : "";
-
 
 	// Session context should always exist in preview/production - if not, we're in dev
 	if (!sessionContext) {

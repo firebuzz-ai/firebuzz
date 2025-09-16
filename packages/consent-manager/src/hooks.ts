@@ -92,7 +92,8 @@ export const useConsent = (): UseConsentReturn => {
 		language: sessionContext?.gdprSettings.language ?? "en-US",
 		countryCode: sessionContext?.gdprSettings.countryCode ?? "US",
 		// DNT (Do Not Track) state
-		isRespectDNTEnabled: sessionContext?.gdprSettings.isRespectDNTEnabled ?? false,
+		isRespectDNTEnabled:
+			sessionContext?.gdprSettings.isRespectDNTEnabled ?? false,
 		isDNTEnabled: isDNTEnabled(),
 		// Legal document URLs
 		privacyPolicyUrl: sessionContext?.gdprSettings.privacyPolicyUrl,
