@@ -18,26 +18,21 @@ import {
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { TrendingUp } from "@firebuzz/ui/icons/lucide";
 import { capitalizeFirstLetter } from "@firebuzz/utils";
-import { useMemo } from "react";
 import type React from "react";
-import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
+import { useMemo } from "react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-export interface VerticalStackedBarChartData {
+export interface VerticalBarChartData {
 	name: string;
-	newSessions: number;
-	returningSessions: number;
-	[key: string]: string | number;
+	value: number;
+	fill?: string;
 }
 
-interface VerticalStackedBarChartProps {
-	data: VerticalStackedBarChartData[];
+interface VerticalBarChartProps {
+	data: VerticalBarChartData[];
 	title: string;
 	description: string;
-	dataKeys: Array<{
-		key: string;
-		label: string;
-		color?: string;
-	}>;
+	valueLabel?: string;
 	isLoading?: boolean;
 	className?: string;
 	source?: Doc<"analyticsPipes">["source"];
@@ -45,16 +40,15 @@ interface VerticalStackedBarChartProps {
 	maxItems?: number;
 	valueFormatter?: (value: number) => string;
 	trendFormatter?: (
-		data: VerticalStackedBarChartData[],
-		dataKeys: Array<{ key: string; label: string; color?: string }>,
+		data: VerticalBarChartData[],
 	) => { text: React.ReactNode; subtitle: React.ReactNode } | null;
 }
 
-export const VerticalStackedBarChart = ({
+export const VerticalBarChart = ({
 	data,
 	title,
 	description,
-	dataKeys,
+	valueLabel = "Value",
 	isLoading,
 	className,
 	source,
@@ -62,95 +56,97 @@ export const VerticalStackedBarChart = ({
 	maxItems = 7,
 	valueFormatter = (value) => value.toLocaleString(),
 	trendFormatter,
-}: VerticalStackedBarChartProps) => {
-	// Transform and limit data
-	const chartData = useMemo((): VerticalStackedBarChartData[] => {
+}: VerticalBarChartProps) => {
+	// Transform and limit data with colors based on value ranking
+	const chartData = useMemo((): VerticalBarChartData[] => {
 		if (!data || data.length === 0) return [];
 
-		return data.slice(0, maxItems);
+		const limitedData = data.slice(0, maxItems);
+
+		// Sort by value to get rankings for color assignment
+		const sortedByValue = [...limitedData].sort((a, b) => b.value - a.value);
+
+		// Create value-to-rank mapping to handle ties properly
+		const uniqueValues = [...new Set(sortedByValue.map((item) => item.value))];
+		const valueToRank = new Map();
+		for (const [index, value] of uniqueValues.entries()) {
+			valueToRank.set(value, index);
+		}
+
+		// Add colors based on value ranking
+		return limitedData.map((item) => {
+			const rank = valueToRank.get(item.value) || 0;
+			const colorIndex = (rank % 5) + 1;
+			return {
+				...item,
+				fill: `var(--chart-${colorIndex})`,
+			};
+		});
 	}, [data, maxItems]);
 
 	// Chart configuration for tooltip and legend
 	const chartConfig = useMemo((): ChartConfig => {
-		const config: ChartConfig = {};
+		const config: ChartConfig = {
+			value: {
+				label: valueLabel,
+				color: "hsl(var(--primary))",
+			},
+		};
 
-		// Add data key configurations
-		for (const [index, dataKey] of dataKeys.entries()) {
-			config[dataKey.key] = {
-				label: dataKey.label,
-				color:
-					dataKey.color ||
-					(index === 0
-						? "hsl(142 71% 45%)"
-						: index === 1
-							? "hsl(var(--brand))"
-							: `hsl(var(--chart-${(index % 5) + 1}))`),
-			};
+		// Create value-to-rank mapping for consistent coloring
+		const sortedByValue = [...chartData].sort((a, b) => b.value - a.value);
+		const uniqueValues = [...new Set(sortedByValue.map((item) => item.value))];
+		const valueToRank = new Map();
+		for (const [index, value] of uniqueValues.entries()) {
+			valueToRank.set(value, index);
 		}
 
-		// Add individual item colors for better tooltip experience
-		for (const [index, item] of chartData.entries()) {
+		for (const item of chartData) {
 			const key = item.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+			const rank = valueToRank.get(item.value) || 0;
+			const colorIndex = (rank % 5) + 1;
+
 			config[key] = {
 				label: item.name,
-				color: `hsl(var(--chart-${(index % 5) + 1}))`,
+				color: `var(--chart-${colorIndex})`,
 			};
 		}
 
 		return config;
-	}, [chartData, dataKeys]);
+	}, [chartData, valueLabel]);
 
 	// Calculate trend data
 	const trendData = useMemo(() => {
 		if (trendFormatter) {
-			return trendFormatter(chartData, dataKeys);
+			return trendFormatter(chartData);
 		}
 
 		if (!chartData || chartData.length === 0) {
 			return null;
 		}
 
-		// Default trend calculation: find item with highest total value
+		// Default trend calculation: find item with highest value
 		const topItem = chartData.reduce((max, item) => {
-			const itemTotal = dataKeys.reduce(
-				(sum, key) => sum + (Number(item[key.key]) || 0),
-				0,
-			);
-			const maxTotal = dataKeys.reduce(
-				(sum, key) => sum + (Number(max[key.key]) || 0),
-				0,
-			);
-			return itemTotal > maxTotal ? item : max;
+			return item.value > max.value ? item : max;
 		});
-
-		const total = dataKeys.reduce(
-			(sum, key) => sum + (Number(topItem[key.key]) || 0),
-			0,
-		);
-		const breakdown = dataKeys
-			.map(
-				(key) =>
-					`${valueFormatter(Number(topItem[key.key]) || 0)} ${key.label.toLowerCase()}`,
-			)
-			.join(", ");
 
 		return {
 			text: (
 				<>
 					<span className="font-medium text-emerald-500">
-						{capitalizeFirstLetter(String(topItem.name))}
+						{capitalizeFirstLetter(topItem.name)}
 					</span>{" "}
-					had most activity
+					peak conversion hour
 				</>
 			),
-			subtitle: `${valueFormatter(total)} total (${breakdown})`,
+			subtitle: `${valueFormatter(topItem.value)} ${valueLabel.toLowerCase()}`,
 		};
-	}, [chartData, dataKeys, trendFormatter, valueFormatter]);
+	}, [chartData, trendFormatter, valueFormatter, valueLabel]);
 
 	if (isLoading) {
 		return (
 			<Card className={className}>
-				<CardHeader>
+				<CardHeader className="!gap-0 space-y-0 px-6 py-3 border-b">
 					<CardTitle className="text-base font-medium">{title}</CardTitle>
 					<CardDescription>{description}</CardDescription>
 				</CardHeader>
@@ -207,54 +203,7 @@ export const VerticalStackedBarChart = ({
 						/>
 						<YAxis hide />
 						<ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-						{dataKeys.map((dataKey) => (
-							<Bar
-								key={dataKey.key}
-								dataKey={dataKey.key}
-								stackId="stack"
-								fill={`var(--color-${dataKey.key})`}
-							>
-								{chartData.map((entry) => {
-									// Find which segments have data for this entry
-									const segmentsWithData = dataKeys.filter(
-										(key) => Number(entry[key.key]) > 0,
-									);
-
-									if (segmentsWithData.length === 0) {
-										return <Cell key={`cell-${entry.name}-${dataKey.key}`} />;
-									}
-
-									const hasData = Number(entry[dataKey.key]) > 0;
-									if (!hasData) {
-										return <Cell key={`cell-${entry.name}-${dataKey.key}`} />;
-									}
-
-									const isOnlySegmentWithData = segmentsWithData.length === 1;
-									const isFirstSegmentWithData =
-										segmentsWithData[0]?.key === dataKey.key;
-									const isLastSegmentWithData =
-										segmentsWithData[segmentsWithData.length - 1]?.key ===
-										dataKey.key;
-
-									let radius: [number, number, number, number] = [0, 0, 0, 0];
-
-									if (isOnlySegmentWithData) {
-										radius = [4, 4, 4, 4]; // All corners rounded when it's the only segment
-									} else if (isFirstSegmentWithData) {
-										radius = [0, 0, 4, 4]; // Bottom corners rounded for first segment with data
-									} else if (isLastSegmentWithData) {
-										radius = [4, 4, 0, 0]; // Top corners rounded for last segment with data
-									}
-
-									return (
-										<Cell
-											key={`cell-${entry.name}-${dataKey.key}`}
-											{...({ radius } as Record<string, unknown>)}
-										/>
-									);
-								})}
-							</Bar>
-						))}
+						<Bar dataKey="value" radius={8} maxBarSize={30} />
 					</BarChart>
 				</ChartContainer>
 			</CardContent>

@@ -1,7 +1,7 @@
 import {
-	VerticalStackedBarChart,
-	type VerticalStackedBarChartData,
-} from "@/components/analytics/charts/vertical-stacked-bar-chart";
+	VerticalBarChart,
+	type VerticalBarChartData,
+} from "@/components/analytics/charts/vertical-bar-chart";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
@@ -25,7 +25,7 @@ const HOURS_OF_DAY = Array.from({ length: 24 }, (_, i) => {
 export const AudienceHourlyActivityChart = ({
 	audienceData,
 }: AudienceHourlyActivityChartProps) => {
-	const chartData = useMemo((): VerticalStackedBarChartData[] => {
+	const chartData = useMemo((): VerticalBarChartData[] => {
 		if (
 			!audienceData?.payload?.hourly_distribution ||
 			audienceData.payload.hourly_distribution.length === 0
@@ -63,12 +63,13 @@ export const AudienceHourlyActivityChart = ({
 		// Convert to chart data format
 		const data = HOURS_OF_DAY.map((hourInfo) => ({
 			name: hourInfo.shortLabel,
-			newSessions: hourActivity[hourInfo.value]?.newSessions || 0,
-			returningSessions: hourActivity[hourInfo.value]?.returningSessions || 0,
+			value:
+				(hourActivity[hourInfo.value]?.newSessions || 0) +
+				(hourActivity[hourInfo.value]?.returningSessions || 0),
 		}));
 
 		// Check if all values are 0, return empty array to show empty state
-		const hasRealData = data.some(hour => hour.newSessions > 0 || hour.returningSessions > 0);
+		const hasRealData = data.some((hour) => hour.value > 0);
 		if (!hasRealData) {
 			return [];
 		}
@@ -77,29 +78,19 @@ export const AudienceHourlyActivityChart = ({
 	}, [audienceData]);
 
 	return (
-		<VerticalStackedBarChart
+		<VerticalBarChart
 			data={chartData}
 			title="Hourly Activity"
-			description="Session activity by hour of day"
-			dataKeys={[
-				{ key: "newSessions", label: "New", color: "hsl(142 71% 45%)" },
-				{
-					key: "returningSessions",
-					label: "Returning",
-					color: "hsl(var(--brand))",
-				},
-			]}
+			description="Total session activity by hour of day"
+			valueLabel="Sessions"
 			source={audienceData?.source}
 			showTrend={chartData.length > 0}
 			maxItems={24}
 			trendFormatter={(data) => {
 				if (!data || data.length === 0) return null;
 				const topHour = data.reduce((max, hour) => {
-					const hourTotal = hour.newSessions + hour.returningSessions;
-					const maxTotal = max.newSessions + max.returningSessions;
-					return hourTotal > maxTotal ? hour : max;
+					return hour.value > max.value ? hour : max;
 				});
-				const total = topHour.newSessions + topHour.returningSessions;
 
 				// Convert back to readable hour format
 				const hourIndex = HOURS_OF_DAY.findIndex(
@@ -117,7 +108,7 @@ export const AudienceHourlyActivityChart = ({
 							had most activity
 						</>
 					),
-					subtitle: `${total.toLocaleString()} sessions (${topHour.newSessions.toLocaleString()} new, ${topHour.returningSessions.toLocaleString()} returning)`,
+					subtitle: `${topHour.value.toLocaleString()} total sessions`,
 				};
 			}}
 		/>

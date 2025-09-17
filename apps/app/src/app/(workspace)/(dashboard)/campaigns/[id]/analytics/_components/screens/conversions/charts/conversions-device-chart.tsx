@@ -1,7 +1,9 @@
+"use client";
+
 import {
-	HorizontalBarChart,
-	type HorizontalBarChartData,
-} from "@/components/analytics/charts/horizontal-bar-chart";
+	DonutChart,
+	type DonutChartData,
+} from "@/components/analytics/charts/donut-chart";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
@@ -15,11 +17,8 @@ interface ConversionsDeviceChartProps {
 export const ConversionsDeviceChart = ({
 	conversionsData,
 }: ConversionsDeviceChartProps) => {
-	const chartData = useMemo((): HorizontalBarChartData[] => {
-		if (
-			!conversionsData?.payload.device_conversions ||
-			conversionsData.payload.device_conversions.length === 0
-		) {
+	const chartData = useMemo((): DonutChartData[] => {
+		if (!conversionsData?.payload?.device_conversions) {
 			return [];
 		}
 
@@ -53,14 +52,14 @@ export const ConversionsDeviceChart = ({
 	}, [conversionsData]);
 
 	return (
-		<HorizontalBarChart
+		<DonutChart
 			data={chartData}
 			title="Device Conversions"
 			description="Conversions by device type"
 			valueLabel="Conversions"
 			source={conversionsData?.source}
 			showTrend={chartData.length > 0}
-			maxItems={5}
+			centerLabel="Total"
 		/>
 	);
 };

@@ -10,7 +10,7 @@ import type {
  */
 async function sendBatchToTinybird(
 	trafficRecords: TrafficData[],
-	env: Env,
+	_env: Env,
 ): Promise<TrafficBatchProcessingResult> {
 	const result: TrafficBatchProcessingResult = {
 		successful: 0,

@@ -375,6 +375,8 @@ const conversionsBreakdownResponseSchema = z.object({
 	utm_source_conversions: z.array(conversionSegmentSchema),
 	utm_medium_conversions: z.array(conversionSegmentSchema),
 	utm_campaign_conversions: z.array(conversionSegmentSchema),
+	referrer_conversions: z.array(conversionSegmentSchema),
+	source_conversions: z.array(conversionSegmentSchema),
 	landing_page_conversions: z.array(conversionSegmentSchema),
 	hourly_conversions: z.array(
 		z.tuple([

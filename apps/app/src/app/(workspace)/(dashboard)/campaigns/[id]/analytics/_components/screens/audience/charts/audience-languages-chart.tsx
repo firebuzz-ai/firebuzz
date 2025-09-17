@@ -92,7 +92,7 @@ export const AudienceLanguagesChart = ({
 						fill: `var(--chart-${(index % 5) + 1})`,
 					};
 				})
-				.filter((item) => !isNaN(item.value) && item.value > 0)
+				.filter((item) => !Number.isNaN(item.value) && item.value > 0)
 				.sort((a, b) => b.value - a.value);
 		}
 
@@ -165,13 +165,13 @@ export const AudienceLanguagesChart = ({
 
 			const languageCounts: Record<string, number> = {};
 
-			audienceData.payload.countries.forEach(([country, count]) => {
+			for (const [country, count] of audienceData.payload.countries) {
 				const language = countryToLanguage[String(country)] || "Other";
 				const sessions = Number(count) || 0;
-				if (!isNaN(sessions) && sessions > 0) {
+				if (!Number.isNaN(sessions) && sessions > 0) {
 					languageCounts[language] = (languageCounts[language] || 0) + sessions;
 				}
-			});
+			}
 
 			return Object.entries(languageCounts)
 				.map(([language, count], index) => ({
@@ -196,7 +196,7 @@ export const AudienceLanguagesChart = ({
 					value: Number(count) || 0,
 					fill: `var(--chart-${(index % 5) + 1})`,
 				}))
-				.filter((item) => !isNaN(item.value) && item.value > 0);
+				.filter((item) => !Number.isNaN(item.value) && item.value > 0);
 		}
 
 		return [];

@@ -339,11 +339,11 @@ export const TimeSeriesChartWrapper = ({
 		if (!chartData || chartData.length === 0) return false;
 
 		// Check if any of the tracked dataKeys have non-zero values
-		return chartData.some(point =>
-			dataKeys.some(key => {
+		return chartData.some((point) =>
+			dataKeys.some((key) => {
 				const value = point[key];
 				return typeof value === "number" && value > 0;
-			})
+			}),
 		);
 	}, [chartData, dataKeys]);
 
@@ -357,12 +357,7 @@ export const TimeSeriesChartWrapper = ({
 		return dataKeys.map((key, index) => ({
 			key,
 			label: capitalizeFirstLetter(key.replace(/_/g, " ")),
-			color:
-				index === 0
-					? "hsl(var(--brand))"
-					: index === 1
-						? "#10b981"
-						: `hsl(var(--chart-${(index % 5) + 1}))`,
+			color: `var(--chart-${(index % 5) + 1})`,
 			strokeWidth: 2,
 			fillOpacity: 0.3,
 		}));
@@ -436,7 +431,13 @@ export const TimeSeriesChartWrapper = ({
 	}
 
 	// Show empty state
-	if (!chartData || chartData.length === 0 || !timeseriesData?.payload || timeseriesData.payload.length === 0 || !hasRealData) {
+	if (
+		!chartData ||
+		chartData.length === 0 ||
+		!timeseriesData?.payload ||
+		timeseriesData.payload.length === 0 ||
+		!hasRealData
+	) {
 		return (
 			<Card className="flex flex-col bg-muted">
 				<CardHeader className="!gap-0 space-y-0 px-6 py-3 border-b">

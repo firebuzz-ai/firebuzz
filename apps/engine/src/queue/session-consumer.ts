@@ -11,7 +11,7 @@ import type {
  */
 async function sendBatchToTinybird(
 	sessions: SessionData[],
-	env: Env,
+	_env: Env,
 ): Promise<BatchProcessingResult> {
 	const result: BatchProcessingResult = {
 		successful: 0,

@@ -93,14 +93,17 @@ export const CodeBlockWithClipboard = ({
 								<div className="flex">
 									<div className="flex flex-col text-muted-foreground mr-4 select-none">
 										{lines.map((_, index) => (
-											<span key={index} className="text-right w-6">
+											<span
+												key={`line-number-${index + 1}`}
+												className="text-right w-6"
+											>
 												{index + 1}
 											</span>
 										))}
 									</div>
 									<div className="flex-1">
 										{lines.map((line, index) => (
-											<div key={index}>{line || " "}</div>
+											<div key={`line-content-${index + 1}`}>{line || " "}</div>
 										))}
 									</div>
 								</div>

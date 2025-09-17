@@ -1,9 +1,9 @@
 import {
-	VerticalStackedBarChart,
-	type VerticalStackedBarChartData,
-} from "@/components/analytics/charts/vertical-stacked-bar-chart";
-import { capitalizeFirstLetter } from "@firebuzz/utils";
+	VerticalBarChart,
+	type VerticalBarChartData,
+} from "@/components/analytics/charts/vertical-bar-chart";
 import type { Doc } from "@firebuzz/convex";
+import { capitalizeFirstLetter } from "@firebuzz/utils";
 import { useMemo } from "react";
 
 interface AudienceActiveDaysChartProps {
@@ -26,7 +26,7 @@ const DAYS_OF_WEEK = [
 export const AudienceActiveDaysChart = ({
 	timeseriesData,
 }: AudienceActiveDaysChartProps) => {
-	const chartData = useMemo((): VerticalStackedBarChartData[] => {
+	const chartData = useMemo((): VerticalBarChartData[] => {
 		if (!timeseriesData?.payload || timeseriesData.payload.length === 0) {
 			return [];
 		}
@@ -64,12 +64,13 @@ export const AudienceActiveDaysChart = ({
 		// Convert to chart data format in regular week order (Monday to Sunday)
 		const data = DAYS_OF_WEEK.map((day) => ({
 			name: day,
-			newSessions: dayActivity[day]?.newSessions || 0,
-			returningSessions: dayActivity[day]?.returningSessions || 0,
+			value:
+				(dayActivity[day]?.newSessions || 0) +
+				(dayActivity[day]?.returningSessions || 0),
 		}));
 
 		// Check if all values are 0, return empty array to show empty state
-		const hasRealData = data.some(day => day.newSessions > 0 || day.returningSessions > 0);
+		const hasRealData = data.some((day) => day.value > 0);
 		if (!hasRealData) {
 			return [];
 		}
@@ -78,29 +79,20 @@ export const AudienceActiveDaysChart = ({
 	}, [timeseriesData]);
 
 	return (
-		<VerticalStackedBarChart
+		<VerticalBarChart
 			data={chartData}
 			title="Most Active Days"
-			description="New vs returning sessions by day of week"
-			dataKeys={[
-				{ key: "newSessions", label: "New", color: "hsl(142 71% 45%)" },
-				{
-					key: "returningSessions",
-					label: "Returning",
-					color: "hsl(var(--brand))",
-				},
-			]}
+			description="Total sessions by day of week"
+			valueLabel="Sessions"
 			source={timeseriesData?.source}
 			showTrend={chartData.length > 0}
 			maxItems={7}
-			trendFormatter={(data, dataKeys) => {
+			trendFormatter={(data) => {
 				if (!data || data.length === 0) return null;
 				const topDay = data.reduce((max, day) => {
-					const dayTotal = day.newSessions + day.returningSessions;
-					const maxTotal = max.newSessions + max.returningSessions;
-					return dayTotal > maxTotal ? day : max;
+					return day.value > max.value ? day : max;
 				});
-				const total = topDay.newSessions + topDay.returningSessions;
+
 				return {
 					text: (
 						<>
@@ -110,7 +102,7 @@ export const AudienceActiveDaysChart = ({
 							had most sessions
 						</>
 					),
-					subtitle: `${total.toLocaleString()} sessions (${topDay.newSessions.toLocaleString()} new, ${topDay.returningSessions.toLocaleString()} returning)`,
+					subtitle: `${topDay.value.toLocaleString()} total sessions`,
 				};
 			}}
 		/>

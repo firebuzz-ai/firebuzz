@@ -1,7 +1,7 @@
 import {
-	VerticalStackedBarChart,
-	type VerticalStackedBarChartData,
-} from "@/components/analytics/charts/vertical-stacked-bar-chart";
+	VerticalBarChart,
+	type VerticalBarChartData,
+} from "@/components/analytics/charts/vertical-bar-chart";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
@@ -25,7 +25,7 @@ const DAYS_OF_WEEK = [
 export const ConversionsDailyPatternsChart = ({
 	conversionsData,
 }: ConversionsDailyPatternsChartProps) => {
-	const chartData = useMemo((): VerticalStackedBarChartData[] => {
+	const chartData = useMemo((): VerticalBarChartData[] => {
 		if (
 			!conversionsData?.payload?.daily_conversions ||
 			conversionsData.payload.daily_conversions.length === 0
@@ -63,33 +63,26 @@ export const ConversionsDailyPatternsChart = ({
 		// Convert to chart data format
 		return DAYS_OF_WEEK.map((dayInfo) => ({
 			name: dayInfo.shortName,
-			newSessions: dayActivity[dayInfo.value]?.conversions || 0,
-			returningSessions: 0, // We only have total conversions, not split by new/returning for daily
+			value: dayActivity[dayInfo.value]?.conversions || 0,
 		}));
 	}, [conversionsData]);
 
 	return (
-		<VerticalStackedBarChart
+		<VerticalBarChart
 			data={chartData}
 			title="Daily Conversion Patterns"
 			description="Conversions by day of week"
-			dataKeys={[
-				{
-					key: "newSessions",
-					label: "Conversions",
-					color: "hsl(var(--brand))",
-				},
-			]}
+			valueLabel="Conversions"
 			source={conversionsData?.source}
 			showTrend={chartData.length > 0}
 			maxItems={7}
 			trendFormatter={(data) => {
 				if (!data || data.length === 0) return null;
 				const topDay = data.reduce((max, day) => {
-					return Number(day.newSessions) > Number(max.newSessions) ? day : max;
+					return day.value > max.value ? day : max;
 				});
 
-				if (Number(topDay.newSessions) === 0) return null;
+				if (topDay.value === 0) return null;
 
 				// Find the full day name
 				const dayInfo = DAYS_OF_WEEK.find((d) => d.shortName === topDay.name);
@@ -104,7 +97,7 @@ export const ConversionsDailyPatternsChart = ({
 							is your best day
 						</>
 					),
-					subtitle: `${Number(topDay.newSessions).toLocaleString()} conversions`,
+					subtitle: `${topDay.value.toLocaleString()} conversions`,
 				};
 			}}
 		/>

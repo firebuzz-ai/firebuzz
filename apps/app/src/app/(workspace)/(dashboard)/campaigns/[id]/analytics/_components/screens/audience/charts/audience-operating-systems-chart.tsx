@@ -29,7 +29,7 @@ export const AudienceOperatingSystemsChart = ({
 				value: Number(count) || 0,
 				fill: `var(--chart-${(index % 5) + 1})`,
 			}))
-			.filter((item) => !isNaN(item.value) && item.value > 0);
+			.filter((item) => !Number.isNaN(item.value) && item.value > 0);
 	}, [audienceData]);
 
 	return (

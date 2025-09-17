@@ -407,7 +407,10 @@ export const fetchAnalyticsPipe = internalAction({
 						projectId,
 						period: params.period,
 						campaignEnvironment: params.campaignEnvironment,
-						conversionEventId: "conversionEventId" in params ? params.conversionEventId : undefined,
+						conversionEventId:
+							"conversionEventId" in params
+								? params.conversionEventId
+								: undefined,
 						eventIds: "eventIds" in params ? params.eventIds : undefined,
 						key,
 						lastUpdatedAt,

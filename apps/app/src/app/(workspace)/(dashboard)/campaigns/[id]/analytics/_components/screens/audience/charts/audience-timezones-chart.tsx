@@ -66,7 +66,7 @@ export const AudienceTimezonesChart = ({
 					value: Number(sessions) || 0,
 					fill: `var(--chart-${(index % 5) + 1})`,
 				}))
-				.filter((item) => !isNaN(item.value) && item.value > 0)
+				.filter((item) => !Number.isNaN(item.value) && item.value > 0)
 				.sort((a, b) => b.value - a.value);
 		}
 
@@ -78,13 +78,13 @@ export const AudienceTimezonesChart = ({
 			// Convert hourly distribution to timezone approximation
 			const timezoneData: Record<string, number> = {};
 
-			audienceData.payload.hourly_distribution.forEach(([hour, count]) => {
+			for (const [hour, count] of audienceData.payload.hourly_distribution) {
 				const timezone = getTimezoneFromHour(Number(hour));
 				const sessions = Number(count) || 0;
-				if (!isNaN(sessions) && sessions > 0) {
+				if (!Number.isNaN(sessions) && sessions > 0) {
 					timezoneData[timezone] = (timezoneData[timezone] || 0) + sessions;
 				}
-			});
+			}
 
 			return Object.entries(timezoneData)
 				.map(([timezone, count], index) => ({
@@ -100,22 +100,22 @@ export const AudienceTimezonesChart = ({
 			const hourlyActivity: Record<number, number> = {};
 
 			// Aggregate sessions by hour of day from timeseries
-			timeseriesData.payload.forEach((dataPoint) => {
+			for (const dataPoint of timeseriesData.payload) {
 				const date = new Date(dataPoint.bucket_start);
 				const hour = date.getUTCHours();
 				hourlyActivity[hour] =
 					(hourlyActivity[hour] || 0) + dataPoint.all_sessions;
-			});
+			}
 
 			// Convert to timezone approximation
 			const timezoneData: Record<string, number> = {};
-			Object.entries(hourlyActivity).forEach(([hour, count]) => {
+			for (const [hour, count] of Object.entries(hourlyActivity)) {
 				const timezone = getTimezoneFromHour(Number(hour));
 				const sessions = Number(count) || 0;
-				if (!isNaN(sessions) && sessions > 0) {
+				if (!Number.isNaN(sessions) && sessions > 0) {
 					timezoneData[timezone] = (timezoneData[timezone] || 0) + sessions;
 				}
-			});
+			}
 
 			return Object.entries(timezoneData)
 				.map(([timezone, count], index) => ({

@@ -1,7 +1,7 @@
 import {
-	VerticalStackedBarChart,
-	type VerticalStackedBarChartData,
-} from "@/components/analytics/charts/vertical-stacked-bar-chart";
+	VerticalBarChart,
+	type VerticalBarChartData,
+} from "@/components/analytics/charts/vertical-bar-chart";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
@@ -25,7 +25,7 @@ const HOURS_OF_DAY = Array.from({ length: 24 }, (_, i) => {
 export const ConversionsHourlyPatternsChart = ({
 	conversionsData,
 }: ConversionsHourlyPatternsChartProps) => {
-	const chartData = useMemo((): VerticalStackedBarChartData[] => {
+	const chartData = useMemo((): VerticalBarChartData[] => {
 		if (
 			!conversionsData?.payload?.hourly_conversions ||
 			conversionsData.payload.hourly_conversions.length === 0
@@ -63,35 +63,26 @@ export const ConversionsHourlyPatternsChart = ({
 		// Convert to chart data format
 		return HOURS_OF_DAY.map((hourInfo) => ({
 			name: hourInfo.shortLabel,
-			newSessions: hourActivity[hourInfo.value]?.conversions || 0,
-			returningSessions: 0, // We only have total conversions, not split by new/returning for hourly
+			value: hourActivity[hourInfo.value]?.conversions || 0,
 		}));
 	}, [conversionsData]);
 
 	return (
-		<VerticalStackedBarChart
+		<VerticalBarChart
 			data={chartData}
 			title="Hourly Conversion Patterns"
 			description="Conversions by hour of day"
-			dataKeys={[
-				{
-					key: "newSessions",
-					label: "Conversions",
-					color: "hsl(var(--brand))",
-				},
-			]}
+			valueLabel="Conversions"
 			source={conversionsData?.source}
 			showTrend={chartData.length > 0}
 			maxItems={24}
 			trendFormatter={(data) => {
 				if (!data || data.length === 0) return null;
 				const topHour = data.reduce((max, hour) => {
-					return Number(hour.newSessions) > Number(max.newSessions)
-						? hour
-						: max;
+					return hour.value > max.value ? hour : max;
 				});
 
-				if (Number(topHour.newSessions) === 0) return null;
+				if (topHour.value === 0) return null;
 
 				// Convert back to readable hour format
 				const hourIndex = HOURS_OF_DAY.findIndex(
@@ -109,7 +100,7 @@ export const ConversionsHourlyPatternsChart = ({
 							peak conversion hour
 						</>
 					),
-					subtitle: `${Number(topHour.newSessions).toLocaleString()} conversions`,
+					subtitle: `${topHour.value.toLocaleString()} conversions`,
 				};
 			}}
 		/>

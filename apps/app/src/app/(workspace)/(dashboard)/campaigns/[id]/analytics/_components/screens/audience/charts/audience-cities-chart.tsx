@@ -26,14 +26,14 @@ export const AudienceCitiesChart = ({
 		return audienceData.payload.cities
 			.map((cityData, index) => {
 				// Format: [city, country, sessions, users, new_sessions, returning_sessions, percentage]
-				const [city, country, sessions] = cityData;
+				const [city, _country, sessions] = cityData;
 				return {
 					name: String(city).charAt(0).toUpperCase() + String(city).slice(1),
 					value: Number(sessions) || 0,
 					fill: `var(--chart-${(index % 5) + 1})`,
 				};
 			})
-			.filter((item) => !isNaN(item.value) && item.value > 0);
+			.filter((item) => !Number.isNaN(item.value) && item.value > 0);
 	}, [audienceData]);
 
 	return (

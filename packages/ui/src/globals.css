@@ -61,11 +61,15 @@
 		--sidebar-ring: 217.2 91.2% 59.8%;
 
 		/* Chart colors */
-		--chart-1: oklch(0.7227 0.1753 50.44);
-		--chart-2: oklch(0.7414 0.1645 52.24);
-		--chart-3: oklch(0.7628 0.1495 54.04);
-		--chart-4: oklch(0.7851 0.1347 54.49);
-		--chart-5: oklch(0.809 0.1176 55.55);
+		--chart-1: oklch(0.7233 0.1751 50.65); /* Brand */
+		--chart-2: oklch(0.7628 0.1495 54.04);
+		--chart-3: oklch(0.809 0.1176 55.55);
+		--chart-4: oklch(0.8609 0.0832 56.89);
+		--chart-5: oklch(0.9155 0.0496 59.25);
+		--chart-purple: oklch(0.627 0.265 303.9);
+		--chart-indigo: oklch(0.645 0.246 16.439);
+		--chart-emerald: oklch(0.6959 0.1491 162.48);
+		--chart-fuchsia: oklch(0.645 0.246 16.439);
 
 		/* Map colors */
 		--map-sea: 220 20% 92%; /* Light blue for oceans/seas */
@@ -132,11 +136,15 @@
 		--sidebar-ring: 30 9% 9%; /* #181614 */
 
 		/* Chart colors */
-		--chart-1: oklch(0.7227 0.1753 50.44);
-		--chart-2: oklch(0.7414 0.1645 52.24);
-		--chart-3: oklch(0.7628 0.1495 54.04);
-		--chart-4: oklch(0.7851 0.1347 54.49);
-		--chart-5: oklch(0.809 0.1176 55.55);
+		--chart-1: oklch(0.7233 0.1751 50.65); /* Brand */
+		--chart-2: oklch(0.7628 0.1495 54.04);
+		--chart-3: oklch(0.809 0.1176 55.55);
+		--chart-4: oklch(0.8609 0.0832 56.89);
+		--chart-5: oklch(0.9155 0.0496 59.25);
+		--chart-purple: oklch(0.627 0.265 303.9);
+		--chart-indigo: oklch(0.645 0.246 16.439);
+		--chart-emerald: oklch(0.6959 0.1491 162.48);
+		--chart-fuchsia: oklch(0.645 0.246 16.439);
 
 		/* Map colors */
 		--map-sea: 210 20% 6%; /* Dark blue for oceans/seas */
