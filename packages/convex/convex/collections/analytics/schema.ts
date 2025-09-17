@@ -14,6 +14,15 @@ const queryBaseSchema = v.object({
   campaignId: v.id("campaigns"),
   workspaceId: v.id("workspaces"),
   projectId: v.id("projects"),
+  period: v.union(
+    v.literal("7d"),
+    v.literal("15d"),
+    v.literal("30d"),
+    v.literal("all-time")
+  ),
+  campaignEnvironment: v.union(v.literal("preview"), v.literal("production")),
+  conversionEventId: v.optional(v.string()),
+  eventIds: v.optional(v.string()),
   lastUpdatedAt: v.string(),
   isRefreshing: v.optional(v.boolean()),
   source: v.union(
@@ -185,6 +194,12 @@ export const analyticsPipesSchema = defineTable(
     realtimeOverviewSchema
   )
 )
-  .index("by_campaign_query", ["campaignId", "queryId"])
+  .index("by_campaign_query_params", [
+    "campaignId",
+    "queryId",
+    "period",
+    "campaignEnvironment",
+  ])
   .index("by_workspace_project", ["workspaceId", "projectId"])
+  .index("by_campaign_id", ["campaignId"])
   .index("by_last_updated", ["lastUpdatedAt"]);

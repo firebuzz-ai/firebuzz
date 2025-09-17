@@ -2,11 +2,10 @@
 
 import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 import { KPICardsContainer } from "@/components/analytics/containers/kpi-cards-container";
-import { AnalyticsControlBar } from "@/components/analytics/controls/analytics-control-bar";
+import { EmptyState } from "@/components/analytics/states";
 import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
-import { toast } from "@firebuzz/ui/lib/utils";
 import { AudienceActiveDaysChart } from "./charts/audience-active-days-chart";
 import { AudienceCitiesChart } from "./charts/audience-cities-chart";
 import { AudienceContinentsChart } from "./charts/audience-continents-chart";
@@ -24,27 +23,9 @@ interface CampaignAnalyticsAudienceProps {
 export const CampaignAnalyticsAudience = ({
   campaignId,
 }: CampaignAnalyticsAudienceProps) => {
-  const {
-    campaign,
-    period,
-    setPeriod,
-    isPreview,
-    setIsPreview,
-    data,
-    isLoading,
-    canShowAnalytics,
-    revalidate,
-  } = useCampaignAnalytics({ campaignId });
-
-  const handleRevalidate = async () => {
-    try {
-      await revalidate();
-      toast.success("Audience data refreshed successfully");
-    } catch (error) {
-      toast.error("Failed to refresh audience data");
-      console.error("Failed to revalidate audience analytics:", error);
-    }
-  };
+  const { campaign, data, isLoading } = useCampaignAnalytics({
+    campaignId,
+  });
 
   // Show loading state
   if (isLoading) {
@@ -85,22 +66,6 @@ export const CampaignAnalyticsAudience = ({
     );
   }
 
-  // Show unpublished state
-  if (!canShowAnalytics) {
-    return (
-      <div className="flex flex-col justify-center items-center py-12 space-y-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground">
-            No audience data available
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Audience data will be available once your campaign is published and
-            starts receiving traffic.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Calculate KPI values with fallbacks across different data sources
   const getUniqueUsers = () => {
@@ -173,141 +138,103 @@ export const CampaignAnalyticsAudience = ({
 
   // Show no data state
   if (!data.audienceBreakdown && !data.sumPrimitives) {
-    return (
-      <div className="space-y-6">
-        <AnalyticsControlBar
-          period={period}
-          setPeriod={setPeriod}
-          isPreview={isPreview}
-          setIsPreview={setIsPreview}
-          onRevalidate={handleRevalidate}
-          currentScreen="audience"
-        />
-        <div className="flex flex-col justify-center items-center py-12 space-y-4">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-muted-foreground">
-              No audience data found for this period
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Try selecting a different time period or check back later.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <EmptyState />;
   }
 
   const source =
     data.audienceBreakdown?.source || data.sumPrimitives?.source || "firebuzz";
 
   return (
-    <div className="flex overflow-hidden flex-col px-6 pt-6 max-h-full">
-      {/* Control Bar */}
-      <AnalyticsControlBar
-        period={period}
-        setPeriod={setPeriod}
-        isPreview={isPreview}
-        setIsPreview={setIsPreview}
-        onRevalidate={handleRevalidate}
-        isRevalidating={data.audienceBreakdown?.isRefreshing}
-        currentScreen="audience"
-      />
+    <div className="flex overflow-hidden relative flex-col max-h-full">
+      {/* Gradient background - Top */}
+      <div className="absolute top-0 right-0 left-0 z-10 h-5 bg-gradient-to-b to-transparent from-background" />
+      <div className="overflow-y-auto relative pt-5 pb-6 space-y-6 max-h-full">
+        {/* KPI Cards */}
+        <KPICardsContainer
+          payload={audienceKPIPayload}
+          source={source}
+          campaignSettings={campaign?.campaignSettings}
+          customKPIs={[
+            {
+              id: "users",
+              title: "Unique Users",
+              field: "current_users",
+            },
+            {
+              id: "sessions",
+              title: "Total Sessions",
+              field: "current_all_sessions",
+            },
+            {
+              id: "new_sessions",
+              title: "New Sessions",
+              field: "current_new_sessions",
+            },
+            {
+              id: "returning_sessions",
+              title: "Returning Sessions",
+              field: "current_returning_sessions",
+            },
+          ]}
+        />
 
-      <div className="flex overflow-hidden relative flex-col max-h-full">
-        {/* Gradient background - Top */}
-        <div className="absolute top-0 right-0 left-0 z-10 h-6 bg-gradient-to-b to-transparent from-background" />
-        <div className="overflow-y-auto relative py-6 space-y-6 max-h-full">
-          {/* KPI Cards */}
-          <KPICardsContainer
-            payload={audienceKPIPayload}
+        {/* Top Row: Countries and New vs Returning */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <WorldMapChart
+            data={
+              (data.audienceBreakdown?.payload.countries ||
+                data.realtimeOverview?.payload.countries ||
+                []) as string[] | [string, number][]
+            }
+            title="Top 30 Countries"
+            description="Geographic distribution of your audience"
             source={source}
-            campaignSettings={campaign?.campaignSettings}
-            customKPIs={[
-              {
-                id: "users",
-                title: "Unique Users",
-                field: "current_users",
-              },
-              {
-                id: "sessions",
-                title: "Total Sessions",
-                field: "current_all_sessions",
-              },
-              {
-                id: "new_sessions",
-                title: "New Sessions",
-                field: "current_new_sessions",
-              },
-              {
-                id: "returning_sessions",
-                title: "Returning Sessions",
-                field: "current_returning_sessions",
-              },
-            ]}
+          />
+          <AudienceVisitorTrendsChart
+            timeseriesData={data.timeseriesPrimitives}
+            isLoading={isLoading}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Continents */}
+          <AudienceContinentsChart
+            audienceData={data.audienceBreakdown}
+            realtimeData={data.realtimeOverview}
+          />
+          {/* Cities */}
+          <AudienceCitiesChart audienceData={data.audienceBreakdown} />
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Active Days */}
+          <AudienceActiveDaysChart timeseriesData={data.timeseriesPrimitives} />
+          {/* Hourly Activity */}
+          <AudienceHourlyActivityChart audienceData={data.audienceBreakdown} />
+        </div>
+
+        {/* Audience Breakdown Charts */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Timezones */}
+          <AudienceTimezonesChart
+            audienceData={data.audienceBreakdown}
+            timeseriesData={data.timeseriesPrimitives}
           />
 
-          {/* Top Row: Countries and New vs Returning */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <WorldMapChart
-              data={
-                (data.audienceBreakdown?.payload.countries ||
-                  data.realtimeOverview?.payload.countries ||
-                  []) as string[] | [string, number][]
-              }
-              title="Top 30 Countries"
-              description="Geographic distribution of your audience"
-              source={source}
-            />
-            <AudienceVisitorTrendsChart
-              timeseriesData={data.timeseriesPrimitives}
-              isLoading={isLoading}
-            />
-          </div>
+          {/* Languages */}
+          <AudienceLanguagesChart audienceData={data.audienceBreakdown} />
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Continents */}
-            <AudienceContinentsChart
-              audienceData={data.audienceBreakdown}
-              realtimeData={data.realtimeOverview}
-            />
-            {/* Cities */}
-            <AudienceCitiesChart audienceData={data.audienceBreakdown} />
-          </div>
+          {/* Devices */}
+          <AudienceDevicesChart audienceData={data.audienceBreakdown} />
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Active Days */}
-            <AudienceActiveDaysChart
-              timeseriesData={data.timeseriesPrimitives}
-            />
-            {/* Hourly Activity */}
-            <AudienceHourlyActivityChart
-              audienceData={data.audienceBreakdown}
-            />
-          </div>
-
-          {/* Audience Breakdown Charts */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Timezones */}
-            <AudienceTimezonesChart
-              audienceData={data.audienceBreakdown}
-              timeseriesData={data.timeseriesPrimitives}
-            />
-
-            {/* Languages */}
-            <AudienceLanguagesChart audienceData={data.audienceBreakdown} />
-
-            {/* Devices */}
-            <AudienceDevicesChart audienceData={data.audienceBreakdown} />
-
-            {/* Operating Systems */}
-            <AudienceOperatingSystemsChart
-              audienceData={data.audienceBreakdown}
-            />
-          </div>
+          {/* Operating Systems */}
+          <AudienceOperatingSystemsChart
+            audienceData={data.audienceBreakdown}
+          />
         </div>
-        {/* Gradient background - Bottom */}
-        <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
       </div>
+      {/* Gradient background - Bottom */}
+      <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
     </div>
   );
 };

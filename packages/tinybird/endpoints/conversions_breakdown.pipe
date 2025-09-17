@@ -81,8 +81,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -101,8 +101,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -121,8 +121,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -141,8 +141,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -162,8 +162,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -182,8 +182,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -202,8 +202,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -222,8 +222,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -231,6 +231,7 @@ SQL >
     GROUP BY s.utm_campaign
     ORDER BY conversions DESC
     LIMIT 10
+
 
 NODE landing_page_conversions
 DESCRIPTION "Conversion analysis by landing page"
@@ -242,8 +243,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -262,8 +263,8 @@ SQL >
         toHour(e.timestamp) AS hour,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
         uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS avg_conversion_value
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS avg_conversion_value
     FROM base_sessions s
     LEFT JOIN all_events e ON s.session_id = e.session_id
     WHERE e.event_id = (SELECT conversion_event_id FROM params)
@@ -289,8 +290,8 @@ SQL >
         END AS day_name,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
         uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS avg_conversion_value
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS avg_conversion_value
     FROM base_sessions s
     LEFT JOIN all_events e ON s.session_id = e.session_id
     WHERE e.event_id = (SELECT conversion_event_id FROM params)
@@ -310,7 +311,7 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
         round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate
     FROM base_sessions s
     LEFT JOIN all_events e ON s.session_id = e.session_id
@@ -338,7 +339,7 @@ SQL >
         avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS avg_value
     FROM base_sessions s
     LEFT JOIN all_events e ON s.session_id = e.session_id
-    WHERE e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD'
+    WHERE e.event_id = (SELECT conversion_event_id FROM params)
     GROUP BY value_range
     ORDER BY
         CASE
@@ -361,8 +362,8 @@ SQL >
         count(DISTINCT s.session_id) AS sessions,
         uniqExact(s.user_id) AS users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS conversion_value_usd,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS conversion_rate,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS conversion_rate,
         countIf(s.is_returning = 0 AND e.event_id = (SELECT conversion_event_id FROM params)) AS new_user_conversions,
         countIf(s.is_returning = 1 AND e.event_id = (SELECT conversion_event_id FROM params)) AS returning_user_conversions
     FROM base_sessions s
@@ -381,8 +382,8 @@ SQL >
         count(DISTINCT s.session_id) AS total_sessions,
         uniqExact(s.user_id) AS total_users,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS total_conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value_currency = 'USD') AS total_conversion_value,
-        round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2) AS overall_conversion_rate
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS total_conversion_value,
+        if(count(DISTINCT s.session_id) = 0, 0, round((countIf(e.event_id = (SELECT conversion_event_id FROM params)) * 100.0) / count(DISTINCT s.session_id), 2)) AS overall_conversion_rate
     FROM base_sessions s
     LEFT JOIN all_events e ON s.session_id = e.session_id
 

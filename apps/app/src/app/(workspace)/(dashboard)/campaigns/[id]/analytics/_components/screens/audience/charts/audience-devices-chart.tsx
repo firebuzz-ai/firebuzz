@@ -6,12 +6,20 @@ import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
 interface AudienceDevicesChartProps {
-	audienceData?: Extract<Doc<"analyticsPipes">, { queryId: "audience-breakdown" }> | null;
+	audienceData?: Extract<
+		Doc<"analyticsPipes">,
+		{ queryId: "audience-breakdown" }
+	> | null;
 }
 
-export const AudienceDevicesChart = ({ audienceData }: AudienceDevicesChartProps) => {
+export const AudienceDevicesChart = ({
+	audienceData,
+}: AudienceDevicesChartProps) => {
 	const chartData = useMemo((): HorizontalBarChartData[] => {
-		if (!audienceData?.payload.device_types || audienceData.payload.device_types.length === 0) {
+		if (
+			!audienceData?.payload.device_types ||
+			audienceData.payload.device_types.length === 0
+		) {
 			return [];
 		}
 
@@ -21,7 +29,7 @@ export const AudienceDevicesChart = ({ audienceData }: AudienceDevicesChartProps
 				value: Number(count) || 0,
 				fill: `var(--chart-${(index % 5) + 1})`,
 			}))
-			.filter(item => !isNaN(item.value) && item.value > 0);
+			.filter((item) => !isNaN(item.value) && item.value > 0);
 	}, [audienceData]);
 
 	return (

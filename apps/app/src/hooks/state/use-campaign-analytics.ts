@@ -1,6 +1,12 @@
 "use client";
 
-import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import {
+  type Id,
+  api,
+  useCachedQuery,
+  useCachedRichQuery,
+  useMutation,
+} from "@firebuzz/convex";
 import { parseAsBoolean, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -15,7 +21,12 @@ export const ANALYTICS_PERIODS = {
 export type AnalyticsPeriod = keyof typeof ANALYTICS_PERIODS;
 
 // Screen types - extensible for future screens
-export type AnalyticsScreen = "overview" | "realtime" | "audience" | "ab-tests";
+export type AnalyticsScreen =
+  | "overview"
+  | "realtime"
+  | "audience"
+  | "conversions"
+  | "ab-tests";
 
 // Hook configuration
 interface UseCampaignAnalyticsConfig {
@@ -34,15 +45,24 @@ export function useCampaignAnalytics({
       "overview",
       "realtime",
       "audience",
+      "conversions",
       "ab-tests",
     ] as const),
     isPreview: parseAsBoolean,
   });
 
-  // Fetch campaign data
-  const campaign = useCachedQuery(api.collections.campaigns.queries.getById, {
-    id: campaignId,
-  });
+  const {
+    data: campaign,
+    isPending: isCampaignLoading,
+    isError: isCampaignError,
+  } = useCachedRichQuery(
+    api.collections.campaigns.queries.getById,
+    campaignId
+      ? {
+          id: campaignId as Id<"campaigns">,
+        }
+      : "skip"
+  );
 
   // Set defaults
   const currentPeriod: AnalyticsPeriod = period ?? "7d";
@@ -55,7 +75,6 @@ export function useCampaignAnalytics({
     periodEnd: string;
   } | null => {
     if (!campaign) return null;
-    if (!campaign.isPublished) return null;
 
     const now = new Date();
     const periodEnd = now.toISOString();
@@ -79,17 +98,6 @@ export function useCampaignAnalytics({
       periodEnd,
     };
 
-    console.log("Period calculation:", {
-      currentPeriod,
-      periodConfig,
-      now: now.toISOString(),
-      calculatedStart: periodStart.toISOString(),
-      calculatedEnd: periodEnd,
-      daysDifference: Math.floor(
-        (now.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)
-      ),
-    });
-
     return result;
   }, [campaign, currentPeriod]);
 
@@ -106,31 +114,61 @@ export function useCampaignAnalytics({
   // Query sum-primitives analytics data
   const sumPrimitivesQuery = useCachedQuery(
     api.collections.analytics.queries.getSumPrimitives,
-    shouldFetchAnalytics ? { campaignId } : "skip"
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
   );
 
   // Query timeseries-primitives analytics data
   const timeseriesPrimitivesQuery = useCachedQuery(
     api.collections.analytics.queries.getTimeseriesPrimitives,
-    shouldFetchAnalytics ? { campaignId } : "skip"
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
   );
 
   // Query audience breakdown analytics data
   const audienceBreakdownQuery = useCachedQuery(
     api.collections.analytics.queries.getAudienceBreakdown,
-    shouldFetchAnalytics ? { campaignId } : "skip"
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
   );
 
   // Query conversions breakdown analytics data
   const conversionsBreakdownQuery = useCachedQuery(
     api.collections.analytics.queries.getConversionsBreakdown,
-    shouldFetchAnalytics ? { campaignId } : "skip"
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
   );
 
   // Query realtime overview analytics data
   const realtimeOverviewQuery = useCachedQuery(
     api.collections.analytics.queries.getRealtimeOverview,
-    shouldFetchAnalytics ? { campaignId } : "skip"
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
   );
 
   // Query all landing pages for the campaign
@@ -186,6 +224,7 @@ export function useCampaignAnalytics({
         // Overview screen uses sum-primitives and timeseries-primitives queries
         queries.push({
           queryId: "sum-primitives" as const,
+          period: currentPeriod,
           periodStart: periodDates.periodStart,
           periodEnd: periodDates.periodEnd,
           conversionEventId,
@@ -200,6 +239,7 @@ export function useCampaignAnalytics({
         // Add timeseries query for charts
         const timeseries_query = {
           queryId: "timeseries-primitives" as const,
+          period: currentPeriod,
           periodStart: periodDates.periodStart,
           periodEnd: periodDates.periodEnd,
           conversionEventId,
@@ -223,6 +263,7 @@ export function useCampaignAnalytics({
         // Add audience breakdown query for overview charts
         queries.push({
           queryId: "audience-breakdown" as const,
+          period: currentPeriod,
           periodStart: periodDates.periodStart,
           periodEnd: periodDates.periodEnd,
           campaignEnvironment: currentIsPreview
@@ -233,6 +274,7 @@ export function useCampaignAnalytics({
         // Add conversions breakdown query for overview charts
         queries.push({
           queryId: "conversions-breakdown" as const,
+          period: currentPeriod,
           periodStart: periodDates.periodStart,
           periodEnd: periodDates.periodEnd,
           conversionEventId,
@@ -263,6 +305,7 @@ export function useCampaignAnalytics({
         const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
         queries.push({
           queryId: "realtime-overview" as const,
+          period: currentPeriod,
           periodStart: thirtyMinutesAgo.toISOString(),
           periodEnd: now.toISOString(),
           conversionEventId,
@@ -270,6 +313,92 @@ export function useCampaignAnalytics({
             ? ("preview" as const)
             : ("production" as const),
         });
+      } else if (currentScreen === "conversions") {
+        // Conversions screen requires periodDates
+        if (!periodDates) return;
+        // Get conversion event ID from campaign settings
+        const conversionEventId =
+          campaign.campaignSettings?.primaryGoal?.id ||
+          (campaign.type === "lead-generation"
+            ? "form-submission"
+            : "external-link-click");
+
+        // Ensure conversionEventId is never undefined
+        if (!conversionEventId) {
+          console.error("No conversion event ID found, using fallback");
+          throw new Error(
+            "Unable to determine conversion event ID for conversions analytics"
+          );
+        }
+
+        // Conversions screen uses conversions-breakdown and timeseries-primitives queries
+        queries.push({
+          queryId: "conversions-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          eventIds: campaign.campaignSettings?.customEvents
+            ?.map((event) => event.id)
+            .join(","), // Optional string field for custom events
+        });
+
+        // Add timeseries query for cumulative value chart
+        queries.push({
+          queryId: "timeseries-primitives" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          granularity: "day" as const, // Default to daily data
+          eventIds: campaign.campaignSettings?.customEvents
+            ?.map((event) => event.id)
+            .join(","), // Optional string field for custom events
+        });
+      } else if (currentScreen === "audience") {
+        // Audience screen requires periodDates
+        if (!periodDates) return;
+
+        // Audience screen uses audience-breakdown and timeseries-primitives queries
+        queries.push({
+          queryId: "audience-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+        });
+
+        // Add timeseries query for audience trends
+        const conversionEventId =
+          campaign.campaignSettings?.primaryGoal?.id ||
+          (campaign.type === "lead-generation"
+            ? "form-submission"
+            : "external-link-click");
+
+        if (conversionEventId) {
+          queries.push({
+            queryId: "timeseries-primitives" as const,
+            period: currentPeriod,
+            periodStart: periodDates.periodStart,
+            periodEnd: periodDates.periodEnd,
+            conversionEventId,
+            campaignEnvironment: currentIsPreview
+              ? ("preview" as const)
+              : ("production" as const),
+            granularity: "day" as const, // Default to daily data
+            eventIds: campaign.campaignSettings?.customEvents
+              ?.map((event) => event.id)
+              .join(","), // Optional string field for custom events
+          });
+        }
       }
 
       // Future screens can add more queries here
@@ -323,18 +452,26 @@ export function useCampaignAnalytics({
           clearInterval(intervalId);
         };
       }
-      if (periodDates) {
-        // For overview screen, revalidate when period changes
+      if (
+        periodDates &&
+        (currentScreen === "overview" ||
+          currentScreen === "conversions" ||
+          currentScreen === "audience")
+      ) {
+        // For overview, conversions, and audience screens, revalidate when period changes
         const initialTimeoutId = setTimeout(() => {
           revalidate().catch((error) => {
-            console.error("Auto-revalidation failed:", error);
+            console.error(
+              `Auto-revalidation failed for ${currentScreen}:`,
+              error
+            );
           });
         }, 300);
 
-        // Auto-refresh every 3 minutes for overview
+        // Auto-refresh every 3 minutes for overview and conversions
         const intervalId = setInterval(() => {
           revalidate().catch((error) => {
-            console.error("Overview auto-revalidation failed:", error);
+            console.error(`${currentScreen} auto-revalidation failed:`, error);
           });
         }, 180000); // 3 minutes
 
@@ -351,12 +488,6 @@ export function useCampaignAnalytics({
     currentScreen,
     revalidate,
   ]);
-
-  // Loading states
-  const isLoading = useMemo(() => {
-    if (!campaign) return true;
-    return false;
-  }, [campaign]);
 
   // Aggregate all analytics data
   const data = useMemo(() => {
@@ -377,7 +508,78 @@ export function useCampaignAnalytics({
     landingPagesQuery,
   ]);
 
-  console.log("Data:", data);
+  const isRevalidating = useMemo(() => {
+    if (currentScreen === "realtime") {
+      return realtimeOverviewQuery?.isRefreshing ?? false;
+    }
+    if (currentScreen === "overview") {
+      return (
+        sumPrimitivesQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
+
+    if (currentScreen === "conversions") {
+      return (
+        conversionsBreakdownQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
+
+    if (currentScreen === "audience") {
+      return (
+        audienceBreakdownQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
+
+    return false;
+  }, [
+    realtimeOverviewQuery?.isRefreshing,
+    sumPrimitivesQuery?.isRefreshing,
+    timeseriesPrimitivesQuery?.isRefreshing,
+    conversionsBreakdownQuery?.isRefreshing,
+    audienceBreakdownQuery?.isRefreshing,
+    currentScreen,
+  ]);
+
+  const isLoading = useMemo(() => {
+    if (currentScreen === "realtime") {
+      return isRevalidating && !realtimeOverviewQuery;
+    }
+
+    if (currentScreen === "overview") {
+      return (
+        isRevalidating && !sumPrimitivesQuery && !timeseriesPrimitivesQuery
+      );
+    }
+    if (currentScreen === "conversions") {
+      return (
+        isRevalidating &&
+        !conversionsBreakdownQuery &&
+        !timeseriesPrimitivesQuery
+      );
+    }
+    if (currentScreen === "audience") {
+      return (
+        isRevalidating && !audienceBreakdownQuery && !timeseriesPrimitivesQuery
+      );
+    }
+    return false;
+  }, [
+    isRevalidating,
+    sumPrimitivesQuery,
+    timeseriesPrimitivesQuery,
+    conversionsBreakdownQuery,
+    audienceBreakdownQuery,
+    realtimeOverviewQuery,
+    currentScreen,
+  ]);
+
+  console.log({ data });
 
   return {
     // Campaign data
@@ -392,10 +594,12 @@ export function useCampaignAnalytics({
     // Period utilities
     availablePeriods: ANALYTICS_PERIODS,
     setPeriod,
+
     // Preview utilities
     setIsPreview,
 
     // Screen navigation
+    currentScreen,
     setScreen,
 
     // Analytics data
@@ -403,7 +607,9 @@ export function useCampaignAnalytics({
 
     // Status flags
     isLoading,
-    canShowAnalytics: shouldFetchAnalytics,
+    isCampaignLoading,
+    isCampaignError,
+    isRevalidating,
 
     // Actions
     revalidate,

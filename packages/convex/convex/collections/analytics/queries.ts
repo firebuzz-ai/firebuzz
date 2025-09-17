@@ -5,8 +5,8 @@ import { internalQuery, query } from "../../_generated/server";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 
-// Internal query to get analytics by campaign and query ID
-export const getByQueryId = internalQuery({
+// Internal query to get analytics by campaign, query ID, period, and environment
+export const getByQueryParams = internalQuery({
 	args: {
 		campaignId: v.id("campaigns"),
 		queryId: v.union(
@@ -16,12 +16,25 @@ export const getByQueryId = internalQuery({
 			v.literal("conversions-breakdown"),
 			v.literal("realtime-overview"),
 		),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		return await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q.eq("campaignId", args.campaignId).eq("queryId", args.queryId),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", args.queryId)
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 	},
@@ -53,14 +66,27 @@ async function verifyCampaignAccess(
 export const getSumPrimitives = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
 		const result = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q.eq("campaignId", args.campaignId).eq("queryId", "sum-primitives"),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", "sum-primitives")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 
@@ -80,16 +106,27 @@ export const getSumPrimitives = query({
 export const getTimeseriesPrimitives = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
 		const result = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q
-					.eq("campaignId", args.campaignId)
-					.eq("queryId", "timeseries-primitives"),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", "timeseries-primitives")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 
@@ -109,14 +146,27 @@ export const getTimeseriesPrimitives = query({
 export const getAudienceBreakdown = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
 		const result = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q.eq("campaignId", args.campaignId).eq("queryId", "audience-breakdown"),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", "audience-breakdown")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 
@@ -136,16 +186,27 @@ export const getAudienceBreakdown = query({
 export const getConversionsBreakdown = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
 		const result = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q
-					.eq("campaignId", args.campaignId)
-					.eq("queryId", "conversions-breakdown"),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", "conversions-breakdown")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 
@@ -165,14 +226,27 @@ export const getConversionsBreakdown = query({
 export const getRealtimeOverview = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
 		const result = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q.eq("campaignId", args.campaignId).eq("queryId", "realtime-overview"),
+			.withIndex("by_campaign_query_params", (q) =>
+				q.eq("campaignId", args.campaignId)
+					.eq("queryId", "realtime-overview")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
 			)
 			.first();
 
@@ -240,18 +314,33 @@ export const getByProject = query({
 	},
 });
 
-// Query to get all analytics data for a campaign
+// Query to get all analytics data for a campaign with specific period and environment
 export const getAllCampaignAnalytics = query({
 	args: {
 		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(
+			v.literal("preview"),
+			v.literal("production"),
+		),
 	},
 	handler: async (ctx, args) => {
 		await verifyCampaignAccess(ctx, args.campaignId);
 
+		// Get all query types for this specific period and environment
 		const allResults = await ctx.db
 			.query("analyticsPipes")
-			.withIndex("by_campaign_query", (q) =>
-				q.eq("campaignId", args.campaignId),
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("campaignId"), args.campaignId),
+					q.eq(q.field("period"), args.period),
+					q.eq(q.field("campaignEnvironment"), args.campaignEnvironment),
+				),
 			)
 			.collect();
 

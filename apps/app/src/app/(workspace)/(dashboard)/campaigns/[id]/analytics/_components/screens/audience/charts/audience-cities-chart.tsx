@@ -6,12 +6,20 @@ import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
 
 interface AudienceCitiesChartProps {
-	audienceData?: Extract<Doc<"analyticsPipes">, { queryId: "audience-breakdown" }> | null;
+	audienceData?: Extract<
+		Doc<"analyticsPipes">,
+		{ queryId: "audience-breakdown" }
+	> | null;
 }
 
-export const AudienceCitiesChart = ({ audienceData }: AudienceCitiesChartProps) => {
+export const AudienceCitiesChart = ({
+	audienceData,
+}: AudienceCitiesChartProps) => {
 	const chartData = useMemo((): HorizontalBarChartData[] => {
-		if (!audienceData?.payload.cities || audienceData.payload.cities.length === 0) {
+		if (
+			!audienceData?.payload.cities ||
+			audienceData.payload.cities.length === 0
+		) {
 			return [];
 		}
 
@@ -25,7 +33,7 @@ export const AudienceCitiesChart = ({ audienceData }: AudienceCitiesChartProps) 
 					fill: `var(--chart-${(index % 5) + 1})`,
 				};
 			})
-			.filter(item => !isNaN(item.value) && item.value > 0);
+			.filter((item) => !isNaN(item.value) && item.value > 0);
 	}, [audienceData]);
 
 	return (

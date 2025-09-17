@@ -70,6 +70,7 @@ interface HorizontalBarChartProps {
   maxItems?: number;
   iconMapping?: Record<string, string>;
   barColor?: string;
+  headerAction?: React.ReactNode;
 }
 
 export const HorizontalBarChart = ({
@@ -85,6 +86,7 @@ export const HorizontalBarChart = ({
   maxItems = 5,
   iconMapping,
   barColor = "hsl(var(--brand))",
+  headerAction,
 }: HorizontalBarChartProps) => {
   // Transform and limit data
   const chartData = useMemo((): HorizontalBarChartData[] => {
@@ -125,8 +127,8 @@ export const HorizontalBarChart = ({
   const barRadius = useMemo(() => {
     if (!chartData.length) return 2;
 
-    const maxValue = Math.max(...chartData.map(d => d.value));
-    const minValue = Math.min(...chartData.map(d => d.value));
+    const maxValue = Math.max(...chartData.map((d) => d.value));
+    const minValue = Math.min(...chartData.map((d) => d.value));
 
     // If all values are very small or there's a big difference between min/max,
     // use a smaller radius to prevent visual issues
@@ -140,14 +142,19 @@ export const HorizontalBarChart = ({
   if (isLoading) {
     return (
       <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex gap-2 items-center text-base font-medium">
-            {isRealtime && (
-              <Activity className="w-4 h-4 text-green-500 animate-pulse" />
-            )}
-            {title}
-          </CardTitle>
-          <CardDescription>{description}</CardDescription>
+        <CardHeader className="!gap-0 space-y-0 px-6 py-3 border-b">
+          <div className={headerAction ? "flex flex-row justify-between items-start" : ""}>
+            <div>
+              <CardTitle className="flex gap-2 items-center text-base font-medium">
+                {isRealtime && (
+                  <Activity className="w-4 h-4 text-green-500 animate-pulse" />
+                )}
+                {title}
+              </CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+            {headerAction}
+          </div>
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[200px] w-full" />
@@ -160,8 +167,13 @@ export const HorizontalBarChart = ({
     return (
       <Card className="flex flex-col bg-muted">
         <CardHeader className="!gap-0 space-y-0 px-6 py-3 border-b">
-          <CardTitle className="text-base font-medium">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <div className={headerAction ? "flex flex-row justify-between items-start" : ""}>
+            <div>
+              <CardTitle className="text-base font-medium">{title}</CardTitle>
+              <CardDescription>{description}</CardDescription>
+            </div>
+            {headerAction}
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="flex h-[200px] items-center justify-center">
@@ -180,10 +192,15 @@ export const HorizontalBarChart = ({
   return (
     <Card className="bg-muted">
       <CardHeader className="!gap-0 space-y-0 px-6 py-3 border-b">
-        <CardTitle className="flex gap-2 items-center text-base font-medium">
-          {title}
-        </CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <div className={headerAction ? "flex flex-row justify-between items-start" : ""}>
+          <div>
+            <CardTitle className="flex gap-2 items-center text-base font-medium">
+              {title}
+            </CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          {headerAction}
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ChartContainer className="h-[200px] w-full" config={chartConfig}>
@@ -208,10 +225,7 @@ export const HorizontalBarChart = ({
               axisLine={false}
               hide
             />
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent />}
-            />
+            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
             <Bar
               dataKey="value"
               radius={barRadius}

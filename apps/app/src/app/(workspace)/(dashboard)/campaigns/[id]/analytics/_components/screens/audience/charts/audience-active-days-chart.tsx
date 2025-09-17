@@ -62,11 +62,19 @@ export const AudienceActiveDaysChart = ({
 		}
 
 		// Convert to chart data format in regular week order (Monday to Sunday)
-		return DAYS_OF_WEEK.map((day) => ({
+		const data = DAYS_OF_WEEK.map((day) => ({
 			name: day,
 			newSessions: dayActivity[day]?.newSessions || 0,
 			returningSessions: dayActivity[day]?.returningSessions || 0,
 		}));
+
+		// Check if all values are 0, return empty array to show empty state
+		const hasRealData = data.some(day => day.newSessions > 0 || day.returningSessions > 0);
+		if (!hasRealData) {
+			return [];
+		}
+
+		return data;
 	}, [timeseriesData]);
 
 	return (
@@ -76,7 +84,11 @@ export const AudienceActiveDaysChart = ({
 			description="New vs returning sessions by day of week"
 			dataKeys={[
 				{ key: "newSessions", label: "New", color: "hsl(142 71% 45%)" },
-				{ key: "returningSessions", label: "Returning", color: "hsl(var(--brand))" },
+				{
+					key: "returningSessions",
+					label: "Returning",
+					color: "hsl(var(--brand))",
+				},
 			]}
 			source={timeseriesData?.source}
 			showTrend={chartData.length > 0}
@@ -98,7 +110,7 @@ export const AudienceActiveDaysChart = ({
 							had most sessions
 						</>
 					),
-					subtitle: `${total.toLocaleString()} sessions (${topDay.newSessions.toLocaleString()} new, ${topDay.returningSessions.toLocaleString()} returning)`
+					subtitle: `${total.toLocaleString()} sessions (${topDay.newSessions.toLocaleString()} new, ${topDay.returningSessions.toLocaleString()} returning)`,
 				};
 			}}
 		/>

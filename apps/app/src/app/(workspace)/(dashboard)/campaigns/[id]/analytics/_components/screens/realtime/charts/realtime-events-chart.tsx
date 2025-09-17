@@ -11,7 +11,10 @@ interface RealtimeEventsChartProps {
 	campaign?: Doc<"campaigns"> | null;
 }
 
-export const RealtimeEventsChart = ({ data, campaign }: RealtimeEventsChartProps) => {
+export const RealtimeEventsChart = ({
+	data,
+	campaign,
+}: RealtimeEventsChartProps) => {
 	const chartData = useMemo((): HorizontalBarChartData[] => {
 		if (!data.payload.top_events || data.payload.top_events.length === 0) {
 			return [];

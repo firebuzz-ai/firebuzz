@@ -2,9 +2,9 @@
 
 import {
   ANALYTICS_PERIODS,
-  type AnalyticsPeriod,
-  type AnalyticsScreen,
+  useCampaignAnalytics,
 } from "@/hooks/state/use-campaign-analytics";
+import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import {
@@ -24,28 +24,27 @@ import {
 import { cn } from "@firebuzz/ui/lib/utils";
 
 interface AnalyticsControlBarProps {
-  period: AnalyticsPeriod;
-  setPeriod: (period: AnalyticsPeriod) => void;
-  isPreview: boolean;
-  setIsPreview: (isPreview: boolean) => void;
-  onRevalidate: () => void;
-  isRevalidating?: boolean;
-  currentScreen?: AnalyticsScreen;
+  campaignId: Id<"campaigns">;
   className?: string;
 }
 
 export const AnalyticsControlBar = ({
-  period,
-  setPeriod,
-  isPreview,
-  setIsPreview,
-  onRevalidate,
-  isRevalidating = false,
-  currentScreen = "overview",
+  campaignId,
   className,
 }: AnalyticsControlBarProps) => {
+  const {
+    period,
+    setPeriod,
+    isPreview,
+    setIsPreview,
+    revalidate,
+    currentScreen,
+    isRevalidating,
+    campaign,
+  } = useCampaignAnalytics({ campaignId });
+
   return (
-    <div className={cn("flex justify-between items-center", className)}>
+    <div className={cn("flex justify-between items-center pb-1", className)}>
       {/* Period Selector or Realtime Label */}
       {currentScreen === "realtime" ? (
         <div className="flex gap-2 items-center px-3 w-[180px] h-8 rounded-md border bg-muted">
@@ -91,6 +90,7 @@ export const AnalyticsControlBar = ({
             )}
           </Label>
           <Switch
+            disabled={!campaign?.isPublished && isPreview}
             id="preview-switch"
             checked={isPreview}
             onCheckedChange={setIsPreview}
@@ -101,9 +101,9 @@ export const AnalyticsControlBar = ({
         <Button
           variant="outline"
           size="sm"
-          onClick={onRevalidate}
+          onClick={revalidate}
           disabled={isRevalidating}
-          className="gap-2 h-8rounded-md"
+          className="gap-2 h-8 rounded-md"
         >
           <RotateCw
             className={cn("size-3.5", isRevalidating && "animate-spin")}

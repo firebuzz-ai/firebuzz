@@ -1,41 +1,111 @@
-// Normalize periods for caching - rounds to 3-minute intervals
-export function normalizePeriodForCaching(
-	periodStart: string,
-	periodEnd: string,
-): {
-	normalizedPeriodStart: string;
-	normalizedPeriodEnd: string;
-} {
-	const CACHE_INTERVAL_MINUTES = 3;
-	const CACHE_INTERVAL_MS = CACHE_INTERVAL_MINUTES * 60 * 1000;
+import { asyncMap } from "convex-helpers";
+import { v } from "convex/values";
+import { internal } from "../../_generated/api";
+import { internalMutation } from "../../_generated/server";
+import { cascadePool } from "../../components/workpools";
 
-	// Parse the dates
-	const startDate = new Date(periodStart);
-	const endDate = new Date(periodEnd);
-
-	// Round start date down to nearest cache interval
-	const normalizedStartMs =
-		Math.floor(startDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
-
-	// Round end date up to nearest cache interval
-	const normalizedEndMs =
-		Math.ceil(endDate.getTime() / CACHE_INTERVAL_MS) * CACHE_INTERVAL_MS;
-
-	return {
-		normalizedPeriodStart: new Date(normalizedStartMs).toISOString(),
-		normalizedPeriodEnd: new Date(normalizedEndMs).toISOString(),
-	};
+// Generate structured key for analytics records
+export function generateStructuredKey(params: {
+  campaignId: string;
+  queryId: string;
+  period: string;
+  campaignEnvironment: string;
+}): string {
+  return `${params.campaignId}_${params.queryId}_${params.period}_${params.campaignEnvironment}`;
 }
 
-// Generate hash key using normalized periods for caching while preserving actual periods for queries
-export function generateHashKey(paramsString: string): string {
-	// Simple hash function (you could use a more robust one like SHA-256)
-	let hash = 0;
-	for (let i = 0; i < paramsString.length; i++) {
-		const char = paramsString.charCodeAt(i);
-		hash = (hash << 5) - hash + char;
-		hash = hash & hash; // Convert to 32bit integer
-	}
+// Batch delete analytics records for a specific campaign
+export const batchDeleteByCampaignId = internalMutation({
+  args: {
+    cursor: v.optional(v.string()),
+    campaignId: v.id("campaigns"),
+    numItems: v.number(),
+  },
+  handler: async (ctx, { campaignId, cursor, numItems }) => {
+    // Get the analytics records for this campaign
+    const { page, continueCursor } = await ctx.db
+      .query("analyticsPipes")
+      .withIndex("by_campaign_id", (q) => q.eq("campaignId", campaignId))
+      .paginate({
+        numItems,
+        cursor: cursor ?? null,
+      });
 
-	return `analytics-${Math.abs(hash).toString(16)}`;
-}
+    // If there are no records, return
+    if (page.length === 0) {
+      return { deleted: 0 };
+    }
+
+    // Delete the analytics records
+    await asyncMap(page, (record) => ctx.db.delete(record._id));
+
+    // If there are more records, delete them
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      page.length === numItems
+    ) {
+      await cascadePool.enqueueMutation(
+        ctx,
+        internal.collections.analytics.utils.batchDeleteByCampaignId,
+        {
+          campaignId,
+          cursor: continueCursor,
+          numItems,
+        }
+      );
+    }
+
+    return { deleted: page.length };
+  },
+});
+
+// Batch delete analytics records by last updated
+export const batchDeleteByLastUpdated = internalMutation({
+  args: {
+    cursor: v.optional(v.string()),
+    olderThanDays: v.number(),
+    numItems: v.number(),
+  },
+  handler: async (ctx, { olderThanDays, cursor, numItems }) => {
+    const cutoffDate = new Date(
+      Date.now() - olderThanDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+
+    // Get analytics records with conversion event IDs for this campaign
+    const { page: staleRecords, continueCursor } = await ctx.db
+      .query("analyticsPipes")
+      .withIndex("by_last_updated", (q) => q.lt("lastUpdatedAt", cutoffDate))
+      .paginate({
+        numItems,
+        cursor: cursor ?? null,
+      });
+
+    // If there are no records, return
+    if (staleRecords.length === 0) {
+      return { deleted: 0 };
+    }
+
+    // Delete stale records
+    await asyncMap(staleRecords, (record) => ctx.db.delete(record._id));
+
+    // If there are more records, continue cleanup
+    if (
+      continueCursor &&
+      continueCursor !== cursor &&
+      staleRecords.length === numItems
+    ) {
+      await cascadePool.enqueueMutation(
+        ctx,
+        internal.collections.analytics.utils.batchDeleteByLastUpdated,
+        {
+          olderThanDays,
+          cursor: continueCursor,
+          numItems,
+        }
+      );
+    }
+
+    return { deleted: staleRecords.length };
+  },
+});

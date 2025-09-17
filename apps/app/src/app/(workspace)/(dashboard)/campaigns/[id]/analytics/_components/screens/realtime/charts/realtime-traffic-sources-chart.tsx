@@ -9,7 +9,9 @@ interface RealtimeTrafficSourcesChartProps {
 	data: Extract<Doc<"analyticsPipes">, { queryId: "realtime-overview" }>;
 }
 
-export const RealtimeTrafficSourcesChart = ({ data }: RealtimeTrafficSourcesChartProps) => {
+export const RealtimeTrafficSourcesChart = ({
+	data,
+}: RealtimeTrafficSourcesChartProps) => {
 	const chartData = useMemo((): HorizontalBarChartData[] => {
 		if (
 			!data.payload.traffic_sources ||

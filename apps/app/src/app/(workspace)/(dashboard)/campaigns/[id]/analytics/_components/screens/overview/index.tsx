@@ -3,11 +3,10 @@
 import { LandingPagesList } from "@/components/analytics/charts/landing-pages-list";
 import { TimeSeriesChartWrapper } from "@/components/analytics/charts/time-series-chart";
 import { KPICardsContainer } from "@/components/analytics/containers/kpi-cards-container";
-import { AnalyticsControlBar } from "@/components/analytics/controls/analytics-control-bar";
+import { EmptyState } from "@/components/analytics/states";
 import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
-import { toast } from "@firebuzz/ui/lib/utils";
 import { AudienceEngagementTrendsChart } from "./charts/audience-engagement-trends-chart";
 import { OverviewTrafficSourcesChart } from "./charts/overview-traffic-sources-chart";
 
@@ -20,25 +19,10 @@ export const CampaignAnalyticsOverview = ({
 }: CampaignAnalyticsOverviewProps) => {
   const {
     campaign,
-    period,
-    setPeriod,
-    isPreview,
-    setIsPreview,
+
     data,
     isLoading,
-    canShowAnalytics,
-    revalidate,
   } = useCampaignAnalytics({ campaignId });
-
-  const handleRevalidate = async () => {
-    try {
-      await revalidate();
-      toast.success("Analytics data refreshed successfully");
-    } catch (error) {
-      toast.error("Failed to refresh analytics data");
-      console.error("Failed to revalidate analytics:", error);
-    }
-  };
 
   // Show loading state
   if (isLoading) {
@@ -79,110 +63,58 @@ export const CampaignAnalyticsOverview = ({
     );
   }
 
-  // Show unpublished state
-  if (!canShowAnalytics) {
-    return (
-      <div className="flex flex-col justify-center items-center py-12 space-y-4">
-        <div className="text-center">
-          <h3 className="text-lg font-semibold text-muted-foreground">
-            No analytics data available
-          </h3>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Analytics data will be available once your campaign is published and
-            starts receiving traffic.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Show no data state
   if (!data.sumPrimitives) {
-    return (
-      <div className="space-y-6">
-        <AnalyticsControlBar
-          period={period}
-          setPeriod={setPeriod}
-          isPreview={isPreview}
-          setIsPreview={setIsPreview}
-          onRevalidate={handleRevalidate}
-          currentScreen="overview"
-        />
-        <div className="flex flex-col justify-center items-center py-12 space-y-4">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-muted-foreground">
-              No data found for this period
-            </h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Try selecting a different time period or check back later.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <EmptyState />;
   }
 
   return (
-    <div className="flex overflow-hidden flex-col px-6 pt-6 max-h-full">
-      {/* Control Bar */}
-      <AnalyticsControlBar
-        period={period}
-        setPeriod={setPeriod}
-        isPreview={isPreview}
-        setIsPreview={setIsPreview}
-        onRevalidate={handleRevalidate}
-        isRevalidating={data.sumPrimitives?.isRefreshing}
-        currentScreen="overview"
-      />
+    <div className="flex overflow-hidden relative flex-col max-h-full">
+      {/* Gradient background - Top */}
+      <div className="absolute top-0 right-0 left-0 z-10 h-5 bg-gradient-to-b to-transparent from-background" />
+      <div className="overflow-y-auto relative pt-5 pb-6 space-y-6 max-h-full">
+        {/* KPI Cards */}
+        <KPICardsContainer
+          payload={data.sumPrimitives.payload}
+          source={data.sumPrimitives.source}
+          campaignSettings={campaign?.campaignSettings}
+        />
 
-      <div className="flex overflow-hidden relative flex-col max-h-full">
-        {/* Gradient background - Top */}
-        <div className="absolute top-0 right-0 left-0 z-10 h-6 bg-gradient-to-b to-transparent from-background" />
-        <div className="overflow-y-auto relative py-6 space-y-6 max-h-full">
-          {/* KPI Cards */}
-          <KPICardsContainer
-            payload={data.sumPrimitives.payload}
-            source={data.sumPrimitives.source}
-            campaignSettings={campaign?.campaignSettings}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {" "}
+          {/* Sessions & Conversions Chart */}
+          <TimeSeriesChartWrapper
+            timeseriesData={data.timeseriesPrimitives}
+            isLoading={isLoading}
+            granularity="day"
+            isCumulative
+            title="Sessions & Conversions Trend"
+            description="Total sessions and conversions over time"
+            source={data.timeseriesPrimitives?.source}
           />
-
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {" "}
-            {/* Sessions & Conversions Chart */}
-            <TimeSeriesChartWrapper
-              timeseriesData={data.timeseriesPrimitives}
-              isLoading={isLoading}
-              granularity="day"
-              isCumulative
-              title="Sessions & Conversions Trend"
-              description="Total sessions and conversions over time"
-              source={data.timeseriesPrimitives?.source}
-            />
-            {/* Session Quality Trend - Full Width */}
-            <AudienceEngagementTrendsChart
-              timeseriesData={data.timeseriesPrimitives}
-              isLoading={isLoading}
-            />
-          </div>
-
-          {/* Additional Analytics Charts */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Top 5 Traffic Sources */}
-            <OverviewTrafficSourcesChart
-              audienceData={data.audienceBreakdown}
-            />
-
-            {/* Top Converting Landing Pages */}
-            <LandingPagesList
-              conversionsData={data.conversionsBreakdown}
-              landingPagesData={data.landingPages}
-              isLoading={isLoading}
-            />
-          </div>
+          {/* Session Quality Trend - Full Width */}
+          <AudienceEngagementTrendsChart
+            timeseriesData={data.timeseriesPrimitives}
+            isLoading={isLoading}
+          />
         </div>
-        {/* Gradient background - Bottom */}
-        <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
+
+        {/* Additional Analytics Charts */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Top 5 Traffic Sources */}
+          <OverviewTrafficSourcesChart audienceData={data.audienceBreakdown} />
+
+          {/* Top Converting Landing Pages */}
+          <LandingPagesList
+            conversionsData={data.conversionsBreakdown}
+            landingPagesData={data.landingPages}
+            isLoading={isLoading}
+          />
+        </div>
       </div>
+      {/* Gradient background - Bottom */}
+      <div className="absolute right-0 bottom-0 left-0 z-10 h-6 bg-gradient-to-b from-transparent to-background" />
     </div>
   );
 };
