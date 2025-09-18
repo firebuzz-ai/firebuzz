@@ -15,6 +15,7 @@ export const getByQueryParams = internalQuery({
 			v.literal("audience-breakdown"),
 			v.literal("conversions-breakdown"),
 			v.literal("realtime-overview"),
+			v.literal("ab-test-result"),
 		),
 		period: v.union(
 			v.literal("7d"),
@@ -250,6 +251,44 @@ export const getRealtimeOverview = query({
 	},
 });
 
+// Public query for fetching A/B test result analytics data
+export const getAbTestResult = query({
+	args: {
+		campaignId: v.id("campaigns"),
+		period: v.union(
+			v.literal("7d"),
+			v.literal("15d"),
+			v.literal("30d"),
+			v.literal("all-time"),
+		),
+		campaignEnvironment: v.union(v.literal("preview"), v.literal("production")),
+	},
+	handler: async (ctx, args) => {
+		await verifyCampaignAccess(ctx, args.campaignId);
+
+		const result = await ctx.db
+			.query("analyticsPipes")
+			.withIndex("by_campaign_query_params", (q) =>
+				q
+					.eq("campaignId", args.campaignId)
+					.eq("queryId", "ab-test-result")
+					.eq("period", args.period)
+					.eq("campaignEnvironment", args.campaignEnvironment),
+			)
+			.first();
+
+		if (!result) {
+			return null;
+		}
+
+		// Type assertion since we know this is ab-test-result
+		return result as Extract<
+			Doc<"analyticsPipes">,
+			{ queryId: "ab-test-result" }
+		>;
+	},
+});
+
 // Query to get analytics data by workspace for admin purposes
 export const getByWorkspace = query({
 	args: {
@@ -344,6 +383,9 @@ export const getAllCampaignAnalytics = query({
 		const realtimeOverview = allResults.find(
 			(r) => r.queryId === "realtime-overview",
 		);
+		const abTestResult = allResults.find(
+			(r) => r.queryId === "ab-test-result",
+		);
 
 		return {
 			sumPrimitives: sumPrimitives as Extract<
@@ -365,6 +407,10 @@ export const getAllCampaignAnalytics = query({
 			realtimeOverview: realtimeOverview as Extract<
 				Doc<"analyticsPipes">,
 				{ queryId: "realtime-overview" }
+			> | null,
+			abTestResult: abTestResult as Extract<
+				Doc<"analyticsPipes">,
+				{ queryId: "ab-test-result" }
 			> | null,
 		};
 	},

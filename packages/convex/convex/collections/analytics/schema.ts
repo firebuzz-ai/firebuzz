@@ -10,6 +10,7 @@ const queryBaseSchema = v.object({
 		v.literal("audience-breakdown"),
 		v.literal("conversions-breakdown"),
 		v.literal("realtime-overview"),
+		v.literal("ab-test-result"),
 	),
 	campaignId: v.id("campaigns"),
 	workspaceId: v.id("workspaces"),
@@ -23,6 +24,8 @@ const queryBaseSchema = v.object({
 	campaignEnvironment: v.union(v.literal("preview"), v.literal("production")),
 	conversionEventId: v.optional(v.string()),
 	eventIds: v.optional(v.string()),
+	abTestId: v.optional(v.string()),
+	confidenceLevel: v.optional(v.number()),
 	lastUpdatedAt: v.string(),
 	isRefreshing: v.optional(v.boolean()),
 	source: v.union(
@@ -131,6 +134,7 @@ export const audienceBreakdownSchema = v.object({
 		// Format: [day_of_week, day_name, sessions, users, new_sessions, returning_sessions, percentage]
 		daily_distribution: v.array(v.array(v.union(v.string(), v.number()))),
 		landing_pages: v.array(v.array(v.union(v.string(), v.number()))),
+		segments: v.array(v.array(v.union(v.string(), v.number()))),
 		ab_test_variants: v.array(v.array(v.union(v.string(), v.number()))),
 	}),
 });
@@ -162,6 +166,7 @@ export const conversionsBreakdownSchema = v.object({
 		daily_conversions: v.array(v.array(v.union(v.string(), v.number()))),
 		user_type_conversions: v.array(v.array(v.union(v.string(), v.number()))),
 		value_distribution: v.array(v.array(v.union(v.string(), v.number()))),
+		segment_conversions: v.array(v.array(v.union(v.string(), v.number()))),
 		ab_test_conversions: v.array(v.array(v.union(v.string(), v.number()))),
 	}),
 });
@@ -182,6 +187,48 @@ export const realtimeOverviewSchema = v.object({
 	}),
 });
 
+export const abTestResultSchema = v.object({
+	...queryBaseSchema.fields,
+	queryId: v.literal("ab-test-result"),
+	payload: v.array(
+		v.object({
+			ab_test_id: v.string(),
+			ab_test_variant_id: v.string(),
+			conversion_event_id: v.string(),
+			confidence_level: v.number(),
+			is_control: v.number(), // 0 or 1
+
+			// Traffic metrics
+			exposures: v.number(),
+			unique_users: v.number(),
+			new_user_exposures: v.number(),
+			returning_user_exposures: v.number(),
+
+			// Conversion metrics
+			conversions: v.number(),
+			conversion_rate: v.number(),
+			total_revenue: v.number(),
+			avg_order_value: v.union(v.number(), v.null()),
+			converting_sessions: v.number(),
+			converting_users: v.number(),
+
+			// Engagement metrics
+			avg_session_duration: v.number(),
+			bounce_rate: v.number(),
+
+			// Statistical analysis
+			cvr_ci_low: v.number(),
+			cvr_ci_high: v.number(),
+			absolute_lift: v.number(),
+			relative_lift: v.number(),
+			z_statistic: v.number(),
+			p_value: v.number(),
+			is_statistically_significant: v.number(), // 0 or 1
+			recommended_sample_size_per_variant: v.number(),
+		}),
+	),
+});
+
 export const analyticsPipesSchema = defineTable(
 	v.union(
 		// Sum Primitives query
@@ -194,12 +241,21 @@ export const analyticsPipesSchema = defineTable(
 		conversionsBreakdownSchema,
 		// Realtime Overview query
 		realtimeOverviewSchema,
+		// AB Test Result query
+		abTestResultSchema,
 	),
 )
 	.index("by_campaign_query_params", [
 		"campaignId",
 		"queryId",
 		"period",
+		"campaignEnvironment",
+	])
+	.index("by_campaign_abtest_params", [
+		"campaignId",
+		"queryId",
+		"abTestId",
+		"conversionEventId",
 		"campaignEnvironment",
 	])
 	.index("by_workspace_project", ["workspaceId", "projectId"])

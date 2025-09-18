@@ -47,7 +47,7 @@ export const cleanedABTestSchema = z.object({
 	pausedAt: z.string().optional(),
 	resumedAt: z.string().optional(),
 	endDate: z.string().optional(),
-	primaryMetric: z.string(),
+	primaryGoalId: z.string(),
 	completionCriteria: z.object({
 		sampleSizePerVariant: z.number(),
 		testDuration: z.number(),

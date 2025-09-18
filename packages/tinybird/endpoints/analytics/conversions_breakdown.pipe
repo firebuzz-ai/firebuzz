@@ -41,6 +41,7 @@ SQL >
         coalesce(nullIf(ref, ''), 'Direct') AS ref,
         coalesce(nullIf(source, ''), 'Direct') AS source,
         landing_page_id,
+        segment_id,
         ab_test_variant_id,
         timestamp
     FROM session_v1
@@ -342,6 +343,25 @@ SQL >
     GROUP BY value_range
     ORDER BY multiIf(value_range = '$0', 0, value_range = '$1-10', 1, value_range = '$11-50', 2, value_range = '$51-100', 3, value_range = '$101-500', 4, value_range = '$501-1000', 5, 6)
 
+NODE segment_conversions
+SQL >
+    WITH (SELECT conversion_event_id FROM params) AS cev
+    SELECT
+        s.segment_id,
+        count(DISTINCT s.session_id) AS sessions,
+        uniqExact(s.user_id) AS users,
+        countIf(e.event_id = cev) AS conversions,
+        sumIf(e.event_value, e.event_id = cev) AS conversion_value_usd,
+        round(countIf(e.event_id = cev) * 100.0 / nullIf(count(DISTINCT s.session_id), 0), 2) AS conversion_rate,
+        countIf(s.is_returning = 0 AND e.event_id = cev) AS new_user_conversions,
+        countIf(s.is_returning = 1 AND e.event_id = cev) AS returning_user_conversions
+    FROM base_sessions s
+    LEFT JOIN all_events e ON s.session_id = e.session_id
+    WHERE s.segment_id IS NOT NULL
+    GROUP BY s.segment_id
+    ORDER BY conversions DESC
+    LIMIT 10
+
 NODE ab_test_conversions
 SQL >
     WITH (SELECT conversion_event_id FROM params) AS cev
@@ -559,6 +579,18 @@ SQL >
             avg_value
         )) AS value_distribution FROM value_distribution
     ),
+    segment_conversions_array AS (
+        SELECT groupArray(tuple(
+            segment_id,
+            sessions,
+            users,
+            conversions,
+            conversion_value_usd,
+            conversion_rate,
+            new_user_conversions,
+            returning_user_conversions
+        )) AS segment_conversions FROM segment_conversions
+    ),
     ab_test_conversions_array AS (
         SELECT groupArray(tuple(
             ab_test_variant_id,
@@ -592,6 +624,7 @@ SQL >
         coalesce(ddca.daily_conversions, []) AS daily_conversions,
         coalesce(utc.user_type_conversions, []) AS user_type_conversions,
         coalesce(vd.value_distribution, []) AS value_distribution,
+        coalesce(seg.segment_conversions, []) AS segment_conversions,
         coalesce(atc.ab_test_conversions, []) AS ab_test_conversions
     FROM totals_data t
     LEFT JOIN device_conversions_array dc ON 1=1
@@ -609,6 +642,7 @@ SQL >
     LEFT JOIN daily_conversions_array ddca ON 1=1
     LEFT JOIN user_type_conversions_array utc ON 1=1
     LEFT JOIN value_distribution_array vd ON 1=1
+    LEFT JOIN segment_conversions_array seg ON 1=1
     LEFT JOIN ab_test_conversions_array atc ON 1=1
 
 TYPE ENDPOINT

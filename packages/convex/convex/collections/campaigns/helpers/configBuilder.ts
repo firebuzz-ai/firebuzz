@@ -125,7 +125,7 @@ export function buildCampaignConfig(
 					pausedAt: abTestData.pausedAt,
 					resumedAt: abTestData.resumedAt,
 					endDate: abTestData.endDate,
-					primaryMetric: abTestData.primaryMetric,
+					primaryGoalId: abTestData.primaryGoalId,
 					completionCriteria: abTestData.completionCriteria,
 					confidenceLevel: abTestData.confidenceLevel,
 					rules: abTestData.rules,

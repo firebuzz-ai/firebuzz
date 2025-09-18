@@ -1,0 +1,232 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for lightweight A/B test winner selection"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(abTestId, required=True) }} AS ab_test_id,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ Int32(confidenceLevel, required=True) }} AS confidence_level,
+        {{ String(winnerStrategy, 'winner-only') }} AS winner_strategy
+
+NODE test_window
+DESCRIPTION "Lifecycle time window for the AB test (partition pruning)"
+
+SQL >
+    %
+    SELECT
+        min(s.timestamp) AS start_ts,
+        max(s.timestamp) AS end_ts
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+
+NODE exposures
+DESCRIPTION "Unique exposures per variant"
+
+SQL >
+    %
+    SELECT
+        s.ab_test_variant_id AS ab_test_variant_id,
+        uniqExact(s.session_id) AS exposures
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+    GROUP BY s.ab_test_variant_id
+
+NODE conversions
+DESCRIPTION "Goal conversions per variant"
+
+SQL >
+    %
+    SELECT
+        s.ab_test_variant_id AS ab_test_variant_id,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions
+    FROM events_v1 e
+    INNER JOIN session_v1 s ON e.session_id = s.session_id
+    WHERE e.workspace_id = (SELECT workspace_id FROM params)
+      AND e.project_id = (SELECT project_id FROM params)
+      AND e.campaign_id = (SELECT campaign_id FROM params)
+      AND e.environment = (SELECT environment FROM params)
+      AND e.campaign_environment = (SELECT campaign_environment FROM params)
+      AND e.ab_test_id = (SELECT ab_test_id FROM params)
+      AND e.timestamp BETWEEN (SELECT start_ts FROM test_window) AND (SELECT end_ts FROM test_window)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+    GROUP BY s.ab_test_variant_id
+
+NODE control_variant
+DESCRIPTION "Identify control variant (smallest variant id)"
+
+SQL >
+    %
+    SELECT min(ab_test_variant_id) AS control_variant_id
+    FROM exposures
+
+NODE control_metrics
+DESCRIPTION "Control exposures and conversions"
+
+SQL >
+    %
+    SELECT
+        cv.control_variant_id,
+        exp.exposures AS control_exposures,
+        coalesce(conv.conversions, 0) AS control_conversions,
+        if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) AS control_cvr
+    FROM control_variant cv
+    INNER JOIN exposures exp ON exp.ab_test_variant_id = cv.control_variant_id
+    LEFT JOIN conversions conv ON conv.ab_test_variant_id = cv.control_variant_id
+
+NODE variants_with_stats
+DESCRIPTION "Per-variant conversion rate and significance vs control"
+
+SQL >
+    %
+    SELECT
+        exp.ab_test_variant_id AS ab_test_variant_id,
+        exp.exposures,
+        coalesce(conv.conversions, 0) AS conversions,
+        if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) AS conversion_rate,
+        if(exp.ab_test_variant_id = cm.control_variant_id, 1, 0) AS is_control,
+        -- z-statistic vs control
+        (
+            (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+            /
+            nullIf(
+                sqrt(
+                    coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                    * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                    * (
+                        coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                        + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                    )
+                ), 0.0)
+        ) AS z_statistic,
+        -- two-tailed p-value
+        erfc(abs(
+            (
+                (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+                /
+                nullIf(
+                    sqrt(
+                        coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                        * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                        * (
+                            coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                            + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                        )
+                    ), 0.0)
+            )
+        ) / sqrt(2)) AS p_value,
+        if(
+            erfc(abs(
+                (
+                    (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+                    /
+                    nullIf(
+                        sqrt(
+                            coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                            * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                            * (
+                                coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                                + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                            )
+                        ), 0.0)
+                )
+            ) / sqrt(2))
+            < multiIf((SELECT confidence_level FROM params) = 90, 0.10, (SELECT confidence_level FROM params) = 95, 0.05, (SELECT confidence_level FROM params) = 99, 0.01, 0.05),
+            1, 0
+        ) AS is_significant
+    FROM exposures exp
+    LEFT JOIN conversions conv ON exp.ab_test_variant_id = conv.ab_test_variant_id
+    CROSS JOIN control_metrics cm
+
+NODE top_candidate
+DESCRIPTION "Top ranked variant by significance then conversion rate"
+
+SQL >
+    %
+    SELECT 
+        vws.ab_test_variant_id,
+        vws.is_significant,
+        vws.conversion_rate,
+        vws.exposures,
+        vws.conversions,
+        vws.p_value
+    FROM variants_with_stats vws
+    ORDER BY vws.is_significant DESC, vws.conversion_rate DESC, vws.is_control ASC
+    LIMIT 1
+
+NODE winner
+DESCRIPTION "Select a single winner row based on significance then conversion rate"
+
+SQL >
+    %
+    SELECT
+        (SELECT ab_test_id FROM params) AS ab_test_id,
+        (SELECT conversion_event_id FROM params) AS conversion_event_id,
+        toUInt8((SELECT confidence_level FROM params)) AS confidence_level,
+        cm.control_variant_id AS control_variant_id,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            cm.control_variant_id,
+            tc.ab_test_variant_id
+        ) AS winner_variant_id,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            0,
+            tc.is_significant
+        ) AS is_statistically_significant,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            cm.control_cvr,
+            tc.conversion_rate
+        ) AS winner_conversion_rate,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            cm.control_exposures,
+            tc.exposures
+        ) AS winner_exposures,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            cm.control_conversions,
+            tc.conversions
+        ) AS winner_conversions,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            0.0,
+            coalesce(tc.conversion_rate - cm.control_cvr, 0.0)
+        ) AS absolute_lift,
+        multiIf(
+            (SELECT winner_strategy FROM params) = 'winner-or-control' AND NOT (tc.is_significant = 1 AND tc.conversion_rate > cm.control_cvr),
+            1.0,
+            tc.p_value
+        ) AS p_value
+    FROM top_candidate tc
+    CROSS JOIN control_metrics cm
+
+NODE response
+DESCRIPTION "Return winner only"
+
+SQL >
+    %
+    SELECT * FROM winner
+
+TYPE ENDPOINT
+
+

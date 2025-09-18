@@ -45,6 +45,7 @@ SQL >
             ELSE 'Direct'
         END AS unified_source,
         landing_page_id,
+        segment_id,
         ab_test_variant_id,
         toHour(timestamp) AS hour_of_day,
         toDayOfWeek(timestamp) AS day_of_week,
@@ -342,12 +343,29 @@ SQL >
     ORDER BY sessions DESC
     LIMIT 15
 
+NODE segments
+DESCRIPTION "Sessions breakdown by segment"
+
+SQL >
+    %
+    SELECT
+        segment_id,
+        count(*) AS sessions,
+        uniqExact(user_id) AS users,
+        countIf(is_returning = 0) AS new_sessions,
+        countIf(is_returning = 1) AS returning_sessions
+    FROM base_sessions
+    WHERE segment_id IS NOT NULL
+    GROUP BY segment_id
+    ORDER BY sessions DESC
+    LIMIT 10
+
 NODE ab_test_variants
 DESCRIPTION "Sessions breakdown by AB test variant"
 
 SQL >
     %
-    SELECT 
+    SELECT
         ab_test_variant_id,
         count(*) AS sessions,
         uniqExact(user_id) AS users,
@@ -548,10 +566,20 @@ SQL >
             round((sessions * 100.0) / (SELECT total_sessions FROM totals_data), 2)
         )) AS landing_pages FROM landing_pages
     ),
+    segments_array AS (
+        SELECT groupArray(tuple(
+            segment_id,
+            sessions,
+            users,
+            new_sessions,
+            returning_sessions,
+            round((sessions * 100.0) / (SELECT total_sessions FROM totals_data), 2)
+        )) AS segments FROM segments
+    ),
     ab_test_variants_array AS (
         SELECT groupArray(tuple(
-            ab_test_variant_id, 
-            sessions, 
+            ab_test_variant_id,
+            sessions,
             users,
             new_sessions,
             returning_sessions,
@@ -578,6 +606,7 @@ SQL >
         coalesce(hd.hourly_distribution, []) AS hourly_distribution,
         coalesce(dd.daily_distribution, []) AS daily_distribution,
         coalesce(lp.landing_pages, []) AS landing_pages,
+        coalesce(sg.segments, []) AS segments,
         coalesce(av.ab_test_variants, []) AS ab_test_variants
     FROM totals_data t
     LEFT JOIN device_types_array dt ON 1=1
@@ -597,6 +626,7 @@ SQL >
     LEFT JOIN hourly_distribution_array hd ON 1=1
     LEFT JOIN daily_distribution_array dd ON 1=1
     LEFT JOIN landing_pages_array lp ON 1=1
+    LEFT JOIN segments_array sg ON 1=1
     LEFT JOIN ab_test_variants_array av ON 1=1
 
 TYPE ENDPOINT

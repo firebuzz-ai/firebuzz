@@ -395,7 +395,7 @@ export const SegmentPanel = ({ node, campaign }: SegmentPanelProps) => {
 				pausedAt: undefined,
 				resumedAt: undefined,
 				endDate: undefined,
-				primaryMetric: "conversions",
+				primaryGoalId: campaign?.campaignSettings?.primaryGoal?.id || "conversions",
 				completionCriteria: {
 					sampleSizePerVariant: 1000,
 					testDuration: 14,

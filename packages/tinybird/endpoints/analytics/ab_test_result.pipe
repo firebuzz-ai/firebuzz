@@ -1,0 +1,272 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE params
+DESCRIPTION "Parameters for A/B test result analytics"
+
+SQL >
+    %
+    SELECT
+        {{ String(workspaceId, required=True) }} AS workspace_id,
+        {{ String(projectId, required=True) }} AS project_id,
+        {{ String(campaignId, required=True) }} AS campaign_id,
+        {{ String(environment, required=True) }} AS environment,
+        {{ String(campaignEnvironment, required=True) }} AS campaign_environment,
+        {{ String(abTestId, required=True) }} AS ab_test_id,
+        {{ String(conversionEventId, required=True) }} AS conversion_event_id,
+        {{ Int32(confidenceLevel, required=True) }} AS confidence_level
+
+NODE exposures
+DESCRIPTION "Unique exposures and user mix by variant"
+
+SQL >
+    %
+    SELECT
+        s.ab_test_variant_id AS ab_test_variant_id,
+        uniqExact(s.session_id) AS exposures,
+        uniqExact(s.user_id) AS unique_users,
+        countIf(s.is_returning = 0) AS new_user_exposures,
+        countIf(s.is_returning = 1) AS returning_user_exposures
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+      AND s.ab_test_variant_id IS NOT NULL
+    GROUP BY s.ab_test_variant_id
+
+NODE test_window
+DESCRIPTION "Lifecycle time window for the AB test"
+
+SQL >
+    %
+    SELECT
+        min(s.timestamp) AS start_ts,
+        max(s.timestamp) AS end_ts
+    FROM session_v1 s
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+
+NODE conversions
+DESCRIPTION "Conversions, revenue and converters by variant"
+
+SQL >
+    %
+    SELECT
+        s.ab_test_variant_id AS ab_test_variant_id,
+        countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS total_revenue,
+        if(countIf(e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value > 0) > 0,
+           avgIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) AND e.event_value > 0),
+           0.0) AS avg_order_value,
+        uniqExactIf(e.session_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_sessions,
+        uniqExactIf(s.user_id, e.event_id = (SELECT conversion_event_id FROM params)) AS converting_users
+    FROM session_v1 s
+    LEFT JOIN events_v1 e ON e.session_id = s.session_id
+      AND e.timestamp BETWEEN (SELECT start_ts FROM test_window) AND (SELECT end_ts FROM test_window)
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+      AND s.ab_test_variant_id IS NOT NULL
+    GROUP BY s.ab_test_variant_id
+
+NODE engagement
+DESCRIPTION "Engagement metrics per variant"
+
+SQL >
+    %
+    SELECT
+        s.ab_test_variant_id AS ab_test_variant_id,
+        avgIf(ev.session_duration, ev.session_duration IS NOT NULL) AS avg_session_duration,
+        countIf(coalesce(ev.non_system_events_per_session, 0) <= 1) AS bounced_sessions,
+        uniqExact(s.session_id) AS total_sessions,
+        round(countIf(coalesce(ev.non_system_events_per_session, 0) <= 1) * 100.0 / nullIf(uniqExact(s.session_id), 0), 2) AS bounce_rate
+    FROM session_v1 s
+    LEFT JOIN (
+        SELECT
+            session_id,
+            countIf(event_type != 'system') AS non_system_events_per_session,
+            argMax(time_on_page, session_event_sequence) AS session_duration
+        FROM events_v1
+        WHERE workspace_id = (SELECT workspace_id FROM params)
+          AND project_id = (SELECT project_id FROM params)
+          AND campaign_id = (SELECT campaign_id FROM params)
+          AND environment = (SELECT environment FROM params)
+          AND campaign_environment = (SELECT campaign_environment FROM params)
+          AND ab_test_id = (SELECT ab_test_id FROM params)
+          AND timestamp BETWEEN (SELECT start_ts FROM test_window) AND (SELECT end_ts FROM test_window)
+        GROUP BY session_id
+    ) ev ON s.session_id = ev.session_id
+    WHERE s.workspace_id = (SELECT workspace_id FROM params)
+      AND s.project_id = (SELECT project_id FROM params)
+      AND s.campaign_id = (SELECT campaign_id FROM params)
+      AND s.environment = (SELECT environment FROM params)
+      AND s.campaign_environment = (SELECT campaign_environment FROM params)
+      AND s.ab_test_id = (SELECT ab_test_id FROM params)
+      AND s.ab_test_variant_id IS NOT NULL
+    GROUP BY s.ab_test_variant_id
+
+NODE control_variant
+DESCRIPTION "Identify control variant (smallest variant id)"
+
+SQL >
+    %
+    SELECT min(ab_test_variant_id) AS control_variant_id
+    FROM exposures
+
+NODE control_metrics
+DESCRIPTION "Metrics for control variant to compare against"
+
+SQL >
+    %
+    SELECT
+        cv.control_variant_id,
+        exp.exposures AS control_exposures,
+        coalesce(conv.conversions, 0) AS control_conversions,
+        if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) AS control_cvr
+    FROM control_variant cv
+    INNER JOIN exposures exp ON exp.ab_test_variant_id = cv.control_variant_id
+    LEFT JOIN (
+        SELECT
+            s.ab_test_variant_id AS ab_test_variant_id,
+            countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions
+        FROM events_v1 e
+        INNER JOIN session_v1 s ON e.session_id = s.session_id
+        WHERE e.workspace_id = (SELECT workspace_id FROM params)
+          AND e.project_id = (SELECT project_id FROM params)
+          AND e.campaign_id = (SELECT campaign_id FROM params)
+          AND e.environment = (SELECT environment FROM params)
+          AND e.campaign_environment = (SELECT campaign_environment FROM params)
+          AND e.timestamp BETWEEN (SELECT start_ts FROM test_window) AND (SELECT end_ts FROM test_window)
+          AND s.ab_test_id = (SELECT ab_test_id FROM params)
+        GROUP BY s.ab_test_variant_id
+    ) conv ON conv.ab_test_variant_id = cv.control_variant_id
+
+NODE response
+DESCRIPTION "A/B test result per variant with statistical analysis"
+
+SQL >
+    %
+    SELECT
+        (SELECT ab_test_id FROM params) AS ab_test_id,
+        exp.ab_test_variant_id AS ab_test_variant_id,
+        (SELECT conversion_event_id FROM params) AS conversion_event_id,
+        toUInt8((SELECT confidence_level FROM params)) AS confidence_level,
+        if(exp.ab_test_variant_id = (SELECT control_variant_id FROM control_variant), 1, 0) AS is_control,
+
+        -- Traffic metrics
+        exp.exposures,
+        exp.unique_users,
+        exp.new_user_exposures,
+        exp.returning_user_exposures,
+
+        -- Conversion metrics
+        coalesce(conv.conversions, 0) AS conversions,
+        if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) AS conversion_rate,
+        coalesce(conv.total_revenue, 0) AS total_revenue,
+        coalesce(conv.avg_order_value, 0.0) AS avg_order_value,
+        coalesce(conv.converting_sessions, 0) AS converting_sessions,
+        coalesce(conv.converting_users, 0) AS converting_users,
+
+        -- Engagement metrics
+        coalesce(eng.avg_session_duration, 0) AS avg_session_duration,
+        coalesce(eng.bounce_rate, 0) AS bounce_rate,
+
+        -- Confidence interval bounds for conversion rate
+        if(exp.exposures = 0, 0.0,
+           (coalesce(conv.conversions, 0) / exp.exposures)
+           - (multiIf((SELECT confidence_level FROM params) = 90, 1.645, (SELECT confidence_level FROM params) = 95, 1.96, (SELECT confidence_level FROM params) = 99, 2.576, 1.96))
+             * sqrt((coalesce(conv.conversions, 0) / exp.exposures) * (1 - coalesce(conv.conversions, 0) / exp.exposures) / exp.exposures)
+        ) AS cvr_ci_low,
+
+        if(exp.exposures = 0, 0.0,
+           (coalesce(conv.conversions, 0) / exp.exposures)
+           + (multiIf((SELECT confidence_level FROM params) = 90, 1.645, (SELECT confidence_level FROM params) = 95, 1.96, (SELECT confidence_level FROM params) = 99, 2.576, 1.96))
+             * sqrt((coalesce(conv.conversions, 0) / exp.exposures) * (1 - coalesce(conv.conversions, 0) / exp.exposures) / exp.exposures)
+        ) AS cvr_ci_high,
+
+        -- Lift metrics vs control
+        ((if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures)) - cm.control_cvr) AS absolute_lift,
+        if(cm.control_cvr = 0, 0.0, (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures)) / cm.control_cvr - 1) AS relative_lift,
+
+        -- Z-test vs control (two-sample proportion test)
+        coalesce((
+            (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+            /
+            nullIf(
+                sqrt(
+                    coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                    * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                    * (
+                        coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                        + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                    )
+                ), 0.0)
+        ), 0.0) AS z_statistic,
+
+        -- Two-tailed p-value from Z using error function
+        coalesce(erfc(abs(
+            (
+                (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+                /
+                nullIf(
+                    sqrt(
+                        coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                        * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                        * (
+                            coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                            + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                        )
+                    ), 0.0)
+            )
+        ) / sqrt(2)), 1.0) AS p_value,
+
+        -- Significance at selected confidence level
+        if(
+            erfc(abs(
+                (
+                    (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+                    /
+                    nullIf(
+                        sqrt(
+                            coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                            * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                            * (
+                                coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                                + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                            )
+                        ), 0.0)
+                )
+            ) / sqrt(2))
+            < multiIf((SELECT confidence_level FROM params) = 90, 0.10, (SELECT confidence_level FROM params) = 95, 0.05, (SELECT confidence_level FROM params) = 99, 0.01, 0.05),
+            1, 0
+        ) AS is_statistically_significant,
+
+        -- Recommended sample size per variant for 80% power, target 10% relative lift
+        toUInt64(
+            ceil(
+                2.0
+                * pow((multiIf((SELECT confidence_level FROM params) = 90, 1.645, (SELECT confidence_level FROM params) = 95, 1.96, (SELECT confidence_level FROM params) = 99, 2.576, 1.96) + 0.84), 2)
+                * greatest(cm.control_cvr, 0.01) * (1 - greatest(cm.control_cvr, 0.01))
+                / pow(greatest(0.0001, greatest(cm.control_cvr, 0.01) * 0.10), 2)
+            )
+        ) AS recommended_sample_size_per_variant
+
+    FROM exposures exp
+    LEFT JOIN conversions AS conv ON exp.ab_test_variant_id = conv.ab_test_variant_id
+    LEFT JOIN engagement AS eng ON exp.ab_test_variant_id = eng.ab_test_variant_id
+    CROSS JOIN control_metrics cm
+    ORDER BY is_control DESC, conversion_rate DESC
+
+TYPE ENDPOINT
+
+

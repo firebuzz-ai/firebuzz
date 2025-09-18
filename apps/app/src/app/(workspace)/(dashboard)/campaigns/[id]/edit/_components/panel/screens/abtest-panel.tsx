@@ -1,6 +1,7 @@
 "use client";
 
 import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
+import { ConfidenceLevelSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/confidence-level-slider";
 import type {
 	ABTestNode,
 	VariantNode,
@@ -731,21 +732,21 @@ export const ABTestPanel = ({
 	// Goal handlers
 	const getCurrentGoal = () => {
 		if (
-			node.data.primaryMetric &&
-			typeof node.data.primaryMetric === "object"
+			node.data.primaryGoalId &&
+			typeof node.data.primaryGoalId === "object"
 		) {
-			return node.data.primaryMetric;
+			return node.data.primaryGoalId;
 		}
-		// Find goal by string value for backward compatibility
+		// Find goal by string value
 		return (
-			availableEvents.find((goal) => goal.id === node.data.primaryMetric) ||
+			availableEvents.find((goal) => goal.id === node.data.primaryGoalId) ||
 			availableEvents[0]
 		);
 	};
 
 	const handleGoalChange = (goal: (typeof availableEvents)[0]) => {
-		// Store the goal ID as a string for compatibility with the schema
-		updateABTestData({ primaryMetric: goal.id });
+		// Store the goal ID as a string
+		updateABTestData({ primaryGoalId: goal.id });
 	};
 
 	const handleNavigateToCampaignOverview = () => {
@@ -1194,13 +1195,13 @@ export const ABTestPanel = ({
 									<Label htmlFor="primary-metric">Primary Metric</Label>
 									<Select
 										value={
-											typeof node.data.primaryMetric === "string"
-												? node.data.primaryMetric
+											typeof node.data.primaryGoalId === "string"
+												? node.data.primaryGoalId
 												: "conversions"
 										}
 										onValueChange={(value) =>
 											!isEditingDisabled &&
-											updateABTestData({ primaryMetric: value })
+											updateABTestData({ primaryGoalId: value })
 										}
 										disabled={isEditingDisabled}
 									>
@@ -1248,6 +1249,20 @@ export const ABTestPanel = ({
 								</div>
 							</div>
 						)}
+
+						{/* Confidence Level - Always visible */}
+						<div className="space-y-2">
+							<ConfidenceLevelSlider
+								value={node.data.confidenceLevel}
+								onValueChange={(value) =>
+									!isEditingDisabled &&
+									updateABTestData({
+										confidenceLevel: value,
+									})
+								}
+								disabled={isEditingDisabled}
+							/>
+						</div>
 
 						<div className="grid grid-cols-2 gap-4">
 							<div className="space-y-2">

@@ -1,617 +1,647 @@
 "use client";
 
-import {
-	type Id,
-	api,
-	useCachedQuery,
-	useCachedRichQuery,
-	useMutation,
-} from "@firebuzz/convex";
+import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+
 import { parseAsBoolean, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo } from "react";
 
 // Period configuration
 export const ANALYTICS_PERIODS = {
-	"7d": { label: "Last 7 days", days: 7 },
-	"15d": { label: "Last 15 days", days: 15 },
-	"30d": { label: "Last 30 days", days: 30 },
-	"all-time": { label: "All time", days: null }, // null means from publishedAt
+  "7d": { label: "Last 7 days", days: 7 },
+  "15d": { label: "Last 15 days", days: 15 },
+  "30d": { label: "Last 30 days", days: 30 },
+  "all-time": { label: "All time", days: null }, // null means from publishedAt
 } as const;
 
 export type AnalyticsPeriod = keyof typeof ANALYTICS_PERIODS;
 
 // Screen types - extensible for future screens
 export type AnalyticsScreen =
-	| "overview"
-	| "realtime"
-	| "audience"
-	| "conversions"
-	| "ab-tests";
+  | "overview"
+  | "realtime"
+  | "audience"
+  | "conversions"
+  | "ab-tests";
 
 // Hook configuration
 interface UseCampaignAnalyticsConfig {
-	campaignId: Id<"campaigns">;
+  campaignId: Id<"campaigns">;
 }
 
 export function useCampaignAnalytics({
-	campaignId,
+  campaignId,
 }: UseCampaignAnalyticsConfig) {
-	// URL state management with nuqs
-	const [{ period, screen, isPreview }, setQueryStates] = useQueryStates({
-		period: parseAsStringLiteral(
-			Object.keys(ANALYTICS_PERIODS) as AnalyticsPeriod[],
-		),
-		screen: parseAsStringLiteral([
-			"overview",
-			"realtime",
-			"audience",
-			"conversions",
-			"ab-tests",
-		] as const),
-		isPreview: parseAsBoolean,
-	});
+  // URL state management with nuqs
+  const [{ period, screen, isPreview }, setQueryStates] = useQueryStates({
+    period: parseAsStringLiteral(
+      Object.keys(ANALYTICS_PERIODS) as AnalyticsPeriod[]
+    ),
+    screen: parseAsStringLiteral([
+      "overview",
+      "realtime",
+      "audience",
+      "conversions",
+      "ab-tests",
+    ] as const),
+    isPreview: parseAsBoolean,
+  });
 
-	const {
-		data: campaign,
-		isPending: isCampaignLoading,
-		isError: isCampaignError,
-	} = useCachedRichQuery(
-		api.collections.campaigns.queries.getById,
-		campaignId
-			? {
-					id: campaignId as Id<"campaigns">,
-				}
-			: "skip",
-	);
+  // Get all analytics-related data in one query
+  const campaignAnalyticsData = useCachedQuery(
+    api.collections.campaigns.queries.getCampaignDataForAnalytics,
+    campaignId ? { campaignId } : "skip"
+  );
 
-	// Set defaults
-	const currentPeriod: AnalyticsPeriod = period ?? "7d";
-	const currentScreen: AnalyticsScreen = screen ?? "overview";
-	const currentIsPreview: boolean = isPreview ?? campaign?.status === "preview";
+  // Extract individual pieces for backward compatibility
+  const campaign = campaignAnalyticsData?.campaign;
+  const landingPages = campaignAnalyticsData?.landingPages;
+  const abTests = campaignAnalyticsData?.abTests;
+  const primaryConversionEventId = campaignAnalyticsData?.conversionEventId;
+  const customEvents = campaignAnalyticsData?.customEvents;
 
-	// Calculate period dates based on selection
-	const periodDates = useMemo((): {
-		periodStart: string;
-		periodEnd: string;
-	} | null => {
-		if (!campaign) return null;
+  // Loading and error states for campaign data
+  const isCampaignLoading = campaignAnalyticsData === undefined;
+  const isCampaignError = campaignAnalyticsData === null;
 
-		const now = new Date();
-		const periodEnd = now.toISOString();
+  // Set defaults
+  const currentPeriod: AnalyticsPeriod = period ?? "7d";
+  const currentScreen: AnalyticsScreen = screen ?? "overview";
+  const currentIsPreview: boolean = isPreview ?? campaign?.status === "preview";
 
-		if (currentPeriod === "all-time") {
-			// Use publishedAt as start date for all-time
-			if (!campaign.publishedAt) return null;
-			return {
-				periodStart: campaign.publishedAt,
-				periodEnd,
-			};
-		}
+  // Calculate period dates based on selection
+  const periodDates = useMemo((): {
+    periodStart: string;
+    periodEnd: string;
+  } | null => {
+    if (!campaign) return null;
 
-		// Calculate start date based on period days
-		const periodConfig = ANALYTICS_PERIODS[currentPeriod];
-		const periodStart = new Date(now);
-		periodStart.setDate(periodStart.getDate() - periodConfig.days);
+    const now = new Date();
+    const periodEnd = now.toISOString();
 
-		const result = {
-			periodStart: periodStart.toISOString(),
-			periodEnd,
-		};
+    if (currentPeriod === "all-time") {
+      // Use publishedAt as start date for all-time
+      if (!campaign.publishedAt) return null;
+      return {
+        periodStart: campaign.publishedAt,
+        periodEnd,
+      };
+    }
 
-		return result;
-	}, [campaign, currentPeriod]);
+    // Calculate start date based on period days
+    const periodConfig = ANALYTICS_PERIODS[currentPeriod];
+    const periodStart = new Date(now);
+    periodStart.setDate(periodStart.getDate() - periodConfig.days);
 
-	// Check if we should fetch analytics data
-	const shouldFetchAnalytics = useMemo(() => {
-		return !!(
-			(campaign?.status === "published" ||
-				campaign?.status === "preview" ||
-				campaign?.status === "completed") &&
-			periodDates
-		);
-	}, [campaign, periodDates]);
+    const result = {
+      periodStart: periodStart.toISOString(),
+      periodEnd,
+    };
 
-	// Query sum-primitives analytics data
-	const sumPrimitivesQuery = useCachedQuery(
-		api.collections.analytics.queries.getSumPrimitives,
-		shouldFetchAnalytics
-			? {
-					campaignId,
-					period: currentPeriod,
-					campaignEnvironment: currentIsPreview ? "preview" : "production",
-				}
-			: "skip",
-	);
+    return result;
+  }, [campaign, currentPeriod]);
 
-	// Query timeseries-primitives analytics data
-	const timeseriesPrimitivesQuery = useCachedQuery(
-		api.collections.analytics.queries.getTimeseriesPrimitives,
-		shouldFetchAnalytics
-			? {
-					campaignId,
-					period: currentPeriod,
-					campaignEnvironment: currentIsPreview ? "preview" : "production",
-				}
-			: "skip",
-	);
+  // Check if we should fetch analytics data
+  const shouldFetchAnalytics = useMemo(() => {
+    return !!(
+      (campaign?.status === "published" ||
+        campaign?.status === "preview" ||
+        campaign?.status === "completed") &&
+      periodDates
+    );
+  }, [campaign, periodDates]);
 
-	// Query audience breakdown analytics data
-	const audienceBreakdownQuery = useCachedQuery(
-		api.collections.analytics.queries.getAudienceBreakdown,
-		shouldFetchAnalytics
-			? {
-					campaignId,
-					period: currentPeriod,
-					campaignEnvironment: currentIsPreview ? "preview" : "production",
-				}
-			: "skip",
-	);
+  // Query sum-primitives analytics data
+  const sumPrimitivesQuery = useCachedQuery(
+    api.collections.analytics.queries.getSumPrimitives,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	// Query conversions breakdown analytics data
-	const conversionsBreakdownQuery = useCachedQuery(
-		api.collections.analytics.queries.getConversionsBreakdown,
-		shouldFetchAnalytics
-			? {
-					campaignId,
-					period: currentPeriod,
-					campaignEnvironment: currentIsPreview ? "preview" : "production",
-				}
-			: "skip",
-	);
+  // Query timeseries-primitives analytics data
+  const timeseriesPrimitivesQuery = useCachedQuery(
+    api.collections.analytics.queries.getTimeseriesPrimitives,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	// Query realtime overview analytics data
-	const realtimeOverviewQuery = useCachedQuery(
-		api.collections.analytics.queries.getRealtimeOverview,
-		shouldFetchAnalytics
-			? {
-					campaignId,
-					period: currentPeriod,
-					campaignEnvironment: currentIsPreview ? "preview" : "production",
-				}
-			: "skip",
-	);
+  // Query audience breakdown analytics data
+  const audienceBreakdownQuery = useCachedQuery(
+    api.collections.analytics.queries.getAudienceBreakdown,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	// Query all landing pages for the campaign
-	const landingPagesQuery = useCachedQuery(
-		api.collections.landingPages.queries.getByCampaignId,
-		{ campaignId },
-	);
+  // Query conversions breakdown analytics data
+  const conversionsBreakdownQuery = useCachedQuery(
+    api.collections.analytics.queries.getConversionsBreakdown,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	// Mutation for revalidating analytics
-	const revalidateAnalyticsMutation = useMutation(
-		api.collections.analytics.mutations.revalidateAnalytics,
-	);
+  // Query realtime overview analytics data
+  const realtimeOverviewQuery = useCachedQuery(
+    api.collections.analytics.queries.getRealtimeOverview,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	// Helper functions for URL state changes
-	const setPeriod = (newPeriod: AnalyticsPeriod) => {
-		setQueryStates({ period: newPeriod });
-	};
+  // Query AB test result analytics data
+  const abTestResultQuery = useCachedQuery(
+    api.collections.analytics.queries.getAbTestResult,
+    shouldFetchAnalytics
+      ? {
+          campaignId,
+          period: currentPeriod,
+          campaignEnvironment: currentIsPreview ? "preview" : "production",
+        }
+      : "skip"
+  );
 
-	const setScreen = (newScreen: AnalyticsScreen) => {
-		setQueryStates({ screen: newScreen });
-	};
+  // Mutation for revalidating analytics
+  const revalidateAnalyticsMutation = useMutation(
+    api.collections.analytics.mutations.revalidateAnalytics
+  );
 
-	const setIsPreview = (newIsPreview: boolean) => {
-		setQueryStates({ isPreview: newIsPreview });
-	};
+  // Helper functions for URL state changes
+  const setPeriod = (newPeriod: AnalyticsPeriod) => {
+    setQueryStates({ period: newPeriod });
+  };
 
-	// Revalidate function - screen-specific queries
-	const revalidate = useCallback(async () => {
-		if (!shouldFetchAnalytics || !campaign) return;
+  const setScreen = (newScreen: AnalyticsScreen) => {
+    setQueryStates({ screen: newScreen });
+  };
 
-		try {
-			const queries = [];
+  const setIsPreview = (newIsPreview: boolean) => {
+    setQueryStates({ isPreview: newIsPreview });
+  };
 
-			// Add queries based on current screen
-			if (currentScreen === "overview") {
-				// Overview screen requires periodDates
-				if (!periodDates) return;
-				// Get conversion event ID from campaign settings
-				const conversionEventId =
-					campaign.campaignSettings?.primaryGoal?.id ||
-					(campaign.type === "lead-generation"
-						? "form-submission"
-						: "external-link-click");
+  // Revalidate function - screen-specific queries
+  const revalidate = useCallback(async () => {
+    if (!shouldFetchAnalytics || !campaign) return;
 
-				// Ensure conversionEventId is never undefined
-				if (!conversionEventId) {
-					console.error("No conversion event ID found, using fallback");
-					throw new Error(
-						"Unable to determine conversion event ID for analytics",
-					);
-				}
+    try {
+      const queries = [];
 
-				// Overview screen uses sum-primitives and timeseries-primitives queries
-				queries.push({
-					queryId: "sum-primitives" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-					eventIds: campaign.campaignSettings?.customEvents
-						?.map((event) => event.id)
-						.join(","), // Optional string field for custom events
-				});
+      // Add queries based on current screen
+      if (currentScreen === "overview") {
+        // Overview screen requires periodDates
+        if (!periodDates) return;
+        // Use conversion event ID from analytics data
+        const conversionEventId = primaryConversionEventId;
 
-				// Add timeseries query for charts
-				const timeseries_query = {
-					queryId: "timeseries-primitives" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-					granularity: "day" as const, // Default to daily data
-					eventIds: campaign.campaignSettings?.customEvents
-						?.map((event) => event.id)
-						.join(","), // Optional string field for custom events
-				};
+        // Ensure conversionEventId is never undefined
+        if (!conversionEventId) {
+          console.error("No conversion event ID found, using fallback");
+          throw new Error(
+            "Unable to determine conversion event ID for analytics"
+          );
+        }
 
-				console.log("Revalidating analytics with parameters:", {
-					currentPeriod,
-					periodConfig: ANALYTICS_PERIODS[currentPeriod],
-					timeseries_query,
-				});
+        // Overview screen uses sum-primitives and timeseries-primitives queries
+        queries.push({
+          queryId: "sum-primitives" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+        });
 
-				queries.push(timeseries_query);
+        // Add timeseries query for charts
+        const timeseries_query = {
+          queryId: "timeseries-primitives" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          granularity: "day" as const, // Default to daily data
+          eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+        };
 
-				// Add audience breakdown query for overview charts
-				queries.push({
-					queryId: "audience-breakdown" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-				});
+        console.log("Revalidating analytics with parameters:", {
+          currentPeriod,
+          periodConfig: ANALYTICS_PERIODS[currentPeriod],
+          timeseries_query,
+        });
 
-				// Add conversions breakdown query for overview charts
-				queries.push({
-					queryId: "conversions-breakdown" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-					eventIds: campaign.campaignSettings?.customEvents
-						?.map((event) => event.id)
-						.join(","), // Optional string field for custom events
-				});
-			} else if (currentScreen === "realtime") {
-				// Realtime screen only needs realtime-overview query
-				const conversionEventId =
-					campaign.campaignSettings?.primaryGoal?.id ||
-					(campaign.type === "lead-generation"
-						? "form-submission"
-						: "external-link-click");
+        queries.push(timeseries_query);
 
-				if (!conversionEventId) {
-					console.error("No conversion event ID found for realtime");
-					throw new Error(
-						"Unable to determine conversion event ID for realtime analytics",
-					);
-				}
+        // Add audience breakdown query for overview charts
+        queries.push({
+          queryId: "audience-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+        });
 
-				// Use last 30 minutes for realtime data
-				const now = new Date();
-				const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-				queries.push({
-					queryId: "realtime-overview" as const,
-					period: currentPeriod,
-					periodStart: thirtyMinutesAgo.toISOString(),
-					periodEnd: now.toISOString(),
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-				});
-			} else if (currentScreen === "conversions") {
-				// Conversions screen requires periodDates
-				if (!periodDates) return;
-				// Get conversion event ID from campaign settings
-				const conversionEventId =
-					campaign.campaignSettings?.primaryGoal?.id ||
-					(campaign.type === "lead-generation"
-						? "form-submission"
-						: "external-link-click");
+        // Add conversions breakdown query for overview charts
+        queries.push({
+          queryId: "conversions-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+        });
+      } else if (currentScreen === "realtime") {
+        // Realtime screen only needs realtime-overview query
+        const conversionEventId = primaryConversionEventId;
 
-				// Ensure conversionEventId is never undefined
-				if (!conversionEventId) {
-					console.error("No conversion event ID found, using fallback");
-					throw new Error(
-						"Unable to determine conversion event ID for conversions analytics",
-					);
-				}
+        if (!conversionEventId) {
+          console.error("No conversion event ID found for realtime");
+          throw new Error(
+            "Unable to determine conversion event ID for realtime analytics"
+          );
+        }
 
-				// Conversions screen uses conversions-breakdown and timeseries-primitives queries
-				queries.push({
-					queryId: "conversions-breakdown" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-					eventIds: campaign.campaignSettings?.customEvents
-						?.map((event) => event.id)
-						.join(","), // Optional string field for custom events
-				});
+        // Use last 30 minutes for realtime data
+        const now = new Date();
+        const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
+        queries.push({
+          queryId: "realtime-overview" as const,
+          period: currentPeriod,
+          periodStart: thirtyMinutesAgo.toISOString(),
+          periodEnd: now.toISOString(),
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+        });
+      } else if (currentScreen === "conversions") {
+        // Conversions screen requires periodDates
+        if (!periodDates) return;
+        // Use conversion event ID from analytics data
+        const conversionEventId = primaryConversionEventId;
 
-				// Add timeseries query for cumulative value chart
-				queries.push({
-					queryId: "timeseries-primitives" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					conversionEventId,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-					granularity: "day" as const, // Default to daily data
-					eventIds: campaign.campaignSettings?.customEvents
-						?.map((event) => event.id)
-						.join(","), // Optional string field for custom events
-				});
-			} else if (currentScreen === "audience") {
-				// Audience screen requires periodDates
-				if (!periodDates) return;
+        // Ensure conversionEventId is never undefined
+        if (!conversionEventId) {
+          console.error("No conversion event ID found, using fallback");
+          throw new Error(
+            "Unable to determine conversion event ID for conversions analytics"
+          );
+        }
 
-				// Audience screen uses audience-breakdown and timeseries-primitives queries
-				queries.push({
-					queryId: "audience-breakdown" as const,
-					period: currentPeriod,
-					periodStart: periodDates.periodStart,
-					periodEnd: periodDates.periodEnd,
-					campaignEnvironment: currentIsPreview
-						? ("preview" as const)
-						: ("production" as const),
-				});
+        // Conversions screen uses conversions-breakdown and timeseries-primitives queries
+        queries.push({
+          queryId: "conversions-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+        });
 
-				// Add timeseries query for audience trends
-				const conversionEventId =
-					campaign.campaignSettings?.primaryGoal?.id ||
-					(campaign.type === "lead-generation"
-						? "form-submission"
-						: "external-link-click");
+        // Add timeseries query for cumulative value chart
+        queries.push({
+          queryId: "timeseries-primitives" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          conversionEventId,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+          granularity: "day" as const, // Default to daily data
+          eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+        });
+      } else if (currentScreen === "audience") {
+        // Audience screen requires periodDates
+        if (!periodDates) return;
 
-				if (conversionEventId) {
-					queries.push({
-						queryId: "timeseries-primitives" as const,
-						period: currentPeriod,
-						periodStart: periodDates.periodStart,
-						periodEnd: periodDates.periodEnd,
-						conversionEventId,
-						campaignEnvironment: currentIsPreview
-							? ("preview" as const)
-							: ("production" as const),
-						granularity: "day" as const, // Default to daily data
-						eventIds: campaign.campaignSettings?.customEvents
-							?.map((event) => event.id)
-							.join(","), // Optional string field for custom events
-					});
-				}
-			}
+        // Audience screen uses audience-breakdown and timeseries-primitives queries
+        queries.push({
+          queryId: "audience-breakdown" as const,
+          period: currentPeriod,
+          periodStart: periodDates.periodStart,
+          periodEnd: periodDates.periodEnd,
+          campaignEnvironment: currentIsPreview
+            ? ("preview" as const)
+            : ("production" as const),
+        });
 
-			// Future screens can add more queries here
-			// if (currentScreen === "abtests") {
-			//   queries.push({ ... });
-			// }
+        // Add timeseries query for audience trends
+        const conversionEventId = primaryConversionEventId;
 
-			if (queries.length > 0) {
-				await revalidateAnalyticsMutation({
-					campaignId,
-					queries,
-				});
-			}
-		} catch (error) {
-			console.error(error);
-			throw error;
-		}
-	}, [
-		shouldFetchAnalytics,
-		periodDates,
-		campaign,
-		currentScreen,
-		currentIsPreview,
-		currentPeriod,
-		campaignId,
-		revalidateAnalyticsMutation,
-	]);
+        if (conversionEventId) {
+          queries.push({
+            queryId: "timeseries-primitives" as const,
+            period: currentPeriod,
+            periodStart: periodDates.periodStart,
+            periodEnd: periodDates.periodEnd,
+            conversionEventId,
+            campaignEnvironment: currentIsPreview
+              ? ("preview" as const)
+              : ("production" as const),
+            granularity: "day" as const, // Default to daily data
+            eventIds: customEvents?.map((event) => event.id).join(","), // Optional string field for custom events
+          });
+        }
+      } else if (currentScreen === "ab-tests") {
+        // AB tests screen requires periodDates
+        if (!periodDates) return;
 
-	// Auto-revalidate when period changes or screen changes with different intervals
-	useEffect(() => {
-		// Only revalidate if we have everything we need and the campaign is published
-		if (shouldFetchAnalytics && campaign?.isPublished) {
-			// For realtime screen, period changes don't matter, but we need to start auto-refresh
-			if (currentScreen === "realtime") {
-				// Initial load
-				const initialTimeoutId = setTimeout(() => {
-					revalidate().catch((error) => {
-						console.error("Initial realtime revalidation failed:", error);
-					});
-				}, 300);
+        // Use conversion event ID from analytics data
+        const conversionEventId = primaryConversionEventId;
 
-				// Auto-refresh every 30 seconds for realtime
-				const intervalId = setInterval(() => {
-					revalidate().catch((error) => {
-						console.error("Realtime auto-revalidation failed:", error);
-					});
-				}, 30000); // 30 seconds
+        if (!conversionEventId) {
+          console.error("No conversion event ID found for AB tests");
+          throw new Error(
+            "Unable to determine conversion event ID for AB test analytics"
+          );
+        }
 
-				return () => {
-					clearTimeout(initialTimeoutId);
-					clearInterval(intervalId);
-				};
-			}
-			if (
-				periodDates &&
-				(currentScreen === "overview" ||
-					currentScreen === "conversions" ||
-					currentScreen === "audience")
-			) {
-				// For overview, conversions, and audience screens, revalidate when period changes
-				const initialTimeoutId = setTimeout(() => {
-					revalidate().catch((error) => {
-						console.error(
-							`Auto-revalidation failed for ${currentScreen}:`,
-							error,
-						);
-					});
-				}, 300);
+        // Use AB test nodes from analytics data
+        const abTests = campaignAnalyticsData?.abTests || [];
 
-				// Auto-refresh every 3 minutes for overview and conversions
-				const intervalId = setInterval(() => {
-					revalidate().catch((error) => {
-						console.error(`${currentScreen} auto-revalidation failed:`, error);
-					});
-				}, 180000); // 3 minutes
+        if (abTests.length > 0) {
+          // Add AB test result query for each active AB test
+          for (const abTestNode of abTests) {
+            const abTestData = abTestNode;
+            queries.push({
+              queryId: "ab-test-result" as const,
+              abTestId: abTestNode.id,
+              conversionEventId: abTestData.primaryGoalId || conversionEventId,
+              confidenceLevel: abTestData.confidenceLevel || 95,
+              campaignEnvironment: currentIsPreview
+                ? ("preview" as const)
+                : ("production" as const),
+            });
+          }
+        }
+      }
 
-				return () => {
-					clearTimeout(initialTimeoutId);
-					clearInterval(intervalId);
-				};
-			}
-		}
-	}, [
-		shouldFetchAnalytics,
-		periodDates,
-		campaign?.isPublished,
-		currentScreen,
-		revalidate,
-	]);
+      // Future screens can add more queries here
 
-	// Aggregate all analytics data
-	const data = useMemo(() => {
-		return {
-			sumPrimitives: sumPrimitivesQuery,
-			timeseriesPrimitives: timeseriesPrimitivesQuery,
-			audienceBreakdown: audienceBreakdownQuery,
-			conversionsBreakdown: conversionsBreakdownQuery,
-			realtimeOverview: realtimeOverviewQuery,
-			landingPages: landingPagesQuery,
-		};
-	}, [
-		sumPrimitivesQuery,
-		timeseriesPrimitivesQuery,
-		audienceBreakdownQuery,
-		conversionsBreakdownQuery,
-		realtimeOverviewQuery,
-		landingPagesQuery,
-	]);
+      if (queries.length > 0) {
+        await revalidateAnalyticsMutation({
+          campaignId,
+          queries,
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  }, [
+    shouldFetchAnalytics,
+    periodDates,
+    campaign,
+    currentScreen,
+    currentIsPreview,
+    currentPeriod,
+    campaignId,
+    revalidateAnalyticsMutation,
+    primaryConversionEventId,
+    customEvents,
+    campaignAnalyticsData,
+  ]);
 
-	const isRevalidating = useMemo(() => {
-		if (currentScreen === "realtime") {
-			return realtimeOverviewQuery?.isRefreshing ?? false;
-		}
-		if (currentScreen === "overview") {
-			return (
-				sumPrimitivesQuery?.isRefreshing ??
-				timeseriesPrimitivesQuery?.isRefreshing ??
-				false
-			);
-		}
+  // Auto-revalidate when period changes or screen changes with different intervals
+  useEffect(() => {
+    // Only revalidate if we have everything we need and the campaign is published
+    if (shouldFetchAnalytics && campaign?.isPublished) {
+      // For realtime screen, period changes don't matter, but we need to start auto-refresh
+      if (currentScreen === "realtime") {
+        // Initial load
+        const initialTimeoutId = setTimeout(() => {
+          revalidate().catch((error) => {
+            console.error("Initial realtime revalidation failed:", error);
+          });
+        }, 300);
 
-		if (currentScreen === "conversions") {
-			return (
-				conversionsBreakdownQuery?.isRefreshing ??
-				timeseriesPrimitivesQuery?.isRefreshing ??
-				false
-			);
-		}
+        // Auto-refresh every 30 seconds for realtime
+        const intervalId = setInterval(() => {
+          revalidate().catch((error) => {
+            console.error("Realtime auto-revalidation failed:", error);
+          });
+        }, 30000); // 30 seconds
 
-		if (currentScreen === "audience") {
-			return (
-				audienceBreakdownQuery?.isRefreshing ??
-				timeseriesPrimitivesQuery?.isRefreshing ??
-				false
-			);
-		}
+        return () => {
+          clearTimeout(initialTimeoutId);
+          clearInterval(intervalId);
+        };
+      }
+      if (
+        periodDates &&
+        (currentScreen === "overview" ||
+          currentScreen === "conversions" ||
+          currentScreen === "audience" ||
+          currentScreen === "ab-tests")
+      ) {
+        // For overview, conversions, audience, and AB tests screens, revalidate when period changes
+        const initialTimeoutId = setTimeout(() => {
+          revalidate().catch((error) => {
+            console.error(
+              `Auto-revalidation failed for ${currentScreen}:`,
+              error
+            );
+          });
+        }, 300);
 
-		return false;
-	}, [
-		realtimeOverviewQuery?.isRefreshing,
-		sumPrimitivesQuery?.isRefreshing,
-		timeseriesPrimitivesQuery?.isRefreshing,
-		conversionsBreakdownQuery?.isRefreshing,
-		audienceBreakdownQuery?.isRefreshing,
-		currentScreen,
-	]);
+        // Auto-refresh every 3 minutes for these screens
+        const intervalId = setInterval(() => {
+          revalidate().catch((error) => {
+            console.error(`${currentScreen} auto-revalidation failed:`, error);
+          });
+        }, 180000); // 3 minutes
 
-	const isLoading = useMemo(() => {
-		if (currentScreen === "realtime") {
-			return isRevalidating && !realtimeOverviewQuery;
-		}
+        return () => {
+          clearTimeout(initialTimeoutId);
+          clearInterval(intervalId);
+        };
+      }
+    }
+  }, [
+    shouldFetchAnalytics,
+    periodDates,
+    campaign?.isPublished,
+    currentScreen,
+    revalidate,
+  ]);
 
-		if (currentScreen === "overview") {
-			return (
-				isRevalidating && !sumPrimitivesQuery && !timeseriesPrimitivesQuery
-			);
-		}
-		if (currentScreen === "conversions") {
-			return (
-				isRevalidating &&
-				!conversionsBreakdownQuery &&
-				!timeseriesPrimitivesQuery
-			);
-		}
-		if (currentScreen === "audience") {
-			return (
-				isRevalidating && !audienceBreakdownQuery && !timeseriesPrimitivesQuery
-			);
-		}
-		return false;
-	}, [
-		isRevalidating,
-		sumPrimitivesQuery,
-		timeseriesPrimitivesQuery,
-		conversionsBreakdownQuery,
-		audienceBreakdownQuery,
-		realtimeOverviewQuery,
-		currentScreen,
-	]);
+  // Aggregate all analytics data
+  const data = useMemo(() => {
+    return {
+      sumPrimitives: sumPrimitivesQuery,
+      timeseriesPrimitives: timeseriesPrimitivesQuery,
+      audienceBreakdown: audienceBreakdownQuery,
+      conversionsBreakdown: conversionsBreakdownQuery,
+      realtimeOverview: realtimeOverviewQuery,
+      abTestResult: abTestResultQuery,
+      // Use consolidated campaign data
+      campaign,
+      abTests,
+      landingPages,
+      conversionEventId: primaryConversionEventId,
+      customEvents,
+    };
+  }, [
+    sumPrimitivesQuery,
+    timeseriesPrimitivesQuery,
+    audienceBreakdownQuery,
+    conversionsBreakdownQuery,
+    realtimeOverviewQuery,
+    abTestResultQuery,
+    abTests,
+    campaign,
+    customEvents,
+    landingPages,
+    primaryConversionEventId,
+  ]);
 
-	console.log({ data });
+  const isRevalidating = useMemo(() => {
+    if (currentScreen === "realtime") {
+      return realtimeOverviewQuery?.isRefreshing ?? false;
+    }
+    if (currentScreen === "overview") {
+      return (
+        sumPrimitivesQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
 
-	return {
-		// Campaign data
-		campaign,
+    if (currentScreen === "conversions") {
+      return (
+        conversionsBreakdownQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
 
-		// Current state
-		period: currentPeriod,
-		screen: currentScreen,
-		isPreview: currentIsPreview,
-		periodDates,
+    if (currentScreen === "audience") {
+      return (
+        audienceBreakdownQuery?.isRefreshing ??
+        timeseriesPrimitivesQuery?.isRefreshing ??
+        false
+      );
+    }
 
-		// Period utilities
-		availablePeriods: ANALYTICS_PERIODS,
-		setPeriod,
+    if (currentScreen === "ab-tests") {
+      return abTestResultQuery?.isRefreshing ?? false;
+    }
 
-		// Preview utilities
-		setIsPreview,
+    return false;
+  }, [
+    realtimeOverviewQuery?.isRefreshing,
+    sumPrimitivesQuery?.isRefreshing,
+    timeseriesPrimitivesQuery?.isRefreshing,
+    conversionsBreakdownQuery?.isRefreshing,
+    audienceBreakdownQuery?.isRefreshing,
+    abTestResultQuery?.isRefreshing,
+    currentScreen,
+  ]);
 
-		// Screen navigation
-		currentScreen,
-		setScreen,
+  const isLoading = useMemo(() => {
+    if (currentScreen === "realtime") {
+      return isRevalidating && !realtimeOverviewQuery;
+    }
 
-		// Analytics data
-		data,
+    if (currentScreen === "overview") {
+      return (
+        isRevalidating && !sumPrimitivesQuery && !timeseriesPrimitivesQuery
+      );
+    }
+    if (currentScreen === "conversions") {
+      return (
+        isRevalidating &&
+        !conversionsBreakdownQuery &&
+        !timeseriesPrimitivesQuery
+      );
+    }
+    if (currentScreen === "audience") {
+      return (
+        isRevalidating && !audienceBreakdownQuery && !timeseriesPrimitivesQuery
+      );
+    }
+    if (currentScreen === "ab-tests") {
+      return isRevalidating && !abTestResultQuery;
+    }
+    return false;
+  }, [
+    isRevalidating,
+    sumPrimitivesQuery,
+    timeseriesPrimitivesQuery,
+    conversionsBreakdownQuery,
+    audienceBreakdownQuery,
+    realtimeOverviewQuery,
+    abTestResultQuery,
+    currentScreen,
+  ]);
 
-		// Status flags
-		isLoading,
-		isCampaignLoading,
-		isCampaignError,
-		isRevalidating,
+  console.log({ data });
 
-		// Actions
-		revalidate,
-	};
+  return {
+    // Campaign data
+    campaign,
+
+    // Current state
+    period: currentPeriod,
+    screen: currentScreen,
+    isPreview: currentIsPreview,
+    periodDates,
+
+    // Period utilities
+    availablePeriods: ANALYTICS_PERIODS,
+    setPeriod,
+
+    // Preview utilities
+    setIsPreview,
+
+    // Screen navigation
+    currentScreen,
+    setScreen,
+
+    // Analytics data
+    data,
+
+    // Status flags
+    isLoading,
+    isCampaignLoading,
+    isCampaignError,
+    isRevalidating,
+
+    // Actions
+    revalidate,
+  };
 }

@@ -52,7 +52,7 @@ export type CleanedABTest = Pick<
 	| "pausedAt"
 	| "resumedAt"
 	| "endDate"
-	| "primaryMetric"
+	| "primaryGoalId"
 	| "completionCriteria"
 	| "confidenceLevel"
 	| "rules"

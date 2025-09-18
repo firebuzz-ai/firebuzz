@@ -101,8 +101,7 @@ SQL >
         END AS bucket_label,
         countIf(e.event_id = 'page-view') AS pageviews,
         countIf(e.event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params) 
-              AND e.event_value_currency = 'USD') AS conversion_value_usd,
+        sumIf(e.event_value, e.event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
         countIf(e.event_id = 'external-link-click') AS external_link_clicks,
         countIf(e.event_id = 'form-submission') AS form_submissions
     FROM events_v1 e

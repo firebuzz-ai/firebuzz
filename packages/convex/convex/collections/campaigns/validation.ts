@@ -208,14 +208,14 @@ const validateABTestNode = (
 		});
 	}
 
-	// Primary metric validation
-	if (!data.primaryMetric) {
+	// Primary goal validation
+	if (!data.primaryGoalId) {
 		validations.push({
-			id: "abtest-primary-metric",
+			id: "abtest-primary-goal",
 			isValid: false,
-			message: "Primary metric must be selected",
+			message: "Primary goal must be selected",
 			severity: "error",
-			field: "primaryMetric",
+			field: "primaryGoalId",
 		});
 	}
 
