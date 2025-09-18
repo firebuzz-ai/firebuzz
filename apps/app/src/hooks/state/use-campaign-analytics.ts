@@ -170,14 +170,29 @@ export function useCampaignAnalytics({
       : "skip"
   );
 
-  // Query AB test result analytics data
-  const abTestResultQuery = useCachedQuery(
-    api.collections.analytics.queries.getAbTestResult,
-    shouldFetchAnalytics
+  // Query AB test results analytics data - handle multiple tests
+  const abTestResultsQuery = useCachedQuery(
+    api.collections.analytics.queries.getAbTestResults,
+    shouldFetchAnalytics &&
+      abTests &&
+      abTests.length > 0 &&
+      primaryConversionEventId
       ? {
           campaignId,
-          period: currentPeriod,
           campaignEnvironment: currentIsPreview ? "preview" : "production",
+          // Pass all AB test IDs and their conversion event IDs, filter out invalid ones
+          abTestConfigs: abTests
+            .map((abTest) => ({
+              abTestId: abTest.id,
+              conversionEventId: (abTest.primaryGoalId ||
+                primaryConversionEventId) as string,
+            }))
+            .filter(
+              (
+                config
+              ): config is { abTestId: string; conversionEventId: string } =>
+                config.conversionEventId !== undefined
+            ),
         }
       : "skip"
   );
@@ -380,32 +395,33 @@ export function useCampaignAnalytics({
         // AB tests screen requires periodDates
         if (!periodDates) return;
 
-        // Use conversion event ID from analytics data
-        const conversionEventId = primaryConversionEventId;
-
-        if (!conversionEventId) {
-          console.error("No conversion event ID found for AB tests");
-          throw new Error(
-            "Unable to determine conversion event ID for AB test analytics"
-          );
-        }
-
         // Use AB test nodes from analytics data
-        const abTests = campaignAnalyticsData?.abTests || [];
+        const abTestsData = campaignAnalyticsData?.abTests || [];
 
-        if (abTests.length > 0) {
-          // Add AB test result query for each active AB test
-          for (const abTestNode of abTests) {
-            const abTestData = abTestNode;
-            queries.push({
-              queryId: "ab-test-result" as const,
-              abTestId: abTestNode.id,
-              conversionEventId: abTestData.primaryGoalId || conversionEventId,
-              confidenceLevel: abTestData.confidenceLevel || 95,
-              campaignEnvironment: currentIsPreview
-                ? ("preview" as const)
-                : ("production" as const),
-            });
+        if (abTestsData.length > 0 && primaryConversionEventId) {
+          // Filter out A/B tests without valid conversion event IDs
+          const validAbTestConfigs = abTestsData
+            .map((abTest) => ({
+              abTestId: abTest.id,
+              conversionEventId:
+                abTest.primaryGoalId || primaryConversionEventId,
+              confidenceLevel: abTest.confidenceLevel || 95,
+            }))
+            .filter((config) => config.conversionEventId !== undefined);
+
+          if (validAbTestConfigs.length > 0) {
+            // Add AB test results query that handles multiple tests
+            for (const config of validAbTestConfigs) {
+              queries.push({
+                queryId: "ab-test-result" as const,
+                abTestId: config.abTestId,
+                conversionEventId: config.conversionEventId,
+                confidenceLevel: config.confidenceLevel,
+                campaignEnvironment: currentIsPreview
+                  ? ("preview" as const)
+                  : ("production" as const),
+              });
+            }
           }
         }
       }
@@ -507,7 +523,7 @@ export function useCampaignAnalytics({
       audienceBreakdown: audienceBreakdownQuery,
       conversionsBreakdown: conversionsBreakdownQuery,
       realtimeOverview: realtimeOverviewQuery,
-      abTestResult: abTestResultQuery,
+      abTestResults: abTestResultsQuery,
       // Use consolidated campaign data
       campaign,
       abTests,
@@ -521,7 +537,7 @@ export function useCampaignAnalytics({
     audienceBreakdownQuery,
     conversionsBreakdownQuery,
     realtimeOverviewQuery,
-    abTestResultQuery,
+    abTestResultsQuery,
     abTests,
     campaign,
     customEvents,
@@ -558,7 +574,7 @@ export function useCampaignAnalytics({
     }
 
     if (currentScreen === "ab-tests") {
-      return abTestResultQuery?.isRefreshing ?? false;
+      return abTestResultsQuery?.some((result) => result?.isRefreshing) ?? false;
     }
 
     return false;
@@ -568,7 +584,7 @@ export function useCampaignAnalytics({
     timeseriesPrimitivesQuery?.isRefreshing,
     conversionsBreakdownQuery?.isRefreshing,
     audienceBreakdownQuery?.isRefreshing,
-    abTestResultQuery?.isRefreshing,
+    abTestResultsQuery,
     currentScreen,
   ]);
 
@@ -595,7 +611,7 @@ export function useCampaignAnalytics({
       );
     }
     if (currentScreen === "ab-tests") {
-      return isRevalidating && !abTestResultQuery;
+      return isRevalidating && (!abTestResultsQuery || abTestResultsQuery.length === 0);
     }
     return false;
   }, [
@@ -605,7 +621,7 @@ export function useCampaignAnalytics({
     conversionsBreakdownQuery,
     audienceBreakdownQuery,
     realtimeOverviewQuery,
-    abTestResultQuery,
+    abTestResultsQuery,
     currentScreen,
   ]);
 

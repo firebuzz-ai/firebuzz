@@ -190,13 +190,13 @@ export const revalidateAnalytics = mutation({
         }),
         v.object({
           queryId: v.literal("ab-test-result"),
-          abTestId: v.string(),
-          conversionEventId: v.string(),
-          confidenceLevel: v.union(v.literal(90), v.literal(95), v.literal(99)),
           campaignEnvironment: v.union(
             v.literal("preview"),
             v.literal("production")
           ),
+          abTestId: v.string(),
+          conversionEventId: v.string(),
+          confidenceLevel: v.union(v.literal(90), v.literal(95), v.literal(99)),
         })
       )
     ),

@@ -1,4 +1,4 @@
-import type { ABTestNodeData } from "@firebuzz/shared-types";
+import type { ABTestNodeData, VariantNodeData, Node, Edge } from "@firebuzz/shared-types";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
@@ -263,17 +263,61 @@ export const getCampaignDataForAnalytics = query({
       .withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
       .collect();
 
-    // Filter AB test nodes with active statuses
-    const abTestNodes =
-      campaign.nodes?.filter((node) => {
-        if (node.type !== "ab-test") return false;
+    // Process AB test nodes and include variant data
+    const nodes = (campaign.nodes || []) as Node[];
+    const edges = (campaign.edges || []) as Edge[];
 
-        const nodeData = node.data as ABTestNodeData;
+    const abTestNodes = nodes
+      .filter((node) => node.type === "ab-test")
+      .map((abTestNode) => {
+        const abTestData = abTestNode.data as ABTestNodeData;
+
+        // Find variant nodes connected to this AB test
+        const abTestOutEdges = edges.filter(
+          (edge) => edge.source === abTestNode.id,
+        );
+        const variantNodes = abTestOutEdges
+          .map((edge) => nodes.find((node) => node.id === edge.target))
+          .filter((node): node is Node => node?.type === "variant");
+
+        // Build variants array from connected variant nodes
+        const variants = variantNodes.map((variantNode) => {
+          const variantData = variantNode.data as VariantNodeData;
+          return {
+            id: variantNode.id,
+            name: variantData.title,
+            landingPageId: variantData.variantId,
+            trafficAllocation: variantData.trafficPercentage,
+            isControl: variantData.isControl || false,
+          };
+        });
+
+        // If no variant nodes are connected, fall back to variants in AB test data
+        const finalVariants =
+          variants.length > 0
+            ? variants
+            : abTestData.variants.map((variant) => ({
+                id: variant.id,
+                name: variant.name,
+                landingPageId: variant.landingPageId,
+                trafficAllocation: variant.trafficAllocation,
+                isControl: variant.isControl,
+              }));
+
         return {
-          ...nodeData,
-          id: node.id,
+          id: abTestNode.id,
+          primaryGoalId: abTestData.primaryGoalId,
+          confidenceLevel: abTestData.confidenceLevel,
+          status: abTestData.status,
+          title: abTestData.title,
+          hypothesis: abTestData.hypothesis,
+          isCompleted: abTestData.isCompleted,
+          startedAt: abTestData.startedAt,
+          completedAt: abTestData.completedAt,
+          endDate: abTestData.endDate,
+          variants: finalVariants,
         };
-      }) || [];
+      });
 
     // Get conversion event info from campaign settings
     const conversionEventId =
@@ -288,9 +332,7 @@ export const getCampaignDataForAnalytics = query({
     return {
       campaign,
       landingPages,
-      abTests: abTestNodes as unknown as (ABTestNodeData & {
-        id: string;
-      })[],
+      abTests: abTestNodes,
       conversionEventId,
       customEvents,
     };
