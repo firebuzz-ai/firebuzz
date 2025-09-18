@@ -1,40 +1,51 @@
-import { campaignConfiguration } from "@/configuration/campaign";
 import { z } from "zod";
 
-// Session context interface (matches analytics package)
+// Session context interface (matches the current engine schema)
 export interface FirebuzzSessionContext {
-	abTestId: string | null;
-	abTestVariantId: string | null;
-	userId: string;
-	workspaceId: string;
-	projectId: string;
-	campaignId: string;
-	landingPageId?: string;
-	session: {
-		sessionId: string;
-		abTest?: {
-			testId: string;
-			variantId: string;
-		};
-	};
-	gdprSettings: {
-		enabled: boolean;
-		consentRequired: boolean;
-	};
-	campaignEnvironment: "preview" | "production";
-	apiBaseUrl: string;
-	botDetection: {
-		score: number;
-		corporateProxy: boolean;
-		verifiedBot: boolean;
-	};
+  abTestId: string | null;
+  abTestVariantId: string | null;
+  userId: string;
+  session: {
+    sessionId: string;
+    expiresAt: number;
+    createdAt: number;
+    abTest?: {
+      testId: string;
+      variantId: string;
+    };
+  };
+  workspaceId: string;
+  projectId: string;
+  campaignId: string;
+  landingPageId: string;
+  segmentId: string | null;
+  gdprSettings: {
+    isEnabled: boolean;
+    isRequiredConsent: boolean;
+    isEU: boolean;
+    isCalifornian: boolean;
+    isIncludedCountry: boolean;
+    isRespectDNTEnabled: boolean;
+    isLocalizationEnabled: boolean;
+    language: string;
+    countryCode: string;
+    privacyPolicyUrl: string;
+    termsOfServiceUrl: string;
+  };
+  campaignEnvironment: "preview" | "production";
+  apiBaseUrl: string;
+  botDetection: {
+    score: number;
+    corporateProxy: boolean;
+    verifiedBot: boolean;
+  };
 }
 
 // Window interface extension for session context
 declare global {
-	interface Window {
-		__FIREBUZZ_SESSION_CONTEXT__?: FirebuzzSessionContext;
-	}
+  interface Window {
+    __FIREBUZZ_SESSION_CONTEXT__?: FirebuzzSessionContext;
+  }
 }
 
 // API Response Types (matching the endpoint schemas)
@@ -91,7 +102,7 @@ class FormApiClient {
 
   private getApiUrl(): string {
     const sessionContext = this.getSessionContext();
-    return sessionContext?.apiBaseUrl || campaignConfiguration.apiUrl;
+    return sessionContext?.apiBaseUrl || "https://engine-dev.frbzz.com"; // fallback for dev
   }
 
   private getCampaignEnvironment(): "preview" | "production" {
@@ -108,8 +119,9 @@ class FormApiClient {
   ): Promise<ApiResult<SubmitFormResponse["data"]>> {
     try {
       const apiUrl = this.getApiUrl();
-      const campaignEnvironment = data.campaignEnvironment || this.getCampaignEnvironment();
-      
+      const campaignEnvironment =
+        data.campaignEnvironment || this.getCampaignEnvironment();
+
       // Prepare submission payload with campaign environment
       const submissionPayload = {
         ...data,

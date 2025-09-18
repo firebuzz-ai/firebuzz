@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@firebuzz/analytics':
-    specifier: ^1.4.13
-    version: 1.4.13(react-dom@18.3.1)(react@18.3.1)
+    specifier: ^1.6.1
+    version: 1.6.1(react-dom@18.3.1)(react@18.3.1)
   '@firebuzz/consent-manager':
     specifier: ^0.2.14
     version: 0.2.14(@babel/core@7.28.3)(@types/react@18.3.24)(react@18.3.1)
@@ -628,8 +628,8 @@ packages:
     dev: true
     optional: true
 
-  /@firebuzz/analytics@1.4.13(react-dom@18.3.1)(react@18.3.1):
-    resolution: {integrity: sha512-4YKPLUhzG2YEfaZH+4nzowuv49jc1KlqqYajuflY1ZLMT2weSJzC9BL6/aDKoOX7mq+GWSpXK6N0YwfA0HQP6g==}
+  /@firebuzz/analytics@1.6.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-YryNJmaXlMTlPvhds+ghTlFJ52UKcviZ01V0dNwcjqIPgnEATF8UzAzPiquGHHgX+IsAqkq275aI3J/CRVsHHQ==}
     peerDependencies:
       react: '>=18.0.0'
       react-dom: '>=18.0.0'

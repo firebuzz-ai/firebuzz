@@ -18,6 +18,7 @@ export const eventDataSchema = z.object({
 	workspace_id: z.string(),
 	project_id: z.string(),
 	landing_page_id: z.string(),
+	segment_id: z.string().nullable().optional(),
 	ab_test_id: z.string().nullable().optional(),
 	ab_test_variant_id: z.string().nullable().optional(),
 
@@ -66,6 +67,7 @@ export const trackEventRequestSchema = z.object({
 	page_url: z.string().optional(),
 	referrer_url: z.string().optional(),
 	campaign_environment: z.string().optional(),
+	segment_id: z.string().optional(),
 });
 
 // Session initialization request
@@ -82,6 +84,7 @@ export const initSessionRequestSchema = z.object({
 	environment: z.string().optional(),
 	campaign_environment: z.string().optional(),
 	is_ephemeral: z.boolean().optional(), // GDPR compliance: indicates ephemeral session (no cookies)
+	segment_id: z.string().optional(),
 });
 
 // DO Session State schema
@@ -92,6 +95,7 @@ export const doSessionStateSchema = z.object({
 	workspaceId: z.string(),
 	projectId: z.string(),
 	landingPageId: z.string(),
+	segmentId: z.string().nullable().optional(),
 	abTestId: z.string().nullable().optional(),
 	abTestVariantId: z.string().nullable().optional(),
 

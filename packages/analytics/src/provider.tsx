@@ -242,7 +242,7 @@ export function AnalyticsProvider({
 		return () => {
 			mounted = false;
 		};
-	}, [analyticsState, consentState, debug]);
+	}, [analyticsState, debug]); // Remove consentState from deps to prevent re-initialization
 
 	// Session state updates when analytics state changes
 	useEffect(() => {

@@ -162,8 +162,7 @@ SQL >
     SELECT
         countIf(event_id = 'page-view') AS pageviews,
         countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params) 
-              AND event_value_currency = 'USD') AS conversion_value_usd,
+        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
         countIf(event_id = 'external-link-click') AS external_link_clicks,
         countIf(event_id = 'form-submission') AS form_submissions
     FROM current_events
@@ -176,8 +175,7 @@ SQL >
     SELECT
         countIf(event_id = 'page-view') AS pageviews,
         countIf(event_id = (SELECT conversion_event_id FROM params)) AS conversions,
-        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params) 
-              AND event_value_currency = 'USD') AS conversion_value_usd,
+        sumIf(event_value, event_id = (SELECT conversion_event_id FROM params)) AS conversion_value_usd,
         countIf(event_id = 'external-link-click') AS external_link_clicks,
         countIf(event_id = 'form-submission') AS form_submissions
     FROM previous_events

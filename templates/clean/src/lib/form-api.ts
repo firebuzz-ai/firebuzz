@@ -1,25 +1,36 @@
-import { campaignConfiguration } from "@/configuration/campaign";
 import { z } from "zod";
 
-// Session context interface (matches analytics package)
+// Session context interface (matches the current engine schema)
 export interface FirebuzzSessionContext {
 	abTestId: string | null;
 	abTestVariantId: string | null;
 	userId: string;
-	workspaceId: string;
-	projectId: string;
-	campaignId: string;
-	landingPageId?: string;
 	session: {
 		sessionId: string;
+		expiresAt: number;
+		createdAt: number;
 		abTest?: {
 			testId: string;
 			variantId: string;
 		};
 	};
+	workspaceId: string;
+	projectId: string;
+	campaignId: string;
+	landingPageId: string;
+	segmentId: string | null;
 	gdprSettings: {
-		enabled: boolean;
-		consentRequired: boolean;
+		isEnabled: boolean;
+		isRequiredConsent: boolean;
+		isEU: boolean;
+		isCalifornian: boolean;
+		isIncludedCountry: boolean;
+		isRespectDNTEnabled: boolean;
+		isLocalizationEnabled: boolean;
+		language: string;
+		countryCode: string;
+		privacyPolicyUrl: string;
+		termsOfServiceUrl: string;
 	};
 	campaignEnvironment: "preview" | "production";
 	apiBaseUrl: string;

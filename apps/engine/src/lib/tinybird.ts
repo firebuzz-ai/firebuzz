@@ -22,6 +22,7 @@ const sessionSchema = z.object({
 	workspace_id: z.string(),
 	campaign_id: z.string(),
 	landing_page_id: z.string().nullable().optional(),
+	segment_id: z.string().nullable().optional(),
 	ab_test_id: z.string().nullable().optional(),
 	ab_test_variant_id: z.string().nullable().optional(),
 
@@ -375,6 +376,7 @@ export async function trackSession(params: {
 		workspace_id: params.workspaceId,
 		campaign_id: params.campaignId,
 		landing_page_id: params.landingPageId ?? null,
+		segment_id: null, // Will be passed from caller
 		ab_test_id: params.abTest?.testId ?? null,
 		ab_test_variant_id: params.abTest?.variantId ?? null,
 
@@ -441,6 +443,7 @@ export function formatSessionData(data: {
 	workspaceId: string;
 	campaignId: string;
 	landingPageId?: string | null;
+	segmentId?: string | null;
 	abTestId?: string | null;
 	abTestVariantId?: string | null;
 	utm?: {
@@ -501,6 +504,7 @@ export function formatSessionData(data: {
 		workspace_id: data.workspaceId,
 		campaign_id: data.campaignId,
 		landing_page_id: data.landingPageId ?? null,
+		segment_id: data.segmentId ?? null,
 		ab_test_id: data.abTestId ?? null,
 		ab_test_variant_id: data.abTestVariantId ?? null,
 

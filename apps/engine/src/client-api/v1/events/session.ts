@@ -213,14 +213,21 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			const body = await c.req.json();
 			const {
 				new_session_id,
+				old_session_id,
 				campaign_id,
 				campaign_slug,
 				workspace_id,
 				project_id,
 				landing_page_id,
+				segment_id,                 // NEW: Include segmentId
 				session_timeout_minutes = 30,
 				user_id,
 				original_hostname,
+				preserved_attribution,      // NEW: Client sends attribution
+				current_url_utm,           // NEW: Current page UTM
+				current_referrer,          // NEW: Current referrer
+				ab_test_id,                // NEW: Preserve AB test
+				ab_test_variant_id,
 			} = body;
 
 			// Validate required parameters
@@ -339,16 +346,27 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 			const doId = c.env.EVENT_TRACKER.idFromName(new_session_id);
 			const eventTracker = c.env.EVENT_TRACKER.get(doId);
 
+			// Calculate new session expiration
+			const now = Date.now();
+			const expiresAt = now + (actualSessionDuration * 60 * 1000);
+
 			const sessionData = {
 				session_id: new_session_id,
+				old_session_id,                  // Track previous session
 				campaign_id,
 				workspace_id,
 				project_id,
 				landing_page_id,
+				segment_id,                      // Include segmentId
 				user_id: userId,
-				ab_test_id: oldSession?.abTest?.testId || undefined,
-				ab_test_variant_id: oldSession?.abTest?.variantId || undefined,
+				ab_test_id: ab_test_id || oldSession?.abTest?.testId || undefined,
+				ab_test_variant_id: ab_test_variant_id || oldSession?.abTest?.variantId || undefined,
 				session_timeout_minutes: actualSessionDuration,
+				expires_at: expiresAt,           // Server-calculated expiration
+				created_at: now,                 // Renewal timestamp
+				preserved_attribution,           // Attribution data from client
+				current_url_utm,                 // Current UTM params
+				current_referrer,                // Current referrer
 				environment: environmentContext.environment,
 				campaign_environment: environmentContext.campaignEnvironment,
 			};
@@ -397,8 +415,10 @@ export const sessionRoutes = new Hono<{ Bindings: Env }>()
 							session_duration_minutes: actualSessionDuration,
 							attribution_duration_days: attributionDurationDays,
 							user_id: userId,
-							ab_test_id: oldSession?.abTest?.testId || undefined,
-							ab_test_variant_id: oldSession?.abTest?.variantId || undefined,
+							expires_at: expiresAt,       // NEW: Return expiration
+							ab_test_id: ab_test_id || oldSession?.abTest?.testId || undefined,
+							ab_test_variant_id: ab_test_variant_id || oldSession?.abTest?.variantId || undefined,
+							attribution_preserved: true,  // NEW: Confirm preservation
 						},
 					},
 					200,

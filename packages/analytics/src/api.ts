@@ -37,6 +37,7 @@ let currentSessionData: {
 	userId: string;
 	sessionId: string;
 	campaignId: string;
+	segmentId?: string | null;
 } | null = null;
 let globalSessionManager: SessionManager | null = null;
 
@@ -90,6 +91,7 @@ export function setSessionData(sessionData: {
 	userId: string;
 	sessionId: string;
 	campaignId: string;
+	segmentId?: string | null;
 }) {
 	currentSessionData = sessionData;
 	if (globalConfig?.debug) {
@@ -103,7 +105,11 @@ export function setSessionData(sessionData: {
 export function getSessionData() {
 	// First try session manager (preferred)
 	if (globalSessionManager) {
-		return globalSessionManager.getCurrentSession();
+		const sessionData = globalSessionManager.getCurrentSession();
+		// If session manager returns null (no cookies allowed), fall back to legacy session data
+		if (sessionData) {
+			return sessionData;
+		}
 	}
 
 	// Fallback to legacy session data
@@ -249,6 +255,7 @@ async function trackSession(
 			workspace_id: sessionContext.workspaceId,
 			campaign_id: sessionContext.campaignId,
 			landing_page_id: sessionContext.landingPageId,
+			segment_id: sessionContext.segmentId || null, // FIXED: Added missing segmentId
 			// AB test data from session context
 			ab_test_id: sessionContext.abTestId || null,
 			ab_test_variant_id: sessionContext.abTestVariantId || null,
@@ -377,25 +384,27 @@ async function initializeSession(
 	sessionId?: string,
 ): Promise<SessionInitResponse> {
 	const config = getConfig();
-	const session_id = sessionId || generateUniqueId();
 
-	// Get session data from provider (no cookie reading)
-	const sessionData = getSessionData();
-	// NEVER generate user ID here - should always come from session context
-	const userId = sessionData?.userId;
-
-	if (!sessionData || !userId) {
-		log(
-			"Error: No session data or user ID available - cannot initialize session",
-		);
-		return { success: false, error: "Missing session context data" };
-	}
-
-	// Get session context data (primary source of truth)
+	// Get session context to check for existing session ID
 	const sessionContext: FirebuzzSessionContext | null =
 		typeof window !== "undefined"
 			? window.__FIREBUZZ_SESSION_CONTEXT__ || null
 			: null;
+
+	// Prioritize: provided sessionId > session context sessionId > generate new
+	const session_id = sessionId || sessionContext?.session?.sessionId || generateUniqueId();
+
+	// User ID MUST come from session context
+	const userId = sessionContext?.userId;
+
+	if (!userId) {
+		log(
+			"Error: No user ID available from session context - cannot initialize session",
+		);
+		return { success: false, error: "Missing session context data" };
+	}
+
+	// sessionContext already declared above for session ID lookup
 
 	const currentHostname =
 		typeof window !== "undefined" ? window.location.hostname : "";
@@ -413,6 +422,7 @@ async function initializeSession(
 		workspace_id: sessionContext.workspaceId,
 		project_id: sessionContext.projectId,
 		landing_page_id: sessionContext.landingPageId,
+		segment_id: sessionContext.segmentId || undefined,
 		user_id: sessionContext.userId,
 		// Include AB test data from session context
 		ab_test_id: sessionContext.abTestId || undefined,
@@ -472,11 +482,15 @@ async function initializeSession(
 					: null;
 
 			// Let SessionManager handle cookie setting based on consent state
+			const sessionDurationMinutes = result.data?.session_duration_minutes || config.sessionTimeoutMinutes || 30;
 			const sessionData = {
-				userId: result.data.user_id || userId || generateUniqueId(),
+				userId: result.data.user_id || userId,
 				sessionId: result.data.session_id,
+				expiresAt: Date.now() + (sessionDurationMinutes * 60 * 1000),
+				createdAt: Date.now(),
 				campaignId: config.campaignId,
 				landingPageId: config.landingPageId,
+				segmentId: sessionContext?.segmentId || null,
 				// Use server response first, fall back to session context
 				abTestId: result.data.ab_test_id || sessionContext?.abTestId || null,
 				abTestVariantId:
@@ -504,6 +518,87 @@ async function initializeSession(
 
 // Track in-flight renewal to prevent duplicates
 let pendingRenewal: Promise<SessionRenewalResponse> | null = null;
+
+/**
+ * Extract current UTM parameters from URL
+ */
+function extractCurrentUTM() {
+	if (typeof window === "undefined") return {};
+
+	const urlParams = new URLSearchParams(window.location.search);
+	return {
+		utm_source: urlParams.get("utm_source") || undefined,
+		utm_medium: urlParams.get("utm_medium") || undefined,
+		utm_campaign: urlParams.get("utm_campaign") || undefined,
+		utm_term: urlParams.get("utm_term") || undefined,
+		utm_content: urlParams.get("utm_content") || undefined,
+		ref: urlParams.get("ref") || undefined,
+		source: urlParams.get("source") || undefined,
+	};
+}
+
+/**
+ * Renew session with attribution preservation
+ */
+async function renewSessionWithPreservation(oldSessionId: string): Promise<{
+	success: boolean;
+	sessionData?: any;
+}> {
+	const config = getConfig();
+	const sessionContext = window.__FIREBUZZ_SESSION_CONTEXT__;
+	if (!sessionContext) return { success: false };
+
+	// Prepare renewal payload with preserved attribution data only
+	const renewalPayload = {
+		old_session_id: oldSessionId,
+		user_id: sessionContext.userId,  // Always from context
+		campaign_id: sessionContext.campaignId,
+		workspace_id: sessionContext.workspaceId,
+		project_id: sessionContext.projectId,
+		landing_page_id: sessionContext.landingPageId,
+		segment_id: sessionContext.segmentId,  // FIXED: Include segmentId
+
+		// Send preserved attribution data (only what server can't detect)
+		preserved_attribution: globalSessionManager?.getAttributionData(),
+		current_url_utm: extractCurrentUTM(),
+		current_referrer: document.referrer,
+
+		// Include AB test data for preservation
+		ab_test_id: sessionContext.abTestId,
+		ab_test_variant_id: sessionContext.abTestVariantId,
+	};
+
+	const response = await fetch(`${config.apiUrl}/client-api/v1/events/session/renew`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify(renewalPayload),
+		credentials: globalSessionManager?.shouldSetCookies() ? "include" : "omit",
+	});
+
+	const result = await response.json();
+
+	if (result.success) {
+		// Server provides new session ID and expiration
+		const renewedSession = {
+			userId: sessionContext.userId,              // Always from context
+			sessionId: result.data.session_id,          // Server-generated
+			expiresAt: result.data.expires_at,          // Server-provided
+			createdAt: Date.now(),                      // Renewal timestamp
+			campaignId: sessionContext.campaignId,
+			landingPageId: sessionContext.landingPageId,
+			segmentId: sessionContext.segmentId,
+			abTestId: result.data.ab_test_id,
+			abTestVariantId: result.data.ab_test_variant_id,
+		};
+
+		// Update session storage with renewal
+		globalSessionManager?.updateAfterRenewal(renewedSession);
+
+		return { success: true, sessionData: renewedSession };
+	}
+
+	return { success: false };
+}
 
 /**
  * Renew an expired session
@@ -623,10 +718,13 @@ async function performSessionRenewal(
 
 			// Create session data for SessionManager
 			const sessionData = {
-				userId: result.data.user_id || userId || generateUniqueId(),
+				userId: result.data.user_id || userId || "",
 				sessionId: result.data.session_id,
+				expiresAt: Date.now() + (30 * 60 * 1000), // Default 30 min expiration
+				createdAt: Date.now(),
 				campaignId: config.campaignId,
 				landingPageId: config.landingPageId,
+				segmentId: currentSession?.segmentId || null,
 				// Preserve existing AB test assignments or use server response
 				abTestId: result.data.ab_test_id || currentSession?.abTestId || null,
 				abTestVariantId:
@@ -831,75 +929,58 @@ export async function initializeAnalytics(): Promise<boolean> {
 }
 
 async function performInitialization(): Promise<boolean> {
-	try {
-		if (!globalSessionManager) {
-			console.error("Session manager not initialized");
-			return false;
+	if (!globalSessionManager) return false;
+
+	// 1. Load any persisted attribution data
+	globalSessionManager.loadPersistedAttribution();
+
+	// 2. Get current session from context (authoritative)
+	const sessionData = globalSessionManager.getSessionFromContext();
+	if (!sessionData) return false;
+
+	// 3. Check if session is expired (local check)
+	if (globalSessionManager.isSessionExpired(sessionData)) {
+		// Session expired - trigger renewal
+		const renewResult = await renewSessionWithPreservation(sessionData.sessionId);
+		if (!renewResult.success) return false;
+
+		// Update currentSessionData with renewed session
+		currentSessionData = renewResult.sessionData;
+
+		// Track renewed session (always track renewals)
+		if (currentSessionData) {
+			await trackSession(currentSessionData.sessionId, currentSessionData.userId, true);
+			globalSessionManager.markSessionAsTracked(currentSessionData.sessionId);
 		}
+	} else {
+		// Session valid - use as-is
+		currentSessionData = {
+			userId: sessionData.userId,
+			sessionId: sessionData.sessionId,
+			campaignId: sessionData.campaignId,
+			segmentId: sessionData.segmentId,
+		};
 
-		// Check for existing session first
-		let sessionData = globalSessionManager.getCurrentSession();
+		// Initialize attribution if first time
+		globalSessionManager.initializeAttribution(sessionData);
 
-		if (!sessionData) {
-			// Initialize new session using userId from session context (if available)
-			const existingUserId = currentSessionData?.userId;
-			const result =
-				await globalSessionManager.initializeSession(existingUserId);
-			if (result.success) {
-				sessionData = result.sessionData;
-				// Update legacy session data for compatibility
-				currentSessionData = {
-					userId: sessionData.userId,
-					sessionId: sessionData.sessionId,
-					campaignId: sessionData.campaignId,
-				};
-
-				// Track new session creation to analytics
-				await trackSession(sessionData.sessionId, sessionData.userId, false);
-			} else {
+		// Only track if this session hasn't been tracked before
+		if (!globalSessionManager.hasSessionBeenTracked(sessionData.sessionId)) {
+			// Initialize EventTracker Durable Object for event processing
+			const initResult = await globalSessionManager.initializeSession();
+			if (!initResult.success) {
+				log("❌ Failed to initialize EventTracker DO for session");
 				return false;
 			}
+
+			// Track session to Tinybird analytics
+			await trackSession(currentSessionData.sessionId, currentSessionData.userId, false);
+			globalSessionManager.markSessionAsTracked(sessionData.sessionId);
+			log("✅ Session tracked to Tinybird");
 		} else {
-			// Validate existing session
-			const isValid = await globalSessionManager.validateSession(
-				sessionData.sessionId,
-			);
-			if (!isValid) {
-				// Renew expired session
-				const newSessionId = generateUniqueId();
-				const renewResult = await renewSession(
-					sessionData.sessionId,
-					newSessionId,
-				);
-				if (renewResult.success && renewResult.data?.session_id) {
-					// Update session data with renewed session
-					sessionData = {
-						userId: sessionData.userId,
-						sessionId: renewResult.data.session_id,
-						campaignId: sessionData.campaignId,
-						landingPageId: sessionData.landingPageId,
-						abTestId: sessionData.abTestId,
-						abTestVariantId: sessionData.abTestVariantId,
-					};
-					// Update legacy session data for compatibility
-					currentSessionData = {
-						userId: sessionData.userId,
-						sessionId: sessionData.sessionId,
-						campaignId: sessionData.campaignId,
-					};
-
-					// Track session renewal to analytics
-					await trackSession(sessionData.sessionId, sessionData.userId, true);
-				} else {
-					return false;
-				}
-			}
+			log("♻️ Session already tracked, skipping duplicate tracking");
 		}
-
-		log("Analytics initialized successfully with session:", sessionData);
-		return true;
-	} catch (error) {
-		log("Analytics initialization failed:", error);
-		return false;
 	}
+
+	return true;
 }

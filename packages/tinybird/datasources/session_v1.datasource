@@ -11,8 +11,9 @@ FORWARD_QUERY >
         user_id, 
         project_id, 
         workspace_id, 
-        campaign_id, 
-        landing_page_id, 
+        campaign_id,
+        landing_page_id,
+        defaultValueOfTypeName('Nullable(String)') AS segment_id,
         ab_test_id, 
         ab_test_variant_id, 
         utm_source, 
@@ -57,7 +58,8 @@ SCHEMA >
     `workspace_id` String `json:$.workspace_id`,
     `campaign_id` String `json:$.campaign_id`,
     `landing_page_id` Nullable(String) `json:$.landing_page_id`,
-    
+    `segment_id` Nullable(String) `json:$.segment_id`,
+
     # AB Test data
     `ab_test_id` Nullable(String) `json:$.ab_test_id`,
     `ab_test_variant_id` Nullable(String) `json:$.ab_test_variant_id`,

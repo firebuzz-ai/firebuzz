@@ -12,7 +12,7 @@
     "ins": "pnpm dlx pnpm@8 --ignore-workspace install"
   },
   "dependencies": {
-    "@firebuzz/analytics": "^1.4.13",
+    "@firebuzz/analytics": "^1.6.1",
     "@firebuzz/consent-manager": "^0.2.14",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.2",

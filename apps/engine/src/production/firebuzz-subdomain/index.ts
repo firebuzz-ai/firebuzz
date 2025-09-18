@@ -113,39 +113,43 @@ app.get("/:campaignSlug", async (c) => {
 		return c.redirect("/utility/landing-not-found");
 	}
 
-	// Store session context for analytics package (only for new sessions)
+	// Always inject session context for analytics reliability
 	let finalHtml = html;
-	if (!isExistingSession) {
-		const sessionContext = {
-			abTestId: abTestId,
-			abTestVariantId: abTestVariantId,
-			workspaceId: config.workspaceId,
-			projectId: config.projectId,
-			campaignId: config.campaignId,
-			landingPageId,
-			userId,
-			session,
-			gdprSettings,
-			campaignEnvironment: "production",
-			// Base API URL based on worker environment
-			apiBaseUrl:
-				c.env.ENVIRONMENT === "production"
-					? "https://engine.frbzz.com"
-					: c.env.ENVIRONMENT === "preview"
-						? "https://engine-preview.frbzz.com"
-						: "https://engine-dev.frbzz.com",
-			// Bot detection data from initial page load
-			botDetection: {
-				score: requestData.bot?.score || 0,
-				corporateProxy: requestData.bot?.corporateProxy || false,
-				verifiedBot: requestData.bot?.verifiedBot || false,
-			},
-		};
+	const sessionContext = {
+		abTestId: abTestId,
+		abTestVariantId: abTestVariantId,
+		workspaceId: config.workspaceId,
+		projectId: config.projectId,
+		campaignId: config.campaignId,
+		landingPageId,
+		segmentId: evaluation.segmentId || null,
+		userId,
+		session: {
+			sessionId: session.sessionId,  // Uses existing session ID if available
+			expiresAt: session.sessionEndsAt,
+			createdAt: session.createdAt,
+			abTest: session.abTest,
+		},
+		gdprSettings,
+		campaignEnvironment: "production",
+		// Base API URL based on worker environment
+		apiBaseUrl:
+			c.env.ENVIRONMENT === "production"
+				? "https://engine.frbzz.com"
+				: c.env.ENVIRONMENT === "preview"
+					? "https://engine-preview.frbzz.com"
+					: "https://engine-dev.frbzz.com",
+		// Bot detection data from initial page load
+		botDetection: {
+			score: requestData.bot?.score || 0,
+			corporateProxy: requestData.bot?.corporateProxy || false,
+			verifiedBot: requestData.bot?.verifiedBot || false,
+		},
+	};
 
-		// Inject session context into HTML for client-side access
-		const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
-		finalHtml = html.replace("</head>", `${contextScript}</head>`);
-	}
+	// Always inject session context into HTML for client-side access
+	const contextScript = `<script>window.__FIREBUZZ_SESSION_CONTEXT__ = ${JSON.stringify(sessionContext)};</script>`;
+	finalHtml = html.replace("</head>", `${contextScript}</head>`);
 
 	// Queue traffic data for observability (non-blocking)
 	c.executionCtx.waitUntil(

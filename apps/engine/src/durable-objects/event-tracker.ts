@@ -49,6 +49,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				project_id TEXT NOT NULL,
 				attribution_id TEXT NULL,
 				landing_page_id TEXT NOT NULL,
+				segment_id TEXT NULL,
 				ab_test_id TEXT NULL,
 				ab_test_variant_id TEXT NULL,
 
@@ -58,10 +59,17 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				session_timeout INTEGER NOT NULL,
 				created_at INTEGER NOT NULL,
 				is_expired INTEGER NOT NULL DEFAULT 0,
+				expires_at INTEGER NOT NULL DEFAULT 0,  -- NEW: Store expiration timestamp
 
 				-- Environment
 				environment TEXT NOT NULL,
 				campaign_environment TEXT NOT NULL,
+
+				-- Attribution data (NEW)
+				attribution_data TEXT NULL, -- JSON string with full attribution
+				renewal_count INTEGER NOT NULL DEFAULT 0,
+				original_session_id TEXT NULL,
+				last_renewal_at INTEGER NULL,
 
 				CONSTRAINT single_row CHECK (id = 1)
 			);
@@ -102,6 +110,42 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			}
 		}
 
+		// Add migration for existing databases that don't have segment_id column
+		try {
+			this.sql.exec(
+				"ALTER TABLE session_state ADD COLUMN segment_id TEXT NULL",
+			);
+		} catch (error) {
+			// Column already exists, ignore error
+			const errorMessage =
+				error instanceof Error ? error.message : String(error);
+			if (!errorMessage.includes("duplicate column name")) {
+				console.warn("Migration warning:", error);
+			}
+		}
+
+		// Add migrations for new attribution columns
+		const migrations = [
+			"ALTER TABLE session_state ADD COLUMN expires_at INTEGER NOT NULL DEFAULT 0",
+			"ALTER TABLE session_state ADD COLUMN attribution_data TEXT NULL",
+			"ALTER TABLE session_state ADD COLUMN renewal_count INTEGER NOT NULL DEFAULT 0",
+			"ALTER TABLE session_state ADD COLUMN original_session_id TEXT NULL",
+			"ALTER TABLE session_state ADD COLUMN last_renewal_at INTEGER NULL",
+		];
+
+		for (const migration of migrations) {
+			try {
+				this.sql.exec(migration);
+			} catch (error) {
+				// Column already exists, ignore error
+				const errorMessage =
+					error instanceof Error ? error.message : String(error);
+				if (!errorMessage.includes("duplicate column name")) {
+					console.warn("Migration warning:", error);
+				}
+			}
+		}
+
 		// Load existing session state if it exists
 		await this.loadSessionFromStorage();
 	}
@@ -123,6 +167,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				workspaceId: sessionRow.workspace_id as string,
 				projectId: sessionRow.project_id as string,
 				landingPageId: sessionRow.landing_page_id as string,
+				segmentId: (sessionRow.segment_id as string | null) || null,
 				abTestId: sessionRow.ab_test_id as string,
 				abTestVariantId: sessionRow.ab_test_variant_id as string,
 				eventBuffer: await this.loadEventBuffer(),
@@ -163,10 +208,10 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			this.sql.exec(
 				`INSERT INTO session_state (
 					id, session_id, user_id, campaign_id, workspace_id, project_id,
-					landing_page_id, ab_test_id, ab_test_variant_id,
+					landing_page_id, segment_id, ab_test_id, ab_test_variant_id,
 					event_sequence, last_activity, session_timeout, created_at,
 					is_expired, environment, campaign_environment
-				) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				ON CONFLICT(id) DO UPDATE SET
 					session_id = excluded.session_id,
 					user_id = excluded.user_id,
@@ -174,6 +219,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 					workspace_id = excluded.workspace_id,
 					project_id = excluded.project_id,
 					landing_page_id = excluded.landing_page_id,
+					segment_id = excluded.segment_id,
 					ab_test_id = excluded.ab_test_id,
 					ab_test_variant_id = excluded.ab_test_variant_id,
 					event_sequence = excluded.event_sequence,
@@ -189,6 +235,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				session.workspaceId,
 				session.projectId,
 				session.landingPageId,
+				session.segmentId,
 				session.abTestId,
 				session.abTestVariantId,
 				session.eventSequence,
@@ -221,6 +268,14 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			const sessionId = sessionData.session_id; // Use provided session ID
 			const now = Date.now();
 
+			console.log("🔍 [EventTracker] Session init debug:", {
+				sessionId,
+				received_segment_id: sessionData.segment_id,
+				final_segmentId: sessionData.segment_id || null,
+				user_id: sessionData.user_id,
+				campaign_id: sessionData.campaign_id,
+			});
+
 			// Create new session state
 			this.currentSession = {
 				sessionId,
@@ -229,6 +284,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				workspaceId: sessionData.workspace_id,
 				projectId: sessionData.project_id,
 				landingPageId: sessionData.landing_page_id,
+				segmentId: sessionData.segment_id || null,
 				abTestId: sessionData.ab_test_id,
 				abTestVariantId: sessionData.ab_test_variant_id,
 				eventBuffer: [],
@@ -302,6 +358,12 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 			// Create complete event data
 			const internalId = generateUniqueId(); // Internal unique ID for tracking
 
+			console.log("🔍 [EventTracker] Creating event data:", {
+				event_id: eventRequest.event_id,
+				session_segmentId: this.currentSession.segmentId,
+				session_id: this.currentSession.sessionId,
+			});
+
 			const eventData: EventData = {
 				timestamp: new Date().toISOString(),
 				id: internalId,
@@ -319,6 +381,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				workspace_id: this.currentSession.workspaceId,
 				project_id: this.currentSession.projectId,
 				landing_page_id: this.currentSession.landingPageId,
+				segment_id: this.currentSession.segmentId,
 				ab_test_id: this.currentSession.abTestId,
 				ab_test_variant_id: this.currentSession.abTestVariantId,
 
@@ -554,6 +617,7 @@ export class EventTrackerDurableObject extends DurableObject<Env> {
 				workspaceId: this.currentSession.workspaceId,
 				campaignId: this.currentSession.campaignId,
 				landingPageId: this.currentSession.landingPageId,
+				segmentId: this.currentSession.segmentId,
 				abTestId: this.currentSession.abTestId,
 				abTestVariantId: this.currentSession.abTestVariantId,
 				// Use stored context for rich data

@@ -21,14 +21,51 @@ export interface TrackEventParams {
 	referrer_url?: string;
 }
 
-// Session data interface (from session context)
+// Session data interface with expiration (enhanced)
 export interface SessionData {
 	userId: string;
 	sessionId: string;
+	expiresAt: number;        // From context.session.expiresAt
+	createdAt: number;        // From context.session.createdAt
 	campaignId: string;
 	landingPageId?: string;
+	segmentId?: string | null;
 	abTestId?: string | null;
 	abTestVariantId?: string | null;
+}
+
+// Focused attribution data (only what server can't detect fresh)
+export interface AttributionData {
+	original: {
+		timestamp: number;
+		utm_source?: string;
+		utm_medium?: string;
+		utm_campaign?: string;
+		utm_term?: string;
+		utm_content?: string;
+		ref?: string;              // Additional attribution field
+		source?: string;           // Source attribution
+		referrer?: string;
+		landingPage: string;
+	};
+	current: {
+		utm_source?: string;
+		utm_medium?: string;
+		utm_campaign?: string;
+		utm_term?: string;
+		utm_content?: string;
+		ref?: string;              // Current ref
+		source?: string;           // Current source
+	};
+}
+
+// Focused session storage (only attribution that needs preservation)
+export interface SessionStorage {
+	attribution: AttributionData;        // Only store attribution data
+	abTest?: { testId: string; variantId: string; };
+	renewalCount: number;
+	originalSessionId: string;
+	originalTimestamp: number;
 }
 
 // Session context interface for window global (matches engine injection)
@@ -40,17 +77,28 @@ export interface FirebuzzSessionContext {
 	projectId: string;
 	campaignId: string;
 	landingPageId?: string;
+	segmentId?: string | null;
 	session: {
 		sessionId: string;
+		expiresAt: number;    // NEW: Add server-provided expiration
+		createdAt: number;    // NEW: Add creation timestamp
 		abTest?: {
 			testId: string;
 			variantId: string;
 		};
 	};
 	gdprSettings: {
-		enabled: boolean;
-		consentRequired: boolean;
-		// Add other GDPR settings as needed
+		isEnabled: boolean;
+		isRequiredConsent: boolean;
+		isEU: boolean;
+		isCalifornian: boolean;
+		isIncludedCountry: boolean;
+		isRespectDNTEnabled: boolean;
+		isLocalizationEnabled: boolean;
+		language: string;
+		countryCode: string;
+		privacyPolicyUrl?: string;
+		termsOfServiceUrl?: string;
 	};
 	campaignEnvironment: "preview" | "production";
 	// Base API URL based on worker environment
