@@ -926,10 +926,11 @@ export const ABTestPanel = ({
 															{node.data.status === "completed" &&
 																node.data.winner === variant.id && (
 																	<Badge
-																		variant="emerald"
-																		className="text-xs"
+																		variant="outline"
+																		className="gap-1 text-xs text-brand"
 																		onClick={(e) => e.stopPropagation()}
 																	>
+																		<Crown className="size-3" />
 																		Winner
 																	</Badge>
 																)}
