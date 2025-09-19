@@ -125,7 +125,7 @@ app.get("/:campaignSlug", async (c) => {
 		segmentId: evaluation.segmentId || null,
 		userId,
 		session: {
-			sessionId: session.sessionId,  // Uses existing session ID if available
+			sessionId: session.sessionId, // Uses existing session ID if available
 			expiresAt: session.sessionEndsAt,
 			createdAt: session.createdAt,
 			abTest: session.abTest,

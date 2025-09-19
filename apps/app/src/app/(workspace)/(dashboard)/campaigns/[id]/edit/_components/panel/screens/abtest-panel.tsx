@@ -1,7 +1,7 @@
 "use client";
 
-import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
 import { ConfidenceLevelSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/confidence-level-slider";
+import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
 import type {
 	ABTestNode,
 	VariantNode,

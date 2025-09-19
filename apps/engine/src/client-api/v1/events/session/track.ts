@@ -11,7 +11,7 @@ interface SessionTrackingData {
 	workspace_id: string;
 	campaign_id: string;
 	landing_page_id: string;
-	segment_id?: string | null;  // ADDED: Missing segmentId field
+	segment_id?: string | null; // ADDED: Missing segmentId field
 	utm_source?: string | null;
 	utm_medium?: string | null;
 	utm_campaign?: string | null;
@@ -83,7 +83,7 @@ export async function trackSession(c: Context) {
 			workspaceId: data.workspace_id,
 			campaignId: data.campaign_id,
 			landingPageId: data.landing_page_id,
-			segmentId: data.segment_id,  // ADDED: Include segmentId
+			segmentId: data.segment_id, // ADDED: Include segmentId
 			abTestId: data.ab_test_id,
 			abTestVariantId: data.ab_test_variant_id,
 			utm: {

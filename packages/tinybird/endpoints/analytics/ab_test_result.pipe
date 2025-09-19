@@ -251,6 +251,31 @@ SQL >
             1, 0
         ) AS is_statistically_significant,
 
+        -- Win probability using cumulative distribution function
+        coalesce(
+            if(
+                exp.ab_test_variant_id = (SELECT control_variant_id FROM control_variant),
+                0.5, -- Control variant has 50% probability by definition
+                0.5 + 0.5 * erf(
+                    (
+                        (if(exp.exposures = 0, 0.0, coalesce(conv.conversions, 0) / exp.exposures) - cm.control_cvr)
+                        /
+                        nullIf(
+                            sqrt(
+                                2 * (
+                                    coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0)
+                                    * (1 - coalesce((coalesce(conv.conversions, 0) + cm.control_conversions) / nullIf(toFloat64(exp.exposures + cm.control_exposures), 0), 0.0))
+                                    * (
+                                        coalesce(1.0 / nullIf(toFloat64(exp.exposures), 0), 0.0)
+                                        + coalesce(1.0 / nullIf(toFloat64(cm.control_exposures), 0), 0.0)
+                                    )
+                                )
+                            ), 0.0)
+                    )
+                )
+            ), 0.5
+        ) AS win_probability,
+
         -- Recommended sample size per variant for 80% power, target 10% relative lift
         toUInt64(
             ceil(

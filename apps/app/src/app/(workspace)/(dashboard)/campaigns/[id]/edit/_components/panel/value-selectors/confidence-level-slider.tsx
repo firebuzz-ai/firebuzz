@@ -37,15 +37,21 @@ export const ConfidenceLevelSlider = ({
 	disabled = false,
 	className,
 }: ConfidenceLevelSliderProps) => {
-	const currentLevel = confidenceLevels.find((level) => level.value === value) || confidenceLevels[1];
+	const currentLevel =
+		confidenceLevels.find((level) => level.value === value) ||
+		confidenceLevels[1];
 
 	// Map confidence levels to slider positions (0, 1, 2)
 	const getSliderPosition = (confidenceValue: 90 | 95 | 99) => {
 		switch (confidenceValue) {
-			case 90: return 0;
-			case 95: return 1;
-			case 99: return 2;
-			default: return 1;
+			case 90:
+				return 0;
+			case 95:
+				return 1;
+			case 99:
+				return 2;
+			default:
+				return 1;
 		}
 	};
 
@@ -78,9 +84,12 @@ export const ConfidenceLevelSlider = ({
 					<div className="w-full h-2 rounded-full bg-muted">
 						{/* Fill based on current position */}
 						<div
-							className={cn("h-full rounded-full transition-all duration-200", currentLevel.color)}
+							className={cn(
+								"h-full rounded-full transition-all duration-200",
+								currentLevel.color,
+							)}
 							style={{
-								width: `${(getSliderPosition(value) / 2) * 100}%`
+								width: `${(getSliderPosition(value) / 2) * 100}%`,
 							}}
 						/>
 					</div>
@@ -92,7 +101,9 @@ export const ConfidenceLevelSlider = ({
 						max={2}
 						step={1}
 						value={getSliderPosition(value)}
-						onChange={(e) => handleSliderChange([Number.parseInt(e.target.value)])}
+						onChange={(e) =>
+							handleSliderChange([Number.parseInt(e.target.value)])
+						}
 						disabled={disabled}
 						className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer disabled:cursor-not-allowed"
 					/>
@@ -102,10 +113,10 @@ export const ConfidenceLevelSlider = ({
 						className={cn(
 							"absolute top-1/2 w-5 h-5 rounded-full border-2 border-background shadow-md transition-all duration-200 transform -translate-y-1/2 -translate-x-1/2 pointer-events-none",
 							currentLevel.color,
-							disabled && "opacity-50"
+							disabled && "opacity-50",
 						)}
 						style={{
-							left: `${(getSliderPosition(value) / 2) * 100}%`
+							left: `${(getSliderPosition(value) / 2) * 100}%`,
 						}}
 					/>
 				</div>
@@ -133,11 +144,16 @@ export const ConfidenceLevelSlider = ({
 			{/* Description */}
 			<div className="p-3 rounded-lg bg-muted">
 				<p className="text-xs text-muted-foreground leading-relaxed">
-					<span className={cn("font-medium", currentLevel.color.replace("bg-", "text-"))}>
-						{currentLevel.description.split(' - ')[0]}
+					<span
+						className={cn(
+							"font-medium",
+							currentLevel.color.replace("bg-", "text-"),
+						)}
+					>
+						{currentLevel.description.split(" - ")[0]}
 					</span>
-					{currentLevel.description.split(' - ')[1] && ' - '}
-					{currentLevel.description.split(' - ')[1]}
+					{currentLevel.description.split(" - ")[1] && " - "}
+					{currentLevel.description.split(" - ")[1]}
 				</p>
 			</div>
 		</div>

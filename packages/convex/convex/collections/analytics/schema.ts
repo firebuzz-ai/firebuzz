@@ -224,6 +224,7 @@ export const abTestResultSchema = v.object({
 			z_statistic: v.number(),
 			p_value: v.number(),
 			is_statistically_significant: v.number(), // 0 or 1
+			win_probability: v.number(),
 			recommended_sample_size_per_variant: v.number(),
 		}),
 	),

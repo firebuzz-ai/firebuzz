@@ -25,8 +25,8 @@ export interface TrackEventParams {
 export interface SessionData {
 	userId: string;
 	sessionId: string;
-	expiresAt: number;        // From context.session.expiresAt
-	createdAt: number;        // From context.session.createdAt
+	expiresAt: number; // From context.session.expiresAt
+	createdAt: number; // From context.session.createdAt
 	campaignId: string;
 	landingPageId?: string;
 	segmentId?: string | null;
@@ -43,8 +43,8 @@ export interface AttributionData {
 		utm_campaign?: string;
 		utm_term?: string;
 		utm_content?: string;
-		ref?: string;              // Additional attribution field
-		source?: string;           // Source attribution
+		ref?: string; // Additional attribution field
+		source?: string; // Source attribution
 		referrer?: string;
 		landingPage: string;
 	};
@@ -54,15 +54,15 @@ export interface AttributionData {
 		utm_campaign?: string;
 		utm_term?: string;
 		utm_content?: string;
-		ref?: string;              // Current ref
-		source?: string;           // Current source
+		ref?: string; // Current ref
+		source?: string; // Current source
 	};
 }
 
 // Focused session storage (only attribution that needs preservation)
 export interface SessionStorage {
-	attribution: AttributionData;        // Only store attribution data
-	abTest?: { testId: string; variantId: string; };
+	attribution: AttributionData; // Only store attribution data
+	abTest?: { testId: string; variantId: string };
 	renewalCount: number;
 	originalSessionId: string;
 	originalTimestamp: number;
@@ -80,8 +80,8 @@ export interface FirebuzzSessionContext {
 	segmentId?: string | null;
 	session: {
 		sessionId: string;
-		expiresAt: number;    // NEW: Add server-provided expiration
-		createdAt: number;    // NEW: Add creation timestamp
+		expiresAt: number; // NEW: Add server-provided expiration
+		createdAt: number; // NEW: Add creation timestamp
 		abTest?: {
 			testId: string;
 			variantId: string;
