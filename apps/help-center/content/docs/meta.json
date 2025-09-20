@@ -1,20 +1,6 @@
 {
   "title": "Documentation",
-  "pages": [
-    {
-      "title": "Academy",
-      "description": "Short videos to get started with Firebuzz",
-      "icon": "BookOpen"
-    },
-    {
-      "title": "Management",
-      "description": "Essential Firebuzz features explained",
-      "icon": "Settings"
-    },
-    {
-      "title": "Integrations",
-      "description": "Technical guide to integrations",
-      "icon": "Puzzle"
-    }
-  ]
+  "icon": "BookOpen",
+  "pages": ["index", "academy", "management", "integrations"],
+  "defaultOpen": true
 }
