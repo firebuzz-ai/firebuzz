@@ -154,8 +154,8 @@ export const Navbar = () => {
         {/* Container */}
         <div className="flex justify-between items-center px-8 py-2 mx-auto max-w-6xl lg:py-0">
           {/* Logo */}
-          <Link className="flex items-center shrink-0" href="/">
-            <Wordmark className="h-4 text-foreground" />
+          <Link href="/">
+            <Wordmark className="max-w-20 text-foreground" />
           </Link>
 
           {/* Desktop Links */}
@@ -220,7 +220,7 @@ export const Navbar = () => {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 rounded-md transition-colors lg:hidden text-foreground hover:bg-muted"
+            className="flex justify-center items-center p-2 w-9 h-9 rounded-md transition-colors lg:hidden text-foreground hover:bg-muted"
             aria-label="Toggle mobile menu"
           >
             {isMobileMenuOpen ? (
