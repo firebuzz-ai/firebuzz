@@ -1,0 +1,57 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* Configure Geist fonts */
+@layer base {
+  body {
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  code, pre {
+    font-family: var(--font-geist-mono), 'Courier New', monospace;
+  }
+}
+
+:root {
+  /* Fumadocs colors mapped from your UI theme */
+  --color-fd-background: hsl(0 0% 100%); /* --background */
+  --color-fd-foreground: hsl(240 5.9% 10%); /* --foreground */
+  --color-fd-muted: hsl(60 9% 98%); /* --muted */
+  --color-fd-muted-foreground: hsl(240 3.83% 46.08%); /* --muted-foreground */
+  --color-fd-popover: hsl(0 0% 100%); /* --popover */
+  --color-fd-popover-foreground: hsl(240 5.9% 10%); /* --popover-foreground */
+  --color-fd-card: hsl(0 0% 100%); /* --card */
+  --color-fd-card-foreground: hsl(240 5.9% 10%); /* --card-foreground */
+  --color-fd-border: hsl(240 4.8% 95.9%); /* --border */
+  --color-fd-primary: hsl(25 94.6% 56.5%); /* --brand */
+  --color-fd-primary-foreground: hsl(240 5.9% 10%); /* --brand-foreground */
+  --color-fd-secondary: hsl(240 4.8% 95.9%); /* --secondary */
+  --color-fd-secondary-foreground: hsl(
+    240 5.3% 26.1%
+  ); /* --secondary-foreground */
+  --color-fd-accent: hsl(0 0% 98%); /* --accent */
+  --color-fd-accent-foreground: hsl(240 5.9% 10%); /* --accent-foreground */
+  --color-fd-ring: hsl(240 4.8% 95.9%); /* --ring */
+}
+
+.dark {
+  /* Fumadocs dark colors mapped from your UI theme */
+  --color-fd-background: hsl(0 0% 4%); /* --background */
+  --color-fd-foreground: hsl(0 0% 100%); /* --foreground */
+  --color-fd-muted: hsl(30 7% 5%); /* --muted */
+  --color-fd-muted-foreground: hsl(0 0% 68%); /* --muted-foreground */
+  --color-fd-popover: hsl(0 0% 4%); /* --popover */
+  --color-fd-popover-foreground: hsl(0 0% 100%); /* --popover-foreground */
+  --color-fd-card: hsl(30 7% 5%); /* --card */
+  --color-fd-card-foreground: hsl(0 0% 100%); /* --card-foreground */
+  --color-fd-border: hsl(30 9% 9%); /* --border */
+  --color-fd-primary: hsl(25 94.6% 56.5%); /* --brand */
+  --color-fd-primary-foreground: hsl(0 0% 4%); /* --brand-foreground */
+  --color-fd-secondary: hsl(30 7% 5%); /* --secondary */
+  --color-fd-secondary-foreground: hsl(0 0% 68%); /* --secondary-foreground */
+  --color-fd-accent: hsl(30 9% 9%); /* --accent */
+  --color-fd-accent-foreground: hsl(0 0% 100%); /* --accent-foreground */
+  --color-fd-ring: hsl(30 9% 9%); /* --ring */
+}
