@@ -1,6 +1,6 @@
 {
-  "title": "Documentation",
-  "icon": "BookOpen",
-  "pages": ["index", "academy", "management", "integrations"],
-  "defaultOpen": true
+	"title": "Documentation",
+	"icon": "BookOpen",
+	"pages": ["index", "academy", "management", "integrations"],
+	"defaultOpen": true
 }

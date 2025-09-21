@@ -1,3 +1,4 @@
+import { Footer } from "@/components/navigation/footer";
 import { Navbar } from "@/components/navigation/navbar";
 import { AppProviders } from "@/components/providers/app";
 import { Toaster } from "@firebuzz/ui/components/ui/sonner";
@@ -11,33 +12,32 @@ const geistSans = GeistSans;
 const geistMono = GeistMono;
 
 export const metadata: Metadata = {
-  title: "Firebuzz",
-  description:
-    "AI powered automation tool for PPC marketers. Generate assets, iterate, optimize and convert.",
+	title: "Firebuzz",
+	description:
+		"AI powered automation tool for PPC marketers. Generate assets, iterate, optimize and convert.",
 };
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }>) {
-  return (
-    <html className="h-full" lang="en" suppressHydrationWarning>
-      <body
-        className={cn(
-          "w-full h-full flex bg-background antialiased",
-          geistSans.variable,
-          geistMono.variable
-        )}
-      >
-        <AppProviders>
-          <div className="flex flex-col flex-1">
-            <Navbar />
-            {children}
-          </div>
-        </AppProviders>
-        <Toaster />
-      </body>
-    </html>
-  );
+	return (
+		<html className="h-full scroll-smooth" lang="en" suppressHydrationWarning>
+			<body
+				className={cn(
+					"w-full min-h-full bg-background antialiased",
+					geistSans.variable,
+					geistMono.variable,
+				)}
+			>
+				<AppProviders>
+					<Navbar />
+					{children}
+					<Footer />
+				</AppProviders>
+				<Toaster />
+			</body>
+		</html>
+	);
 }

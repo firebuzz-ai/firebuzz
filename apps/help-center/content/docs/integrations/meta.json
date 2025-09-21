@@ -1,6 +1,6 @@
 {
-  "title": "Integrations",
-  "description": "Technical guide to integrations",
-  "icon": "Puzzle",
-  "pages": ["index"]
+	"title": "Integrations",
+	"description": "Technical guide to integrations",
+	"icon": "Puzzle",
+	"pages": ["index"]
 }

@@ -1,33 +1,33 @@
 {
-  "name": "firebuzz",
-  "private": true,
-  "scripts": {
-    "build": "turbo build",
-    "build:app": "pnpm with-env turbo build --filter app",
-    "dev": "pnpm with-env turbo dev",
-    "dev:app": "pnpm with-env turbo dev --filter app",
-    "dev:convex": "pnpm with-env turbo dev --filter @firebuzz/convex",
-    "dev:marketing": "pnpm with-env turbo dev --filter marketing",
-    "dev:help-center": "pnpm with-env turbo dev --filter help-center",
-    "dev:template": "pnpm with-env turbo dev --filter template",
-    "start": "turbo start",
-    "start:app": "pnpm with-env turbo start --filter app",
-    "lint": "turbo lint",
-    "typecheck": "turbo typecheck",
-    "format": "pnpm biome format . --write && pnpm biome check . --write",
-    "clean": "turbo clean && rm -rf .turbo node_modules",
-    "ui": "pnpm --filter @firebuzz/ui ui",
-    "with-env": "dotenv -e .env.local --",
-    "test": "turbo test"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "turbo": "^2.4.1",
-    "typescript": "5.7.3",
-    "dotenv-cli": "^7.3.0"
-  },
-  "packageManager": "pnpm@9.0.0",
-  "engines": {
-    "node": ">=18"
-  }
+	"name": "firebuzz",
+	"private": true,
+	"scripts": {
+		"build": "turbo build",
+		"build:app": "pnpm with-env turbo build --filter app",
+		"dev": "pnpm with-env turbo dev",
+		"dev:app": "pnpm with-env turbo dev --filter app",
+		"dev:convex": "pnpm with-env turbo dev --filter @firebuzz/convex",
+		"dev:marketing": "pnpm with-env turbo dev --filter marketing",
+		"dev:help-center": "pnpm with-env turbo dev --filter help-center",
+		"dev:template": "pnpm with-env turbo dev --filter template",
+		"start": "turbo start",
+		"start:app": "pnpm with-env turbo start --filter app",
+		"lint": "turbo lint",
+		"typecheck": "turbo typecheck",
+		"format": "pnpm biome format . --write && pnpm biome check . --write",
+		"clean": "turbo clean && rm -rf .turbo node_modules",
+		"ui": "pnpm --filter @firebuzz/ui ui",
+		"with-env": "dotenv -e .env.local --",
+		"test": "turbo test"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"turbo": "^2.4.1",
+		"typescript": "5.7.3",
+		"dotenv-cli": "^7.3.0"
+	},
+	"packageManager": "pnpm@9.0.0",
+	"engines": {
+		"node": ">=18"
+	}
 }

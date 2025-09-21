@@ -9,12 +9,12 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
  * Docs Layout: app/docs/layout.tsx
  */
 export function baseOptions(): BaseLayoutProps {
-  return {
-    nav: {
-      title: <Wordmark className="h-4 text-fd-foreground max-w-20" />,
-    },
+	return {
+		nav: {
+			title: <Wordmark className="h-4 text-fd-foreground max-w-20" />,
+		},
 
-    // see https://fumadocs.dev/docs/ui/navigation/links
-    links: [],
-  };
+		// see https://fumadocs.dev/docs/ui/navigation/links
+		links: [],
+	};
 }
