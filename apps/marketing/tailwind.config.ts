@@ -16,6 +16,20 @@ const config: Config = {
 				"2xl": "1148px",
 			},
 		},
+		extend: {
+			...baseConfig.theme?.extend,
+			animation: {
+				...baseConfig.theme?.extend?.animation,
+				marquee: "marquee var(--duration) linear infinite",
+			},
+			keyframes: {
+				...baseConfig.theme?.extend?.keyframes,
+				marquee: {
+					from: { transform: "translateX(0)" },
+					to: { transform: "translateX(calc(-100% - var(--gap)))" }
+				}
+			}
+		}
 	},
 };
 

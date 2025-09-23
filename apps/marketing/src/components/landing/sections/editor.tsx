@@ -2,7 +2,7 @@ import { Badge } from "@firebuzz/ui/components/ui/badge";
 import Image from "next/image";
 import { FeaturedTabsEditor } from "../feature-tabs-editor";
 
-export const AppPreview = () => {
+export const Editor = () => {
   return (
     <div className="py-10 border-b">
       <div className="px-8 mx-auto max-w-6xl">

@@ -1,6 +1,7 @@
-import { AppPreview } from "./sections/app-preview";
+import { Editor } from "./sections/editor";
 import { Flow } from "./sections/flow";
 import { Hero } from "./sections/hero";
+import { Testimonial } from "./sections/testimonial";
 
 export const Homepage = () => {
   return (
@@ -11,8 +12,9 @@ export const Homepage = () => {
         <div className="">
           {/* Content */}
           <Hero />
-          <AppPreview />
+          <Editor />
           <Flow />
+          <Testimonial />
         </div>
       </div>
     </div>

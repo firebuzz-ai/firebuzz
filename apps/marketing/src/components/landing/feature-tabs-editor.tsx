@@ -161,42 +161,58 @@ export const FeaturedTabsEditor = () => {
       case "powerful-agent":
         return (
           <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeTab}-content`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex flex-col gap-6 justify-center p-6"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-xl font-semibold">Let AI do the work</h3>
-                  <p className="text-muted-foreground">
-                    You will be able to create fully customized landing pages
-                    with our AI-Agent that knows your business.
-                  </p>
-                </div>
-                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                  <div>
-                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                    Full Customization
+            <div className="flex relative flex-col justify-center h-full">
+              {/* Subtle Grid Pattern BG */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "30px 30px",
+                }}
+              />
+              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-content`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
+                >
+                  <div className="relative z-10 space-y-1">
+                    <h3 className="text-xl font-semibold">
+                      Let AI do the work
+                    </h3>
+                    <p className="text-muted-foreground">
+                      You will be able to create fully customized landing pages
+                      with our AI-Agent that knows your business.
+                    </p>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                    Knowledgebase
+                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
+                    <div className="border-r border-b lg:border-b-0">
+                      <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                      Full Customization
+                    </div>
+                    <div className="border-b lg:border-r lg:border-b-0">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Knowledgebase
+                    </div>
+                    <div className="border-r">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Search Web
+                    </div>
+                    <div>
+                      <CheckCheck className="size-3 text-brand shrink-0" /> Run
+                      Code
+                    </div>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Search
-                    Web
-                  </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Run
-                    Code
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
               <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
@@ -207,6 +223,12 @@ export const FeaturedTabsEditor = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="relative z-0"
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                    transform: "translateZ(0)"
+                  }}
                 >
                   <Image
                     src="/landing/agent.svg"
@@ -214,6 +236,11 @@ export const FeaturedTabsEditor = () => {
                     alt="Firebuzz"
                     width={530}
                     height={340}
+                    priority
+                    style={{
+                      imageRendering: "crisp-edges",
+                      shapeRendering: "crispEdges"
+                    }}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -223,42 +250,58 @@ export const FeaturedTabsEditor = () => {
       case "themes":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeTab}-content`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex flex-col gap-6 justify-center p-6"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-xl font-semibold">
-                    Your Brand, Your Way
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Choose from our collection of themes and customize them
-                    based on your brand characteristics.
-                  </p>
-                </div>
-                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                  <div>
-                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                    Color Palette
+            <div className="flex relative flex-col justify-center h-full">
+              {/* Subtle Grid Pattern BG */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "30px 30px",
+                }}
+              />
+              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-content`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
+                >
+                  <div className="relative z-10 space-y-1">
+                    <h3 className="text-xl font-semibold">
+                      Your Brand, Your Way
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Choose from our collection of themes and customize them
+                      based on your brand characteristics.
+                    </p>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Fonts
+                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
+                    <div className="border-r border-b lg:border-b-0">
+                      <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                      Color Palette
+                    </div>
+                    <div className="border-b lg:border-r lg:border-b-0">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Fonts
+                    </div>
+                    <div className="border-r">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Light & Dark
+                    </div>
+                    <div>
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Assets
+                    </div>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Light
-                    & Dark
-                  </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Assets
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
               <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
@@ -269,6 +312,12 @@ export const FeaturedTabsEditor = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="relative z-0"
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                    transform: "translateZ(0)"
+                  }}
                 >
                   <Image
                     src="/landing/theme.svg"
@@ -276,6 +325,11 @@ export const FeaturedTabsEditor = () => {
                     alt="Firebuzz"
                     width={530}
                     height={340}
+                    priority
+                    style={{
+                      imageRendering: "crisp-edges",
+                      shapeRendering: "crispEdges"
+                    }}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -285,42 +339,56 @@ export const FeaturedTabsEditor = () => {
       case "images-files":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeTab}-content`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex flex-col gap-6 justify-center p-6"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-xl font-semibold">Images? Handled.</h3>
-                  <p className="text-muted-foreground">
-                    Firebuzz gives you very powerfull asset management system.
-                    Use storage to store images, files and everything else.
-                  </p>
-                </div>
-                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                  <div>
-                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                    AI Generation
+            <div className="flex relative flex-col justify-center h-full">
+              {/* Subtle Grid Pattern BG */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "30px 30px",
+                }}
+              />
+              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-content`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
+                >
+                  <div className="relative z-10 space-y-1">
+                    <h3 className="text-xl font-semibold">Images? Handled.</h3>
+                    <p className="text-muted-foreground">
+                      Firebuzz gives you very powerfull asset management system.
+                      Use storage to store images, files and everything else.
+                    </p>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Stock
-                    Images
+                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
+                    <div className="border-r border-b lg:border-b-0">
+                      <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                      AI Generation
+                    </div>
+                    <div className="border-b lg:border-r lg:border-b-0">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Stock Images
+                    </div>
+                    <div className="border-r">
+                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                      Search File Storage
+                    </div>
+                    <div>
+                      <CheckCheck className="size-3 text-brand shrink-0" /> Auto
+                      Optimize
+                    </div>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Search
-                    File Storage
-                  </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Auto
-                    Optimize
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
               <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
@@ -331,6 +399,12 @@ export const FeaturedTabsEditor = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="relative z-0"
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                    transform: "translateZ(0)"
+                  }}
                 >
                   <Image
                     src="/landing/image-gen.svg"
@@ -338,6 +412,11 @@ export const FeaturedTabsEditor = () => {
                     alt="Firebuzz"
                     width={530}
                     height={340}
+                    priority
+                    style={{
+                      imageRendering: "crisp-edges",
+                      shapeRendering: "crispEdges"
+                    }}
                   />
                 </motion.div>
               </AnimatePresence>
@@ -347,44 +426,58 @@ export const FeaturedTabsEditor = () => {
       case "instant-publish":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={`${activeTab}-content`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3, ease: "easeInOut" }}
-                className="flex flex-col gap-6 justify-center p-6"
-              >
-                <div className="space-y-1">
-                  <h3 className="text-xl font-semibold">
-                    Publish in seconds (10s)
-                  </h3>
-                  <p className="text-muted-foreground">
-                    Our hosting infrastructure is built to be fast and scalable.
-                    Publish your landing page in seconds.
-                  </p>
-                </div>
-                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                  <div>
-                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                    Global CDN
+            <div className="flex relative flex-col justify-center h-full">
+              {/* Subtle Grid Pattern BG */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "30px 30px",
+                }}
+              />
+              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-content`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
+                >
+                  <div className="relative z-10 space-y-1">
+                    <h3 className="text-xl font-semibold">
+                      Publish in seconds (10s)
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Our hosting infrastructure is built to be fast and
+                      scalable. Publish your landing page in seconds.
+                    </p>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> High
-                    Traffic
+                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
+                    <div className="border-r border-b lg:border-b-0">
+                      <CheckCheck className="truncate size-3 text-brand shrink-0" />
+                      Global CDN
+                    </div>
+                    <div className="border-b lg:border-r lg:border-b-0">
+                      <CheckCheck className="size-3 text-brand shrink-0" /> High
+                      Traffic
+                    </div>
+                    <div className="border-r">
+                      <CheckCheck className="size-3 text-brand shrink-0" /> Fast
+                      Load
+                    </div>
+                    <div>
+                      <CheckCheck className="size-3 text-brand shrink-0" /> SSL
+                      Secured
+                    </div>
                   </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> Fast
-                    Load
-                  </div>
-                  <div>
-                    <CheckCheck className="size-3 text-brand shrink-0" /> SSL
-                    Secured
-                  </div>
-                </div>
-              </motion.div>
-            </AnimatePresence>
+                </motion.div>
+              </AnimatePresence>
+            </div>
             <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
               <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
@@ -395,6 +488,12 @@ export const FeaturedTabsEditor = () => {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="relative z-0"
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                    transform: "translateZ(0)"
+                  }}
                 >
                   <Image
                     src="/landing/publish.svg"
@@ -402,6 +501,11 @@ export const FeaturedTabsEditor = () => {
                     alt="Firebuzz"
                     width={530}
                     height={340}
+                    priority
+                    style={{
+                      imageRendering: "crisp-edges",
+                      shapeRendering: "crispEdges"
+                    }}
                   />
                 </motion.div>
               </AnimatePresence>

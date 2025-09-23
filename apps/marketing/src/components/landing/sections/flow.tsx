@@ -24,7 +24,7 @@ export const Flow = () => {
         </div>
 
         {/* Steps */}
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3">
           {/* Step 1 - Make Changes */}
           <div className="overflow-hidden rounded-lg border bg-muted">
             <div className="px-3 pt-4 space-y-2">
@@ -47,6 +47,11 @@ export const Flow = () => {
                 alt="Firebuzz"
                 width={530}
                 height={340}
+                priority
+                style={{
+                  imageRendering: "crisp-edges",
+                  shapeRendering: "crispEdges",
+                }}
               />
             </div>
           </div>
@@ -74,12 +79,17 @@ export const Flow = () => {
                 alt="Firebuzz"
                 width={530}
                 height={340}
+                priority
+                style={{
+                  imageRendering: "crisp-edges",
+                  shapeRendering: "crispEdges",
+                }}
               />
             </div>
           </div>
 
           {/* Step 3 - Publish */}
-          <div className="overflow-hidden rounded-lg border bg-muted">
+          <div className="overflow-hidden col-span-full rounded-lg border bg-muted md:col-span-1">
             <div className="px-3 pt-4 space-y-2">
               <div className="flex gap-3 items-center">
                 <div className="flex justify-center items-center text-sm font-medium tabular-nums rounded-lg border size-8">
@@ -101,6 +111,11 @@ export const Flow = () => {
                 alt="Firebuzz"
                 width={530}
                 height={340}
+                priority
+                style={{
+                  imageRendering: "crisp-edges",
+                  shapeRendering: "crispEdges",
+                }}
               />
             </div>
           </div>
