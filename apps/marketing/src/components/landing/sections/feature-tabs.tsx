@@ -278,7 +278,9 @@ export const FeatureTabs = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2">
             <div className="flex flex-col gap-6 justify-center p-6">
               <div className="space-y-1">
-                <h3 className="text-xl font-semibold">Publish in seconds</h3>
+                <h3 className="text-xl font-semibold">
+                  Publish in seconds (10s)
+                </h3>
                 <p className="text-muted-foreground">
                   Our hosting infrastructure is built to be fast and scalable.
                   Publish your landing page in seconds.
