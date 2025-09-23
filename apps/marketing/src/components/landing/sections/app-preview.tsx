@@ -2,7 +2,7 @@ import { Badge } from "@firebuzz/ui/components/ui/badge";
 import Image from "next/image";
 import HeroLightImage from "../../../../public/landing/hero-2-light.png";
 import HeroDarkImage from "../../../../public/landing/hero-3-dark.png";
-import { FeatureTabs } from "./feature-tabs";
+import { FeaturedTabsEditor } from "../feature-tabs-editor";
 
 export const AppPreview = () => {
   return (
@@ -46,7 +46,7 @@ export const AppPreview = () => {
           </p>
         </div>
         {/* Features */}
-        <FeatureTabs />
+        <FeaturedTabsEditor />
       </div>
     </div>
   );

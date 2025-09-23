@@ -1,4 +1,5 @@
 import { AppPreview } from "./sections/app-preview";
+import { Flow } from "./sections/flow";
 import { Hero } from "./sections/hero";
 
 export const Homepage = () => {
@@ -11,7 +12,7 @@ export const Homepage = () => {
           {/* Content */}
           <Hero />
           <AppPreview />
-          <div className="py-10" />
+          <Flow />
         </div>
       </div>
     </div>

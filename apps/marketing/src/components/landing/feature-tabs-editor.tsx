@@ -4,6 +4,7 @@ import { Button } from "@firebuzz/ui/components/ui/button";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { BookOpen, CheckCheck, Video } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import * as React from "react";
 
@@ -14,7 +15,7 @@ const tabs = [
   { id: "instant-publish", label: "Instant Publish" },
 ];
 
-export const FeatureTabs = () => {
+export const FeaturedTabsEditor = () => {
   const [activeTab, setActiveTab] = React.useState("powerful-agent");
   const [isAutoPlaying, setIsAutoPlaying] = React.useState(true);
   const tabsContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -330,7 +331,7 @@ export const FeatureTabs = () => {
         <div className="relative" ref={tabsContainerRef}>
           <div
             ref={scrollContainerRef}
-            className="flex overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory"
+            className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
           >
             {tabs.map((tab, index) => {
               const isActive = activeTab === tab.id;
@@ -365,7 +366,20 @@ export const FeatureTabs = () => {
       </div>
 
       {/* Tab Content */}
-      {getTabContent(activeTab)}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{
+            duration: 0.3,
+            ease: "easeInOut",
+          }}
+        >
+          {getTabContent(activeTab)}
+        </motion.div>
+      </AnimatePresence>
 
       {/* Footer */}
       <div className="border-t bg-muted">
