@@ -1,7 +1,5 @@
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import Image from "next/image";
-import HeroLightImage from "../../../../public/landing/hero-2-light.png";
-import HeroDarkImage from "../../../../public/landing/hero-3-dark.png";
 import { FeaturedTabsEditor } from "../feature-tabs-editor";
 
 export const AppPreview = () => {
@@ -11,21 +9,15 @@ export const AppPreview = () => {
         {/* Image */}
         <div className="overflow-hidden relative z-10 bg-gradient-to-br to-transparent rounded-tl-xl via-brand from-brand">
           <div className="pt-2 pl-2 w-full h-full md:pt-3 md:pl-3">
-            <picture>
-              <source
-                srcSet={HeroDarkImage.src}
-                media="(prefers-color-scheme: dark)"
-              />
-              <Image
-                src={HeroLightImage}
-                alt="Firebuzz"
-                priority
-                quality={100}
-                width={1200}
-                height={628}
-                className="object-cover rounded-tl-xl rounded-br-xl border"
-              />
-            </picture>
+            <Image
+              src="/landing/hero-dark.png"
+              alt="Firebuzz"
+              priority
+              quality={100}
+              width={1200}
+              height={628}
+              className="object-cover rounded-tl-xl rounded-br-xl border"
+            />
           </div>
         </div>
         {/* Content */}

@@ -160,172 +160,251 @@ export const FeaturedTabsEditor = () => {
     switch (tabId) {
       case "powerful-agent":
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="flex flex-col gap-6 justify-center p-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold">Let AI do the work</h3>
-                <p className="text-muted-foreground">
-                  You will be able to create fully customized landing pages with
-                  our AI-Agent that knows your business.
-                </p>
-              </div>
-              <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                <div>
-                  <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                  Full Customization
+          <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeTab}-content`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex flex-col gap-6 justify-center p-6"
+              >
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">Let AI do the work</h3>
+                  <p className="text-muted-foreground">
+                    You will be able to create fully customized landing pages
+                    with our AI-Agent that knows your business.
+                  </p>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                  Knowledgebase
+                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
+                  <div>
+                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                    Full Customization
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" />{" "}
+                    Knowledgebase
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Search
+                    Web
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Run
+                    Code
+                  </div>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Search
-                  Web
-                </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Run Code
-                </div>
-              </div>
-            </div>
-            <div className="relative space-y-2 h-full border-t sm:border-t-0 sm:border-l bg-muted">
+              </motion.div>
+            </AnimatePresence>
+            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-              <Image
-                src="/landing/agent-4.svg"
-                unoptimized
-                alt="Firebuzz"
-                width={530}
-                height={340}
-              />
+              <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-image`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Image
+                    src="/landing/agent.svg"
+                    unoptimized
+                    alt="Firebuzz"
+                    width={530}
+                    height={340}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         );
       case "themes":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="flex flex-col gap-6 justify-center p-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold">Your Brand, Your Way</h3>
-                <p className="text-muted-foreground">
-                  Choose from our collection of themes and customize them based
-                  on your brand characteristics.
-                </p>
-              </div>
-              <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                <div>
-                  <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                  Color Palette
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeTab}-content`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex flex-col gap-6 justify-center p-6"
+              >
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">
+                    Your Brand, Your Way
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Choose from our collection of themes and customize them
+                    based on your brand characteristics.
+                  </p>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Fonts
+                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
+                  <div>
+                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                    Color Palette
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Fonts
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Light
+                    & Dark
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Assets
+                  </div>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Light &
-                  Dark
-                </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Assets
-                </div>
-              </div>
-            </div>
-            <div className="relative space-y-2 h-full border-t sm:border-t-0 sm:border-l bg-muted">
+              </motion.div>
+            </AnimatePresence>
+            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-              <Image
-                src="/landing/theme-2.svg"
-                unoptimized
-                alt="Firebuzz"
-                width={530}
-                height={340}
-              />
+              <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-image`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Image
+                    src="/landing/theme.svg"
+                    unoptimized
+                    alt="Firebuzz"
+                    width={530}
+                    height={340}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         );
       case "images-files":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="flex flex-col gap-6 justify-center p-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold">Images? Handled.</h3>
-                <p className="text-muted-foreground">
-                  Firebuzz gives you very powerfull asset management system. Use
-                  storage to store images, files and everything else.
-                </p>
-              </div>
-              <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                <div>
-                  <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                  AI Generation
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeTab}-content`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex flex-col gap-6 justify-center p-6"
+              >
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">Images? Handled.</h3>
+                  <p className="text-muted-foreground">
+                    Firebuzz gives you very powerfull asset management system.
+                    Use storage to store images, files and everything else.
+                  </p>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Stock
-                  Images
+                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
+                  <div>
+                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                    AI Generation
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Stock
+                    Images
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Search
+                    File Storage
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Auto
+                    Optimize
+                  </div>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Search
-                  File Storage
-                </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Auto
-                  Optimize
-                </div>
-              </div>
-            </div>
-            <div className="relative space-y-2 h-full border-t sm:border-t-0 sm:border-l bg-muted">
+              </motion.div>
+            </AnimatePresence>
+            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-              <Image
-                src="/landing/image-gen-3.svg"
-                unoptimized
-                alt="Firebuzz"
-                width={530}
-                height={340}
-              />
+              <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-image`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Image
+                    src="/landing/image-gen.svg"
+                    unoptimized
+                    alt="Firebuzz"
+                    width={530}
+                    height={340}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         );
       case "instant-publish":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="flex flex-col gap-6 justify-center p-6">
-              <div className="space-y-1">
-                <h3 className="text-xl font-semibold">
-                  Publish in seconds (10s)
-                </h3>
-                <p className="text-muted-foreground">
-                  Our hosting infrastructure is built to be fast and scalable.
-                  Publish your landing page in seconds.
-                </p>
-              </div>
-              <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
-                <div>
-                  <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                  Global CDN
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeTab}-content`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, ease: "easeInOut" }}
+                className="flex flex-col gap-6 justify-center p-6"
+              >
+                <div className="space-y-1">
+                  <h3 className="text-xl font-semibold">
+                    Publish in seconds (10s)
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Our hosting infrastructure is built to be fast and scalable.
+                    Publish your landing page in seconds.
+                  </p>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> High
-                  Traffic
+                <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted  lg:*:border-r last:*:border-r-0 *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground">
+                  <div>
+                    <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                    Global CDN
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> High
+                    Traffic
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> Fast
+                    Load
+                  </div>
+                  <div>
+                    <CheckCheck className="size-3 text-brand shrink-0" /> SSL
+                    Secured
+                  </div>
                 </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> Fast
-                  Load
-                </div>
-                <div>
-                  <CheckCheck className="size-3 text-brand shrink-0" /> SSL
-                  Secured
-                </div>
-              </div>
-            </div>
-            <div className="relative space-y-2 h-full border-t sm:border-t-0 sm:border-l bg-muted">
+              </motion.div>
+            </AnimatePresence>
+            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-              <Image
-                src="/landing/publish-2.svg"
-                unoptimized
-                alt="Firebuzz"
-                width={530}
-                height={340}
-              />
+              <div className="absolute inset-0 z-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-image`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <Image
+                    src="/landing/publish.svg"
+                    unoptimized
+                    alt="Firebuzz"
+                    width={530}
+                    height={340}
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         );
@@ -341,11 +420,11 @@ export const FeaturedTabsEditor = () => {
         <div className="relative w-full" ref={tabsContainerRef}>
           <div
             ref={scrollContainerRef}
-            className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory touch-pan-x w-full"
+            className="flex overflow-x-auto w-full scrollbar-hide snap-x snap-mandatory touch-pan-x"
             style={{
               WebkitOverflowScrolling: "touch",
               scrollbarWidth: "none",
-              msOverflowStyle: "none"
+              msOverflowStyle: "none",
             }}
           >
             {tabs.map((tab, index) => {
@@ -356,7 +435,7 @@ export const FeaturedTabsEditor = () => {
                   ref={setTabRef(index)}
                   onClick={() => handleTabClick(tab.id)}
                   className={cn(
-                    "relative z-10 flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground snap-start min-w-fit",
+                    "relative z-10 flex-shrink-0 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors sm:px-6 hover:text-foreground snap-start min-w-fit",
                     isActive ? "text-foreground" : "text-muted-foreground"
                   )}
                   type="button"
@@ -381,24 +460,11 @@ export const FeaturedTabsEditor = () => {
       </div>
 
       {/* Tab Content */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{
-            duration: 0.3,
-            ease: "easeInOut",
-          }}
-        >
-          {getTabContent(activeTab)}
-        </motion.div>
-      </AnimatePresence>
+      <div>{getTabContent(activeTab)}</div>
 
       {/* Footer */}
       <div className="border-t bg-muted">
-        <div className="flex items-stretch h-full">
+        <div className="flex justify-between w-full h-full sm:justify-start">
           <Button
             variant="ghost"
             size="sm"

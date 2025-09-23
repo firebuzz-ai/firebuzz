@@ -52,7 +52,7 @@ export const Flow = () => {
           </div>
 
           {/* Step 2 - Review Changes */}
-          <div className="rounded-lg border bg-muted">
+          <div className="overflow-hidden rounded-lg border bg-muted">
             <div className="px-3 pt-4 space-y-2">
               <div className="flex gap-3 items-center">
                 <div className="flex justify-center items-center text-sm font-medium tabular-nums rounded-lg border size-8">
@@ -79,7 +79,7 @@ export const Flow = () => {
           </div>
 
           {/* Step 3 - Publish */}
-          <div className="rounded-lg border bg-muted">
+          <div className="overflow-hidden rounded-lg border bg-muted">
             <div className="px-3 pt-4 space-y-2">
               <div className="flex gap-3 items-center">
                 <div className="flex justify-center items-center text-sm font-medium tabular-nums rounded-lg border size-8">
