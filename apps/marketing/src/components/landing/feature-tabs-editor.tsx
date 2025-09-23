@@ -2,6 +2,7 @@
 
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
+import { useIsMobile } from "@firebuzz/ui/hooks/use-mobile";
 import { BookOpen, CheckCheck, Video } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
@@ -17,6 +18,7 @@ const tabs = [
 
 export const FeaturedTabsEditor = () => {
   const [activeTab, setActiveTab] = React.useState("powerful-agent");
+  const isMobile = useIsMobile();
   const [isAutoPlaying, setIsAutoPlaying] = React.useState(true);
   const tabsContainerRef = React.useRef<HTMLDivElement | null>(null);
   const tabRefs = React.useRef<(HTMLButtonElement | null)[]>([]);
@@ -72,17 +74,19 @@ export const FeaturedTabsEditor = () => {
 
       scrollContainer.scrollTo({
         left: scrollLeft,
-        behavior: "smooth",
+        behavior: isMobile ? "auto" : "smooth",
       });
     }
-  }, [activeTab]);
+  }, [activeTab, isMobile]);
 
   const setTabRef = (index: number) => (el: HTMLButtonElement | null) => {
     tabRefs.current[index] = el;
     if (el && tabsContainerRef.current) {
       requestAnimationFrame(() => {
         updateIndicatorPosition();
-        scrollToActiveTab();
+        if (!isMobile) {
+          scrollToActiveTab();
+        }
       });
     }
   };
@@ -107,35 +111,41 @@ export const FeaturedTabsEditor = () => {
 
   React.useLayoutEffect(() => {
     updateIndicatorPosition();
-    scrollToActiveTab();
-  }, [updateIndicatorPosition, scrollToActiveTab]);
+    if (!isMobile) {
+      scrollToActiveTab();
+    }
+  }, [updateIndicatorPosition, scrollToActiveTab, isMobile]);
 
   React.useEffect(() => {
     if (tabsContainerRef.current && tabRefs.current.length > 0) {
       updateIndicatorPosition();
-      scrollToActiveTab();
+      if (!isMobile) {
+        scrollToActiveTab();
+      }
     }
-  }, [updateIndicatorPosition, scrollToActiveTab]);
+  }, [updateIndicatorPosition, scrollToActiveTab, isMobile]);
 
   React.useEffect(() => {
     const handleResize = () => {
       updateIndicatorPosition();
-      scrollToActiveTab();
+      if (!isMobile) {
+        scrollToActiveTab();
+      }
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [updateIndicatorPosition, scrollToActiveTab]);
+  }, [updateIndicatorPosition, scrollToActiveTab, isMobile]);
 
-  // Auto-play interval effect
+  // Auto-play interval effect - disabled on mobile
   React.useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || isMobile) return;
 
     const interval = setInterval(() => {
       goToNextTab();
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, goToNextTab]);
+  }, [isAutoPlaying, isMobile, goToNextTab]);
 
   // Cleanup timeout on unmount
   React.useEffect(() => {
@@ -328,10 +338,15 @@ export const FeaturedTabsEditor = () => {
     <div className="overflow-hidden mt-10 w-full rounded-lg border bg-card">
       {/* Tabs Header */}
       <div className="border-b bg-muted">
-        <div className="relative" ref={tabsContainerRef}>
+        <div className="relative w-full" ref={tabsContainerRef}>
           <div
             ref={scrollContainerRef}
-            className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory"
+            className="flex overflow-x-auto scrollbar-hide snap-x snap-mandatory touch-pan-x w-full"
+            style={{
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "none",
+              msOverflowStyle: "none"
+            }}
           >
             {tabs.map((tab, index) => {
               const isActive = activeTab === tab.id;
@@ -341,7 +356,7 @@ export const FeaturedTabsEditor = () => {
                   ref={setTabRef(index)}
                   onClick={() => handleTabClick(tab.id)}
                   className={cn(
-                    "relative z-10 flex-shrink-0 px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground snap-start",
+                    "relative z-10 flex-shrink-0 px-4 sm:px-6 py-3 text-sm font-medium whitespace-nowrap transition-colors hover:text-foreground snap-start min-w-fit",
                     isActive ? "text-foreground" : "text-muted-foreground"
                   )}
                   type="button"
