@@ -40,7 +40,13 @@ export const Flow = () => {
             </div>
             <div className="relative">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                }}
+              />
               <Image
                 src="/landing/flow-1.svg"
                 unoptimized
@@ -72,7 +78,14 @@ export const Flow = () => {
             </div>
             <div className="relative">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                }}
+              />
+
               <Image
                 src="/landing/flow-2.svg"
                 unoptimized
@@ -104,7 +117,14 @@ export const Flow = () => {
             </div>
             <div className="relative">
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                }}
+              />
+              <div className="absolute inset-x-0 top-0 z-10 h-20 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
               <Image
                 src="/landing/flow-3.svg"
                 unoptimized

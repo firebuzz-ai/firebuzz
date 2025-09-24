@@ -60,54 +60,69 @@ const testimonials = [
 
 export const Testimonial = () => {
   return (
-    <div className="px-8 mx-auto max-w-6xl">
-      <div className="mx-auto max-w-6xl border-x">
-        <div className="flex flex-col justify-center items-center py-10 mx-auto w-full text-center border-b">
-          <div>
-            <Badge
-              variant="outline"
-              className="mb-4 bg-muted py-1.5 px-4 text-brand"
-            >
-              Testimonials
-            </Badge>
-            <h2 className="max-w-4xl text-3xl font-bold lg:text-4xl">
-              Hear from Early Users
-            </h2>
-            <p className="mt-4 max-w-lg text-muted-foreground">
-              Marketers and freelancers who are already building the future with
-              our AI platform see significant results. Listen what they say.
-            </p>
-          </div>
-        </div>
-        <div className="flex overflow-hidden relative flex-col justify-center items-center py-10 w-full">
-          <div className="group flex overflow-hidden [--gap:1rem] [gap:var(--gap)] flex-row [--duration:30s]">
-            {/* First set of testimonials */}
-            <div className="flex shrink-0 justify-around [gap:var(--gap)] animate-marquee flex-row group-hover:[animation-play-state:paused]">
-              {testimonials.map((testimonial) => (
-                <TestimonialCard
-                  key={`first-${testimonial.author.name}-${testimonial.author.handle}`}
-                  {...testimonial}
-                />
-              ))}
-            </div>
-            {/* Duplicate set for seamless loop */}
-            <div className="flex shrink-0 justify-around [gap:var(--gap)] animate-marquee flex-row group-hover:[animation-play-state:paused]">
-              {testimonials.map((testimonial) => (
-                <TestimonialCard
-                  key={`second-${testimonial.author.name}-${testimonial.author.handle}`}
-                  {...testimonial}
-                />
-              ))}
+    <div className="mx-auto max-w-7xl border-b">
+      <div className="px-8 mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl border-x">
+          <div className="flex relative flex-col justify-center items-center py-10 mx-auto w-full text-center border-b">
+            {/* Subtle Grid Pattern BG */}
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                backgroundSize: "30px 30px",
+              }}
+            />
+            <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-muted/40 from-muted via-muted/70" />
+            <div className="relative z-10">
+              <Badge
+                variant="outline"
+                className="mb-4 bg-muted py-1.5 px-4 text-brand"
+              >
+                Testimonials
+              </Badge>
+              <h2 className="max-w-4xl text-3xl font-bold lg:text-4xl">
+                Hear from Early Users
+              </h2>
+              <p className="mt-4 max-w-lg text-muted-foreground">
+                Marketers and freelancers who are already building the future
+                with our AI platform see significant results. Listen what they
+                say.
+              </p>
             </div>
           </div>
+          <div className="flex overflow-hidden relative flex-col justify-center items-center py-10 w-full">
+            <div className="group flex overflow-hidden [--gap:1rem] [gap:var(--gap)] flex-row [--duration:30s]">
+              {/* First set of testimonials */}
+              <div className="flex shrink-0 justify-around [gap:var(--gap)] animate-marquee flex-row group-hover:[animation-play-state:paused]">
+                {testimonials.map((testimonial) => (
+                  <TestimonialCard
+                    key={`first-${testimonial.author.name}-${testimonial.author.handle}`}
+                    {...testimonial}
+                  />
+                ))}
+              </div>
+              {/* Duplicate set for seamless loop */}
+              <div className="flex shrink-0 justify-around [gap:var(--gap)] animate-marquee flex-row group-hover:[animation-play-state:paused]">
+                {testimonials.map((testimonial) => (
+                  <TestimonialCard
+                    key={`second-${testimonial.author.name}-${testimonial.author.handle}`}
+                    {...testimonial}
+                  />
+                ))}
+              </div>
+            </div>
 
-          {/* Left fade */}
-          <div className="hidden absolute inset-y-0 left-0 w-32 pointer-events-none sm:block">
-            <div className="w-full h-full bg-gradient-to-r to-transparent from-background via-background/80" />
-          </div>
-          {/* Right fade */}
-          <div className="hidden absolute inset-y-0 right-0 w-32 pointer-events-none sm:block">
-            <div className="w-full h-full bg-gradient-to-l to-transparent from-background via-background/80" />
+            {/* Left fade */}
+            <div className="hidden absolute inset-y-0 left-0 w-32 pointer-events-none sm:block">
+              <div className="w-full h-full bg-gradient-to-r to-transparent from-background via-background/80" />
+            </div>
+            {/* Right fade */}
+            <div className="hidden absolute inset-y-0 right-0 w-32 pointer-events-none sm:block">
+              <div className="w-full h-full bg-gradient-to-l to-transparent from-background via-background/80" />
+            </div>
           </div>
         </div>
       </div>

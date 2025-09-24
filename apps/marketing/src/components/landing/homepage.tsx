@@ -1,3 +1,5 @@
+import { Campaign } from "./sections/campaign";
+import { ClosingCta } from "./sections/closing-cta";
 import { Editor } from "./sections/editor";
 import { Flow } from "./sections/flow";
 import { Hero } from "./sections/hero";
@@ -15,6 +17,8 @@ export const Homepage = () => {
           <Editor />
           <Flow />
           <Testimonial />
+          <Campaign />
+          <ClosingCta />
         </div>
       </div>
     </div>

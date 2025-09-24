@@ -7,7 +7,6 @@ import {
   useFrame,
   useThree,
 } from "@react-three/fiber";
-import { useTheme } from "next-themes"; // lub twój provider
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
@@ -103,7 +102,7 @@ const DotMaterial = shaderMaterial(
 function Scene() {
   const size = useThree((s) => s.size);
   const viewport = useThree((s) => s.viewport);
-  const { theme } = useTheme();
+  /*   const { theme } = useTheme(); */
 
   const rotation = 0;
   const gridSize = 100;
@@ -127,7 +126,7 @@ function Scene() {
   }, []);
 
   useEffect(() => {
-    const isDark = theme === "dark";
+    const isDark = true; /* theme === "dark"; */
     const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
     const dotColor = "#f97f27";
     const dotOpacity = isDark ? 0.025 : 0.15;
@@ -135,7 +134,7 @@ function Scene() {
     dotMaterial.uniforms.bgColor.value.setHex(bgColor.replace("#", "0x"));
     dotMaterial.uniforms.dotColor.value.setHex(dotColor.replace("#", "0x"));
     dotMaterial.uniforms.dotOpacity.value = dotOpacity;
-  }, [dotMaterial, theme]);
+  }, [dotMaterial]);
 
   useFrame((state) => {
     dotMaterial.uniforms.time.value = state.clock.elapsedTime;

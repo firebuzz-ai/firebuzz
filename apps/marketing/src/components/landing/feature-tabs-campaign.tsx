@@ -10,14 +10,14 @@ import Image from "next/image";
 import * as React from "react";
 
 const tabs = [
-  { id: "powerful-agent", label: "Powerful Agent" },
-  { id: "themes", label: "Themes" },
-  { id: "images-files", label: "Images & Files" },
-  { id: "instant-publish", label: "Instant Publish" },
+  { id: "ab-testing", label: "A/B Testing" },
+  { id: "segmentation", label: "Segmentation" },
+  { id: "localization", label: "Localization" },
+  { id: "built-in-analytics", label: "Built-in Analytics" },
 ];
 
-export const FeaturedTabsEditor = () => {
-  const [activeTab, setActiveTab] = React.useState("powerful-agent");
+export const FeaturedTabsCampaign = () => {
+  const [activeTab, setActiveTab] = React.useState("ab-testing");
   const isMobile = useIsMobile();
   const [isAutoPlaying, setIsAutoPlaying] = React.useState(true);
   const tabsContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -158,7 +158,7 @@ export const FeaturedTabsEditor = () => {
 
   const getTabContent = (tabId: string) => {
     switch (tabId) {
-      case "powerful-agent":
+      case "ab-testing":
         return (
           <div className="grid grid-cols-1 gap-0 sm:grid-cols-2">
             <div className="flex relative flex-col justify-center h-full">
@@ -185,29 +185,29 @@ export const FeaturedTabsEditor = () => {
                 >
                   <div className="relative z-10 space-y-1">
                     <h3 className="text-xl font-semibold">
-                      Let AI do the work
+                      Lightning Fast A/B Testing
                     </h3>
                     <p className="text-muted-foreground">
-                      You will be able to create fully customized landing pages
-                      with our AI-Agent that knows your business.
+                      With Firebuzz, you can run A/B tests on server so no
+                      flashy effects, just fast results.
                     </p>
                   </div>
                   <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
                     <div className="border-r border-b lg:border-b-0">
                       <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                      Full Customization
+                      Server Side
                     </div>
                     <div className="border-b lg:border-r lg:border-b-0">
                       <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Knowledgebase
+                      Multiple Variants
                     </div>
                     <div className="border-r">
                       <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Search Web
+                      Traffic Control
                     </div>
                     <div>
-                      <CheckCheck className="size-3 text-brand shrink-0" /> Run
-                      Code
+                      <CheckCheck className="size-3 text-brand shrink-0" />
+                      Realtime Results
                     </div>
                   </div>
                 </motion.div>
@@ -237,7 +237,7 @@ export const FeaturedTabsEditor = () => {
                   }}
                 >
                   <Image
-                    src="/landing/agent.svg"
+                    src="/landing/ab-test.svg"
                     unoptimized
                     alt="Firebuzz"
                     width={530}
@@ -253,7 +253,7 @@ export const FeaturedTabsEditor = () => {
             </div>
           </div>
         );
-      case "themes":
+      case "segmentation":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
             <div className="flex relative flex-col justify-center h-full">
@@ -280,29 +280,29 @@ export const FeaturedTabsEditor = () => {
                 >
                   <div className="relative z-10 space-y-1">
                     <h3 className="text-xl font-semibold">
-                      Your Brand, Your Way
+                      Segment Your Audience
                     </h3>
                     <p className="text-muted-foreground">
-                      Choose from our collection of themes and customize them
-                      based on your brand characteristics.
+                      Firebuzz campaigns let you segment your audience and show
+                      different landing page to each segment.
                     </p>
                   </div>
                   <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
                     <div className="border-r border-b lg:border-b-0">
                       <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                      Color Palette
+                      Geography
                     </div>
                     <div className="border-b lg:border-r lg:border-b-0">
                       <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Fonts
+                      Behavior
                     </div>
                     <div className="border-r">
                       <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Light & Dark
+                      Device
                     </div>
                     <div>
-                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Assets
+                      <CheckCheck className="size-3 text-brand shrink-0" /> +100
+                      variants
                     </div>
                   </div>
                 </motion.div>
@@ -332,7 +332,7 @@ export const FeaturedTabsEditor = () => {
                   }}
                 >
                   <Image
-                    src="/landing/theme.svg"
+                    src="/landing/segment.svg"
                     unoptimized
                     alt="Firebuzz"
                     width={530}
@@ -348,100 +348,7 @@ export const FeaturedTabsEditor = () => {
             </div>
           </div>
         );
-      case "images-files":
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-2">
-            <div className="flex relative flex-col justify-center h-full">
-              {/* Subtle Grid Pattern BG */}
-              <div
-                className="absolute inset-0 opacity-20"
-                style={{
-                  backgroundImage: `
-                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
-                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
-                  `,
-                  backgroundSize: "30px 30px",
-                }}
-              />
-              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${activeTab}-content`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
-                >
-                  <div className="relative z-10 space-y-1">
-                    <h3 className="text-xl font-semibold">Images? Handled.</h3>
-                    <p className="text-muted-foreground">
-                      Firebuzz gives you very powerfull asset management system.
-                      Use storage to store images, files and everything else.
-                    </p>
-                  </div>
-                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
-                    <div className="border-r border-b lg:border-b-0">
-                      <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
-                      AI Generation
-                    </div>
-                    <div className="border-b lg:border-r lg:border-b-0">
-                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Stock Images
-                    </div>
-                    <div className="border-r">
-                      <CheckCheck className="size-3 text-brand shrink-0" />{" "}
-                      Search File Storage
-                    </div>
-                    <div>
-                      <CheckCheck className="size-3 text-brand shrink-0" /> Auto
-                      Optimize
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
-              {/* Overlay */}
-              <div
-                className="absolute inset-0 z-10"
-                style={{
-                  background:
-                    "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
-                }}
-              />
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${activeTab}-image`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="relative z-0"
-                  style={{
-                    willChange: "transform, opacity",
-                    backfaceVisibility: "hidden",
-                    transform: "translateZ(0)",
-                  }}
-                >
-                  <Image
-                    src="/landing/image-gen.svg"
-                    unoptimized
-                    alt="Firebuzz"
-                    width={530}
-                    height={340}
-                    className="p-0 w-full h-full"
-                    style={{
-                      imageRendering: "crisp-edges",
-                      shapeRendering: "crispEdges",
-                    }}
-                  />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-        );
-      case "instant-publish":
+      case "localization":
         return (
           <div className="grid grid-cols-1 sm:grid-cols-2">
             <div className="flex relative flex-col justify-center h-full">
@@ -468,29 +375,124 @@ export const FeaturedTabsEditor = () => {
                 >
                   <div className="relative z-10 space-y-1">
                     <h3 className="text-xl font-semibold">
-                      Publish in seconds (10s)
+                      Localization? Easy.
                     </h3>
                     <p className="text-muted-foreground">
-                      Our hosting infrastructure is built to be fast and
-                      scalable. Publish your landing page in seconds.
+                      Running multi-language campaigns has never been easier.
+                      Firebuz handles all the heavy lifting for you.
+                    </p>
+                  </div>
+                  <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
+                    <div className="border-r border-b lg:border-b-0">
+                      <CheckCheck className="truncate size-3 text-brand shrink-0" />{" "}
+                      Auto Detection
+                    </div>
+                    <div className="border-b lg:border-r lg:border-b-0">
+                      <CheckCheck className="size-3 text-brand shrink-0" /> All
+                      Languages
+                    </div>
+                    <div className="border-r">
+                      <CheckCheck className="size-3 text-brand shrink-0" /> AI
+                      Translations
+                    </div>
+                    <div>
+                      <CheckCheck className="size-3 text-brand shrink-0" /> Full
+                      Design Control
+                    </div>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+            <div className="relative h-full border-t sm:border-t-0 sm:border-l bg-muted">
+              {/* Overlay */}
+              <div
+                className="absolute inset-0 z-10"
+                style={{
+                  background:
+                    "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                }}
+              />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-image`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="relative z-0"
+                  style={{
+                    willChange: "transform, opacity",
+                    backfaceVisibility: "hidden",
+                    transform: "translateZ(0)",
+                  }}
+                >
+                  <Image
+                    src="/landing/localization.svg"
+                    unoptimized
+                    alt="Firebuzz"
+                    width={530}
+                    height={340}
+                    className="p-0 w-full h-full"
+                    style={{
+                      imageRendering: "crisp-edges",
+                      shapeRendering: "crispEdges",
+                    }}
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        );
+      case "built-in-analytics":
+        return (
+          <div className="grid overflow-hidden grid-cols-1 sm:grid-cols-2">
+            <div className="flex relative flex-col justify-center h-full">
+              {/* Subtle Grid Pattern BG */}
+              <div
+                className="absolute inset-0 opacity-20"
+                style={{
+                  backgroundImage: `
+                    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+                    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)
+                  `,
+                  backgroundSize: "30px 30px",
+                }}
+              />
+              <div className="absolute inset-0 z-[1] bg-gradient-to-bl to-background/40 from-background via-background/70" />
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`${activeTab}-content`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="flex relative z-10 flex-col gap-6 justify-center p-6"
+                >
+                  <div className="relative z-10 space-y-1">
+                    <h3 className="text-xl font-semibold">
+                      No more switching between tools
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Firebuzz gives you a complete solution for your campaign
+                      management with built-in analytics and tracking.
                     </p>
                   </div>
                   <div className="lg:flex grid grid-cols-2 overflow-hidden border rounded-md *:px-2 *:py-1 text-xs bg-muted *:flex-1 *:flex *:items-center *:gap-1 *:text-nowrap text-muted-foreground relative z-10">
                     <div className="border-r border-b lg:border-b-0">
                       <CheckCheck className="truncate size-3 text-brand shrink-0" />
-                      Global CDN
+                      Realtime
                     </div>
                     <div className="border-b lg:border-r lg:border-b-0">
-                      <CheckCheck className="size-3 text-brand shrink-0" /> High
-                      Traffic
+                      <CheckCheck className="size-3 text-brand shrink-0" />
+                      External Tracking
                     </div>
                     <div className="border-r">
-                      <CheckCheck className="size-3 text-brand shrink-0" /> Fast
-                      Load
+                      <CheckCheck className="size-3 text-brand shrink-0" />
+                      GDPR Compliant
                     </div>
                     <div>
-                      <CheckCheck className="size-3 text-brand shrink-0" /> SSL
-                      Secured
+                      <CheckCheck className="size-3 text-brand shrink-0" />
+                      Integrated
                     </div>
                   </div>
                 </motion.div>
@@ -505,6 +507,7 @@ export const FeaturedTabsEditor = () => {
                     "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
                 }}
               />
+              <div className="absolute inset-y-0 right-0 z-10 w-40 bg-gradient-to-l to-transparent from-muted via-muted/70" />
               <AnimatePresence mode="wait">
                 <motion.div
                   key={`${activeTab}-image`}
@@ -520,7 +523,7 @@ export const FeaturedTabsEditor = () => {
                   }}
                 >
                   <Image
-                    src="/landing/publish.svg"
+                    src="/landing/analytics.svg"
                     unoptimized
                     alt="Firebuzz"
                     width={530}
