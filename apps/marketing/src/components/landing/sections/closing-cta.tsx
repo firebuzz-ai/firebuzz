@@ -18,8 +18,8 @@ const features = [
 
 export const ClosingCta = () => {
   return (
-    <div className="px-8 py-16 mx-auto max-w-6xl">
-      <div className="grid grid-cols-12 rounded-lg border bg-muted">
+    <div className="px-8 py-24 mx-auto max-w-6xl">
+      <div className="grid overflow-hidden grid-cols-12 rounded-lg border">
         <div className="overflow-hidden col-span-full row-span-2 border-r border-b sm:col-span-6">
           <div className="px-8 pt-8">
             <h2 className="text-lg font-medium">Integrations</h2>
@@ -27,17 +27,17 @@ export const ClosingCta = () => {
               Connect Firebuzz with your favorite tools and services.
             </p>
           </div>
-          <div className="relative bg-muted">
+          <div className="relative">
             {/* Overlay */}
             <div
               className="absolute inset-0 z-10"
               style={{
                 background:
-                  "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                  "radial-gradient(circle at center, transparent 8%, hsl(var(--background) / 0.3) 35%, hsl(var(--background) / 0.8) 100%)",
               }}
             />
-            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-muted/40 from-muted via-muted/70" />
-            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-background/40 from-background via-background/70" />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-background/40 from-background via-background/70" />
 
             <Image
               src="/landing/integrations.svg"
@@ -61,17 +61,17 @@ export const ClosingCta = () => {
             </p>
           </div>
 
-          <div className="relative bg-muted">
+          <div className="relative">
             {/* Overlay */}
             <div
               className="absolute inset-0 z-10"
               style={{
                 background:
-                  "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
+                  "radial-gradient(circle at center, transparent 8%, hsl(var(--background) / 0.3) 35%, hsl(var(--background) / 0.8) 100%)",
               }}
             />
-            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-muted/40 from-muted via-muted/70" />
-            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-background/40 from-background via-background/70" />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-background/40 from-background via-background/70" />
 
             <Image
               src="/landing/ai-models.svg"
@@ -108,7 +108,7 @@ export const ClosingCta = () => {
                   return (
                     <div
                       key={`first-${feature}`}
-                      className="flex-shrink-0 px-3 py-1.5 text-sm relative font-medium whitespace-nowrap rounded-md border bg-background/50 mr-4 overflow-hidden"
+                      className="flex-shrink-0 px-3 py-1.5 text-sm relative font-medium whitespace-nowrap rounded-md border bg-background/50 mr-4 overflow-hidden bg-muted"
                     >
                       <div
                         className="absolute inset-0 z-10"
@@ -138,7 +138,7 @@ export const ClosingCta = () => {
                   return (
                     <div
                       key={`second-${feature}`}
-                      className="flex-shrink-0 px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md border mr-4 relative overflow-hidden"
+                      className="flex-shrink-0 px-3 py-1.5 text-sm font-medium whitespace-nowrap rounded-md border mr-4 relative overflow-hidden bg-muted"
                     >
                       <div
                         className="absolute inset-0 z-10"
@@ -155,15 +155,15 @@ export const ClosingCta = () => {
 
             {/* Left fade */}
             <div className="absolute inset-y-0 left-0 w-8 pointer-events-none">
-              <div className="w-full h-full bg-gradient-to-r to-transparent from-muted via-muted/80" />
+              <div className="w-full h-full bg-gradient-to-r to-transparent from-background via-background/80" />
             </div>
             {/* Right fade */}
             <div className="absolute inset-y-0 right-0 w-8 pointer-events-none">
-              <div className="w-full h-full bg-gradient-to-l to-transparent from-muted via-muted/80" />
+              <div className="w-full h-full bg-gradient-to-l to-transparent from-background via-background/80" />
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 col-span-full sm:grid-cols-2">
+        <div className="grid grid-cols-1 col-span-full sm:grid-cols-2 bg-muted">
           <div className="px-8 py-8 border-b sm:border-b-0 sm:border-r">
             <div className="text-sm text-muted-foreground">Firebuzz Pro</div>
             <h2 className="max-w-sm text-2xl font-bold leading-tight">
