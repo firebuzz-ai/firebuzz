@@ -36,8 +36,8 @@ export const ClosingCta = () => {
                   "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
               }}
             />
-            <div className="absolute inset-x-0 top-0 z-10 h-5 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-            <div className="absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-muted/40 from-muted via-muted/70" />
 
             <Image
               src="/landing/integrations.svg"
@@ -70,8 +70,8 @@ export const ClosingCta = () => {
                   "radial-gradient(circle at center, transparent 8%, hsl(var(--muted) / 0.3) 35%, hsl(var(--muted) / 0.8) 100%)",
               }}
             />
-            <div className="absolute inset-x-0 top-0 z-10 h-10 bg-gradient-to-b to-muted/40 from-muted via-muted/70" />
-            <div className="absolute inset-x-0 bottom-0 z-10 h-10 bg-gradient-to-t to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b lg:h-5 to-muted/40 from-muted via-muted/70" />
+            <div className="absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t lg:h-5 to-muted/40 from-muted via-muted/70" />
 
             <Image
               src="/landing/ai-models.svg"
@@ -179,16 +179,16 @@ export const ClosingCta = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-0 text-sm text-center text-muted-foreground md:text-base">
-            <div className="flex justify-center items-center py-8 font-medium text-center border-r border-b">
+            <div className="flex justify-center items-center p-8 font-medium text-center border-r border-b">
               Unlimited Leads
             </div>
-            <div className="flex justify-center items-center py-8 font-medium text-center border-b">
+            <div className="flex justify-center items-center p-8 font-medium text-center border-b">
               Unlimited Landing Pages
             </div>
-            <div className="flex justify-center items-center py-8 font-medium text-center border-r">
+            <div className="flex justify-center items-center p-8 font-medium text-center border-r">
               20k traffic / per month
             </div>
-            <div className="flex justify-center items-center py-8 font-medium text-center">
+            <div className="flex justify-center items-center p-8 font-medium text-center">
               250 Credits / per month
             </div>
           </div>
