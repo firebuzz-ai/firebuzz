@@ -74,3 +74,13 @@ export const getByIdInternal = internalQuery({
 		return await ctx.db.get(id);
 	},
 });
+
+export const getByProductIdInternal = internalQuery({
+	args: { productId: v.id("products") },
+	handler: async (ctx, { productId }) => {
+		return await ctx.db
+			.query("prices")
+			.withIndex("by_product_id", (q) => q.eq("productId", productId))
+			.collect();
+	},
+});

@@ -109,12 +109,11 @@ export const assetsRoute = app
 	.openapi(insertKvRoute, async (c) => {
 		const { key, value, options } = c.req.valid("json");
 		try {
-			const result = await c.env.ASSETS.put(key, value, options);
+			await c.env.ASSETS.put(key, value, options);
 			return c.json(
 				{
 					success: true as const,
 					message: "Key-value pair inserted successfully" as const,
-					data: result,
 				},
 				200,
 			);
@@ -256,17 +255,25 @@ export const assetsRoute = app
 		try {
 			const result = await c.env.ASSETS.list({ prefix, limit, cursor });
 
+			const transformedKeys = result.keys.map((key) => ({
+				name: key.name,
+				expiration: key.expiration,
+				metadata: key.metadata && typeof key.metadata === 'object' && key.metadata !== null
+					? key.metadata as { [x: string]: string }
+					: undefined,
+			}));
+
 			return c.json(
 				{
 					success: true as const,
 					message: "Key-value pairs listed successfully" as const,
 					data: result.list_complete
 						? {
-								keys: result.keys,
+								keys: transformedKeys,
 								list_complete: result.list_complete,
 							}
 						: {
-								keys: result.keys,
+								keys: transformedKeys,
 								list_complete: result.list_complete,
 								cursor: result.cursor,
 							},

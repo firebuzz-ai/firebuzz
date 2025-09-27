@@ -358,3 +358,66 @@ export const deleteInternal = internalMutationWithTrigger({
 		await ctx.db.delete(args.transactionId);
 	},
 });
+
+export const handleIntervalTransitionCredits = internalMutationWithTrigger({
+	args: {
+		workspaceId: v.id("workspaces"),
+		customerId: v.id("customers"),
+		fromInterval: v.union(v.literal("month"), v.literal("year")),
+		toInterval: v.union(v.literal("month"), v.literal("year")),
+		targetProduct: v.object({
+			_id: v.id("products"),
+			stripeProductId: v.string(),
+			metadata: v.optional(v.record(v.string(), v.any())),
+		}),
+		subscriptionId: v.id("subscriptions"),
+		currentPeriodStart: v.string(),
+		currentPeriodEnd: v.string(),
+		reason: v.string(),
+	},
+	handler: async (ctx, args) => {
+		const now = new Date().toISOString();
+
+		if (args.fromInterval === "month" && args.toInterval === "year") {
+			// Monthly → Yearly: Give prorated credits for current month
+			const monthlyCredits = Number(args.targetProduct.metadata?.credits || 0);
+
+			// Calculate remaining days in current month
+			const currentDate = new Date();
+			const nextMonth = new Date(
+				currentDate.getFullYear(),
+				currentDate.getMonth() + 1,
+				1,
+			);
+			const totalDaysInMonth = new Date(
+				currentDate.getFullYear(),
+				currentDate.getMonth() + 1,
+				0,
+			).getDate();
+			const remainingDays = Math.ceil(
+				(nextMonth.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24),
+			);
+			const prorationRatio = remainingDays / totalDaysInMonth;
+			const proratedCredits = Math.floor(monthlyCredits * prorationRatio);
+
+			if (proratedCredits > 0) {
+				await ctx.db.insert("transactions", {
+					workspaceId: args.workspaceId,
+					customerId: args.customerId,
+					amount: proratedCredits,
+					type: "subscription",
+					periodStart: now,
+					expiresAt: nextMonth.toISOString(),
+					subscriptionId: args.subscriptionId,
+					reason: `${args.reason} - prorated credits for current month (${Math.round(prorationRatio * 100)}%)`,
+					idempotencyKey: `interval-change-${args.workspaceId}-${args.targetProduct.stripeProductId}-${now}`,
+					updatedAt: now,
+				});
+			}
+		}
+		// For yearly → monthly: Do nothing (grace period approach)
+		// Let existing credits expire naturally
+
+		return { success: true };
+	},
+});

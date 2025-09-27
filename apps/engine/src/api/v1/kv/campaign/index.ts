@@ -109,12 +109,14 @@ export const campaignRoute = app
 	.openapi(insertKvRoute, async (c) => {
 		const { key, value, options } = c.req.valid("json");
 		try {
-			const result = await c.env.CAMPAIGN.put(key, value, options);
-			return c.json({
-				success: true,
-				message: "Key-value pair inserted successfully",
-				data: result,
-			});
+			await c.env.CAMPAIGN.put(key, value, options);
+			return c.json(
+				{
+					success: true as const,
+					message: "Key-value pair inserted successfully" as const,
+				},
+				200,
+			);
 		} catch (error) {
 			console.error(error);
 			return c.json(
@@ -250,17 +252,25 @@ export const campaignRoute = app
 		try {
 			const result = await c.env.CAMPAIGN.list({ prefix, limit, cursor });
 
+			const transformedKeys = result.keys.map((key) => ({
+				name: key.name,
+				expiration: key.expiration,
+				metadata: key.metadata && typeof key.metadata === 'object' && key.metadata !== null
+					? key.metadata as { [x: string]: string }
+					: undefined,
+			}));
+
 			return c.json(
 				{
 					success: true,
 					message: "Key-value pairs listed successfully",
 					data: result.list_complete
 						? {
-								keys: result.keys,
+								keys: transformedKeys,
 								list_complete: result.list_complete,
 							}
 						: {
-								keys: result.keys,
+								keys: transformedKeys,
 								list_complete: result.list_complete,
 								cursor: result.cursor,
 							},

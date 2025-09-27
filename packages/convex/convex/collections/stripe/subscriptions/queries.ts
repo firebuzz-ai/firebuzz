@@ -90,3 +90,51 @@ export const getCurrentByWorkspaceIdInternal = internalQuery({
 		return await getCurrentSubscription(ctx, workspaceId);
 	},
 });
+
+export const getLastByWorkspaceIdInternal = internalQuery({
+	args: { workspaceId: v.id("workspaces") },
+	handler: async (ctx, { workspaceId }) => {
+		// Get the most recent subscription for this workspace (including canceled ones)
+		// Order by creation time descending to get the latest
+		const subscription = await ctx.db
+			.query("subscriptions")
+			.withIndex("by_workspace_id", (q) => q.eq("workspaceId", workspaceId))
+			.order("desc")
+			.first();
+
+		if (!subscription) {
+			return null;
+		}
+
+		// Get subscription items with their prices and products
+		const subscriptionItems = await ctx.db
+			.query("subscriptionItems")
+			.withIndex("by_subscription_id", (q) =>
+				q.eq("subscriptionId", subscription._id),
+			)
+			.collect();
+
+		const itemsWithPricesAndProducts = await asyncMap(
+			subscriptionItems,
+			async (item) => {
+				const price = await ctx.db.get(item.priceId);
+				let product = null;
+
+				if (price) {
+					product = await ctx.db.get(price.productId);
+				}
+
+				return {
+					...item,
+					price,
+					product,
+				};
+			},
+		);
+
+		return {
+			...subscription,
+			items: itemsWithPricesAndProducts,
+		};
+	},
+});
