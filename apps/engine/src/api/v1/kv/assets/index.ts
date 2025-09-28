@@ -258,9 +258,12 @@ export const assetsRoute = app
 			const transformedKeys = result.keys.map((key) => ({
 				name: key.name,
 				expiration: key.expiration,
-				metadata: key.metadata && typeof key.metadata === 'object' && key.metadata !== null
-					? key.metadata as { [x: string]: string }
-					: undefined,
+				metadata:
+					key.metadata &&
+					typeof key.metadata === "object" &&
+					key.metadata !== null
+						? (key.metadata as { [x: string]: string })
+						: undefined,
 			}));
 
 			return c.json(

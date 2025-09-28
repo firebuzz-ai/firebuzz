@@ -15,7 +15,8 @@
 			"dist",
 			"_generated",
 			"templates",
-			"worker-configuration.d.ts"
+			"worker-configuration.d.ts",
+			"templates/**"
 		]
 	},
 	"formatter": {
@@ -35,6 +36,7 @@
 			"dist",
 			"_generated",
 			"templates",
+			"templates/**",
 			"worker-configuration.d.ts"
 		],
 		"rules": {

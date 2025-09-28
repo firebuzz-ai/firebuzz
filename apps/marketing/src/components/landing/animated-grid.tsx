@@ -2,32 +2,32 @@
 
 import { shaderMaterial, useTrailTexture } from "@react-three/drei";
 import {
-  Canvas,
-  type ThreeEvent,
-  useFrame,
-  useThree,
+	Canvas,
+	type ThreeEvent,
+	useFrame,
+	useThree,
 } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 
 const DotMaterial = shaderMaterial(
-  {
-    time: 0,
-    resolution: new THREE.Vector2(),
-    dotColor: new THREE.Color("#FFFFFF"),
-    bgColor: new THREE.Color("#121212"),
-    mouseTrail: null,
-    render: 0,
-    rotation: 0,
-    gridSize: 50,
-    dotOpacity: 0.05,
-  },
-  /* glsl */ `
+	{
+		time: 0,
+		resolution: new THREE.Vector2(),
+		dotColor: new THREE.Color("#FFFFFF"),
+		bgColor: new THREE.Color("#121212"),
+		mouseTrail: null,
+		render: 0,
+		rotation: 0,
+		gridSize: 50,
+		dotOpacity: 0.05,
+	},
+	/* glsl */ `
     void main() {
       gl_Position = vec4(position.xy, 0.0, 1.0);
     }
   `,
-  /* glsl */ `
+	/* glsl */ `
     uniform float time;
     uniform int render;
     uniform vec2 resolution;
@@ -96,84 +96,84 @@ const DotMaterial = shaderMaterial(
       #include <tonemapping_fragment>
       #include <colorspace_fragment>
     }
-  `
+  `,
 );
 
 function Scene() {
-  const size = useThree((s) => s.size);
-  const viewport = useThree((s) => s.viewport);
-  /*   const { theme } = useTheme(); */
+	const size = useThree((s) => s.size);
+	const viewport = useThree((s) => s.viewport);
+	/*   const { theme } = useTheme(); */
 
-  const rotation = 0;
-  const gridSize = 100;
+	const rotation = 0;
+	const gridSize = 100;
 
-  // no helper needed; will inline in effect
+	// no helper needed; will inline in effect
 
-  const [trail, onMove] = useTrailTexture({
-    size: 128,
-    radius: 0.1,
-    maxAge: 200,
-    interpolate: 1,
-    ease: function easeInOutCirc(x) {
-      return x < 0.5
-        ? (1 - Math.sqrt(1 - (2 * x) ** 2)) / 2
-        : (Math.sqrt(1 - (-2 * x + 2) ** 2) + 1) / 2;
-    },
-  });
+	const [trail, onMove] = useTrailTexture({
+		size: 128,
+		radius: 0.1,
+		maxAge: 200,
+		interpolate: 1,
+		ease: function easeInOutCirc(x) {
+			return x < 0.5
+				? (1 - Math.sqrt(1 - (2 * x) ** 2)) / 2
+				: (Math.sqrt(1 - (-2 * x + 2) ** 2) + 1) / 2;
+		},
+	});
 
-  const dotMaterial = useMemo(() => {
-    return new DotMaterial();
-  }, []);
+	const dotMaterial = useMemo(() => {
+		return new DotMaterial();
+	}, []);
 
-  useEffect(() => {
-    const isDark = true; /* theme === "dark"; */
-    const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
-    const dotColor = "#f97f27";
-    const dotOpacity = isDark ? 0.025 : 0.15;
+	useEffect(() => {
+		const isDark = true; /* theme === "dark"; */
+		const bgColor = isDark ? "#0A0A0A" : "#FFFFFF";
+		const dotColor = "#f97f27";
+		const dotOpacity = isDark ? 0.025 : 0.15;
 
-    dotMaterial.uniforms.bgColor.value.setHex(bgColor.replace("#", "0x"));
-    dotMaterial.uniforms.dotColor.value.setHex(dotColor.replace("#", "0x"));
-    dotMaterial.uniforms.dotOpacity.value = dotOpacity;
-  }, [dotMaterial]);
+		dotMaterial.uniforms.bgColor.value.setHex(bgColor.replace("#", "0x"));
+		dotMaterial.uniforms.dotColor.value.setHex(dotColor.replace("#", "0x"));
+		dotMaterial.uniforms.dotOpacity.value = dotOpacity;
+	}, [dotMaterial]);
 
-  useFrame((state) => {
-    dotMaterial.uniforms.time.value = state.clock.elapsedTime;
-  });
+	useFrame((state) => {
+		dotMaterial.uniforms.time.value = state.clock.elapsedTime;
+	});
 
-  const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
-    onMove(e);
-  };
+	const handlePointerMove = (e: ThreeEvent<PointerEvent>) => {
+		onMove(e);
+	};
 
-  const scale = Math.max(viewport.width, viewport.height) / 2;
+	const scale = Math.max(viewport.width, viewport.height) / 2;
 
-  return (
-    <mesh scale={[scale, scale, 1]} onPointerMove={handlePointerMove}>
-      <planeGeometry args={[2, 2]} />
-      <primitive
-        object={dotMaterial}
-        resolution={[size.width * viewport.dpr, size.height * viewport.dpr]}
-        rotation={rotation}
-        gridSize={gridSize}
-        mouseTrail={trail}
-        render={0}
-      />
-    </mesh>
-  );
+	return (
+		<mesh scale={[scale, scale, 1]} onPointerMove={handlePointerMove}>
+			<planeGeometry args={[2, 2]} />
+			<primitive
+				object={dotMaterial}
+				resolution={[size.width * viewport.dpr, size.height * viewport.dpr]}
+				rotation={rotation}
+				gridSize={gridSize}
+				mouseTrail={trail}
+				render={0}
+			/>
+		</mesh>
+	);
 }
 
 export const DotScreenShader = () => {
-  return (
-    <div className="absolute inset-0 pointer-events-none">
-      <Canvas
-        gl={{
-          antialias: true,
-          powerPreference: "low-power",
-          outputColorSpace: THREE.SRGBColorSpace,
-          toneMapping: THREE.NoToneMapping,
-        }}
-      >
-        <Scene />
-      </Canvas>
-    </div>
-  );
+	return (
+		<div className="absolute inset-0 pointer-events-none">
+			<Canvas
+				gl={{
+					antialias: true,
+					powerPreference: "low-power",
+					outputColorSpace: THREE.SRGBColorSpace,
+					toneMapping: THREE.NoToneMapping,
+				}}
+			>
+				<Scene />
+			</Canvas>
+		</div>
+	);
 };
