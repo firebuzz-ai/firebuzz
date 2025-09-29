@@ -1,554 +1,529 @@
+
 export default [
-	{
-		title: "How to Build A/B Testing Pipeline",
-		summary:
-			"Discover how to build a/b testing pipeline that helps you test different versions of your landing pages to see which one converts better.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "analytics",
-			title: "Analytics",
-			description:
-				"Data analysis, performance metrics, and insights-driven decision making",
-			color: "blue",
-			featuredPost: "analytics-1",
-			content: "",
-			_meta: {
-				filePath: "analytics.mdx",
-				fileName: "analytics.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "analytics",
-			},
-		},
-		thumbnail: "/posts/thumbnail-1.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "analytics-1.mdx",
-			fileName: "analytics-1.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "analytics-1",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Importance of Conversion Rate Optimization",
-		summary:
-			"Discover how to improve your conversion rate by optimizing your landing pages.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "analytics",
-			title: "Analytics",
-			description:
-				"Data analysis, performance metrics, and insights-driven decision making",
-			color: "blue",
-			featuredPost: "analytics-1",
-			content: "",
-			_meta: {
-				filePath: "analytics.mdx",
-				fileName: "analytics.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "analytics",
-			},
-		},
-		thumbnail: "/posts/thumbnail-2.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "analytics-2.mdx",
-			fileName: "analytics-2.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "analytics-2",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "How to Build Audience Segmentation Pipeline",
-		summary:
-			"Discover how to build audience segmentation pipeline that helps you segment your audience into different groups based on their behavior and preferences.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "analytics",
-			title: "Analytics",
-			description:
-				"Data analysis, performance metrics, and insights-driven decision making",
-			color: "blue",
-			featuredPost: "analytics-1",
-			content: "",
-			_meta: {
-				filePath: "analytics.mdx",
-				fileName: "analytics.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "analytics",
-			},
-		},
-		thumbnail: "/posts/thumbnail-3.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "analytics-3.mdx",
-			fileName: "analytics-3.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "analytics-3",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Design High Converting Landing Pages",
-		summary:
-			"Discover how to design high converting landing pages that convert visitors into customers.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "design",
-			title: "Design",
-			description:
-				"UI/UX design principles, user experience optimization, and design systems",
-			color: "yellow",
-			featuredPost: "design-1",
-			content: "",
-			_meta: {
-				filePath: "design.mdx",
-				fileName: "design.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "design",
-			},
-		},
-		thumbnail: "/posts/thumbnail-4.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "design-1.mdx",
-			fileName: "design-1.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "design-1",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Branding For Small Businesses",
-		summary: "Discover how to brand your small business for maximum impact.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "design",
-			title: "Design",
-			description:
-				"UI/UX design principles, user experience optimization, and design systems",
-			color: "yellow",
-			featuredPost: "design-1",
-			content: "",
-			_meta: {
-				filePath: "design.mdx",
-				fileName: "design.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "design",
-			},
-		},
-		thumbnail: "/posts/thumbnail-5.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "design-2.mdx",
-			fileName: "design-2.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "design-2",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Why We Need To Redesign Our Website",
-		summary:
-			"Discover why we need to redesign our website to improve user experience and conversion rates.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "design",
-			title: "Design",
-			description:
-				"UI/UX design principles, user experience optimization, and design systems",
-			color: "yellow",
-			featuredPost: "design-1",
-			content: "",
-			_meta: {
-				filePath: "design.mdx",
-				fileName: "design.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "design",
-			},
-		},
-		thumbnail: "/posts/thumbnail-1.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "design-3.mdx",
-			fileName: "design-3.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "design-3",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Marketing 2.0: The Future of Marketing with AI",
-		summary:
-			"The future of marketing is here. Discover how AI is transforming the way we create, measure, and optimize marketing campaigns.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "marketing",
-			title: "Marketing",
-			description:
-				"AI-powered marketing strategies, campaign optimization, and growth tactics",
-			color: "emerald",
-			featuredPost: "marketing-2",
-			content: "",
-			_meta: {
-				filePath: "marketing.mdx",
-				fileName: "marketing.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "marketing",
-			},
-		},
-		thumbnail: "/posts/thumbnail-2.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "marketing-2.mdx",
-			fileName: "marketing-2.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "marketing-2",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Marketing 3.0: The Future of Marketing with AI",
-		summary:
-			"The future of marketing is here. Discover how AI is transforming the way we create, measure, and optimize marketing campaigns.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "luis",
-			fullName: "Luis Fernandez",
-			avatar: "/images/authors/luis.jpg",
-			bio: "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
-			content: "",
-			_meta: {
-				filePath: "luis.mdx",
-				fileName: "luis.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "luis",
-			},
-		},
-		category: {
-			slug: "marketing",
-			title: "Marketing",
-			description:
-				"AI-powered marketing strategies, campaign optimization, and growth tactics",
-			color: "emerald",
-			featuredPost: "marketing-2",
-			content: "",
-			_meta: {
-				filePath: "marketing.mdx",
-				fileName: "marketing.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "marketing",
-			},
-		},
-		thumbnail: "/posts/thumbnail-3.png",
-		isFeatured: false,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
-		_meta: {
-			filePath: "marketing-3.mdx",
-			fileName: "marketing-3.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "marketing-3",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,"default",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},"__esModule",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:"em",h2:"h2",img:"img",p:"p",strong:"strong",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,i.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,i.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,i.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;',
-		readingTime: "1 min read",
-		readingTimeMinutes: 0.93,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-		],
-	},
-	{
-		title: "Why We Built Firebuzz: Revolutionizing Marketing with AI",
-		summary:
-			"The story behind Firebuzz - how we identified the biggest challenges in modern marketing and built an AI-powered platform to solve them. Discover the journey from frustration to innovation that led to creating the future of marketing automation.",
-		date: new Date("2025-10-18T00:00:00.000Z"),
-		author: {
-			ref: "batuhan",
-			fullName: "Batuhan Bilgin",
-			avatar: "/images/authors/batuhan.jpg",
-			bio: "Senior Marketing Strategist at Firebuzz with 8+ years of experience in AI-powered marketing campaigns and growth strategies.",
-			content: "",
-			_meta: {
-				filePath: "batuhan.mdx",
-				fileName: "batuhan.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "batuhan",
-			},
-		},
-		category: {
-			slug: "marketing",
-			title: "Marketing",
-			description:
-				"AI-powered marketing strategies, campaign optimization, and growth tactics",
-			color: "emerald",
-			featuredPost: "marketing-2",
-			content: "",
-			_meta: {
-				filePath: "marketing.mdx",
-				fileName: "marketing.mdx",
-				directory: ".",
-				extension: "mdx",
-				path: "marketing",
-			},
-		},
-		thumbnail: "/posts/why-we-built-firebuzz.png",
-		isFeatured: true,
-		content:
-			"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\n\n## The AI-Powered Solution\n\nWe envisioned a platform where artificial intelligence could handle the heavy lifting while marketers focused on what they do best - understanding their audience and crafting compelling narratives.\n\n### Intelligent Campaign Creation\n\nOur AI agents don't just generate content; they understand your brand voice, analyze your target audience, and create campaigns that feel authentically human. From email sequences to social media content, Firebuzz generates marketing materials that convert.\n\n### Code-Free Landing Pages\n\nWith our browser-based development environment powered by WebContainers, anyone can create stunning, responsive landing pages without writing a single line of code. Our AI handles the technical implementation while you focus on the message.\n\n![Firebuzz intuitive drag-and-drop landing page builder interface powered by WebContainers, showing real-time visual editing without requiring code](/posts/why-we-built-firebuzz.png)\n\n_Firebuzz's intuitive landing page builder - create professional pages without code_\n\n### Real-Time Optimization\n\nFirebuzz continuously analyzes campaign performance and makes real-time adjustments to improve results. It's like having a team of data scientists working 24/7 to optimize your marketing efforts.\n\n## The Technology Behind the Magic\n\nBuilding Firebuzz required pushing the boundaries of what's possible with AI and web technologies:\n\n- **Advanced Language Models**: We fine-tuned multiple AI models to understand marketing nuances and generate compelling copy that converts.\n\n- **WebContainer Technology**: Running full development environments in the browser was once impossible. We made it seamless.\n\n- **Real-Time Collaboration**: Multiple team members can work on campaigns simultaneously with instant sync and conflict resolution.\n\n- **Multi-Channel Integration**: One campaign, deployed across email, social media, landing pages, and more with automatic formatting for each platform.\n\n## Early Results Exceeded Our Expectations\n\nWithin the first six months of beta testing:\n\n- **90% reduction** in campaign creation time\n- **3x increase** in conversion rates for our beta users\n- **85% of users** reported increased marketing team productivity\n- **95% customer satisfaction** score from early adopters\n\n![Firebuzz analytics dashboard displaying impressive beta results: 90% time reduction, 3x conversion increase, and 95% customer satisfaction scores](/posts/why-we-built-firebuzz.png)\n\n_Analytics dashboard showing our impressive beta testing results and user satisfaction metrics_\n\n## Looking Forward\n\nFirebuzz is just the beginning. We're working on features that will make marketing even more intelligent and accessible:\n\n- **Predictive Analytics**: AI that predicts campaign performance before launch\n- **Voice-Activated Campaigns**: Create marketing materials through natural conversation\n- **Automated A/B Testing**: Let AI run thousands of variations to find the perfect message\n\n## Join the Marketing Revolution\n\nWe built Firebuzz because we believe marketing should be creative, strategic, and fun - not bogged down by technical complexity and repetitive tasks. Every marketer should have access to enterprise-level AI capabilities, regardless of their team size or technical background.\n\nThe future of marketing is here, and it's powered by AI that amplifies human creativity rather than replacing it.\n\nReady to transform your marketing workflow? [Start your free trial today](/pricing) and experience the difference AI-powered marketing can make.",
-		_meta: {
-			filePath: "why-we-built-firebuzz.mdx",
-			fileName: "why-we-built-firebuzz.mdx",
-			directory: ".",
-			extension: "mdx",
-			path: "why-we-built-firebuzz",
-		},
-		mdx: 'var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,f=Object.prototype.hasOwnProperty;var w=(i,e)=>()=>(e||i((e={exports:{}}).exports,e),e.exports),b=(i,e)=>{for(var t in e)a(i,t,{get:e[t],enumerable:!0})},s=(i,e,t,o)=>{if(e&&typeof e=="object"||typeof e=="function")for(let r of u(e))!f.call(i,r)&&r!==t&&a(i,r,{get:()=>e[r],enumerable:!(o=m(e,r))||o.enumerable});return i};var k=(i,e,t)=>(t=i!=null?g(p(i)):{},s(e||!i||!i.__esModule?a(t,"default",{value:i,enumerable:!0}):t,i)),y=i=>s(a({},"__esModule",{value:!0}),i);var c=w((x,l)=>{l.exports=_jsx_runtime});var v={};b(v,{default:()=>h});var n=k(c());function d(i){let e={a:"a",em:"em",h2:"h2",h3:"h3",img:"img",li:"li",p:"p",strong:"strong",ul:"ul",...i.components};return(0,n.jsxs)(n.Fragment,{children:[(0,n.jsx)(e.p,{children:"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today\'s fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn\'t have."}),`\n`,(0,n.jsx)(e.p,{children:"That\'s why we built Firebuzz."}),`\n`,(0,n.jsx)(e.h2,{id:"the-problem-we-saw-everywhere",children:"The Problem We Saw Everywhere"}),`\n`,(0,n.jsx)(e.p,{children:"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:"}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks"})}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Time-consuming workflows"}),": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours."]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Technical barriers"}),": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind."]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Lack of personalization"}),": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers."]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Disconnected tools"}),": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows."]}),`\n`,(0,n.jsx)(e.h2,{id:"the-ai-powered-solution",children:"The AI-Powered Solution"}),`\n`,(0,n.jsx)(e.p,{children:"We envisioned a platform where artificial intelligence could handle the heavy lifting while marketers focused on what they do best - understanding their audience and crafting compelling narratives."}),`\n`,(0,n.jsx)(e.h3,{id:"intelligent-campaign-creation",children:"Intelligent Campaign Creation"}),`\n`,(0,n.jsx)(e.p,{children:"Our AI agents don\'t just generate content; they understand your brand voice, analyze your target audience, and create campaigns that feel authentically human. From email sequences to social media content, Firebuzz generates marketing materials that convert."}),`\n`,(0,n.jsx)(e.h3,{id:"code-free-landing-pages",children:"Code-Free Landing Pages"}),`\n`,(0,n.jsx)(e.p,{children:"With our browser-based development environment powered by WebContainers, anyone can create stunning, responsive landing pages without writing a single line of code. Our AI handles the technical implementation while you focus on the message."}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Firebuzz intuitive drag-and-drop landing page builder interface powered by WebContainers, showing real-time visual editing without requiring code"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:"Firebuzz\'s intuitive landing page builder - create professional pages without code"})}),`\n`,(0,n.jsx)(e.h3,{id:"real-time-optimization",children:"Real-Time Optimization"}),`\n`,(0,n.jsx)(e.p,{children:"Firebuzz continuously analyzes campaign performance and makes real-time adjustments to improve results. It\'s like having a team of data scientists working 24/7 to optimize your marketing efforts."}),`\n`,(0,n.jsx)(e.h2,{id:"the-technology-behind-the-magic",children:"The Technology Behind the Magic"}),`\n`,(0,n.jsx)(e.p,{children:"Building Firebuzz required pushing the boundaries of what\'s possible with AI and web technologies:"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Advanced Language Models"}),": We fine-tuned multiple AI models to understand marketing nuances and generate compelling copy that converts."]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"WebContainer Technology"}),": Running full development environments in the browser was once impossible. We made it seamless."]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Real-Time Collaboration"}),": Multiple team members can work on campaigns simultaneously with instant sync and conflict resolution."]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:"Multi-Channel Integration"}),": One campaign, deployed across email, social media, landing pages, and more with automatic formatting for each platform."]}),`\n`]}),`\n`]}),`\n`,(0,n.jsx)(e.h2,{id:"early-results-exceeded-our-expectations",children:"Early Results Exceeded Our Expectations"}),`\n`,(0,n.jsx)(e.p,{children:"Within the first six months of beta testing:"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"90% reduction"})," in campaign creation time"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"3x increase"})," in conversion rates for our beta users"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"85% of users"})," reported increased marketing team productivity"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"95% customer satisfaction"})," score from early adopters"]}),`\n`]}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:"/posts/why-we-built-firebuzz.png",alt:"Firebuzz analytics dashboard displaying impressive beta results: 90% time reduction, 3x conversion increase, and 95% customer satisfaction scores"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:"Analytics dashboard showing our impressive beta testing results and user satisfaction metrics"})}),`\n`,(0,n.jsx)(e.h2,{id:"looking-forward",children:"Looking Forward"}),`\n`,(0,n.jsx)(e.p,{children:"Firebuzz is just the beginning. We\'re working on features that will make marketing even more intelligent and accessible:"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"Predictive Analytics"}),": AI that predicts campaign performance before launch"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"Voice-Activated Campaigns"}),": Create marketing materials through natural conversation"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:"Automated A/B Testing"}),": Let AI run thousands of variations to find the perfect message"]}),`\n`]}),`\n`,(0,n.jsx)(e.h2,{id:"join-the-marketing-revolution",children:"Join the Marketing Revolution"}),`\n`,(0,n.jsx)(e.p,{children:"We built Firebuzz because we believe marketing should be creative, strategic, and fun - not bogged down by technical complexity and repetitive tasks. Every marketer should have access to enterprise-level AI capabilities, regardless of their team size or technical background."}),`\n`,(0,n.jsx)(e.p,{children:"The future of marketing is here, and it\'s powered by AI that amplifies human creativity rather than replacing it."}),`\n`,(0,n.jsxs)(e.p,{children:["Ready to transform your marketing workflow? ",(0,n.jsx)(e.a,{href:"/pricing",children:"Start your free trial today"})," and experience the difference AI-powered marketing can make."]})]})}function h(i={}){let{wrapper:e}=i.components||{};return e?(0,n.jsx)(e,{...i,children:(0,n.jsx)(d,{...i})}):d(i)}return y(v);})();\n;return Component;',
-		readingTime: "4 min read",
-		readingTimeMinutes: 3.315,
-		headings: [
-			{
-				level: 2,
-				title: "The Problem We Saw Everywhere",
-				slug: "the-problem-we-saw-everywhere",
-			},
-			{
-				level: 2,
-				title: "The AI-Powered Solution",
-				slug: "the-ai-powered-solution",
-			},
-			{
-				level: 3,
-				title: "Intelligent Campaign Creation",
-				slug: "intelligent-campaign-creation",
-			},
-			{
-				level: 3,
-				title: "Code-Free Landing Pages",
-				slug: "code-free-landing-pages",
-			},
-			{
-				level: 3,
-				title: "Real-Time Optimization",
-				slug: "real-time-optimization",
-			},
-			{
-				level: 2,
-				title: "The Technology Behind the Magic",
-				slug: "the-technology-behind-the-magic",
-			},
-			{
-				level: 2,
-				title: "Early Results Exceeded Our Expectations",
-				slug: "early-results-exceeded-our-expectations",
-			},
-			{
-				level: 2,
-				title: "Looking Forward",
-				slug: "looking-forward",
-			},
-			{
-				level: 2,
-				title: "Join the Marketing Revolution",
-				slug: "join-the-marketing-revolution",
-			},
-		],
-	},
-];
+  {
+    "title": "How to Build A/B Testing Pipeline",
+    "summary": "Discover how to build a/b testing pipeline that helps you test different versions of your landing pages to see which one converts better.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "analytics",
+      "title": "Analytics",
+      "description": "Data analysis, performance metrics, and insights-driven decision making",
+      "color": "blue",
+      "featuredPost": "analytics-1",
+      "content": "",
+      "_meta": {
+        "filePath": "analytics.mdx",
+        "fileName": "analytics.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "analytics"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-1.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "analytics-1.mdx",
+      "fileName": "analytics-1.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "analytics-1"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Importance of Conversion Rate Optimization",
+    "summary": "Discover how to improve your conversion rate by optimizing your landing pages.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "analytics",
+      "title": "Analytics",
+      "description": "Data analysis, performance metrics, and insights-driven decision making",
+      "color": "blue",
+      "featuredPost": "analytics-1",
+      "content": "",
+      "_meta": {
+        "filePath": "analytics.mdx",
+        "fileName": "analytics.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "analytics"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-2.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "analytics-2.mdx",
+      "fileName": "analytics-2.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "analytics-2"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "How to Build Audience Segmentation Pipeline",
+    "summary": "Discover how to build audience segmentation pipeline that helps you segment your audience into different groups based on their behavior and preferences.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "analytics",
+      "title": "Analytics",
+      "description": "Data analysis, performance metrics, and insights-driven decision making",
+      "color": "blue",
+      "featuredPost": "analytics-1",
+      "content": "",
+      "_meta": {
+        "filePath": "analytics.mdx",
+        "fileName": "analytics.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "analytics"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-3.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "analytics-3.mdx",
+      "fileName": "analytics-3.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "analytics-3"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Design High Converting Landing Pages",
+    "summary": "Discover how to design high converting landing pages that convert visitors into customers.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "design",
+      "title": "Design",
+      "description": "UI/UX design principles, user experience optimization, and design systems",
+      "color": "yellow",
+      "featuredPost": "design-1",
+      "content": "",
+      "_meta": {
+        "filePath": "design.mdx",
+        "fileName": "design.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "design"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-4.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "design-1.mdx",
+      "fileName": "design-1.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "design-1"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Branding For Small Businesses",
+    "summary": "Discover how to brand your small business for maximum impact.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "design",
+      "title": "Design",
+      "description": "UI/UX design principles, user experience optimization, and design systems",
+      "color": "yellow",
+      "featuredPost": "design-1",
+      "content": "",
+      "_meta": {
+        "filePath": "design.mdx",
+        "fileName": "design.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "design"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-5.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "design-2.mdx",
+      "fileName": "design-2.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "design-2"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Why We Need To Redesign Our Website",
+    "summary": "Discover why we need to redesign our website to improve user experience and conversion rates.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "design",
+      "title": "Design",
+      "description": "UI/UX design principles, user experience optimization, and design systems",
+      "color": "yellow",
+      "featuredPost": "design-1",
+      "content": "",
+      "_meta": {
+        "filePath": "design.mdx",
+        "fileName": "design.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "design"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-1.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "design-3.mdx",
+      "fileName": "design-3.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "design-3"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Marketing 2.0: The Future of Marketing with AI",
+    "summary": "The future of marketing is here. Discover how AI is transforming the way we create, measure, and optimize marketing campaigns.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "marketing",
+      "title": "Marketing",
+      "description": "AI-powered marketing strategies, campaign optimization, and growth tactics",
+      "color": "emerald",
+      "featuredPost": "marketing-2",
+      "content": "",
+      "_meta": {
+        "filePath": "marketing.mdx",
+        "fileName": "marketing.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "marketing"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-2.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "marketing-2.mdx",
+      "fileName": "marketing-2.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "marketing-2"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Marketing 3.0: The Future of Marketing with AI",
+    "summary": "The future of marketing is here. Discover how AI is transforming the way we create, measure, and optimize marketing campaigns.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "luis",
+      "fullName": "Luis Fernandez",
+      "avatar": "/images/authors/luis.jpg",
+      "bio": "Lead Product Designer at Firebuzz, passionate about creating intuitive user experiences and data-driven design solutions.",
+      "content": "",
+      "_meta": {
+        "filePath": "luis.mdx",
+        "fileName": "luis.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "luis"
+      }
+    },
+    "category": {
+      "slug": "marketing",
+      "title": "Marketing",
+      "description": "AI-powered marketing strategies, campaign optimization, and growth tactics",
+      "color": "emerald",
+      "featuredPost": "marketing-2",
+      "content": "",
+      "_meta": {
+        "filePath": "marketing.mdx",
+        "fileName": "marketing.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "marketing"
+      }
+    },
+    "thumbnail": "/posts/thumbnail-3.png",
+    "isFeatured": false,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.",
+    "_meta": {
+      "filePath": "marketing-3.mdx",
+      "fileName": "marketing-3.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "marketing-3"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var h=Object.getOwnPropertyDescriptor;var p=Object.getOwnPropertyNames;var w=Object.getPrototypeOf,u=Object.prototype.hasOwnProperty;var k=(n,e)=>()=>(e||n((e={exports:{}}).exports,e),e.exports),f=(n,e)=>{for(var t in e)a(n,t,{get:e[t],enumerable:!0})},o=(n,e,t,s)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of p(e))!u.call(n,r)&&r!==t&&a(n,r,{get:()=>e[r],enumerable:!(s=h(e,r))||s.enumerable});return n};var y=(n,e,t)=>(t=n!=null?g(w(n)):{},o(e||!n||!n.__esModule?a(t,\"default\",{value:n,enumerable:!0}):t,n)),x=n=>o(a({},\"__esModule\",{value:!0}),n);var c=k((T,l)=>{l.exports=_jsx_runtime});var b={};f(b,{default:()=>m});var i=y(c());function d(n){let e={em:\"em\",h2:\"h2\",img:\"img\",p:\"p\",strong:\"strong\",...n.components};return(0,i.jsxs)(i.Fragment,{children:[(0,i.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,i.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,i.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,i.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,i.jsx)(e.p,{children:(0,i.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,i.jsxs)(e.p,{children:[(0,i.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]})]})}function m(n={}){let{wrapper:e}=n.components||{};return e?(0,i.jsx)(e,{...n,children:(0,i.jsx)(d,{...n})}):d(n)}return x(b);})();\n;return Component;",
+    "readingTime": "1 min read",
+    "readingTimeMinutes": 0.93,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      }
+    ]
+  },
+  {
+    "title": "Why We Built Firebuzz: Revolutionizing Marketing with AI",
+    "summary": "The story behind Firebuzz - how we identified the biggest challenges in modern marketing and built an AI-powered platform to solve them. Discover the journey from frustration to innovation that led to creating the future of marketing automation.",
+    "date": new Date("2025-10-18T00:00:00.000Z"),
+    "author": {
+      "ref": "batuhan",
+      "fullName": "Batuhan Bilgin",
+      "avatar": "/images/authors/batuhan.jpg",
+      "bio": "Senior Marketing Strategist at Firebuzz with 8+ years of experience in AI-powered marketing campaigns and growth strategies.",
+      "content": "",
+      "_meta": {
+        "filePath": "batuhan.mdx",
+        "fileName": "batuhan.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "batuhan"
+      }
+    },
+    "category": {
+      "slug": "marketing",
+      "title": "Marketing",
+      "description": "AI-powered marketing strategies, campaign optimization, and growth tactics",
+      "color": "emerald",
+      "featuredPost": "marketing-2",
+      "content": "",
+      "_meta": {
+        "filePath": "marketing.mdx",
+        "fileName": "marketing.mdx",
+        "directory": ".",
+        "extension": "mdx",
+        "path": "marketing"
+      }
+    },
+    "thumbnail": "/posts/why-we-built-firebuzz.png",
+    "isFeatured": true,
+    "content": "The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\n\nThat's why we built Firebuzz.\n\n## The Problem We Saw Everywhere\n\nWorking in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\n\n![Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation](/posts/why-we-built-firebuzz.png)\n\n_Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks_\n\n**Time-consuming workflows**: Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\n\n**Technical barriers**: Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\n\n**Lack of personalization**: Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\n\n**Disconnected tools**: Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\n\n## The AI-Powered Solution\n\nWe envisioned a platform where artificial intelligence could handle the heavy lifting while marketers focused on what they do best - understanding their audience and crafting compelling narratives.\n\n### Intelligent Campaign Creation\n\nOur AI agents don't just generate content; they understand your brand voice, analyze your target audience, and create campaigns that feel authentically human. From email sequences to social media content, Firebuzz generates marketing materials that convert.\n\n### Code-Free Landing Pages\n\nWith our browser-based development environment powered by WebContainers, anyone can create stunning, responsive landing pages without writing a single line of code. Our AI handles the technical implementation while you focus on the message.\n\n![Firebuzz intuitive drag-and-drop landing page builder interface powered by WebContainers, showing real-time visual editing without requiring code](/posts/why-we-built-firebuzz.png)\n\n_Firebuzz's intuitive landing page builder - create professional pages without code_\n\n### Real-Time Optimization\n\nFirebuzz continuously analyzes campaign performance and makes real-time adjustments to improve results. It's like having a team of data scientists working 24/7 to optimize your marketing efforts.\n\n## The Technology Behind the Magic\n\nBuilding Firebuzz required pushing the boundaries of what's possible with AI and web technologies:\n\n- **Advanced Language Models**: We fine-tuned multiple AI models to understand marketing nuances and generate compelling copy that converts.\n\n- **WebContainer Technology**: Running full development environments in the browser was once impossible. We made it seamless.\n\n- **Real-Time Collaboration**: Multiple team members can work on campaigns simultaneously with instant sync and conflict resolution.\n\n- **Multi-Channel Integration**: One campaign, deployed across email, social media, landing pages, and more with automatic formatting for each platform.\n\n## Early Results Exceeded Our Expectations\n\nWithin the first six months of beta testing:\n\n- **90% reduction** in campaign creation time\n- **3x increase** in conversion rates for our beta users\n- **85% of users** reported increased marketing team productivity\n- **95% customer satisfaction** score from early adopters\n\n![Firebuzz analytics dashboard displaying impressive beta results: 90% time reduction, 3x conversion increase, and 95% customer satisfaction scores](/posts/why-we-built-firebuzz.png)\n\n_Analytics dashboard showing our impressive beta testing results and user satisfaction metrics_\n\n## Looking Forward\n\nFirebuzz is just the beginning. We're working on features that will make marketing even more intelligent and accessible:\n\n- **Predictive Analytics**: AI that predicts campaign performance before launch\n- **Voice-Activated Campaigns**: Create marketing materials through natural conversation\n- **Automated A/B Testing**: Let AI run thousands of variations to find the perfect message\n\n## Join the Marketing Revolution\n\nWe built Firebuzz because we believe marketing should be creative, strategic, and fun - not bogged down by technical complexity and repetitive tasks. Every marketer should have access to enterprise-level AI capabilities, regardless of their team size or technical background.\n\nThe future of marketing is here, and it's powered by AI that amplifies human creativity rather than replacing it.\n\nReady to transform your marketing workflow? [Start your free trial today](/pricing) and experience the difference AI-powered marketing can make.",
+    "_meta": {
+      "filePath": "why-we-built-firebuzz.mdx",
+      "fileName": "why-we-built-firebuzz.mdx",
+      "directory": ".",
+      "extension": "mdx",
+      "path": "why-we-built-firebuzz"
+    },
+    "mdx": "var Component=(()=>{var g=Object.create;var a=Object.defineProperty;var m=Object.getOwnPropertyDescriptor;var u=Object.getOwnPropertyNames;var p=Object.getPrototypeOf,f=Object.prototype.hasOwnProperty;var w=(i,e)=>()=>(e||i((e={exports:{}}).exports,e),e.exports),b=(i,e)=>{for(var t in e)a(i,t,{get:e[t],enumerable:!0})},s=(i,e,t,o)=>{if(e&&typeof e==\"object\"||typeof e==\"function\")for(let r of u(e))!f.call(i,r)&&r!==t&&a(i,r,{get:()=>e[r],enumerable:!(o=m(e,r))||o.enumerable});return i};var k=(i,e,t)=>(t=i!=null?g(p(i)):{},s(e||!i||!i.__esModule?a(t,\"default\",{value:i,enumerable:!0}):t,i)),y=i=>s(a({},\"__esModule\",{value:!0}),i);var c=w((x,l)=>{l.exports=_jsx_runtime});var v={};b(v,{default:()=>h});var n=k(c());function d(i){let e={a:\"a\",em:\"em\",h2:\"h2\",h3:\"h3\",img:\"img\",li:\"li\",p:\"p\",strong:\"strong\",ul:\"ul\",...i.components};return(0,n.jsxs)(n.Fragment,{children:[(0,n.jsx)(e.p,{children:\"The marketing landscape was broken. We knew it, our clients knew it, and anyone trying to create compelling campaigns in today's fast-paced digital world knew it. Traditional marketing tools were clunky, time-consuming, and required extensive technical knowledge that most marketers simply didn't have.\"}),`\n`,(0,n.jsx)(e.p,{children:\"That's why we built Firebuzz.\"}),`\n`,(0,n.jsx)(e.h2,{id:\"the-problem-we-saw-everywhere\",children:\"The Problem We Saw Everywhere\"}),`\n`,(0,n.jsx)(e.p,{children:\"Working in the marketing industry for over a decade, our team witnessed the same pain points repeatedly:\"}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks that led to inefficiencies in campaign creation\"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:\"Traditional marketing workflow showing complex processes, multiple tools, and time-consuming manual tasks\"})}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Time-consuming workflows\"}),\": Marketers were spending 70% of their time on repetitive tasks instead of strategy and creativity. Campaign creation took weeks when it should take hours.\"]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Technical barriers\"}),\": Creating professional landing pages required developers, designers, and extensive back-and-forth communication. Small businesses and solo marketers were left behind.\"]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Lack of personalization\"}),\": Despite having access to customer data, most campaigns were still one-size-fits-all approaches that failed to engage modern consumers.\"]}),`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Disconnected tools\"}),\": Marketing teams were juggling 10+ different platforms, leading to data silos and inefficient workflows.\"]}),`\n`,(0,n.jsx)(e.h2,{id:\"the-ai-powered-solution\",children:\"The AI-Powered Solution\"}),`\n`,(0,n.jsx)(e.p,{children:\"We envisioned a platform where artificial intelligence could handle the heavy lifting while marketers focused on what they do best - understanding their audience and crafting compelling narratives.\"}),`\n`,(0,n.jsx)(e.h3,{id:\"intelligent-campaign-creation\",children:\"Intelligent Campaign Creation\"}),`\n`,(0,n.jsx)(e.p,{children:\"Our AI agents don't just generate content; they understand your brand voice, analyze your target audience, and create campaigns that feel authentically human. From email sequences to social media content, Firebuzz generates marketing materials that convert.\"}),`\n`,(0,n.jsx)(e.h3,{id:\"code-free-landing-pages\",children:\"Code-Free Landing Pages\"}),`\n`,(0,n.jsx)(e.p,{children:\"With our browser-based development environment powered by WebContainers, anyone can create stunning, responsive landing pages without writing a single line of code. Our AI handles the technical implementation while you focus on the message.\"}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Firebuzz intuitive drag-and-drop landing page builder interface powered by WebContainers, showing real-time visual editing without requiring code\"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:\"Firebuzz's intuitive landing page builder - create professional pages without code\"})}),`\n`,(0,n.jsx)(e.h3,{id:\"real-time-optimization\",children:\"Real-Time Optimization\"}),`\n`,(0,n.jsx)(e.p,{children:\"Firebuzz continuously analyzes campaign performance and makes real-time adjustments to improve results. It's like having a team of data scientists working 24/7 to optimize your marketing efforts.\"}),`\n`,(0,n.jsx)(e.h2,{id:\"the-technology-behind-the-magic\",children:\"The Technology Behind the Magic\"}),`\n`,(0,n.jsx)(e.p,{children:\"Building Firebuzz required pushing the boundaries of what's possible with AI and web technologies:\"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Advanced Language Models\"}),\": We fine-tuned multiple AI models to understand marketing nuances and generate compelling copy that converts.\"]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"WebContainer Technology\"}),\": Running full development environments in the browser was once impossible. We made it seamless.\"]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Real-Time Collaboration\"}),\": Multiple team members can work on campaigns simultaneously with instant sync and conflict resolution.\"]}),`\n`]}),`\n`,(0,n.jsxs)(e.li,{children:[`\n`,(0,n.jsxs)(e.p,{children:[(0,n.jsx)(e.strong,{children:\"Multi-Channel Integration\"}),\": One campaign, deployed across email, social media, landing pages, and more with automatic formatting for each platform.\"]}),`\n`]}),`\n`]}),`\n`,(0,n.jsx)(e.h2,{id:\"early-results-exceeded-our-expectations\",children:\"Early Results Exceeded Our Expectations\"}),`\n`,(0,n.jsx)(e.p,{children:\"Within the first six months of beta testing:\"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"90% reduction\"}),\" in campaign creation time\"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"3x increase\"}),\" in conversion rates for our beta users\"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"85% of users\"}),\" reported increased marketing team productivity\"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"95% customer satisfaction\"}),\" score from early adopters\"]}),`\n`]}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.img,{src:\"/posts/why-we-built-firebuzz.png\",alt:\"Firebuzz analytics dashboard displaying impressive beta results: 90% time reduction, 3x conversion increase, and 95% customer satisfaction scores\"})}),`\n`,(0,n.jsx)(e.p,{children:(0,n.jsx)(e.em,{children:\"Analytics dashboard showing our impressive beta testing results and user satisfaction metrics\"})}),`\n`,(0,n.jsx)(e.h2,{id:\"looking-forward\",children:\"Looking Forward\"}),`\n`,(0,n.jsx)(e.p,{children:\"Firebuzz is just the beginning. We're working on features that will make marketing even more intelligent and accessible:\"}),`\n`,(0,n.jsxs)(e.ul,{children:[`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"Predictive Analytics\"}),\": AI that predicts campaign performance before launch\"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"Voice-Activated Campaigns\"}),\": Create marketing materials through natural conversation\"]}),`\n`,(0,n.jsxs)(e.li,{children:[(0,n.jsx)(e.strong,{children:\"Automated A/B Testing\"}),\": Let AI run thousands of variations to find the perfect message\"]}),`\n`]}),`\n`,(0,n.jsx)(e.h2,{id:\"join-the-marketing-revolution\",children:\"Join the Marketing Revolution\"}),`\n`,(0,n.jsx)(e.p,{children:\"We built Firebuzz because we believe marketing should be creative, strategic, and fun - not bogged down by technical complexity and repetitive tasks. Every marketer should have access to enterprise-level AI capabilities, regardless of their team size or technical background.\"}),`\n`,(0,n.jsx)(e.p,{children:\"The future of marketing is here, and it's powered by AI that amplifies human creativity rather than replacing it.\"}),`\n`,(0,n.jsxs)(e.p,{children:[\"Ready to transform your marketing workflow? \",(0,n.jsx)(e.a,{href:\"/pricing\",children:\"Start your free trial today\"}),\" and experience the difference AI-powered marketing can make.\"]})]})}function h(i={}){let{wrapper:e}=i.components||{};return e?(0,n.jsx)(e,{...i,children:(0,n.jsx)(d,{...i})}):d(i)}return y(v);})();\n;return Component;",
+    "readingTime": "4 min read",
+    "readingTimeMinutes": 3.315,
+    "headings": [
+      {
+        "level": 2,
+        "title": "The Problem We Saw Everywhere",
+        "slug": "the-problem-we-saw-everywhere"
+      },
+      {
+        "level": 2,
+        "title": "The AI-Powered Solution",
+        "slug": "the-ai-powered-solution"
+      },
+      {
+        "level": 3,
+        "title": "Intelligent Campaign Creation",
+        "slug": "intelligent-campaign-creation"
+      },
+      {
+        "level": 3,
+        "title": "Code-Free Landing Pages",
+        "slug": "code-free-landing-pages"
+      },
+      {
+        "level": 3,
+        "title": "Real-Time Optimization",
+        "slug": "real-time-optimization"
+      },
+      {
+        "level": 2,
+        "title": "The Technology Behind the Magic",
+        "slug": "the-technology-behind-the-magic"
+      },
+      {
+        "level": 2,
+        "title": "Early Results Exceeded Our Expectations",
+        "slug": "early-results-exceeded-our-expectations"
+      },
+      {
+        "level": 2,
+        "title": "Looking Forward",
+        "slug": "looking-forward"
+      },
+      {
+        "level": 2,
+        "title": "Join the Marketing Revolution",
+        "slug": "join-the-marketing-revolution"
+      }
+    ]
+  }
+]
