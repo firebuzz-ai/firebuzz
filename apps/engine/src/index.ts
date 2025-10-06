@@ -63,6 +63,7 @@ import { handleTrafficQueue } from "./queue/traffic-consumer";
 // Export the Durable Object classes
 export { ABTestDurableObject } from "./durable-objects/ab-test";
 export { EventTrackerDurableObject } from "./durable-objects/event-tracker";
+export { AgentSessionDurableObject } from "./durable-objects/agent-session";
 
 // Export both fetch and queue handlers in the default export
 export default {

@@ -31,6 +31,10 @@
 			"types": "./src/api/do/ab-test/index.ts",
 			"default": "./src/api/do/ab-test/index.ts"
 		},
+		"./api/do/agent-session": {
+			"types": "./src/api/do/agent-session/index.ts",
+			"default": "./src/api/do/agent-session/index.ts"
+		},
 		"./api/client-types": {
 			"types": "./src/api/client-types.ts",
 			"default": "./src/api/client-types.ts"

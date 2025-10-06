@@ -9,6 +9,7 @@ import { projectSchema } from "./collections/projects/schema";
 import { documentChunksSchema } from "./collections/storage/documents/chunks/schema";
 import { documentsSchema } from "./collections/storage/documents/schema";
 
+import { agentSessionSchema } from "./collections/agentSessions/schema";
 import { audienceSchema } from "./collections/brands/audiences/schema";
 import { featureSchema } from "./collections/brands/features/schema";
 import { brandSchema } from "./collections/brands/schema";
@@ -22,6 +23,8 @@ import { formSubmissionSchema } from "./collections/forms/submissions/schema";
 import { invitationSchema } from "./collections/invitations/schema";
 import { memberSchema } from "./collections/members/schema";
 import { onboardingSchema } from "./collections/onboarding/schema";
+import { sandboxSchema } from "./collections/sandboxes/schema";
+import { sandboxCommandSchema } from "./collections/sandboxes/commands/schema";
 import { memoizedDocumentsSchema } from "./collections/storage/documents/memoized/schema";
 import { documentVectorsSchema } from "./collections/storage/documents/vectors/schema";
 import { knowledgeBaseSchema } from "./collections/storage/knowledgeBases/schema";
@@ -42,50 +45,53 @@ import { userSchema } from "./collections/users/schema";
 import { workspaceSchema } from "./collections/workspaces/schema";
 
 export default defineSchema({
-	users: userSchema,
-	workspaces: workspaceSchema,
-	projects: projectSchema,
-	onboarding: onboardingSchema,
-	campaigns: campaignSchema,
-	forms: formSchema,
-	formSubmissions: formSubmissionSchema,
-	landingPageTemplates: landingPageTemplatesSchema,
-	landingPages: landingPagesSchema,
-	landingPageVersions: landingPageVersionsSchema,
-	landingPageMessages: landingPageMessagesSchema,
-	media: mediaSchema,
-	mediaVectors: mediaVectorsSchema,
-	customDomains: customDomainSchema,
-	projectDomains: projectDomainsSchema,
-	documents: documentsSchema,
-	documentChunks: documentChunksSchema,
-	documentVectors: documentVectorsSchema,
-	knowledgeBases: knowledgeBaseSchema,
-	brands: brandSchema,
-	themes: themeSchema,
-	audiences: audienceSchema,
-	features: featureSchema,
-	testimonials: testimonialSchema,
-	socials: socialSchema,
+  users: userSchema,
+  workspaces: workspaceSchema,
+  projects: projectSchema,
+  onboarding: onboardingSchema,
+  campaigns: campaignSchema,
+  forms: formSchema,
+  formSubmissions: formSubmissionSchema,
+  landingPageTemplates: landingPageTemplatesSchema,
+  landingPages: landingPagesSchema,
+  landingPageVersions: landingPageVersionsSchema,
+  landingPageMessages: landingPageMessagesSchema,
+  media: mediaSchema,
+  mediaVectors: mediaVectorsSchema,
+  customDomains: customDomainSchema,
+  projectDomains: projectDomainsSchema,
+  documents: documentsSchema,
+  documentChunks: documentChunksSchema,
+  documentVectors: documentVectorsSchema,
+  knowledgeBases: knowledgeBaseSchema,
+  brands: brandSchema,
+  themes: themeSchema,
+  audiences: audienceSchema,
+  features: featureSchema,
+  testimonials: testimonialSchema,
+  socials: socialSchema,
+  agentSessions: agentSessionSchema,
+  sandboxes: sandboxSchema,
+  sandboxCommands: sandboxCommandSchema,
 
-	// Stripe Tables
-	transactions: transactionSchema,
-	customers: customerSchema,
-	subscriptions: subscriptionSchema,
-	subscriptionItems: subscriptionItemSchema,
-	invoices: invoiceSchema,
-	paymentMethods: paymentMethodSchema,
-	payments: paymentSchema,
-	products: productSchema,
-	prices: priceSchema,
-	webhookEvents: webhookEventSchema,
-	invitations: invitationSchema,
-	members: memberSchema,
-	taxIds: taxIdSchema,
+  // Stripe Tables
+  transactions: transactionSchema,
+  customers: customerSchema,
+  subscriptions: subscriptionSchema,
+  subscriptionItems: subscriptionItemSchema,
+  invoices: invoiceSchema,
+  paymentMethods: paymentMethodSchema,
+  payments: paymentSchema,
+  products: productSchema,
+  prices: priceSchema,
+  webhookEvents: webhookEventSchema,
+  invitations: invitationSchema,
+  members: memberSchema,
+  taxIds: taxIdSchema,
 
-	// Helper Tables
-	memoizedDocuments: memoizedDocumentsSchema,
+  // Helper Tables
+  memoizedDocuments: memoizedDocumentsSchema,
 
-	// Analytics Tables
-	analyticsPipes: analyticsPipesSchema,
+  // Analytics Tables
+  analyticsPipes: analyticsPipesSchema,
 });

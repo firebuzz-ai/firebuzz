@@ -8,6 +8,9 @@
  * @module
  */
 
+import type * as collections_agentSessions_actions from "../collections/agentSessions/actions.js";
+import type * as collections_agentSessions_mutations from "../collections/agentSessions/mutations.js";
+import type * as collections_agentSessions_queries from "../collections/agentSessions/queries.js";
 import type * as collections_analytics_actions from "../collections/analytics/actions.js";
 import type * as collections_analytics_mutations from "../collections/analytics/mutations.js";
 import type * as collections_analytics_queries from "../collections/analytics/queries.js";
@@ -77,6 +80,11 @@ import type * as collections_onboarding_queries from "../collections/onboarding/
 import type * as collections_onboarding_utils from "../collections/onboarding/utils.js";
 import type * as collections_projects_mutations from "../collections/projects/mutations.js";
 import type * as collections_projects_queries from "../collections/projects/queries.js";
+import type * as collections_sandboxes_actions from "../collections/sandboxes/actions.js";
+import type * as collections_sandboxes_commands_mutations from "../collections/sandboxes/commands/mutations.js";
+import type * as collections_sandboxes_commands_queries from "../collections/sandboxes/commands/queries.js";
+import type * as collections_sandboxes_mutations from "../collections/sandboxes/mutations.js";
+import type * as collections_sandboxes_queries from "../collections/sandboxes/queries.js";
 import type * as collections_storage_documents_actions from "../collections/storage/documents/actions.js";
 import type * as collections_storage_documents_chunks_actions from "../collections/storage/documents/chunks/actions.js";
 import type * as collections_storage_documents_chunks_mutations from "../collections/storage/documents/chunks/mutations.js";
@@ -174,6 +182,9 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  "collections/agentSessions/actions": typeof collections_agentSessions_actions;
+  "collections/agentSessions/mutations": typeof collections_agentSessions_mutations;
+  "collections/agentSessions/queries": typeof collections_agentSessions_queries;
   "collections/analytics/actions": typeof collections_analytics_actions;
   "collections/analytics/mutations": typeof collections_analytics_mutations;
   "collections/analytics/queries": typeof collections_analytics_queries;
@@ -243,6 +254,11 @@ declare const fullApi: ApiFromModules<{
   "collections/onboarding/utils": typeof collections_onboarding_utils;
   "collections/projects/mutations": typeof collections_projects_mutations;
   "collections/projects/queries": typeof collections_projects_queries;
+  "collections/sandboxes/actions": typeof collections_sandboxes_actions;
+  "collections/sandboxes/commands/mutations": typeof collections_sandboxes_commands_mutations;
+  "collections/sandboxes/commands/queries": typeof collections_sandboxes_commands_queries;
+  "collections/sandboxes/mutations": typeof collections_sandboxes_mutations;
+  "collections/sandboxes/queries": typeof collections_sandboxes_queries;
   "collections/storage/documents/actions": typeof collections_storage_documents_actions;
   "collections/storage/documents/chunks/actions": typeof collections_storage_documents_chunks_actions;
   "collections/storage/documents/chunks/mutations": typeof collections_storage_documents_chunks_mutations;
