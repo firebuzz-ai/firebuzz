@@ -68,8 +68,8 @@ export const joinOrCreateSession = mutation({
         .withIndex("by_landing_page_id", (q) =>
           q.eq("landingPageId", assetSettings.id)
         )
-        .filter((q) => q.eq(q.field("status"), "active"))
-        .unique();
+        /* .filter((q) => q.eq(q.field("status"), "active")) */ // TODO: Uncomment this
+        .first();
 
       // A) NEW SESSION ROUTE
       if (!session) {
