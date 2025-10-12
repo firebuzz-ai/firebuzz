@@ -1,4 +1,3 @@
-import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
 import { ConvexError } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
@@ -12,6 +11,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 import { ZodError } from "zod";
+import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
 import { SocialForm } from "./social-form";
 
 export const NewSocialModal = () => {

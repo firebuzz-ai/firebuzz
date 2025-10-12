@@ -1,5 +1,6 @@
 "use client";
 
+import { parseAsStringLiteral, useQueryStates } from "nuqs";
 import { EditAudienceModal } from "@/components/modals/audience/edit-audience-modal";
 import { NewAudienceModal } from "@/components/modals/audience/new-audience-modal";
 import { NewFeatureModal } from "@/components/modals/feature/new-feature-modal";
@@ -9,7 +10,6 @@ import { NewSocialModal } from "@/components/modals/social/new-social-modal";
 import { EditTestimonialModal } from "@/components/modals/testimonial/edit-testimonial-modal";
 import { NewTestimonialModal } from "@/components/modals/testimonial/new-testimonial-modal";
 import { MarketingTabs } from "@/components/navigation/brand/marketing-tabs";
-import { parseAsStringLiteral, useQueryStates } from "nuqs";
 import { Audiences } from "./audiences/audiences";
 import { Features } from "./features/features";
 import { Socials } from "./socials/socials";

@@ -1,12 +1,12 @@
 "use client";
+import { api, type Id, useRichQuery } from "@firebuzz/convex";
+import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { notFound } from "next/navigation";
 import { Canvas, FormCanvasProvider } from "@/components/canvas/forms";
 import { FlowLayout } from "@/components/layouts/two-panels/panels/campaign/flow";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/campaign/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
-import { type Id, api, useRichQuery } from "@firebuzz/convex";
-import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { notFound } from "next/navigation";
 // Removed Jotai dependencies - using canvas-only approach with optimistic updates
 import { Panel } from "./panel/panel";
 

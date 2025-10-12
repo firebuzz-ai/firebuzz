@@ -1,5 +1,4 @@
 "use client";
-import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -7,6 +6,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
 import { DomainForm } from "./domain-form";
 
 export const NewDomainModal = () => {

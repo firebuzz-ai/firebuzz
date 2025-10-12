@@ -1,6 +1,5 @@
 "use client";
 
-import { useConfigureProjectDomainModal } from "@/hooks/ui/use-configure-project-domain-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -23,6 +22,7 @@ import {
 	Settings,
 	ShieldCheck,
 } from "@firebuzz/ui/icons/lucide";
+import { useConfigureProjectDomainModal } from "@/hooks/ui/use-configure-project-domain-modal";
 
 interface ProjectDomainItemProps {
 	domain: Doc<"projectDomains">;

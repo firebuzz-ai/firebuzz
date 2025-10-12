@@ -5,7 +5,8 @@ import { internalQuery } from "../_generated/server";
 
 export const rateLimiter = new RateLimiter(components.rateLimiter, {
 	firecrawlScrape: { kind: "fixed window", rate: 100, period: MINUTE },
-	ingestCreditUsage: { kind: "fixed window", rate: 10, period: SECOND },
+	ingestCreditUsage: { kind: "fixed window", rate: 100, period: SECOND },
+	ingestTokenUsage: { kind: "fixed window", rate: 100, period: SECOND },
 	exaSearchAndCrawl: { kind: "fixed window", rate: 5, period: SECOND },
 	formSubmit: { kind: "fixed window", rate: 5, period: SECOND },
 	analyticsQuery: { kind: "fixed window", rate: 20, period: SECOND },
@@ -19,6 +20,7 @@ export const checkLimit = internalQuery({
 			v.literal("ingestCreditUsage"),
 			v.literal("formSubmit"),
 			v.literal("analyticsQuery"),
+			v.literal("ingestTokenUsage"),
 		),
 		key: v.optional(v.string()),
 	},

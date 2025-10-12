@@ -1,5 +1,5 @@
-import { getContentType } from "@/utils/assets";
 import { Hono } from "hono";
+import { getContentType } from "@/utils/assets";
 
 const app = new Hono<{ Bindings: Env }>();
 

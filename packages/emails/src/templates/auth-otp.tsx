@@ -1,7 +1,4 @@
 import { projectConfig } from "@firebuzz/project-config";
-import * as React from "react";
-import { tailwindConfig } from "./tailwind-config";
-
 import {
   Body,
   Container,
@@ -16,6 +13,8 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
+import * as React from "react";
+import { tailwindConfig } from "./tailwind-config";
 
 export interface AuthOTPTemplateProps {
   requestedAt: string;

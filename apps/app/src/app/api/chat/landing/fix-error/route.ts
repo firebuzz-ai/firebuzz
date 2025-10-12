@@ -1,9 +1,8 @@
 import { auth } from "@clerk/nextjs/server";
 import { generateObject } from "ai";
-
-import { openAI } from "@/lib/ai/openai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { openAI } from "@/lib/ai/openai";
 
 export async function POST(request: NextRequest) {
 	const { prompt } = await request.json();

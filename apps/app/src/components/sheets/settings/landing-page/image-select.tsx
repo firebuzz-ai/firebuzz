@@ -1,8 +1,8 @@
 "use client";
 
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Image } from "@firebuzz/ui/icons/lucide";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 
 export const ImageSelect = ({
 	onChange,

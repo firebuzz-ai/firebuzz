@@ -1,11 +1,10 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Check, ChevronRight, ChevronsRight } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
 
 interface FlowNodeProps {
 	node: { id: number; title: string; subtitle: string };

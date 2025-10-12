@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "../../../_generated/server";
+import { internalQuery, query } from "../../../_generated/server";
 import { getCurrentUserWithWorkspace } from "../../users/utils";
 
 export const getAll = query({
@@ -49,5 +49,14 @@ export const getById = query({
 		}
 
 		return theme;
+	},
+});
+
+export const getByIdInternal = internalQuery({
+	args: {
+		id: v.id("themes"),
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db.get(args.id);
 	},
 });

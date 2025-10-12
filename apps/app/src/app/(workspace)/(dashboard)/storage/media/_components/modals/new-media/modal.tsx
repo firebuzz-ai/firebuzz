@@ -1,4 +1,3 @@
-import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -16,6 +15,7 @@ import {
 	SidebarProvider,
 } from "@firebuzz/ui/components/ui/sidebar";
 import { Layers2, Upload } from "@firebuzz/ui/icons/lucide";
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
 import { Unsplash } from "./unsplash";
 import { UploadMedia } from "./upload";
 

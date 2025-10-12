@@ -1,6 +1,6 @@
-import { openAIRaw } from "@/lib/ai/openai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { openAIRaw } from "@/lib/ai/openai";
 
 // Parameter schema for the image generation API
 const generateParamsSchema = z.object({

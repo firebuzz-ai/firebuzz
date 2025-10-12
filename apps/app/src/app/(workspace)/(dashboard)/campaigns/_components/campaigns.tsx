@@ -1,16 +1,16 @@
 "use client";
-import { NewCampaignModal } from "@/components/modals/campaigns/campaign-modal";
-import { TableFooter } from "@/components/tables/paginated-footer";
-import { useProject } from "@/hooks/auth/use-project";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedQuery,
 	useStablePaginatedQuery,
 } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { NewCampaignModal } from "@/components/modals/campaigns/campaign-modal";
+import { TableFooter } from "@/components/tables/paginated-footer";
+import { useProject } from "@/hooks/auth/use-project";
 import { Controls } from "./controls";
 import { Table } from "./table";
 

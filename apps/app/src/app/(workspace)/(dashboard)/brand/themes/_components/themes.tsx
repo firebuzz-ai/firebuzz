@@ -1,10 +1,10 @@
 "use client";
 
-import { ThemeTabs } from "@/components/navigation/brand/themes-tabs";
-import { ThemeSettingsSheet } from "@/components/sheets/settings/themes/sheet";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
+import { ThemeTabs } from "@/components/navigation/brand/themes-tabs";
+import { ThemeSettingsSheet } from "@/components/sheets/settings/themes/sheet";
 import { NewThemeModal } from "./modals/new-theme/modal";
 import { Theme } from "./theme/theme";
 

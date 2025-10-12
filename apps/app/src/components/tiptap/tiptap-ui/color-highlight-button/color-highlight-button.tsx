@@ -3,20 +3,17 @@
 import type { Node } from "@tiptap/pm/model";
 import { type Editor, isNodeSelection } from "@tiptap/react";
 import * as React from "react";
-
+// --- UI Primitives ---
+import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
+import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
 // --- Hooks ---
 import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 // --- Lib ---
 import {
 	findNodePosition,
 	isEmptyNode,
 	isMarkInSchema,
 } from "@/lib/tiptap-utils";
-
-// --- UI Primitives ---
-import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
-import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
 
 // --- Styles ---
 import "@/components/tiptap/tiptap-ui/color-highlight-button/color-highlight-button.scss";

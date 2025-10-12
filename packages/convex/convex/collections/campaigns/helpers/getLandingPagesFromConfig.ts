@@ -1,8 +1,8 @@
 import type {
+	nodeSchemaConvex,
 	SegmentNodeData,
 	TrafficNodeData,
 	VariantNodeData,
-	nodeSchemaConvex,
 } from "@firebuzz/shared-types/campaign";
 import type { Infer } from "convex/values";
 import type { Id } from "../../../_generated/dataModel";

@@ -1,10 +1,10 @@
 "use client";
 
-import { useUser } from "@/hooks/auth/use-user";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
-import { type ReactNode, createContext, useContext, useState } from "react";
+import { createContext, type ReactNode, useContext, useState } from "react";
 import { z } from "zod";
+import { useUser } from "@/hooks/auth/use-user";
 
 const formSchema = z.object({
 	firstName: z.string().min(1, "First name is required"),

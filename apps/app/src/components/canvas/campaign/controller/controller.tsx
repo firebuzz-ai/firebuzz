@@ -1,3 +1,10 @@
+import { Button } from "@firebuzz/ui/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipShortcut,
+	TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
 import {
 	Hand,
 	Maximize,
@@ -6,7 +13,7 @@ import {
 	Plus,
 	StickyNote,
 } from "@firebuzz/ui/icons/lucide";
-
+import { cn } from "@firebuzz/ui/lib/utils";
 import {
 	Panel,
 	type PanelProps,
@@ -14,15 +21,6 @@ import {
 	useReactFlow,
 	useViewport,
 } from "@xyflow/react";
-
-import { Button } from "@firebuzz/ui/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipShortcut,
-	TooltipTrigger,
-} from "@firebuzz/ui/components/ui/tooltip";
-import { cn } from "@firebuzz/ui/lib/utils";
 import { useEffect } from "react";
 import { useCanvasController } from "./provider";
 

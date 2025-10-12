@@ -1,14 +1,3 @@
-import { useUser } from "@/hooks/auth/use-user";
-import {
-	actionsAtom,
-	artifactsAtom,
-	currentPreviewVersionAtom,
-	currentVersionAtom,
-	parsedFilesAtom,
-} from "@/lib/workbench/atoms";
-import type { ParsedFile } from "@/lib/workbench/parser/current-files-parser";
-import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
-import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { api, fetchQuery } from "@firebuzz/convex/nextjs";
@@ -22,6 +11,17 @@ import { nanoid } from "nanoid";
 import { useParams } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUser } from "@/hooks/auth/use-user";
+import {
+	actionsAtom,
+	artifactsAtom,
+	currentPreviewVersionAtom,
+	currentVersionAtom,
+	parsedFilesAtom,
+} from "@/lib/workbench/atoms";
+import type { ParsedFile } from "@/lib/workbench/parser/current-files-parser";
+import { parseFileSystemTree } from "@/lib/workbench/parser/current-files-parser";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { ActionList } from "./action-list";
 
 interface ArtifactProps {

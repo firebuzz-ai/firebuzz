@@ -1,10 +1,5 @@
 "use client";
 
-import { ProjectModal } from "@/components/modals/projects/project-modal";
-import { useRouterContext } from "@/components/providers/workspace/router";
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import { buttonVariants } from "@firebuzz/ui/components/ui/button";
 import type { ColorPickerColorType } from "@firebuzz/ui/components/ui/color-picker";
 import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";
@@ -16,6 +11,11 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { ProjectModal } from "@/components/modals/projects/project-modal";
+import { useRouterContext } from "@/components/providers/workspace/router";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useProjectModal } from "@/hooks/ui/use-project-modal";
 
 const container = {
 	hidden: { opacity: 0 },

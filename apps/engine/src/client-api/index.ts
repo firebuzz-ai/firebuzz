@@ -17,7 +17,9 @@ const clientApiRoutes = new OpenAPIHono<{ Bindings: Env }>()
 type ClientApiType = typeof clientApiRoutes;
 const createClientApiClient = ({
 	baseUrl = "http://localhost:8787",
-}: { baseUrl?: string } = {}) => {
+}: {
+	baseUrl?: string;
+} = {}) => {
 	return hc<ClientApiType>(`${baseUrl}/client-api/v1`);
 };
 

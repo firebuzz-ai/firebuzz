@@ -1,10 +1,5 @@
 "use client";
 
-import type {
-	FilterOperator,
-	RuleTypeDefinition,
-	RuleTypeId,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import {
 	CalendarDays,
 	Code,
@@ -27,9 +22,9 @@ import {
 	FirefoxIcon,
 	GoogleChromeIcon,
 	GoogleIcon,
-	IOSIcon,
 	InstagramIcon,
 	InternetExplorerIcon,
+	IOSIcon,
 	LinkedInIcon,
 	LinuxIcon,
 	OperaIcon,
@@ -40,8 +35,13 @@ import {
 	WindowsIcon,
 	YouTubeIcon,
 } from "@firebuzz/ui/icons/social";
-// @ts-ignore
-import { TIMEZONES, countriesAndLanguages } from "@firebuzz/utils";
+// @ts-expect-error
+import { countriesAndLanguages, TIMEZONES } from "@firebuzz/utils";
+import type {
+	FilterOperator,
+	RuleTypeDefinition,
+	RuleTypeId,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 
 // Helper functions to get countries and languages
 const getCountryOptions = () => {

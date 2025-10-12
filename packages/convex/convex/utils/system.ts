@@ -6,8 +6,8 @@ import {
 	aggregateCurrentPeriodAdditions,
 	aggregateCurrentPeriodUsage,
 	aggregateDocuments,
-	aggregateLandingPageVersions,
 	aggregateLandingPages,
+	aggregateLandingPageVersions,
 	aggregateMedia,
 } from "../components/aggregates";
 import { batchDeleteStoragePool, cascadePool } from "../components/workpools";

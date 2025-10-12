@@ -1,0 +1,235 @@
+import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
+import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
+import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
+import type { XaiProviderOptions } from "@ai-sdk/xai";
+import { openRouter } from "lib/openRouter";
+import type { Model } from "./schema";
+
+/* Context Window Sizes
+Model	Context Window	Output Tokens
+claude-sonnet-4.5	200K tokens	~64K tokens
+gpt-5	400K tokens	~128K tokens
+gpt-5-mini	400K tokens	~128K tokens
+gemini-2.5-pro	1M tokens (2M coming)	Standard
+google/gemini-2.5-flash	1M tokens	Standard
+z-ai/glm-4.6	~128K tokens	Standard
+x-ai/grok-code-fast-1	256K tokens	Standard
+x-ai/grok-4-fast	256K tokens	Standard */
+
+// Pricing per million tokens (updated 2025-10-10)
+export const AI_MODELS_PRICING = {
+	"claude-sonnet-4.5": {
+		inputPerMillion: 3.0,
+		outputPerMillion: 15.0,
+		cachedInputPerMillion: 0.3,
+	},
+	"gpt-5": {
+		inputPerMillion: 1.25,
+		outputPerMillion: 10.0,
+		cachedInputPerMillion: 0.125,
+	},
+	"gpt-5-mini": {
+		inputPerMillion: 0.25,
+		outputPerMillion: 2.0,
+		cachedInputPerMillion: 0.025,
+	},
+	"gemini-2.5-pro": {
+		inputPerMillion: 1.25,
+		outputPerMillion: 10.0,
+		cachedInputPerMillion: 0.31,
+	},
+	"google/gemini-2.5-flash": {
+		inputPerMillion: 0.15,
+		outputPerMillion: 0.6,
+		cachedInputPerMillion: 0.03,
+	},
+	"z-ai/glm-4.6": {
+		inputPerMillion: 0.5,
+		outputPerMillion: 2.2,
+		cachedInputPerMillion: 0.11,
+	},
+	"x-ai/grok-code-fast-1": {
+		inputPerMillion: 0.2,
+		outputPerMillion: 1.5,
+		cachedInputPerMillion: 0.02,
+	},
+	"x-ai/grok-4-fast": {
+		inputPerMillion: 0.2,
+		outputPerMillion: 0.5,
+		cachedInputPerMillion: 0.05,
+	},
+} as const;
+
+/**
+ * Calculate the total cost for a given model and token usage
+ * @param model - The AI model to calculate cost for
+ * @param inputTokens - Total number of input tokens (includes cached tokens)
+ * @param outputTokens - Number of output tokens used
+ * @param cachedInputTokens - Number of cached input tokens (subset of inputTokens)
+ * @returns Total cost in USD
+ */
+export function calculateModelCost(
+	model: Model,
+	inputTokens: number,
+	outputTokens: number,
+	cachedInputTokens = 0,
+): number {
+	const pricing = AI_MODELS_PRICING[model];
+
+	// Subtract cached tokens from input tokens to avoid double counting
+	const nonCachedInputTokens = inputTokens - cachedInputTokens;
+	const inputCost =
+		(nonCachedInputTokens / 1_000_000) * pricing.inputPerMillion;
+	const cachedCost =
+		(cachedInputTokens / 1_000_000) * pricing.cachedInputPerMillion;
+	const outputCost = (outputTokens / 1_000_000) * pricing.outputPerMillion;
+	return inputCost + cachedCost + outputCost;
+}
+
+/**
+ * Convert USD spend to credits ($0.05 = 1 credit)
+ * Rounds up to 2 decimal places
+ * @param totalSpend - Total spend in USD
+ * @returns Number of credits consumed, rounded up to 2 decimal places
+ */
+export function calculateCreditsFromSpend(totalSpend: number): number {
+	const credits = totalSpend / 0.05;
+	return Math.ceil(credits * 100) / 100;
+}
+
+/**
+ * Normalize a model string to one of our supported models
+ * Maps model versions/variants to their base model name
+ * @param modelString - Raw model string (e.g., "claude-sonnet-4.5-20250929")
+ * @returns Normalized model name or undefined if not supported
+ */
+export function normalizeModel(modelString: string): Model {
+	if (modelString.startsWith("claude-sonnet-4.5")) {
+		return "claude-sonnet-4.5";
+	}
+	if (modelString.startsWith("gpt-5-mini")) {
+		return "gpt-5-mini";
+	}
+	if (modelString.startsWith("gpt-5")) {
+		return "gpt-5";
+	}
+	if (modelString.startsWith("gemini-2.5-pro")) {
+		return "gemini-2.5-pro";
+	}
+	if (
+		modelString.startsWith("google/gemini-2.5-flash") ||
+		modelString.startsWith("gemini-2.5-flash")
+	) {
+		return "google/gemini-2.5-flash";
+	}
+	if (
+		modelString.startsWith("z-ai/glm-4.6") ||
+		modelString.startsWith("glm-4.6")
+	) {
+		return "z-ai/glm-4.6";
+	}
+	if (
+		modelString.startsWith("x-ai/grok-code-fast-1") ||
+		modelString.startsWith("grok-code-fast-1")
+	) {
+		return "x-ai/grok-code-fast-1";
+	}
+	if (
+		modelString.startsWith("x-ai/grok-4-fast") ||
+		modelString.startsWith("grok-4-fast")
+	) {
+		return "x-ai/grok-4-fast";
+	}
+	return "claude-sonnet-4.5";
+}
+
+const openRouterSettings = {
+	reasoning: {
+		enabled: true,
+		effort: "medium" as const,
+	},
+	usage: {
+		include: true,
+	},
+};
+
+export const getModel = (model: Model) => {
+	switch (model) {
+		case "gpt-5":
+			return openRouter.chat("openai/gpt-5-codex", openRouterSettings);
+		case "gemini-2.5-pro":
+			return openRouter.chat("google/gemini-2.5-pro");
+		case "z-ai/glm-4.6":
+			return openRouter.chat("z-ai/glm-4.6", openRouterSettings);
+		case "claude-sonnet-4.5":
+			return openRouter.chat("anthropic/claude-sonnet-4.5", openRouterSettings);
+		case "gpt-5-mini":
+			return openRouter.chat("gpt-5-mini", openRouterSettings);
+		case "google/gemini-2.5-flash":
+			return openRouter.chat("google/gemini-2.5-flash", openRouterSettings);
+		case "x-ai/grok-code-fast-1":
+			return openRouter.chat("x-ai/grok-code-fast-1", openRouterSettings);
+		case "x-ai/grok-4-fast":
+			return openRouter.chat("x-ai/grok-4-fast", openRouterSettings);
+
+		default:
+			return openRouter.chat("gpt-5-mini", openRouterSettings);
+	}
+};
+
+export const getProviderOptions = (
+	model: Model,
+):
+	| { anthropic: AnthropicProviderOptions }
+	| { google: GoogleGenerativeAIProviderOptions }
+	| { openai: OpenAIResponsesProviderOptions }
+	| { xai: XaiProviderOptions }
+	| undefined => {
+	switch (model) {
+		/* Anthropic models */
+		case "claude-sonnet-4.5":
+			return {
+				anthropic: {
+					thinking: { type: "enabled" as const, budgetTokens: 12000 },
+				},
+			};
+		/* Google models */
+		case "gemini-2.5-pro":
+		case "google/gemini-2.5-flash":
+			return {
+				google: {
+					responseModalities: ["TEXT"] as const,
+					thinkingConfig: {
+						thinkingBudget: 12000,
+						includeThoughts: true,
+					},
+				},
+			};
+		/* OpenAI models */
+		case "gpt-5":
+		case "gpt-5-mini":
+		case "z-ai/glm-4.6":
+			return {
+				openai: {
+					reasoningEffort: "medium" as const,
+					reasoningSummary: "auto",
+				},
+			};
+
+		/* XAI models */
+		case "x-ai/grok-code-fast-1":
+		case "x-ai/grok-4-fast":
+			return {
+				xai: {
+					reasoningEffort: "high" as const,
+				},
+			};
+		default:
+			return {
+				openai: {
+					reasoningEffort: "medium" as const,
+					reasoningSummary: "auto",
+				},
+			};
+	}
+};

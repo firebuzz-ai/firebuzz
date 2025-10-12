@@ -1,4 +1,12 @@
 "use client";
+import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
+import { Textarea } from "@firebuzz/ui/components/ui/textarea";
+import { ChevronRight, Plus } from "@firebuzz/ui/icons/lucide";
+import { toast } from "@firebuzz/ui/lib/utils";
+import type { ChatRequestOptions, CreateMessage, Message } from "ai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { AnimatePresence } from "motion/react";
+import { memo, useCallback, useRef, useState } from "react";
 import { DocumentsSelectorModal } from "@/components/modals/documents/selector/modal";
 import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
 import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
@@ -9,14 +17,6 @@ import {
 	isPreviewVersionDifferentAtom,
 	selectedElementAtom,
 } from "@/lib/workbench/atoms";
-import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
-import { Textarea } from "@firebuzz/ui/components/ui/textarea";
-import { ChevronRight, Plus } from "@firebuzz/ui/icons/lucide";
-import { toast } from "@firebuzz/ui/lib/utils";
-import type { ChatRequestOptions, CreateMessage, Message } from "ai";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { AnimatePresence } from "motion/react";
-import { memo, useCallback, useRef, useState } from "react";
 import { ActionErrors } from "./action-errors";
 import { Attachment } from "./attachment";
 import { AttachmentButton } from "./attachment-button";

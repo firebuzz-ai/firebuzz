@@ -119,7 +119,7 @@ export class ImageGenClient {
 		}
 
 		// Add other params as JSON string
-		const { mask, ...otherParams } = validatedParams;
+		const { mask: _mask, ...otherParams } = validatedParams;
 		formData.append("params", JSON.stringify(otherParams));
 
 		const response = await fetch(`${this.baseEndpoint}/edit`, {

@@ -1,6 +1,5 @@
 "use client";
 
-import { failedActionsAtom } from "@/lib/workbench/atoms";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
@@ -9,6 +8,7 @@ import { toast } from "@firebuzz/ui/lib/utils";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
 import { z } from "zod";
+import { failedActionsAtom } from "@/lib/workbench/atoms";
 
 export const actionErrorSchema = z.object({
 	actionType: z

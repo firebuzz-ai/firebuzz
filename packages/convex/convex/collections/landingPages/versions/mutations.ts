@@ -2,8 +2,12 @@ import { ConvexError, v } from "convex/values";
 import { internal } from "../../../_generated/api";
 import { mutation } from "../../../_generated/server";
 import { retrier } from "../../../components/actionRetrier";
+import { aggregateLandingPageVersions } from "../../../components/aggregates";
 import { r2 } from "../../../components/r2";
-import { mutationWithTrigger } from "../../../triggers";
+import {
+	internalMutationWithTrigger,
+	mutationWithTrigger,
+} from "../../../triggers";
 import { getCurrentUserWithWorkspace } from "../../users/utils";
 import { createInternal } from "./utils";
 
@@ -110,5 +114,70 @@ export const deletePermanent = mutationWithTrigger({
 			ctx,
 			`landing-page-versions/${landingPageVersion.landingPageId}/${landingPageVersion._id}.txt`,
 		);
+	},
+});
+
+export const createWithCommit = internalMutationWithTrigger({
+	args: {
+		landingPageId: v.id("landingPages"),
+		key: v.string(),
+		commitMessage: v.string(),
+		description: v.optional(v.string()),
+		messageId: v.optional(v.string()),
+		workspaceId: v.id("workspaces"),
+		projectId: v.id("projects"),
+		campaignId: v.id("campaigns"),
+		createdBy: v.id("users"),
+	},
+	handler: async (ctx, args) => {
+		console.log(
+			"[createWithCommit] Creating version for landingPage:",
+			args.landingPageId,
+		);
+
+		// Check last count of landing page versions
+		const lastCount = await aggregateLandingPageVersions.count(ctx, {
+			namespace: args.landingPageId,
+
+			bounds: {},
+		});
+
+		console.log(
+			"[createWithCommit] Last count:",
+			lastCount,
+			"New version will be:",
+			lastCount + 1,
+		);
+
+		// Create the landing page version
+		const landingPageVersionId = await ctx.db.insert("landingPageVersions", {
+			number: lastCount + 1,
+			createdBy: args.createdBy,
+			workspaceId: args.workspaceId,
+			projectId: args.projectId,
+			campaignId: args.campaignId,
+			landingPageId: args.landingPageId,
+			messageId: args.messageId,
+			key: args.key,
+			commitMessage: args.commitMessage,
+			description: args.description,
+		});
+
+		console.log(
+			"[createWithCommit] Version record created:",
+			landingPageVersionId,
+		);
+
+		// Update the landing page version
+		await ctx.db.patch(args.landingPageId, {
+			landingPageVersionId,
+		});
+
+		console.log("[createWithCommit] Updated landingPage with version pointer");
+
+		return {
+			landingPageVersionId,
+			number: lastCount + 1,
+		};
 	},
 });

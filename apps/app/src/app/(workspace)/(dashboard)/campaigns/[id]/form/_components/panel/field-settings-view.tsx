@@ -1,7 +1,6 @@
 "use client";
 
-import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
-import { type Id, api, useCachedQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedQuery } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Form,
@@ -25,6 +24,7 @@ import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
+import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { PanelScreen } from "../form-types";
 import { OptionEditView } from "./option-edit-view";
 import { OptionsManager } from "./options-management";

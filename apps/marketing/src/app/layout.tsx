@@ -1,7 +1,7 @@
+import { Toaster } from "@firebuzz/ui/components/ui/sonner";
 import { Footer } from "@/components/navigation/footer";
 import { Navbar } from "@/components/navigation/navbar";
 import { AppProviders } from "@/components/providers/app";
-import { Toaster } from "@firebuzz/ui/components/ui/sonner";
 import "@firebuzz/ui/globals.css";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { GeistMono } from "geist/font/mono";

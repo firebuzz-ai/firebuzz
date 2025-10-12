@@ -1,11 +1,5 @@
 "use client";
 
-import { ConfidenceLevelSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/confidence-level-slider";
-import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
-import type {
-	ABTestNode,
-	VariantNode,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import type { Doc } from "@firebuzz/convex";
 import { api, useConvex, useMutation } from "@firebuzz/convex";
 import {
@@ -52,6 +46,12 @@ import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ConfidenceLevelSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/confidence-level-slider";
+import { TrafficDistributionSlider } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/value-selectors/traffic-distribution-slider";
+import type {
+	ABTestNode,
+	VariantNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import { PrimaryGoalSelector } from "../value-selectors/primary-goal-selector";
 
 interface ABTestPanelProps {
@@ -1229,7 +1229,10 @@ export const ABTestPanel = ({
 										onValueChange={(value) =>
 											!isEditingDisabled &&
 											updateABTestData({
-												confidenceLevel: Number.parseInt(value) as 90 | 95 | 99,
+												confidenceLevel: Number.parseInt(value, 10) as
+													| 90
+													| 95
+													| 99,
 											})
 										}
 										disabled={isEditingDisabled}
@@ -1278,7 +1281,7 @@ export const ABTestPanel = ({
 										!isEditingDisabled &&
 										updateCompletionCriteria({
 											sampleSizePerVariant:
-												Number.parseInt(e.target.value) || undefined,
+												Number.parseInt(e.target.value, 10) || undefined,
 										})
 									}
 									placeholder="e.g. 1000"
@@ -1297,7 +1300,7 @@ export const ABTestPanel = ({
 										!isEditingDisabled &&
 										updateCompletionCriteria({
 											testDuration:
-												Number.parseInt(e.target.value) || undefined,
+												Number.parseInt(e.target.value, 10) || undefined,
 										})
 									}
 									placeholder="e.g. 14"

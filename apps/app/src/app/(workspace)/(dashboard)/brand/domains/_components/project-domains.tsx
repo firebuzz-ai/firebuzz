@@ -1,9 +1,9 @@
 "use client";
 
-import { ConfigureProjectDomainModal } from "@/components/modals/domains/configure-project-domain/configure-project-domain-modal";
-import { useProject } from "@/hooks/auth/use-project";
 import { api, useCachedQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { ConfigureProjectDomainModal } from "@/components/modals/domains/configure-project-domain/configure-project-domain-modal";
+import { useProject } from "@/hooks/auth/use-project";
 import { ProjectDomainItem } from "./project-domain-item";
 
 export const ProjectDomains = () => {

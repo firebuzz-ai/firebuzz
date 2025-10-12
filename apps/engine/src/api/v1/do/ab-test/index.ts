@@ -5,7 +5,7 @@ import {
 	syncABTestMessageResponseSchema,
 	syncABTestSuccessResponseSchema,
 } from "@firebuzz/shared-types/api/do/ab-test";
-import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
 const syncABTestRoute = createRoute({
 	path: "/sync/{campaignId}",

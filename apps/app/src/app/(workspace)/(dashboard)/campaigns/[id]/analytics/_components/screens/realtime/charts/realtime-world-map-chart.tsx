@@ -1,5 +1,5 @@
-import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 import type { Doc } from "@firebuzz/convex";
+import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 
 interface RealtimeWorldMapChartProps {
 	data: Extract<Doc<"analyticsPipes">, { queryId: "realtime-overview" }>;

@@ -1,7 +1,8 @@
-import { type VariantProps, cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { CircleAlert, CircleCheck, CircleX, Info } from "lucide-react";
 import * as React from "react";
 import { cn } from "../../lib/utils";
+
 const infoBoxVariants = cva(
 	"flex gap-3 rounded-lg border p-3 border text-sm text-muted-foreground",
 	{

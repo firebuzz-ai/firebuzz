@@ -1,8 +1,3 @@
-import {
-	type ImageType,
-	useAIImageModal,
-	useBrush,
-} from "@/hooks/ui/use-ai-image-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	DropdownMenu,
@@ -26,6 +21,11 @@ import {
 import { cn } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useMemo } from "react";
+import {
+	type ImageType,
+	useAIImageModal,
+	useBrush,
+} from "@/hooks/ui/use-ai-image-modal";
 import { useMaskState } from "./use-mask-state";
 
 export const MaskButton = ({

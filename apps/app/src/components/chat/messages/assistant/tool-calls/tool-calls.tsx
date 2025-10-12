@@ -17,7 +17,7 @@ interface ToolCallProps {
 		result,
 	}: {
 		toolCallId: string;
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// biome-ignore lint/suspicious/noExplicitAny: AI SDK tool result type flexibility
 		result: any;
 	}) => void;
 }

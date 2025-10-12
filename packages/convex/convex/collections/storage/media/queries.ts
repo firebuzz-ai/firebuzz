@@ -1,6 +1,5 @@
-import { ConvexError, v } from "convex/values";
-
 import { paginationOptsValidator } from "convex/server";
+import { ConvexError, v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
 import { aggregateMedia } from "../../../components/aggregates";
 import { getCurrentUserWithWorkspace } from "../../users/utils";
@@ -96,7 +95,7 @@ export const getTotalSize = query({
 	handler: async (ctx, args) => {
 		return await aggregateMedia.sum(ctx, {
 			namespace: args.projectId,
-			// @ts-ignore
+			// @ts-expect-error
 			bounds: {},
 		});
 	},

@@ -3,11 +3,11 @@ export * from "./templates";
 
 // Export individual templates for direct import
 export {
-	default as AuthInvitationTemplate,
 	type AuthInvitationTemplateProps,
+	default as AuthInvitationTemplate,
 } from "./templates/auth-invitation";
 
 export {
-	default as AuthInvitationAcceptedTemplate,
 	type AuthInvitationAcceptedTemplateProps,
+	default as AuthInvitationAcceptedTemplate,
 } from "./templates/auth-invitation-accepted";

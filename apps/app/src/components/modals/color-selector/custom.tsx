@@ -1,8 +1,8 @@
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import { useCallback, useState } from "react";
 import { HexColorPicker } from "react-colorful";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 
 // Helper function to convert hex to rgba
 const hexToRgba = (

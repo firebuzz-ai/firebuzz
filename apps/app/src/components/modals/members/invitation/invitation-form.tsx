@@ -1,6 +1,6 @@
 "use client";
 
-import { ConvexError, api, useAction } from "@firebuzz/convex";
+import { api, ConvexError, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	Form,

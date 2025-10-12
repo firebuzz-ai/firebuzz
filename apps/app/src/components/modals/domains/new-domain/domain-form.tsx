@@ -1,6 +1,4 @@
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { ConvexError, api, useAction } from "@firebuzz/convex";
+import { api, ConvexError, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	Form,
@@ -16,6 +14,8 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 import { z } from "zod";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 const domainFormSchema = z.object({
 	hostname: z

@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button";
 import { motion } from "motion/react";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);

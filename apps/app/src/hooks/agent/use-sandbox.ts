@@ -1,5 +1,5 @@
-import { SanboxContext } from "@/components/providers/agent/sandbox";
 import { useContext } from "react";
+import { SanboxContext } from "@/components/providers/agent/sandbox";
 
 export const useSandbox = () => {
 	const context = useContext(SanboxContext);

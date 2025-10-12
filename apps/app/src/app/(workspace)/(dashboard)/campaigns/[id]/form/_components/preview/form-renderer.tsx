@@ -1,6 +1,5 @@
 "use client";
 
-import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -39,6 +38,7 @@ import { useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useNodes } from "@xyflow/react";
 import { useMemo } from "react";
 import { z } from "zod";
+import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { FormField } from "../form-types";
 
 export const FormRenderer = () => {

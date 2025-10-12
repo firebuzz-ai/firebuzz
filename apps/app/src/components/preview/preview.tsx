@@ -1,7 +1,7 @@
 "use client";
-import { previewRefAtom } from "@/lib/workbench/atoms";
 import { useSetAtom } from "jotai";
 import { useEffect, useRef } from "react";
+import { previewRefAtom } from "@/lib/workbench/atoms";
 import { Frame } from "./frame";
 import { FullScreenModal } from "./full-screen-modal";
 import { Header } from "./header";

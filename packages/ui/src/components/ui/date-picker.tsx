@@ -1,8 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Calendar } from "@firebuzz/ui/components/ui/calendar";
 import {
@@ -10,6 +7,8 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@firebuzz/ui/components/ui/popover";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 
 export function DatePicker({
 	value,

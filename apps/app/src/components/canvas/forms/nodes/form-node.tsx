@@ -1,15 +1,15 @@
 "use client";
 
-import {
-	AnimatedButton,
-	AnimatedButtonShortcut,
-} from "@/components/reusables/animated-button";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card } from "@firebuzz/ui/components/ui/card";
 import { Minus } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
+import {
+	AnimatedButton,
+	AnimatedButtonShortcut,
+} from "@/components/reusables/animated-button";
 import type { FormField } from "../../../../app/(workspace)/(dashboard)/campaigns/[id]/form/_components/form-types";
 import { useFormCanvasController } from "../controller/provider";
 import { FormFieldsRenderer } from "./form-fields-renderer";

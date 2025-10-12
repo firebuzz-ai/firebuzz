@@ -106,7 +106,7 @@ export const Navbar = () => {
 	}, [updateIndicatorPosition]);
 
 	// Close mobile menu when route changes
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only want to run on pathname change, not setIsMobileMenuOpen
 	React.useEffect(() => {
 		setIsMobileMenuOpen(false);
 	}, [pathname]);

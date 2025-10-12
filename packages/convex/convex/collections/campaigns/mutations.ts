@@ -4,11 +4,11 @@ import {
 } from "@firebuzz/shared-types/campaign";
 import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import {
-	type EdgeChange,
-	type NodeChange,
 	addEdge,
 	applyEdgeChanges,
 	applyNodeChanges,
+	type EdgeChange,
+	type NodeChange,
 } from "@xyflow/react";
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";

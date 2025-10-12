@@ -1,11 +1,11 @@
 "use client";
+import { api, useCachedRichQuery } from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { useState } from "react";
 import { FormLayout } from "@/components/layouts/two-panels/panels/brand/identity/form";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/brand/identity/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { api, useCachedRichQuery } from "@firebuzz/convex";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { useState } from "react";
 import { type BrandConfigType, BrandIdentityForm } from "./form";
 import { Panel } from "./panel";
 

@@ -1,8 +1,5 @@
 "use client";
 
-import { useWorkspaceGeneralForm } from "@/app/(workspace)/(dashboard)/settings/workspace/general/_components/form-context";
-import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
-import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -13,6 +10,9 @@ import { Building, FolderOpen, Users } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
+import { useWorkspaceGeneralForm } from "@/app/(workspace)/(dashboard)/settings/workspace/general/_components/form-context";
+import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
+import { useProjectModal } from "@/hooks/ui/use-project-modal";
 
 const TABS: TabItem[] = [
 	{

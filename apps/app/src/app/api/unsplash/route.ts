@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
-
 import { auth } from "@clerk/nextjs/server";
 import { envUnsplash } from "@firebuzz/env";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { createApi } from "unsplash-js";
 
 export const GET = async (req: NextRequest) => {
@@ -31,7 +30,7 @@ export const GET = async (req: NextRequest) => {
 	const result = await client.search.getPhotos({
 		query: query ?? "",
 		perPage: 10,
-		page: page ? Number.parseInt(page) : 1,
+		page: page ? Number.parseInt(page, 10) : 1,
 		orientation: orientation ?? "landscape",
 		orderBy: orderBy ?? "relevant",
 	});

@@ -1,9 +1,8 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedQuery,
 	usePaginatedQuery,
 } from "@firebuzz/convex";
@@ -15,6 +14,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { useDebounce } from "use-debounce";
+import { useProject } from "@/hooks/auth/use-project";
 import { Controls } from "../controls";
 import { DocumentDetailsModal } from "../modals/modal";
 import { NewDocumentModal } from "../modals/new-document/modal";

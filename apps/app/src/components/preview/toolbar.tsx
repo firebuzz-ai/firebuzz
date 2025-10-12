@@ -1,8 +1,3 @@
-import {
-	isElementSelectionEnabledAtom,
-	isIframeFullScreenAtom,
-	isIframeLoadedAtom,
-} from "@/lib/workbench/atoms";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -19,6 +14,11 @@ import {
 import { cn } from "@firebuzz/ui/lib/utils";
 import { reloadPreview } from "@webcontainer/api";
 import { useAtom, useAtomValue } from "jotai";
+import {
+	isElementSelectionEnabledAtom,
+	isIframeFullScreenAtom,
+	isIframeLoadedAtom,
+} from "@/lib/workbench/atoms";
 
 export const Toolbar = ({
 	url,

@@ -80,6 +80,20 @@ export const getByCampaignId = query({
 	},
 });
 
+export const getByCampaignIdInternal = internalQuery({
+	args: {
+		campaignId: v.id("campaigns"),
+	},
+	handler: async (ctx, args) => {
+		const form = await ctx.db
+			.query("forms")
+			.withIndex("by_campaign_id", (q) => q.eq("campaignId", args.campaignId))
+			.first();
+
+		return form;
+	},
+});
+
 // Canvas-specific query (following campaign pattern)
 export const getFormCanvasData = query({
 	args: {

@@ -1,10 +1,10 @@
+import type { Doc } from "@firebuzz/convex";
+import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
+import { useMemo } from "react";
 import {
 	HorizontalBarChart,
 	type HorizontalBarChartData,
 } from "@/components/analytics/charts/horizontal-bar-chart";
-import type { Doc } from "@firebuzz/convex";
-import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
-import { useMemo } from "react";
 
 interface RealtimeEventsChartProps {
 	data: Extract<Doc<"analyticsPipes">, { queryId: "realtime-overview" }>;

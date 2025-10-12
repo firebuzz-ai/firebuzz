@@ -21,8 +21,8 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import {
 	type Dispatch,
-	type SetStateAction,
 	memo,
+	type SetStateAction,
 	useCallback,
 	useEffect,
 	useMemo,
@@ -38,7 +38,7 @@ interface ToolCallProps {
 		result,
 	}: {
 		toolCallId: string;
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// biome-ignore lint/suspicious/noExplicitAny: AI SDK tool result type flexibility
 		result: any;
 	}) => void;
 }
@@ -124,7 +124,7 @@ const AskImageConfirmationPartial = memo(
 									{[...Array(6)].map((_, i) => (
 										<Skeleton
 											key={`skeleton-${
-												// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+												// biome-ignore lint/suspicious/noArrayIndexKey: generated images with index fallback for uniqueness
 												i
 											}`}
 											className="flex-shrink-0 w-48 h-32"

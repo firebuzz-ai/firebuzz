@@ -1,6 +1,6 @@
-import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 import type { Doc } from "@firebuzz/convex";
 import { useMemo } from "react";
+import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 
 interface ConversionsGeographicChartProps {
 	conversionsData?: Extract<

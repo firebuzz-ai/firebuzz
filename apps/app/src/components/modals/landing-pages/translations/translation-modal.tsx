@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
 import { Languages } from "@firebuzz/ui/icons/lucide";
+import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
 import { TranslationForm } from "./translation-form";
 
 export const TranslationModal = () => {

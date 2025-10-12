@@ -1,6 +1,5 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
 import { api, useAction } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -15,6 +14,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { AlertTriangle, Calendar, Shield } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import { useSubscription } from "@/hooks/auth/use-subscription";
 
 interface CancelSubscriptionModalProps {
 	isOpen: boolean;
@@ -194,8 +194,10 @@ export const CancelSubscriptionModal = ({
 						>
 							{isLoading ? (
 								<Spinner size="xs" />
+							) : isTrial ? (
+								"Cancel Trial"
 							) : (
-								<>{isTrial ? "Cancel Trial" : "Cancel Subscription"}</>
+								"Cancel Subscription"
 							)}
 						</Button>
 					</div>

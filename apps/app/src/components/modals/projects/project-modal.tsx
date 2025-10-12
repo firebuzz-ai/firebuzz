@@ -1,6 +1,5 @@
 "use client";
 
-import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import { ProjectForm } from "./project-form";
 
 export const ProjectModal = () => {

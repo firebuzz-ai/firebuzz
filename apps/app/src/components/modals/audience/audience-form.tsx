@@ -565,7 +565,7 @@ export const AudienceForm = ({
 												{field.value.map((term, index) => (
 													<Badge
 														key={`${term}-${
-															// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+															// biome-ignore lint/suspicious/noArrayIndexKey: user-entered terms with index fallback for uniqueness
 															index
 														}`}
 														variant="brand"

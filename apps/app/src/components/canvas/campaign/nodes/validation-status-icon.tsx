@@ -1,4 +1,4 @@
-import { type Id, api, useCachedQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedQuery } from "@firebuzz/convex";
 import {
 	Tooltip,
 	TooltipContent,
@@ -77,7 +77,7 @@ export const ValidationStatusIcon = ({
 							{errorMessages.map((message: string, index: number) => (
 								<li
 									key={`${message}-${
-										// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+										// biome-ignore lint/suspicious/noArrayIndexKey: error messages with index fallback for uniqueness
 										index
 									}`}
 									className="list-item list-inside"

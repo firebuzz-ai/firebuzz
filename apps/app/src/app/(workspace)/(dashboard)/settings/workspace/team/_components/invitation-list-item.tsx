@@ -1,6 +1,6 @@
 "use client";
 
-import { type Doc, api, useAction } from "@firebuzz/convex";
+import { api, type Doc, useAction } from "@firebuzz/convex";
 import { Avatar, AvatarFallback } from "@firebuzz/ui/components/ui/avatar";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";

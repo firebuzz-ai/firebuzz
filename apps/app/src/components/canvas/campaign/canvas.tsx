@@ -1,5 +1,18 @@
 "use client";
 import {
+	type ABTestNodeData,
+	api,
+	type Doc,
+	type Id,
+	useCachedQuery,
+	useMutation,
+} from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { toast } from "@firebuzz/ui/lib/utils";
+import {
+	addEdge,
+	applyEdgeChanges,
+	applyNodeChanges,
 	type Connection,
 	type Edge,
 	type EdgeChange,
@@ -8,27 +21,13 @@ import {
 	type NodeChange,
 	type NodeTypes,
 	ReactFlow,
-	addEdge,
-	applyEdgeChanges,
-	applyNodeChanges,
 	useReactFlow,
 } from "@xyflow/react";
-
 import { useUser } from "@/hooks/auth/use-user";
 import {
 	type CampaignScreen,
 	useCampaignNavigation,
 } from "@/hooks/ui/use-campaign-navigation";
-import {
-	type ABTestNodeData,
-	type Doc,
-	type Id,
-	api,
-	useCachedQuery,
-	useMutation,
-} from "@firebuzz/convex";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { toast } from "@firebuzz/ui/lib/utils";
 import "@xyflow/react/dist/style.css";
 import { nanoid } from "nanoid";
 import { useTheme } from "next-themes";
@@ -158,7 +157,7 @@ export const Canvas = ({
 	const [localEdges, setLocalEdges] = useState<Edge[]>(serverEdges);
 
 	// Simple approach: only update when canvasData changes (Convex query result)
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally only syncing with server state, not local setters
 	useEffect(() => {
 		if (!canvasData) return;
 

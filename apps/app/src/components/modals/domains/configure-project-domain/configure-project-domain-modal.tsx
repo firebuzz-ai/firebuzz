@@ -1,6 +1,5 @@
 "use client";
 
-import { useConfigureProjectDomainModal } from "@/hooks/ui/use-configure-project-domain-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useConfigureProjectDomainModal } from "@/hooks/ui/use-configure-project-domain-modal";
 import { ConfigureProjectDomainForm } from "./configure-project-domain-form";
 
 export const ConfigureProjectDomainModal = () => {

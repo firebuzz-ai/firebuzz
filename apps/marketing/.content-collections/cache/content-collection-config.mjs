@@ -4,94 +4,100 @@ import { compileMDX } from "@content-collections/mdx";
 import readingTime from "reading-time";
 import rehypeSlug from "rehype-slug";
 import { z } from "zod";
+
 var posts = defineCollection({
-  name: "posts",
-  directory: "content/posts",
-  include: "*.mdx",
-  schema: z.object({
-    title: z.string(),
-    summary: z.string(),
-    date: z.coerce.date(),
-    author: z.string(),
-    category: z.string(),
-    thumbnail: z.string().optional(),
-    isFeatured: z.boolean().optional().default(false)
-  }),
-  transform: async (document, context) => {
-    const mdx = await compileMDX(context, document, {
-      rehypePlugins: [rehypeSlug]
-    });
-    const author = await context.documents(authors).find((a) => a.ref === document.author);
-    const category = await context.documents(postCategories).find((t) => t.slug === document.category);
-    const readTime = readingTime(document.content);
-    const headingRegex = /^(#{2,3})\s+(.+)$/gm;
-    const headings = [];
-    let match = headingRegex.exec(document.content);
-    while (match !== null) {
-      const level = match[1].length;
-      const title = match[2].trim();
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-      headings.push({ level, title, slug });
-      match = headingRegex.exec(document.content);
-    }
-    return {
-      ...document,
-      author,
-      category,
-      mdx,
-      readingTime: readTime.text,
-      readingTimeMinutes: readTime.minutes,
-      headings
-    };
-  }
+	name: "posts",
+	directory: "content/posts",
+	include: "*.mdx",
+	schema: z.object({
+		title: z.string(),
+		summary: z.string(),
+		date: z.coerce.date(),
+		author: z.string(),
+		category: z.string(),
+		thumbnail: z.string().optional(),
+		isFeatured: z.boolean().optional().default(false),
+	}),
+	transform: async (document, context) => {
+		const mdx = await compileMDX(context, document, {
+			rehypePlugins: [rehypeSlug],
+		});
+		const author = await context
+			.documents(authors)
+			.find((a) => a.ref === document.author);
+		const category = await context
+			.documents(postCategories)
+			.find((t) => t.slug === document.category);
+		const readTime = readingTime(document.content);
+		const headingRegex = /^(#{2,3})\s+(.+)$/gm;
+		const headings = [];
+		let match = headingRegex.exec(document.content);
+		while (match !== null) {
+			const level = match[1].length;
+			const title = match[2].trim();
+			const slug = title
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/(^-|-$)/g, "");
+			headings.push({ level, title, slug });
+			match = headingRegex.exec(document.content);
+		}
+		return {
+			...document,
+			author,
+			category,
+			mdx,
+			readingTime: readTime.text,
+			readingTimeMinutes: readTime.minutes,
+			headings,
+		};
+	},
 });
 var postCategories = defineCollection({
-  name: "postCategories",
-  directory: "content/post-categories",
-  include: "*.mdx",
-  schema: z.object({
-    slug: z.string(),
-    title: z.string(),
-    description: z.string(),
-    color: z.string(),
-    featuredPost: z.string()
-  })
+	name: "postCategories",
+	directory: "content/post-categories",
+	include: "*.mdx",
+	schema: z.object({
+		slug: z.string(),
+		title: z.string(),
+		description: z.string(),
+		color: z.string(),
+		featuredPost: z.string(),
+	}),
 });
 var authors = defineCollection({
-  name: "authors",
-  directory: "content/authors",
-  include: "*.mdx",
-  schema: z.object({
-    ref: z.string(),
-    fullName: z.string(),
-    avatar: z.string(),
-    bio: z.string()
-  })
+	name: "authors",
+	directory: "content/authors",
+	include: "*.mdx",
+	schema: z.object({
+		ref: z.string(),
+		fullName: z.string(),
+		avatar: z.string(),
+		bio: z.string(),
+	}),
 });
 var changelogs = defineCollection({
-  name: "changelogs",
-  directory: "content/changelogs",
-  include: "*.mdx",
-  schema: z.object({
-    title: z.string(),
-    summary: z.string(),
-    date: z.coerce.date(),
-    version: z.string(),
-    thumbnail: z.string().optional()
-  }),
-  transform: async (document, context) => {
-    const mdx = await compileMDX(context, document, {
-      rehypePlugins: [rehypeSlug]
-    });
-    return {
-      ...document,
-      mdx
-    };
-  }
+	name: "changelogs",
+	directory: "content/changelogs",
+	include: "*.mdx",
+	schema: z.object({
+		title: z.string(),
+		summary: z.string(),
+		date: z.coerce.date(),
+		version: z.string(),
+		thumbnail: z.string().optional(),
+	}),
+	transform: async (document, context) => {
+		const mdx = await compileMDX(context, document, {
+			rehypePlugins: [rehypeSlug],
+		});
+		return {
+			...document,
+			mdx,
+		};
+	},
 });
 var content_collections_default = defineConfig({
-  collections: [posts, postCategories, authors, changelogs]
+	collections: [posts, postCategories, authors, changelogs],
 });
-export {
-  content_collections_default as default
-};
+export { content_collections_default as default };

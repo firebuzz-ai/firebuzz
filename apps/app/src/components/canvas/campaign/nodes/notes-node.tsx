@@ -1,4 +1,3 @@
-import { useUser } from "@/hooks/auth/use-user";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { BaseNode as BaseNodeComponent } from "@firebuzz/ui/components/ui/base-node";
 import { ArrowDownRight } from "@firebuzz/ui/icons/lucide";
@@ -6,6 +5,7 @@ import { cn } from "@firebuzz/ui/lib/utils";
 import type { NodeProps } from "@xyflow/react";
 import { NodeResizeControl, useReactFlow } from "@xyflow/react";
 import { memo, useState } from "react";
+import { useUser } from "@/hooks/auth/use-user";
 import { CampaignNodeIcons } from "./campaign/icons";
 import type { NoteNode as NoteNodeType } from "./campaign/types";
 

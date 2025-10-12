@@ -1,9 +1,9 @@
 "use client";
 
-import { workbenchStateAtom } from "@/lib/workbench/atoms";
 import { CornerDownRight } from "@firebuzz/ui/icons/lucide";
 import { useAtomValue } from "jotai";
 import { AnimatePresence, motion } from "motion/react";
+import { workbenchStateAtom } from "@/lib/workbench/atoms";
 
 export function Loading() {
 	const workbenchState = useAtomValue(workbenchStateAtom);

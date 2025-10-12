@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@/hooks/auth/use-user";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
@@ -14,6 +13,7 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { cn } from "@firebuzz/ui/lib/utils";
 import * as React from "react";
+import { useUser } from "@/hooks/auth/use-user";
 import { getInitials, getTimeAgo } from "./helpers";
 
 interface PresenceAvatarProps {

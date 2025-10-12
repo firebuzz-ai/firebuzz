@@ -1,9 +1,9 @@
-import { useChatScroll } from "@/hooks/ui/use-chat-scroll";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { Message as MessageType } from "ai";
 import { motion } from "motion/react";
 import { useEffect } from "react";
+import { useChatScroll } from "@/hooks/ui/use-chat-scroll";
 import { LoadingMessage } from "./loading-message";
 import { Message } from "./message";
 
@@ -25,7 +25,7 @@ interface MessagesProps {
 		result,
 	}: {
 		toolCallId: string;
-		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+		// biome-ignore lint/suspicious/noExplicitAny: AI SDK tool result type flexibility
 		result: any;
 	}) => void;
 	overviewComponent: React.ReactNode;

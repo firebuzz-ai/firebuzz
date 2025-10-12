@@ -1,7 +1,7 @@
 import { Tinybird } from "@chronark/zod-bird";
 import { formatToDateTime64 } from "@firebuzz/utils";
-import { zid, zodToConvex } from "convex-helpers/server/zod";
 import { v } from "convex/values";
+import { zid, zodToConvex } from "convex-helpers/server/zod";
 import { z } from "zod";
 import { internalAction } from "../_generated/server";
 
@@ -28,10 +28,38 @@ const creditUsageSchema = z.object({
 	projectId: zid("projects"),
 });
 
+// Token Usage Schema based on token_usage_v1.datasource
+const tokenUsageSchema = z.object({
+	outputType: z.union([z.literal("text"), z.literal("image")]),
+	inputTokens: z.number().min(0),
+	cachedInputTokens: z.number().min(0),
+	outputTokens: z.number().min(0),
+	reasoningTokens: z.number().min(0),
+	totalTokens: z.number().min(0),
+	model: z.string(),
+	provider: z.string(),
+	cost: z.number().min(0),
+	environment: z.union([
+		z.literal("dev"),
+		z.literal("production"),
+		z.literal("preview"),
+	]),
+	sessionId: zid("agentSessions").nullable(),
+	workspaceId: zid("workspaces"),
+	projectId: zid("projects"),
+	userId: zid("users"),
+	createdAt: z.string().datetime(),
+});
+
 // Build ingest endpoint for credit usage
 export const ingestCreditUsage = tinybird.buildIngestEndpoint({
 	datasource: "credit_usage_v1",
 	event: creditUsageSchema,
+});
+
+export const ingestTokenUsage = tinybird.buildIngestEndpoint({
+	datasource: "token_usage_v1",
+	event: tokenUsageSchema,
 });
 
 export const ingestCreditUsageAction = internalAction({
@@ -42,15 +70,124 @@ export const ingestCreditUsageAction = internalAction({
 		workspaceId: v.id("workspaces"),
 		userId: v.id("users"),
 		projectId: v.id("projects"),
+		createdAt: v.string(),
 	},
 	handler: async (_ctx, args) => {
 		try {
-			const createdAt = formatToDateTime64();
+			const createdAt = formatToDateTime64(args.createdAt);
 
 			await ingestCreditUsage({
 				...args,
 				createdAt,
 			});
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	},
+});
+
+export const batchIngestCreditUsageAction = internalAction({
+	args: {
+		transactions: v.array(
+			v.object({
+				amount: v.number(),
+				type: v.string(),
+				idempotencyKey: v.string(),
+				workspaceId: v.id("workspaces"),
+				userId: v.id("users"),
+				projectId: v.id("projects"),
+				createdAt: v.string(),
+			}),
+		),
+	},
+	handler: async (_ctx, args) => {
+		try {
+			const transactionWithCreatedAt = args.transactions.map((transaction) => ({
+				...transaction,
+				createdAt: formatToDateTime64(transaction.createdAt),
+			}));
+
+			await ingestCreditUsage(transactionWithCreatedAt);
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	},
+});
+
+export const inngestTokenUsageAction = internalAction({
+	args: {
+		outputType: v.union(v.literal("text"), v.literal("image")),
+		inputTokens: v.number(),
+		cachedInputTokens: v.number(),
+		outputTokens: v.number(),
+		reasoningTokens: v.number(),
+		totalTokens: v.number(),
+		model: v.string(),
+		provider: v.string(),
+		cost: v.number(),
+		sessionId: v.optional(v.id("agentSessions")),
+		workspaceId: v.id("workspaces"),
+		userId: v.id("users"),
+		projectId: v.id("projects"),
+		createdAt: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		try {
+			const createdAt = formatToDateTime64(args.createdAt);
+			const environment = process.env.ENVIRONMENT as
+				| "dev"
+				| "production"
+				| "preview";
+
+			await ingestTokenUsage({
+				...args,
+				createdAt,
+				environment,
+				sessionId: args.sessionId ?? null,
+			});
+		} catch (error) {
+			console.error(error);
+			throw error;
+		}
+	},
+});
+
+export const batchIngestTokenUsageAction = internalAction({
+	args: v.object({
+		tokenUsages: v.array(
+			v.object({
+				outputType: v.union(v.literal("text"), v.literal("image")),
+				inputTokens: v.number(),
+				cachedInputTokens: v.number(),
+				outputTokens: v.number(),
+				reasoningTokens: v.number(),
+				totalTokens: v.number(),
+				model: v.string(),
+				provider: v.string(),
+				cost: v.number(),
+				sessionId: v.optional(v.id("agentSessions")),
+				workspaceId: v.id("workspaces"),
+				userId: v.id("users"),
+				projectId: v.id("projects"),
+				createdAt: v.string(),
+			}),
+		),
+	}),
+	handler: async (_ctx, args) => {
+		try {
+			const tokenUsageWithCreatedAt = args.tokenUsages.map((tokenUsage) => ({
+				...tokenUsage,
+				createdAt: formatToDateTime64(tokenUsage.createdAt),
+				environment: process.env.ENVIRONMENT as
+					| "dev"
+					| "production"
+					| "preview",
+				sessionId: tokenUsage.sessionId ?? null,
+			}));
+
+			await ingestTokenUsage(tokenUsageWithCreatedAt);
 		} catch (error) {
 			console.error(error);
 			throw error;

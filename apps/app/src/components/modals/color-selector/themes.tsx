@@ -1,4 +1,3 @@
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -10,6 +9,7 @@ import { Search } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { hslToHex } from "@firebuzz/utils";
 import { useCallback, useMemo, useState } from "react";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 
 interface ThemeColorItem {
 	name: string;

@@ -1,7 +1,7 @@
+import { useEffect, useState } from "react";
 import { LogoDark } from "@/components/brand/logo-dark";
 import { LogoLight } from "@/components/brand/logo-light";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
 
 export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

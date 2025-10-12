@@ -44,11 +44,8 @@ export const batchTrackRoute = new Hono<{ Bindings: Env }>().post(
 			console.log("📦 Batch track API received events:", {
 				session_id: sessionId,
 				event_count: batchData.events.length,
-				first_has_ab_test_id: Object.prototype.hasOwnProperty.call(
-					batchData.events[0],
-					"ab_test_id",
-				),
-				first_has_ab_test_variant_id: Object.prototype.hasOwnProperty.call(
+				first_has_ab_test_id: Object.hasOwn(batchData.events[0], "ab_test_id"),
+				first_has_ab_test_variant_id: Object.hasOwn(
 					batchData.events[0],
 					"ab_test_variant_id",
 				),
@@ -70,11 +67,8 @@ export const batchTrackRoute = new Hono<{ Bindings: Env }>().post(
 					event_id: eventData.event_id,
 					event_type: eventData.event_type,
 					session_id: sessionId,
-					has_ab_test_id: Object.prototype.hasOwnProperty.call(
-						eventData,
-						"ab_test_id",
-					),
-					has_ab_test_variant_id: Object.prototype.hasOwnProperty.call(
+					has_ab_test_id: Object.hasOwn(eventData, "ab_test_id"),
+					has_ab_test_variant_id: Object.hasOwn(
 						eventData,
 						"ab_test_variant_id",
 					),

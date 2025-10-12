@@ -1,7 +1,6 @@
-import { useProject } from "@/hooks/auth/use-project";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedQuery,
 	usePaginatedQuery,
 } from "@firebuzz/convex";
@@ -27,6 +26,7 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage
 interface SelectedMediaItem {

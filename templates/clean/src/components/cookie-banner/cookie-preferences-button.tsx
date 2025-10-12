@@ -1,12 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useCampaignEnv } from "@/hooks/use-campaign-env";
-import { cn } from "@/lib/utils";
 import { useConsent } from "@firebuzz/consent-manager";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Cookie, Settings } from "lucide-react";
 import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { useCampaignEnv } from "@/hooks/use-campaign-env";
+import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 import { CookiePreferencesDialog } from "./cookie-preferences-dialog";
 

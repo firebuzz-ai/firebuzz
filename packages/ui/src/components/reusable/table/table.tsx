@@ -1,24 +1,6 @@
 "use client";
 
-import {
-	type ColumnDef,
-	type Row,
-	type TableMeta,
-	flexRender,
-	getCoreRowModel,
-	useReactTable,
-} from "@tanstack/react-table";
-
 import { ScrollArea, ScrollBar } from "@firebuzz/ui/components/ui/scroll-area";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import {
-	type Dispatch,
-	type SetStateAction,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
-
 import {
 	Table,
 	TableBody,
@@ -27,6 +9,22 @@ import {
 	TableHeader,
 	TableRow,
 } from "@firebuzz/ui/components/ui/table";
+import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	type Row,
+	type TableMeta,
+	useReactTable,
+} from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import {
+	type Dispatch,
+	type SetStateAction,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 
 interface DataTableProps<TData, TValue> {
 	columns: ColumnDef<TData, TValue>[];
@@ -51,7 +49,7 @@ export function DataTable<TData, TValue>({
 	const table = useReactTable({
 		data,
 		columns,
-		//@ts-ignore
+		//@ts-expect-error
 		getRowId: (row) => row._id,
 		getCoreRowModel: getCoreRowModel(),
 		onRowSelectionChange: setSelection,

@@ -1,5 +1,5 @@
-import { twoPanelsContext } from "@/components/layouts/two-panels/provider";
 import { useContext } from "react";
+import { twoPanelsContext } from "@/components/layouts/two-panels/provider";
 export const useTwoPanelsLayout = () => {
 	const context = useContext(twoPanelsContext);
 

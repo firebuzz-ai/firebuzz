@@ -1,9 +1,5 @@
 "use client";
 
-import { getAllLocales } from "@firebuzz/utils";
-import { Check, ChevronsUpDown, Languages } from "lucide-react";
-import * as React from "react";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Command,
@@ -19,6 +15,9 @@ import {
 	PopoverTrigger,
 } from "@firebuzz/ui/components/ui/popover";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { getAllLocales } from "@firebuzz/utils";
+import { Check, ChevronsUpDown, Languages } from "lucide-react";
+import * as React from "react";
 
 interface LocaleSelectorProps {
 	defaultValue?: string;
@@ -50,7 +49,6 @@ export const LocaleSelector = ({
 			<PopoverTrigger asChild>
 				<Button
 					variant="outline"
-					// biome-ignore lint/a11y/useSemanticElements: <explanation>
 					role="combobox"
 					aria-expanded={open}
 					className={cn(

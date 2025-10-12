@@ -1,4 +1,3 @@
-import { type ImageType, useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	Tooltip,
@@ -13,6 +12,7 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import { useMemo } from "react";
+import { type ImageType, useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 export const SelectedImageMenu = () => {
 	const {
 		selectedImage,

@@ -1,10 +1,9 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import {
+	api,
 	type Doc,
 	type Id,
-	api,
 	useCachedQuery,
 	useMutation,
 	useUploadFile,
@@ -39,6 +38,7 @@ import { formatFileSize, parseDocumentFile } from "@firebuzz/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { type Accept, type FileRejection, useDropzone } from "react-dropzone";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Expected structure for onSelect, consistent with useDocumentsSelectorModal
 interface SelectedDocumentItem {

@@ -102,7 +102,7 @@ export const ConfidenceLevelSlider = ({
 						step={1}
 						value={getSliderPosition(value)}
 						onChange={(e) =>
-							handleSliderChange([Number.parseInt(e.target.value)])
+							handleSliderChange([Number.parseInt(e.target.value, 10)])
 						}
 						disabled={disabled}
 						className="absolute inset-0 w-full h-2 opacity-0 cursor-pointer disabled:cursor-not-allowed"

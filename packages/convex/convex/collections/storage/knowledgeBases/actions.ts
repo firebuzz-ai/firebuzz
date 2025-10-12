@@ -1,6 +1,6 @@
 import { embed } from "ai";
-import { asyncMap } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
+import { asyncMap } from "convex-helpers";
 import { internal } from "../../../_generated/api";
 import type { Doc, Id } from "../../../_generated/dataModel";
 import { action } from "../../../_generated/server";
@@ -9,7 +9,7 @@ import { openai } from "../../../lib/openai";
 export const vectorSearch = action({
 	args: {
 		query: v.string(),
-		knowledgeBase: v.id("knowledgeBases"),
+		knowledgeBase: v.array(v.id("knowledgeBases")),
 		limit: v.optional(v.number()),
 		scoreThreshold: v.optional(v.number()),
 	},
@@ -36,7 +36,8 @@ export const vectorSearch = action({
 		const results = await ctx.vectorSearch("documentVectors", "by_emmbedings", {
 			vector: embedding.embedding,
 			limit,
-			filter: (q) => q.eq("knowledgeBaseId", knowledgeBase),
+			filter: (q) =>
+				q.or(...knowledgeBase.map((id) => q.eq("knowledgeBaseId", id))),
 		});
 
 		const filteredResults = results.filter(
@@ -98,7 +99,7 @@ export const vectorSearch = action({
 					const memoizedDocument = await ctx.runQuery(
 						internal.collections.storage.documents.memoized.queries
 							.getByDocumentAndKnowledgeBaseInternal,
-						{ documentId, knowledgeBaseId: knowledgeBase },
+						{ documentId, knowledgeBaseId: document.knowledgeBases[0] },
 					);
 
 					return {

@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	type AnalyticsScreen,
-	useCampaignAnalytics,
-} from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
@@ -19,6 +15,10 @@ import {
 	Users,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import {
+	type AnalyticsScreen,
+	useCampaignAnalytics,
+} from "@/hooks/state/use-campaign-analytics";
 
 const screens: Array<{
 	id: AnalyticsScreen;

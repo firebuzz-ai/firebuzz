@@ -1,6 +1,6 @@
 "use client";
 
-import { type Doc, api, useMutation } from "@firebuzz/convex";
+import { api, type Doc, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -295,16 +295,14 @@ export const CustomEventsPanel = ({
 
 				<div className="flex-1">
 					<div className="flex flex-col">
-						<>
-							<div className="text-lg font-semibold leading-tight">
-								{isEditMode ? "Edit Custom Event" : "Add Custom Event"}
-							</div>
-							<div className="text-sm leading-tight text-muted-foreground">
-								{isEditMode
-									? `Update the event settings for ${campaign.title}`
-									: `Create a new custom event for ${campaign.title}`}
-							</div>
-						</>
+						<div className="text-lg font-semibold leading-tight">
+							{isEditMode ? "Edit Custom Event" : "Add Custom Event"}
+						</div>
+						<div className="text-sm leading-tight text-muted-foreground">
+							{isEditMode
+								? `Update the event settings for ${campaign.title}`
+								: `Create a new custom event for ${campaign.title}`}
+						</div>
 					</div>
 				</div>
 			</div>

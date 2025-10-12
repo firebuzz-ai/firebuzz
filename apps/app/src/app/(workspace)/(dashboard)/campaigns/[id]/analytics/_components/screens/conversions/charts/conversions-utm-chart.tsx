@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	HorizontalBarChart,
-	type HorizontalBarChartData,
-} from "@/components/analytics/charts/horizontal-bar-chart";
 import type { Doc } from "@firebuzz/convex";
 import {
 	Select,
@@ -13,6 +9,10 @@ import {
 	SelectValue,
 } from "@firebuzz/ui/components/ui/select";
 import { useMemo, useState } from "react";
+import {
+	HorizontalBarChart,
+	type HorizontalBarChartData,
+} from "@/components/analytics/charts/horizontal-bar-chart";
 
 interface ConversionsUtmChartProps {
 	conversionsData?: Extract<

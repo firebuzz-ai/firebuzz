@@ -2,16 +2,15 @@
 
 import { useOrganizationList } from "@clerk/nextjs";
 import {
+	api,
 	type Doc,
 	type Id,
-	api,
 	useCachedRichQuery,
 	useMutation,
 } from "@firebuzz/convex";
-
-import { useUser } from "@/hooks/auth/use-user";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback } from "react";
+import { useUser } from "@/hooks/auth/use-user";
 
 const workspaceContext = createContext<{
 	refetchOrganizations: () => Promise<void>;

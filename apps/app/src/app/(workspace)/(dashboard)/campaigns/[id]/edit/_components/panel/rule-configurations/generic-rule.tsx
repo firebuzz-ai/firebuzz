@@ -1,10 +1,5 @@
 "use client";
 
-import type {
-	FilterOperator,
-	RuleTypeId,
-	SegmentRule,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Checkbox } from "@firebuzz/ui/components/ui/checkbox";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -18,10 +13,15 @@ import {
 } from "@firebuzz/ui/components/ui/select";
 import { X } from "@firebuzz/ui/icons/lucide";
 import { useState } from "react";
+import type {
+	FilterOperator,
+	RuleTypeId,
+	SegmentRule,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import {
-	RULE_TYPE_DEFINITIONS,
 	getOperatorLabel,
 	getValueTypeForOperator,
+	RULE_TYPE_DEFINITIONS,
 } from "../helpers/rule-types";
 import { FilterOperatorSelector } from "../value-selectors/filter-operator-selector";
 

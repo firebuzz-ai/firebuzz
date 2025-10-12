@@ -1,15 +1,19 @@
-import { getSystemPrompt } from "@/lib/chat/prompt";
+import { anthropic } from "@ai-sdk/anthropic";
 
 import { auth } from "@clerk/nextjs/server";
+import { api, fetchMutation } from "@firebuzz/convex/nextjs";
+import { envCloudflarePublic } from "@firebuzz/env";
+import { stripIndents } from "@firebuzz/utils";
 import {
+	appendResponseMessages,
 	type Message,
 	type StreamTextOnFinishCallback,
-	type ToolSet,
-	appendResponseMessages,
 	smoothStream,
 	streamText,
+	type ToolSet,
 } from "ai";
-
+import { nanoid } from "nanoid";
+import type { NextRequest } from "next/server";
 import { askImageConfirmation } from "@/lib/ai/tools/ask-image-confirmation";
 import { getFormSchema } from "@/lib/ai/tools/get-form-schema";
 import { getMarketingData } from "@/lib/ai/tools/get-marketing-data";
@@ -19,12 +23,7 @@ import { readProjectFile } from "@/lib/ai/tools/read-project-file";
 import { searchKnowledgeBase } from "@/lib/ai/tools/search-knowledgebase";
 import { searchStockImage } from "@/lib/ai/tools/search-stock-image";
 import { searchWeb } from "@/lib/ai/tools/search-web";
-import { anthropic } from "@ai-sdk/anthropic";
-import { api, fetchMutation } from "@firebuzz/convex/nextjs";
-import { envCloudflarePublic } from "@firebuzz/env";
-import { stripIndents } from "@firebuzz/utils";
-import { nanoid } from "nanoid";
-import type { NextRequest } from "next/server";
+import { getSystemPrompt } from "@/lib/chat/prompt";
 
 export async function POST(request: NextRequest) {
 	const body = await request.json();
@@ -179,6 +178,7 @@ export async function POST(request: NextRequest) {
       `),
 						};
 					}
+					return part;
 				}),
 			};
 		}

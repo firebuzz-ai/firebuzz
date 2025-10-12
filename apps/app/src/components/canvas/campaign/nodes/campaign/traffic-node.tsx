@@ -1,4 +1,3 @@
-import { getDefaultSegmentRules } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/helpers/default-rules";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { BaseNode as BaseNodeComponent } from "@firebuzz/ui/components/ui/base-node";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -15,6 +14,7 @@ import {
 } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { memo, useCallback, useEffect, useState } from "react";
+import { getDefaultSegmentRules } from "@/app/(workspace)/(dashboard)/campaigns/[id]/edit/_components/panel/helpers/default-rules";
 import { ValidationStatusIcon } from "../validation-status-icon";
 import { CampaignNodeIcons } from "./icons";
 import type { SegmentNode, TrafficNode as TrafficNodeType } from "./types";

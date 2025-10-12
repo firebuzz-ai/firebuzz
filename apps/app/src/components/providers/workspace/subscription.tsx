@@ -1,8 +1,8 @@
 "use client";
 
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { type Doc, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Doc, useCachedRichQuery } from "@firebuzz/convex";
 import { createContext, useMemo } from "react";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 interface SubscriptionData {
 	subscription:

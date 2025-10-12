@@ -1,7 +1,5 @@
 "use client";
 
-import { MONO_FONTS, SANS_FONTS, SERIF_FONTS } from "@/lib/theme/constants";
-import { getFontFamilyWithFallbacks } from "@/lib/theme/utils";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Command,
@@ -27,6 +25,8 @@ import {
 import { Check, ChevronsUpDown } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useEffect, useState } from "react";
+import { MONO_FONTS, SANS_FONTS, SERIF_FONTS } from "@/lib/theme/constants";
+import { getFontFamilyWithFallbacks } from "@/lib/theme/utils";
 
 // Dynamic font loading utility
 const loadedFonts = new Set<string>();

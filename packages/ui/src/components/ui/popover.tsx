@@ -1,9 +1,8 @@
 "use client";
 
+import { cn } from "@firebuzz/ui/lib/utils";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as React from "react";
-
-import { cn } from "@firebuzz/ui/lib/utils";
 
 const Popover = PopoverPrimitive.Root;
 

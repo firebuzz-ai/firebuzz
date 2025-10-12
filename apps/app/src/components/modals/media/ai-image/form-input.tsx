@@ -1,5 +1,3 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
-import ImageGenClient from "@/lib/ai/image/client";
 import {
 	api,
 	useMutation,
@@ -27,6 +25,8 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import ImageGenClient from "@/lib/ai/image/client";
 import { Generations } from "./generations";
 import { ImageList } from "./image-list";
 import { MaskButton } from "./mask-button";

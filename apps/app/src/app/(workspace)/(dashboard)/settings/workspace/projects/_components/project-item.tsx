@@ -1,6 +1,3 @@
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useProjectModal } from "@/hooks/ui/use-project-modal";
 import type { Doc } from "@firebuzz/convex";
 import { api, useMutation } from "@firebuzz/convex";
 import {
@@ -32,6 +29,9 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useProjectModal } from "@/hooks/ui/use-project-modal";
 
 export const ProjectItem = ({
 	project,
@@ -76,9 +76,9 @@ export const ProjectItem = ({
 						{/* Top */}
 						<div className="flex gap-2 items-center">
 							<ColoredIconPreview
-								// @ts-ignore
+								// @ts-expect-error
 								icon={project.icon}
-								// @ts-ignore
+								// @ts-expect-error
 								color={project.color}
 								iconClassName="size-5"
 								className="size-8"

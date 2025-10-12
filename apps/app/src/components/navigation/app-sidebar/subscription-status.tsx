@@ -1,10 +1,5 @@
 "use client";
 
-import { FinishTrialModal } from "@/components/modals/subscription/finish-trial/modal";
-import { ResubscribeModal } from "@/components/modals/subscription/resubscribe/modal";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, useAction } from "@firebuzz/convex";
 import { Icon } from "@firebuzz/ui/components/brand/icon";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -19,6 +14,11 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { formatToCalendarDateTime } from "@firebuzz/utils";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { FinishTrialModal } from "@/components/modals/subscription/finish-trial/modal";
+import { ResubscribeModal } from "@/components/modals/subscription/resubscribe/modal";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 export const SubscriptionStatus = () => {
 	const { currentWorkspace } = useWorkspace();
@@ -121,7 +121,7 @@ export const SubscriptionStatus = () => {
 		0,
 		Math.ceil(
 			(new Date(periodCreditSummary?.periodEnd ?? new Date()).getTime() -
-				new Date().getTime()) /
+				Date.now()) /
 				(1000 * 60 * 60 * 24),
 		),
 	);
@@ -175,7 +175,8 @@ export const SubscriptionStatus = () => {
 							</Tooltip>
 						</div>
 						<span className="font-mono font-medium text-sidebar-foreground">
-							{currentPeriodUsage}/{currentPeriodAdditions}
+							{currentPeriodUsage.toFixed(2)}/
+							{currentPeriodAdditions.toFixed(2)}
 						</span>
 					</div>
 

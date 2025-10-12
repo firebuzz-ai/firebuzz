@@ -1,5 +1,5 @@
 import { useAtom } from "jotai";
-import { RESET, atomWithReset } from "jotai/utils";
+import { atomWithReset, RESET } from "jotai/utils";
 import { useCallback, useMemo } from "react";
 
 export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536" | "auto";

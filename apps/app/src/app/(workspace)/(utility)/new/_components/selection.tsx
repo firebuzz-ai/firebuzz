@@ -1,9 +1,7 @@
 "use client";
 
-import { AnimatedButton } from "@/components/reusables/animated-button";
-import { useUser } from "@/hooks/auth/use-user";
 import { useAuth } from "@clerk/nextjs";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { Icon } from "@firebuzz/ui/components/brand/icon";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
@@ -14,6 +12,8 @@ import { useRouter } from "next/navigation";
 import type React from "react";
 import { useCallback, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { AnimatedButton } from "@/components/reusables/animated-button";
+import { useUser } from "@/hooks/auth/use-user";
 
 interface SelectionProps {
 	handleFadeout: () => void;

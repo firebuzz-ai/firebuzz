@@ -1,7 +1,5 @@
 "use client";
 
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
 import type { Doc } from "@firebuzz/convex";
 import { api, useMutation } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -26,6 +24,8 @@ import { cn, toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
+import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
+import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
 
 // Define schema for testimonial creation based on the convex schema
 const testimonialSchema = z.object({

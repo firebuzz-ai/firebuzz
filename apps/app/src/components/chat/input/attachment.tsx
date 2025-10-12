@@ -1,13 +1,11 @@
-import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
-import { attachmentsAtom } from "@/lib/workbench/atoms";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { FileAudio, FileText, FileVideo, X } from "@firebuzz/ui/icons/lucide";
 import { getAttachmentType } from "@firebuzz/utils";
 import { useAtom } from "jotai";
-import { motion } from "motion/react";
-
-import { AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
+import { attachmentsAtom } from "@/lib/workbench/atoms";
 
 export const Attachment = ({
 	clearAttachments,

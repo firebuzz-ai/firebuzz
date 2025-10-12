@@ -92,3 +92,25 @@ export const uploadUserAvatarFromURL = internalAction({
 		);
 	},
 });
+
+export const getObject = internalAction({
+	args: {
+		key: v.string(),
+	},
+	handler: async (_ctx, args) => {
+		// Get signed URL for the object
+		const url = await r2.getUrl(args.key);
+
+		// Fetch the object content
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new ConvexError(
+				`Failed to fetch object from R2: ${response.statusText}`,
+			);
+		}
+
+		// Return as array buffer
+		const arrayBuffer = await response.arrayBuffer();
+		return new Uint8Array(arrayBuffer);
+	},
+});

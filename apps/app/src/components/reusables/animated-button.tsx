@@ -19,7 +19,7 @@
  * ```
  */
 
-import { Slot, type VariantProps, cn, cva } from "@firebuzz/ui/lib/utils";
+import { cn, cva, Slot, type VariantProps } from "@firebuzz/ui/lib/utils";
 import { motion } from "motion/react";
 import * as React from "react";
 

@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  useConsent,
+  useConsentBanner,
+  useConsentModal,
+} from "@firebuzz/consent-manager";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,13 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  useConsent,
-  useConsentBanner,
-  useConsentModal,
-} from "@firebuzz/consent-manager";
 import { useCampaignEnv } from "@/hooks/use-campaign-env";
-import * as React from "react";
 import { CookiePreferencesDialog } from "./cookie-preferences-dialog";
 
 interface CookieBannerProps {

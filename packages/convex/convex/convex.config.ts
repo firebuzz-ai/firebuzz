@@ -1,5 +1,6 @@
 import cache from "@convex-dev/action-cache/convex.config";
 import actionRetrier from "@convex-dev/action-retrier/convex.config";
+import agent from "@convex-dev/agent/convex.config";
 import aggregate from "@convex-dev/aggregate/convex.config";
 import migrations from "@convex-dev/migrations/convex.config";
 import presence from "@convex-dev/presence/convex.config";
@@ -55,4 +56,6 @@ app.use(resend);
 // Presence
 app.use(presence);
 
+// Agents
+app.use(agent);
 export default app;

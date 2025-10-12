@@ -1,6 +1,5 @@
 "use client";
 
-import { useSheet } from "@/hooks/ui/use-sheet";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { ScrollArea } from "@firebuzz/ui/components/ui/scroll-area";
 import {
@@ -12,6 +11,7 @@ import {
 	SheetTitle,
 } from "@firebuzz/ui/components/ui/sheet";
 import { useCallback, useState } from "react";
+import { useSheet } from "@/hooks/ui/use-sheet";
 import { SettingsTab } from "./tabs/settings/settings";
 
 export const KnowledgeBaseSettingsSheet = () => {

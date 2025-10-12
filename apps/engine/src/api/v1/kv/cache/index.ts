@@ -9,7 +9,7 @@ import {
 	listKvQuerySchema,
 	listKvResponseSchema,
 } from "@firebuzz/shared-types/api/kv";
-import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
 
 // @route POST /api/v1/kv
 const insertKvRoute = createRoute({
@@ -147,7 +147,7 @@ export const cacheRoute = app
 							message: "Key-value pair retrieved successfully",
 
 							data: {
-								// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+								// biome-ignore lint/suspicious/noExplicitAny: KV storage returns dynamic JSON structure
 								value: result as Record<string, any>,
 								type: "json" as const,
 								metadata: undefined,
@@ -192,7 +192,7 @@ export const cacheRoute = app
 						success: true,
 						message: "Key-value pair retrieved successfully",
 						data: {
-							// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+							// biome-ignore lint/suspicious/noExplicitAny: KV storage returns dynamic JSON structure
 							value: result.value as Record<string, any>,
 							type: "json" as const,
 							metadata: result.metadata,

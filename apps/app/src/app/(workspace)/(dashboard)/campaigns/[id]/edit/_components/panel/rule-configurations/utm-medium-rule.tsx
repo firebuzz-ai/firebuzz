@@ -1,12 +1,12 @@
 "use client";
 
+import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
+import { useState } from "react";
 import type {
 	FilterOperator,
 	SegmentRule,
 } from "@/components/canvas/campaign/nodes/campaign/types";
-import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
-import { useState } from "react";
-import { RULE_TYPE_DEFINITIONS, getOperatorLabel } from "../helpers/rule-types";
+import { getOperatorLabel, RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { FilterOperatorSelector } from "../value-selectors/filter-operator-selector";
 import { HybridSelectValue } from "../value-selectors/hybrid-select-value";
 

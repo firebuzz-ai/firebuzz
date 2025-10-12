@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
 import type { Id } from "@firebuzz/convex";
 import { api, useCachedRichQuery, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
@@ -17,6 +16,7 @@ import { toast } from "@firebuzz/ui/lib/utils";
 import { Reorder } from "motion/react";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
 import { type ThemeItemDoc, ThemeReorderableItem } from "./item";
 
 interface SettingsTabProps {

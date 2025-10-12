@@ -4,6 +4,7 @@ import { TooltipProvider } from "@firebuzz/ui/components/ui/tooltip";
 import { ConvexClientProvider } from "./convex";
 import { NuqsProvider } from "./nuqs";
 import { ThemeProvider } from "./theme";
+
 const clerkEnv = envClerk();
 
 export const AppProviders = ({

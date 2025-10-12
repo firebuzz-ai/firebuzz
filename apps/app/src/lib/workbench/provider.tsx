@@ -2,11 +2,11 @@ import { useSetAtom } from "jotai";
 import type React from "react";
 import { useEffect } from "react";
 import {
-	type SelectedElement,
 	errorsAtom,
 	isIframeLoadedAtom,
 	portAtom,
 	resetState,
+	type SelectedElement,
 	selectedElementAtom,
 } from "./atoms";
 import { PREVIEW_SCRIPT } from "./constants";

@@ -1,3 +1,4 @@
+import type { Doc } from "@firebuzz/convex";
 import type { LucideIcon } from "@firebuzz/ui/icons/lucide";
 import {
 	Banknote,
@@ -8,8 +9,6 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { getCurrencySymbol } from "@firebuzz/utils";
-
-import type { Doc } from "@firebuzz/convex";
 import { KPICard } from "../charts/kpi-card";
 
 // Define KPI configuration with calculation and display logic

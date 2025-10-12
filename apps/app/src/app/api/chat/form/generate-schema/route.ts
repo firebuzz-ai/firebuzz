@@ -1,8 +1,8 @@
-import { openAI } from "@/lib/ai/openai";
 import { auth } from "@clerk/nextjs/server";
 import { generateObject } from "ai";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { openAI } from "@/lib/ai/openai";
 
 const formFieldSchema = z.object({
 	id: z.string().describe("Unique identifier for the field"),

@@ -1,4 +1,6 @@
 "use client";
+
+import type { Doc } from "@firebuzz/convex";
 import { Canvas } from "@/components/canvas/campaign/canvas";
 import { BaseNode } from "@/components/canvas/campaign/nodes/base-node";
 import { ABTestNode } from "@/components/canvas/campaign/nodes/campaign/abtest-node";
@@ -6,8 +8,6 @@ import { SegmentNode } from "@/components/canvas/campaign/nodes/campaign/segment
 import { TrafficNode } from "@/components/canvas/campaign/nodes/campaign/traffic-node";
 import { VariantNode } from "@/components/canvas/campaign/nodes/campaign/variant-node";
 import { NoteNode } from "@/components/canvas/campaign/nodes/notes-node";
-
-import type { Doc } from "@firebuzz/convex";
 
 const nodeTypes = {
 	base: BaseNode,

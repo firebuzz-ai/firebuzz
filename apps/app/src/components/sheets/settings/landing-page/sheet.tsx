@@ -1,7 +1,5 @@
 "use client";
 
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
 	AnimatedTabs,
@@ -19,6 +17,8 @@ import {
 } from "@firebuzz/ui/components/ui/sheet";
 import { Globe, Layers, Tag } from "@firebuzz/ui/icons/lucide";
 import { useCallback, useState } from "react";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { useSheet } from "@/hooks/ui/use-sheet";
 import { PageTab } from "./tabs/page";
 import { SeoTab } from "./tabs/seo";
 import { TagsTab } from "./tabs/tags";

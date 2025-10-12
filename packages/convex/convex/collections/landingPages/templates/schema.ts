@@ -20,6 +20,7 @@ export const landingPageTemplatesSchema = defineTable(
     slug: v.string(), // Must be unique
     thumbnail: v.string(),
     previewUrl: v.string(),
+    key: v.string(),
     tags: templateTags,
     files: v.string(),
   })

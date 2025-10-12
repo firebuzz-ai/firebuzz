@@ -1,6 +1,5 @@
 "use client";
 
-import { LAST_THEMES } from "@/lib/theme/constants";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Command,
@@ -23,6 +22,7 @@ import {
 import { Check, ChevronDown, Shuffle } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import { LAST_THEMES } from "@/lib/theme/constants";
 
 interface TemplateSectionProps {
 	onTemplateSelect: (templateId: string) => void;

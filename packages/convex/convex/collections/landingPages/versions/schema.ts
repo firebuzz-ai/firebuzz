@@ -6,6 +6,8 @@ export const landingPageVersionsSchema = defineTable(
 		number: v.number(),
 		messageId: v.optional(v.string()),
 		key: v.optional(v.string()),
+		commitMessage: v.optional(v.string()),
+		description: v.optional(v.string()),
 		// Relations
 		createdBy: v.id("users"),
 		workspaceId: v.id("workspaces"),

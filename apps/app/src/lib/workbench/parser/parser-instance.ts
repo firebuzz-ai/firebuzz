@@ -1,8 +1,5 @@
-import { workbenchStore } from "../atoms";
-
-import { messageQueueAtom } from "../atoms";
-
 import type { MessageQueueItem } from "../atoms";
+import { messageQueueAtom, workbenchStore } from "../atoms";
 import { MessageParser } from "./message-parser";
 
 export const messageParser = new MessageParser({

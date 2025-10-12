@@ -295,8 +295,10 @@ export const PasswordSettings = () => {
 										<Spinner size="xs" className="mr-2" />
 										{hasPassword ? "Updating..." : "Setting..."}
 									</>
+								) : hasPassword ? (
+									"Update password"
 								) : (
-									<>{hasPassword ? "Update password" : "Set password"}</>
+									"Set password"
 								)}
 							</Button>
 

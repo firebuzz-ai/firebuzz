@@ -1,12 +1,6 @@
 "use client";
 
-import type {
-	SegmentNode,
-	TrafficNode,
-} from "@/components/canvas/campaign/nodes/campaign/types";
-import { PanelHeader } from "@/components/ui/panel-header";
-import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
-import { type Doc, type Id, api, useCachedQuery } from "@firebuzz/convex";
+import { api, type Doc, type Id, useCachedQuery } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -36,6 +30,12 @@ import { useNodes, useReactFlow } from "@xyflow/react";
 import { Reorder } from "motion/react";
 import { nanoid } from "nanoid";
 import { useCallback, useMemo, useRef, useState } from "react";
+import type {
+	SegmentNode,
+	TrafficNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
+import { PanelHeader } from "@/components/ui/panel-header";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { getDefaultSegmentRules } from "../helpers/default-rules";
 
 interface TrafficPanelProps {

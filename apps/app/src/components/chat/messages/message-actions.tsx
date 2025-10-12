@@ -1,5 +1,3 @@
-import type { Message } from "ai";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Tooltip,
@@ -8,6 +6,7 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { ThumbsDownIcon, ThumbsUpIcon } from "@firebuzz/ui/icons/lucide";
+import type { Message } from "ai";
 import equal from "fast-deep-equal";
 import { memo } from "react";
 

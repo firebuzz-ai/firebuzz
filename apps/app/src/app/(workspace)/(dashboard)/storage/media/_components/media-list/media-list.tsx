@@ -1,11 +1,8 @@
 "use client";
 
-import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { useProject } from "@/hooks/auth/use-project";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedQuery,
 	usePaginatedQuery,
 } from "@firebuzz/convex";
@@ -17,6 +14,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
 import { useDebounce } from "use-debounce";
+import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { useProject } from "@/hooks/auth/use-project";
 import { Controls } from "../controls";
 import { MediaDetailsModal } from "../modals/modal";
 import { NewMediaModal } from "../modals/new-media/modal";

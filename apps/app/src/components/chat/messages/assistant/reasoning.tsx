@@ -1,7 +1,7 @@
+import type { UIMessage } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ChevronDown, ChevronRight, Clock } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
-import type { Message as MessageType } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import type {
 	CSSProperties,
@@ -70,7 +70,7 @@ interface ReasoningProps {
 	content: string;
 
 	isOver: boolean;
-	setMessages: Dispatch<SetStateAction<MessageType[]>>;
+	setMessages: Dispatch<SetStateAction<UIMessage[]>>;
 }
 
 export const Reasoning = ({ content, setMessages, isOver }: ReasoningProps) => {

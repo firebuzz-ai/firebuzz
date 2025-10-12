@@ -1,11 +1,11 @@
 "use client";
 
-import { EmptyState } from "@/components/reusables/empty-state";
-import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
-import { type Doc, type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Doc, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Hash } from "@firebuzz/ui/icons/lucide";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/reusables/empty-state";
+import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
 import { SocialItem } from "./social-item";
 import { SocialSearchBar } from "./social-search-bar";
 import { SocialSelectedMenu } from "./social-selected-menu";

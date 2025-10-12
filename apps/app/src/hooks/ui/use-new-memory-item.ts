@@ -1,6 +1,4 @@
-import { parseAsBoolean, parseAsString } from "nuqs";
-
-import { useQueryStates } from "nuqs";
+import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 
 export const useNewMemoryItem = () => {
 	return useQueryStates(

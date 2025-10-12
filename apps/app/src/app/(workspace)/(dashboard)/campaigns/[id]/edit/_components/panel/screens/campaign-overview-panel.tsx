@@ -1,11 +1,9 @@
 "use client";
 
-import { CampaignNodeIcons } from "@/components/canvas/campaign/nodes/campaign/icons";
-import { useCampaignNavigation } from "@/hooks/ui/use-campaign-navigation";
 import {
+	api,
 	ConvexError,
 	type Doc,
-	api,
 	useCachedQuery,
 	useMutation,
 } from "@firebuzz/convex";
@@ -33,6 +31,8 @@ import { DEFAULT_CAMPAIGN_EVENTS } from "@firebuzz/utils";
 import { useReactFlow } from "@xyflow/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { CampaignNodeIcons } from "@/components/canvas/campaign/nodes/campaign/icons";
+import { useCampaignNavigation } from "@/hooks/ui/use-campaign-navigation";
 import { GoalSelector } from "../value-selectors/goal-selector";
 
 interface CampaignOverviewPanelProps {
@@ -165,7 +165,8 @@ export const CampaignOverviewPanel = ({
 		...DEFAULT_CAMPAIGN_EVENTS.filter((event) =>
 			event.availableFor.includes(campaign.type),
 		).map((event) => {
-			const { availableFor, ...eventWithoutAvailableFor } = event;
+			const { availableFor: _availableFor, ...eventWithoutAvailableFor } =
+				event;
 			return { ...eventWithoutAvailableFor, isCustom: false };
 		}),
 		...(campaign.campaignSettings?.customEvents || []),

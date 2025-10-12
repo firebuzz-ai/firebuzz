@@ -1,8 +1,8 @@
 import "@/app/global.css";
-import { cn } from "@/lib/utils";
 import { RootProvider } from "fumadocs-ui/provider";
 import { GeistMono } from "geist/font/mono";
 import { GeistSans } from "geist/font/sans";
+import { cn } from "@/lib/utils";
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;

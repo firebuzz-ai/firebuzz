@@ -1,6 +1,6 @@
+import { cn } from "@firebuzz/ui/lib/utils";
 import type React from "react";
 
-import { cn } from "@firebuzz/ui/lib/utils";
 interface RainbowButtonProps
 	extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 

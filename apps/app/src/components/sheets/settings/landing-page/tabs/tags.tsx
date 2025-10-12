@@ -1,5 +1,3 @@
-import { parsedFilesAtom, tagsConfigAtom } from "@/lib/workbench/atoms";
-import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
@@ -24,6 +22,8 @@ import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
+import { parsedFilesAtom, tagsConfigAtom } from "@/lib/workbench/atoms";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 
 // Define schema for Tags configuration
 const tagsSchema = z.object({

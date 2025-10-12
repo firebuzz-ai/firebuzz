@@ -4,33 +4,50 @@ import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 
 export const getById = query({
-  args: {
-    id: v.id("agentSessions"),
-  },
-  handler: async (ctx, args) => {
-    const user = await getCurrentUserWithWorkspace(ctx);
+	args: {
+		id: v.id("agentSessions"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
 
-    const agentSession = await ctx.db.get(args.id);
+		const agentSession = await ctx.db.get(args.id);
 
-    if (!agentSession) {
-      throw new ConvexError(ERRORS.NOT_FOUND);
-    }
+		if (!agentSession) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
 
-    if (agentSession.workspaceId !== user.currentWorkspaceId) {
-      throw new ConvexError(ERRORS.UNAUTHORIZED);
-    }
+		if (agentSession.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
 
-    const session = await ctx.db.get(args.id);
+		const session = await ctx.db.get(args.id);
 
-    return session;
-  },
+		return session;
+	},
 });
 
 export const getByIdInternal = internalQuery({
-  args: {
-    id: v.id("agentSessions"),
-  },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.id);
-  },
+	args: {
+		id: v.id("agentSessions"),
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db.get(args.id);
+	},
+});
+
+export const getByActiveSandboxIdInternal = internalQuery({
+	args: {
+		sandboxId: v.id("sandboxes"),
+	},
+	handler: async (ctx, args) => {
+		return await ctx.db
+			.query("agentSessions")
+			.filter((q) =>
+				q.and(
+					q.eq(q.field("sandboxId"), args.sandboxId),
+					q.eq(q.field("status"), "active"),
+				),
+			)
+			.first();
+	},
 });

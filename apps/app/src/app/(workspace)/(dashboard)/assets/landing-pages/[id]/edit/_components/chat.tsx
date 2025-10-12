@@ -1,18 +1,5 @@
 "use client";
 
-import { ChatHeader } from "@/components/chat/header";
-import { ChatInput } from "@/components/chat/input/chat-input";
-import { ChatMessages } from "@/components/chat/messages/messages";
-import {
-	currentFilesTreeAtom,
-	currentImportantFilesAtom,
-	currentVersionAtom,
-	isIframeLoadedAtom,
-	workbenchStore,
-} from "@/lib/workbench/atoms";
-import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
-import { useMessageQueue } from "@/lib/workbench/hooks/use-message-queue";
-import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { useChat } from "@ai-sdk/react";
 import type { Id } from "@firebuzz/convex";
 import {
@@ -30,6 +17,19 @@ import {
 	useEffect,
 	useMemo,
 } from "react";
+import { ChatHeader } from "@/components/chat/header";
+import { ChatInput } from "@/components/chat/input/chat-input";
+import { ChatMessages } from "@/components/chat/messages/messages";
+import {
+	currentFilesTreeAtom,
+	currentImportantFilesAtom,
+	currentVersionAtom,
+	isIframeLoadedAtom,
+	workbenchStore,
+} from "@/lib/workbench/atoms";
+import { useMessageParser } from "@/lib/workbench/hooks/use-message-parser";
+import { useMessageQueue } from "@/lib/workbench/hooks/use-message-queue";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 
 const EmptyState = () => {
 	return (

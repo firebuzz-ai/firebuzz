@@ -1,6 +1,6 @@
 "use client";
 
-import { type Doc, api, useMutation } from "@firebuzz/convex";
+import { api, type Doc, useMutation } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	DropdownMenu,

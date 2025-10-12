@@ -3,13 +3,14 @@
 import { useAuth, useUser as useClerkUser } from "@clerk/nextjs";
 import type { GetToken } from "@clerk/types";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedRichQuery,
 	useConvexAuth,
 } from "@firebuzz/convex";
 
 import { createContext } from "react";
+
 interface User extends Doc<"users"> {
 	currentWorkspaceExternalId: string | undefined;
 	currentRole: "org:admin" | "org:member";

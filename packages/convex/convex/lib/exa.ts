@@ -50,13 +50,20 @@ export const searchAndCrawl = action({
 			type: "auto",
 		});
 
+		const timestampMs = Date.now();
+		const randomHex = Math.floor(Math.random() * 0xffffff)
+			.toString(16)
+			.padStart(6, "0");
+		const idempotencyKey = `${user._id}:${timestampMs}-${randomHex}-exa-search`;
+
 		// 3) Add usage to the database
 		await ctx.runMutation(
-			api.collections.stripe.transactions.mutations.addUsageIdempotent,
+			api.collections.stripe.transactions.mutations
+				.addUsageIdempotentSyncWithTinybird,
 			{
 				amount: 0.25,
-				idempotencyKey: `search-and-crawl-${user._id}-${Date.now()}`,
-				reason: "Search and Crawl",
+				idempotencyKey,
+				reason: "Search and Crawl with Exa",
 			},
 		);
 

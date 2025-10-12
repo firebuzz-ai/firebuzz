@@ -56,7 +56,7 @@ export class FileSystem {
 	): Directory["directory"] {
 		const directory: Directory["directory"] = {};
 		for (const key in directoryData) {
-			if (Object.prototype.hasOwnProperty.call(directoryData, key)) {
+			if (Object.hasOwn(directoryData, key)) {
 				const nodeData = directoryData[key];
 				if (nodeData) {
 					directory[key] = this.parseNode(nodeData);

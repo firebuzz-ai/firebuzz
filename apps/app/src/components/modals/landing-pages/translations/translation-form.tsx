@@ -1,7 +1,7 @@
 "use client";
 
 import type { Id } from "@firebuzz/convex";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { LocaleSelector } from "@firebuzz/ui/components/reusable/locale-selector";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";

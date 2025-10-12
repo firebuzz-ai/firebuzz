@@ -1,14 +1,5 @@
 "use client";
 
-import {
-	type Editor,
-	EditorContent,
-	EditorContext,
-	type JSONContent,
-	useEditor,
-} from "@tiptap/react";
-import * as React from "react";
-
 import { Highlight } from "@tiptap/extension-highlight";
 import { Image } from "@tiptap/extension-image";
 import { Subscript } from "@tiptap/extension-subscript";
@@ -18,14 +9,21 @@ import { TaskList } from "@tiptap/extension-task-list";
 import { TextAlign } from "@tiptap/extension-text-align";
 import { Typography } from "@tiptap/extension-typography";
 import { Underline } from "@tiptap/extension-underline";
+import {
+	type Editor,
+	EditorContent,
+	EditorContext,
+	type JSONContent,
+	useEditor,
+} from "@tiptap/react";
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit";
-
+import * as React from "react";
+import { Markdown } from "tiptap-markdown";
 // --- Custom Extensions ---
 import { Link } from "@/components/tiptap/tiptap-extension/link-extension";
 import { Selection } from "@/components/tiptap/tiptap-extension/selection-extension";
 import { TrailingNode } from "@/components/tiptap/tiptap-extension/trailing-node-extension";
-import { Markdown } from "tiptap-markdown";
 
 // --- UI Primitives ---
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
@@ -42,6 +40,10 @@ import "@/components/tiptap/tiptap-node/image-node/image-node.scss";
 import "@/components/tiptap/tiptap-node/list-node/list-node.scss";
 import "@/components/tiptap/tiptap-node/paragraph-node/paragraph-node.scss";
 
+// --- Icons ---
+import { ArrowLeftIcon } from "@/components/tiptap/tiptap-icons/arrow-left-icon";
+import { HighlighterIcon } from "@/components/tiptap/tiptap-icons/highlighter-icon";
+import { LinkIcon } from "@/components/tiptap/tiptap-icons/link-icon";
 import { BlockQuoteButton } from "@/components/tiptap/tiptap-ui/blockquote-button";
 import { CodeBlockButton } from "@/components/tiptap/tiptap-ui/code-block-button";
 import {
@@ -60,11 +62,6 @@ import { ListDropdownMenu } from "@/components/tiptap/tiptap-ui/list-dropdown-me
 import { MarkButton } from "@/components/tiptap/tiptap-ui/mark-button";
 import { TextAlignButton } from "@/components/tiptap/tiptap-ui/text-align-button";
 import { UndoRedoButton } from "@/components/tiptap/tiptap-ui/undo-redo-button";
-
-// --- Icons ---
-import { ArrowLeftIcon } from "@/components/tiptap/tiptap-icons/arrow-left-icon";
-import { HighlighterIcon } from "@/components/tiptap/tiptap-icons/highlighter-icon";
-import { LinkIcon } from "@/components/tiptap/tiptap-icons/link-icon";
 
 import { useCursorVisibility } from "@/hooks/tiptap/use-cursor-visibility";
 // --- Hooks ---

@@ -1,11 +1,11 @@
 "use client";
 
-import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { ChevronLeft, ChevronRight } from "@firebuzz/ui/icons/lucide";
 import { useState } from "react";
+import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
 import { InvitationListItem } from "./invitation-list-item";
 
 export const Invitations = () => {

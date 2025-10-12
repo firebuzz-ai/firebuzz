@@ -1,10 +1,9 @@
 "use client";
 
-import * as SliderPrimitive from "@radix-ui/react-slider";
-import { type VariantProps, cva } from "class-variance-authority";
-import * as React from "react";
-
 import { cn } from "@firebuzz/ui/lib/utils";
+import * as SliderPrimitive from "@radix-ui/react-slider";
+import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 const sliderVariants = cva("", {
 	variants: {

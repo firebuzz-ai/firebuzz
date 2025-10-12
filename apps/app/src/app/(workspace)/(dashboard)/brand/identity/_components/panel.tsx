@@ -1,6 +1,5 @@
 "use client";
 
-import { BrowserPreview } from "@/lib/theme/preview";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -9,6 +8,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useTheme } from "next-themes";
 import { useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { BrowserPreview } from "@/lib/theme/preview";
 
 interface PanelProps {
 	hasChanges: boolean;

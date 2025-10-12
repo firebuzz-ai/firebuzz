@@ -1,11 +1,10 @@
 "use client";
-import { KnowledgeBaseTabs } from "@/components/navigation/knowledge-bases/tabs";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useEffect, useMemo, useState } from "react";
-
 import { EditMemoryItemModal } from "@/components/modals/knowledge-base/edit-memory-item/modal";
 import { NewMemoryItemModal } from "@/components/modals/knowledge-base/new-memory/modal";
+import { KnowledgeBaseTabs } from "@/components/navigation/knowledge-bases/tabs";
 import { KnowledgeBaseSettingsSheet } from "@/components/sheets/settings/knowledge-bases/sheet";
 import { NewDocumentModal } from "../../documents/_components/modals/new-document/modal";
 import { MemoryList } from "./memory-list";

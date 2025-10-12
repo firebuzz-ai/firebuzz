@@ -1,9 +1,9 @@
+import type { Doc } from "@firebuzz/convex";
+import { useMemo } from "react";
 import {
 	HorizontalBarChart,
 	type HorizontalBarChartData,
 } from "@/components/analytics/charts/horizontal-bar-chart";
-import type { Doc } from "@firebuzz/convex";
-import { useMemo } from "react";
 
 interface AudienceOperatingSystemsChartProps {
 	audienceData?: Extract<

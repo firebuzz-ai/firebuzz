@@ -1,11 +1,11 @@
 "use client";
 
+import type { Doc } from "@firebuzz/convex";
+import { useMemo } from "react";
 import {
 	DonutChart,
 	type DonutChartData,
 } from "@/components/analytics/charts/donut-chart";
-import type { Doc } from "@firebuzz/convex";
-import { useMemo } from "react";
 
 interface ConversionsDeviceChartProps {
 	conversionsData?: Extract<

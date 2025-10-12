@@ -1,6 +1,5 @@
 "use client";
 
-import { useConfigureDomainModal } from "@/hooks/ui/use-configure-domain-modal";
 import { ReadonlyInputWithClipboard } from "@firebuzz/ui/components/reusable/readonly-input-with-clipboard";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import {
@@ -11,6 +10,7 @@ import {
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
 import { Label } from "@firebuzz/ui/components/ui/label";
+import { useConfigureDomainModal } from "@/hooks/ui/use-configure-domain-modal";
 
 export const ConfigureDomainModal = () => {
 	const [state, setState] = useConfigureDomainModal();

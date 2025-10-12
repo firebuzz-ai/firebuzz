@@ -1,7 +1,5 @@
 "use client";
 
-import { EmptyState } from "@/components/reusables/empty-state";
-import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import {
@@ -17,6 +15,8 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { HelpCircle, Table2 } from "@firebuzz/ui/icons/lucide";
+import { EmptyState } from "@/components/reusables/empty-state";
+import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
 import { FeatureRow } from "./feature-row";
 
 export const Features = () => {

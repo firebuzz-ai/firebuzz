@@ -1,3 +1,8 @@
+import { Icon } from "@firebuzz/ui/components/brand/icon";
+import {
+	Collapsible,
+	CollapsibleContent,
+} from "@firebuzz/ui/components/ui/collapsible";
 import {
 	Sidebar,
 	SidebarContent,
@@ -11,7 +16,6 @@ import {
 	SidebarMenuSubItem,
 	SidebarRail,
 } from "@firebuzz/ui/components/ui/sidebar";
-
 import {
 	Fingerprint,
 	Folder,
@@ -19,12 +23,6 @@ import {
 	SquareTerminal,
 	Workflow,
 } from "@firebuzz/ui/icons/lucide";
-
-import { Icon } from "@firebuzz/ui/components/brand/icon";
-import {
-	Collapsible,
-	CollapsibleContent,
-} from "@firebuzz/ui/components/ui/collapsible";
 import AvatarMenu from "./avatar-menu";
 import { ProjectSwitcher } from "./project-switcher";
 import { ProjectsSidebarList } from "./projects-list";

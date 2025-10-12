@@ -1,7 +1,7 @@
-import { campaignConfiguration } from "@/configuration/campaign";
-import { clsx, type ClassValue } from "clsx";
+import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { z } from "zod";
+import { campaignConfiguration } from "@/configuration/campaign";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

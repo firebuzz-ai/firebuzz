@@ -1,8 +1,8 @@
-import { LandingPageSettingsSheet } from "@/components/sheets/settings/landing-page/sheet";
 import { auth } from "@clerk/nextjs/server";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { LandingPageSettingsSheet } from "@/components/sheets/settings/landing-page/sheet";
 import { EditLandingPage } from "./_components/edit";
 import { Providers } from "./_components/providers";
 export default async function LandingPageEditPage({
@@ -22,7 +22,7 @@ export default async function LandingPageEditPage({
 		`${panelId}-right-panel-size`,
 	)?.value;
 	const previewPanelSize = previewPanelValue
-		? Number.parseInt(previewPanelValue)
+		? Number.parseInt(previewPanelValue, 10)
 		: 30;
 
 	return (

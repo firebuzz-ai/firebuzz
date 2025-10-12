@@ -2,16 +2,13 @@
 
 import type { Editor } from "@tiptap/react";
 import * as React from "react";
-
-// --- Hooks ---
-import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 // --- Icons ---
 import { ImagePlusIcon } from "@/components/tiptap/tiptap-icons/image-plus-icon";
-
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
+// --- Hooks ---
+import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
 
 export interface ImageUploadButtonProps extends ButtonProps {
 	editor?: Editor | null;

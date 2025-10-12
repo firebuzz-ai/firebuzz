@@ -1,7 +1,5 @@
 "use client";
 
-import { useProfileForm } from "@/app/(workspace)/(dashboard)/settings/account/profile/_components/form-context";
-import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -12,6 +10,8 @@ import { Building2, Shield, User } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo } from "react";
+import { useProfileForm } from "@/app/(workspace)/(dashboard)/settings/account/profile/_components/form-context";
+import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 
 const TABS: TabItem[] = [
 	{

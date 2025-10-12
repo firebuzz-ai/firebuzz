@@ -2805,7 +2805,15 @@ export const handleStripeEvent = internalAction({
 					}
 
 					// Extract card details if it's a card payment method
-					let cardDetails = undefined;
+					let cardDetails:
+						| {
+								brand: string;
+								last4: string;
+								expMonth: number;
+								expYear: number;
+						  }
+						| undefined;
+
 					if (paymentMethodData.type === "card" && paymentMethodData.card) {
 						cardDetails = {
 							brand: paymentMethodData.card.brand,
@@ -2848,7 +2856,15 @@ export const handleStripeEvent = internalAction({
 
 					if (existingPaymentMethod) {
 						// Extract card details if it's a card payment method
-						let cardDetails = undefined;
+						let cardDetails:
+							| {
+									brand: string;
+									last4: string;
+									expMonth: number;
+									expYear: number;
+							  }
+							| undefined;
+
 						if (paymentMethodData.type === "card" && paymentMethodData.card) {
 							cardDetails = {
 								brand: paymentMethodData.card.brand,

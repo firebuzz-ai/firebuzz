@@ -72,7 +72,6 @@ export const ComboboxSelectValue = ({
 				<PopoverTrigger asChild>
 					<Button
 						variant="outline"
-						// biome-ignore lint/a11y/useSemanticElements: <explanation>
 						role="combobox"
 						aria-expanded={open}
 						className="justify-between w-full h-8"

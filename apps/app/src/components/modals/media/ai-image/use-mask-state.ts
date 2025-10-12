@@ -1,9 +1,9 @@
+import { atom, getDefaultStore, useStore } from "jotai";
 import {
-	type HistoryAtoms,
 	createHistoryAtoms,
+	type HistoryAtoms,
 	useHistory,
 } from "@/hooks/state/history";
-import { atom, getDefaultStore, useStore } from "jotai";
 
 const limit = 10;
 

@@ -1,7 +1,5 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import {
 	Card,
@@ -20,6 +18,8 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Label, Pie, PieChart } from "recharts";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 const chartConfig = {
 	user_total_usage: {

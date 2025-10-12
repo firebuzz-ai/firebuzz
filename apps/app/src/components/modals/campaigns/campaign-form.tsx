@@ -1,8 +1,7 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import type { Id } from "@firebuzz/convex";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { LocaleSelector } from "@firebuzz/ui/components/reusable/locale-selector";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -30,6 +29,7 @@ import { slugify } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
+import { useProject } from "@/hooks/auth/use-project";
 
 const formSchema = z.object({
 	title: z.string().min(3, "Title must be at least 3 characters"),

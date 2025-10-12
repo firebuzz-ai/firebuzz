@@ -1,6 +1,5 @@
-import type { HTMLAttributes } from "react";
-
 import { cn } from "@firebuzz/ui/lib/utils";
+import type { HTMLAttributes } from "react";
 
 export function BaseNode({
 	className,
@@ -24,7 +23,7 @@ export function BaseNode({
 						: "border-border bg-muted",
 				className,
 			)}
-			// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+			// biome-ignore lint/a11y/noNoninteractiveTabindex: flow diagram node needs tabIndex for keyboard navigation
 			tabIndex={0}
 		/>
 	);

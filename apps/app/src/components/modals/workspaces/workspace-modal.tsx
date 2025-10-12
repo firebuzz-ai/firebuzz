@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 import { WorkspaceForm } from "./workspace-form";
 
 export const NewWorkspaceModal = () => {

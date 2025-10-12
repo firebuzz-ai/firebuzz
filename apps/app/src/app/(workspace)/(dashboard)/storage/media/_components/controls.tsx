@@ -1,5 +1,3 @@
-import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
@@ -36,6 +34,8 @@ import {
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 
 interface ControlsProps {
 	open: () => void;

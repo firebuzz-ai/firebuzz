@@ -1,11 +1,5 @@
 "use client";
 
-import { ManageProjectsModal } from "@/components/modals/subscription/manage-projects/modal";
-import { ManageSeatsModal } from "@/components/modals/subscription/manage-seats/modal";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useManageProjects } from "@/hooks/ui/use-manage-projects";
-import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -23,6 +17,12 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo } from "react";
+import { ManageProjectsModal } from "@/components/modals/subscription/manage-projects/modal";
+import { ManageSeatsModal } from "@/components/modals/subscription/manage-seats/modal";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useManageProjects } from "@/hooks/ui/use-manage-projects";
+import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 
 export const AddOns = () => {
 	const { subscription, isLoading, isCancellingAtPeriodEnd } =
@@ -33,6 +33,24 @@ export const AddOns = () => {
 	const isAdmin = useMemo(() => {
 		return user?.currentRole === "org:admin";
 	}, [user]);
+
+	// Helper function to get display name for add-on types
+	const getAddOnDisplayName = useCallback(
+		(addOnType: "extra-project" | "extra-seat" | "extra-traffic"): string => {
+			switch (addOnType) {
+				case "extra-project":
+					return "Extra Projects";
+				case "extra-seat":
+					return "Extra Seats";
+				default:
+					return addOnType
+						.split("-")
+						.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+						.join(" ");
+			}
+		},
+		[],
+	);
 
 	// Get add-ons from subscription items
 	const addOns = useMemo(() => {
@@ -56,24 +74,7 @@ export const AddOns = () => {
 				interval: item.price?.interval,
 				priceId: item.price?._id,
 			}));
-	}, [subscription]);
-
-	// Helper function to get display name for add-on types
-	function getAddOnDisplayName(
-		addOnType: "extra-project" | "extra-seat" | "extra-traffic",
-	): string {
-		switch (addOnType) {
-			case "extra-project":
-				return "Extra Projects";
-			case "extra-seat":
-				return "Extra Seats";
-			default:
-				return addOnType
-					.split("-")
-					.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-					.join(" ");
-		}
-	}
+	}, [subscription, getAddOnDisplayName]);
 
 	// Helper function to get icon for add-on types
 	function getAddOnIcon(addOnType: string) {

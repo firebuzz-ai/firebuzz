@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { LandingPageForm } from "./landing-page-form";
 
 export const NewLandingPageModal = () => {

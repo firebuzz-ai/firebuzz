@@ -297,7 +297,6 @@ export const ToolbarGroup = React.forwardRef<HTMLDivElement, BaseProps>(
 		return (
 			<div
 				ref={mergeRefs([groupRef, ref])}
-				// biome-ignore lint/a11y/useSemanticElements: <explanation>
 				role="group"
 				className={`tiptap-toolbar-group ${className || ""}`}
 				{...props}

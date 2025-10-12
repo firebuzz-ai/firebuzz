@@ -1,6 +1,6 @@
 "use client";
 
-import { type Id, api, useCachedQuery, useMutation } from "@firebuzz/convex";
+import { api, type Id, useCachedQuery, useMutation } from "@firebuzz/convex";
 
 import { parseAsBoolean, parseAsStringLiteral, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo } from "react";

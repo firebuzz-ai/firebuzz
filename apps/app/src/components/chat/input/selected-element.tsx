@@ -1,10 +1,10 @@
 "use client";
 
-import { selectedElementAtom } from "@/lib/workbench/atoms";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { ChevronRight, Code } from "@firebuzz/ui/icons/lucide";
 import { useAtom } from "jotai";
 import { motion } from "motion/react";
+import { selectedElementAtom } from "@/lib/workbench/atoms";
 
 export const SelectedElement = () => {
 	const [selectedElement, setSelectedElement] = useAtom(selectedElementAtom);

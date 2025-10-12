@@ -1,5 +1,12 @@
 "use client";
 
+import { Button } from "@firebuzz/ui/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipShortcut,
+	TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
 import {
 	Hand,
 	Maximize,
@@ -8,24 +15,15 @@ import {
 	Plus,
 	Sparkles,
 } from "@firebuzz/ui/icons/lucide";
-
+import { cn } from "@firebuzz/ui/lib/utils";
 import {
 	Panel,
 	type PanelProps,
 	useKeyPress,
+	useNodes,
 	useReactFlow,
 	useViewport,
 } from "@xyflow/react";
-
-import { Button } from "@firebuzz/ui/components/ui/button";
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipShortcut,
-	TooltipTrigger,
-} from "@firebuzz/ui/components/ui/tooltip";
-import { cn } from "@firebuzz/ui/lib/utils";
-import { useNodes } from "@xyflow/react";
 import { useEffect, useMemo } from "react";
 import type { FormField } from "../../../../app/(workspace)/(dashboard)/campaigns/[id]/form/_components/form-types";
 import { AIFormGenerator } from "../../../../app/(workspace)/(dashboard)/campaigns/[id]/form/_components/preview/ai-form-generator";

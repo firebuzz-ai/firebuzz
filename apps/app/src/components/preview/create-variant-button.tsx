@@ -1,6 +1,5 @@
 "use client";
 
-import { resetState } from "@/lib/workbench/atoms";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -14,6 +13,8 @@ import { GitBranch } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { resetState } from "@/lib/workbench/atoms";
+
 interface CreateVariantButtonProps {
 	landingPageId: Id<"landingPages">;
 }

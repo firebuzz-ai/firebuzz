@@ -1,7 +1,6 @@
 "use client";
 
-import { useEditTestimonialModal } from "@/hooks/ui/use-edit-testimonial-modal";
-import { type Doc, type Id, api, useMutation } from "@firebuzz/convex";
+import { api, type Doc, type Id, useMutation } from "@firebuzz/convex";
 import {
 	Avatar,
 	AvatarFallback,
@@ -24,7 +23,6 @@ import {
 	Trash,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
-
 import {
 	type Dispatch,
 	type SetStateAction,
@@ -32,6 +30,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useEditTestimonialModal } from "@/hooks/ui/use-edit-testimonial-modal";
 
 interface TestimonialItemProps {
 	testimonial: Doc<"testimonials">;

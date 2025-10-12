@@ -1,7 +1,5 @@
 "use client";
 
-import { useUser } from "@/hooks/auth/use-user";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
 	Avatar,
 	AvatarFallback,
@@ -24,6 +22,8 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useCallback, useState } from "react";
+import { useUser } from "@/hooks/auth/use-user";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 export const WorkspacesList = () => {
 	const { user } = useUser();

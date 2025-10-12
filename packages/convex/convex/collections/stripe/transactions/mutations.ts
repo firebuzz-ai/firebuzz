@@ -41,7 +41,7 @@ export const createIdempotent = internalMutationWithTrigger({
 	},
 });
 
-export const addUsageIdempotent = mutationWithTrigger({
+export const addUsageIdempotentSyncWithTinybird = mutationWithTrigger({
 	args: {
 		amount: v.number(),
 		idempotencyKey: v.string(),
@@ -104,8 +104,58 @@ export const addUsageIdempotent = mutationWithTrigger({
 				workspaceId: workspace._id,
 				userId: user._id,
 				projectId: user.currentProjectId!,
+				createdAt: new Date().toISOString(),
 			},
 		);
+
+		const transaction = await ctx.db.insert("transactions", usage);
+
+		return transaction;
+	},
+});
+
+export const addUsageIdempotentInternal = internalMutationWithTrigger({
+	args: {
+		amount: v.number(),
+		idempotencyKey: v.string(),
+		reason: v.optional(v.string()),
+		workspaceId: v.id("workspaces"),
+		sessionId: v.optional(v.id("agentSessions")),
+		userId: v.id("users"),
+		projectId: v.id("projects"),
+	},
+	handler: async (ctx, args) => {
+		const workspace = await ctx.db.get(args.workspaceId);
+
+		if (!workspace) {
+			throw new Error(ERRORS.NOT_FOUND);
+		}
+
+		const subscription = await getCurrentSubscription(ctx, workspace._id);
+
+		if (!subscription) {
+			throw new Error(ERRORS.NOT_FOUND);
+		}
+
+		if (!workspace.customerId) {
+			throw new Error(ERRORS.NOT_FOUND);
+		}
+
+		const usage = {
+			workspaceId: workspace._id,
+			projectId: args.projectId,
+			sessionId: args.sessionId,
+			customerId: subscription.customerId,
+			amount: args.amount,
+			type: "usage" as const,
+			periodStart: subscription.currentPeriodStart,
+			expiresAt: subscription.currentPeriodEnd,
+			subscriptionId: subscription._id,
+			reason: args.reason || "Usage credits",
+			idempotencyKey: args.idempotencyKey,
+			updatedAt: new Date().toISOString(),
+			createdBy: args.userId,
+		};
 
 		const transaction = await ctx.db.insert("transactions", usage);
 

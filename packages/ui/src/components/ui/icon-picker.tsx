@@ -18,9 +18,9 @@ export const iconPickerIcons = {
 } as const;
 
 function getZodEnumFromObjectKeys<
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: generic utility requires flexible object typing
 	TI extends Record<string, any>,
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: type inference from generic record structure
 	R extends string = TI extends Record<infer R, any> ? R : never,
 >(input: TI): z.ZodEnum<[R, ...R[]]> {
 	const [firstKey, ...otherKeys] = Object.keys(input) as [R, ...R[]];

@@ -1,11 +1,11 @@
 "use client";
-import { useProject } from "@/hooks/auth/use-project";
 import { api, useCachedQuery } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Sidebar, SidebarContent } from "@firebuzz/ui/components/ui/sidebar";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { formatFileSize } from "@firebuzz/utils";
 import NumberFlow from "@number-flow/react";
+import { useProject } from "@/hooks/auth/use-project";
 
 // TODO: Update with actual document-related information and limits
 export const DocumentsSidebar = () => {

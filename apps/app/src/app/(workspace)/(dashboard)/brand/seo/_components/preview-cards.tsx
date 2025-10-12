@@ -17,8 +17,8 @@ import {
 	GoogleIcon,
 	TwitterIcon,
 } from "@firebuzz/ui/icons/social";
-import { useTheme } from "next-themes";
 import Image from "next/image";
+import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import type { BrandSeoType } from "./form";
 

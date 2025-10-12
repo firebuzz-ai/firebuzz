@@ -1,5 +1,3 @@
-import { PDFViewer } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/pdf-viewer";
-import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button, buttonVariants } from "@firebuzz/ui/components/ui/button";
@@ -7,6 +5,8 @@ import { ExternalLink, EyeOff, X } from "@firebuzz/ui/icons/lucide";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useHotkeys } from "react-hotkeys-hook";
+import { PDFViewer } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/pdf-viewer";
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 
 const MediaRenderer = ({
 	mediaUrl,

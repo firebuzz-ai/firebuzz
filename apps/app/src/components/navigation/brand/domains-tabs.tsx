@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -8,6 +7,7 @@ import {
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Globe, Globe2 } from "@firebuzz/ui/icons/lucide";
 import { useCallback } from "react";
+import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
 
 const TABS: TabItem[] = [
 	{

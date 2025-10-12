@@ -1,8 +1,8 @@
 "use client";
 
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { NewWorkspaceModal } from "@/components/modals/workspaces/workspace-modal";
 import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { WorkspaceInvitations } from "./_components/workspace-invitations";
 import { WorkspacesList } from "./_components/workspaces-list";
 

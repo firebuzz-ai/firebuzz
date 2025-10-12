@@ -20,7 +20,7 @@ export function isWebContainer(): boolean {
 		}
 
 		// Check for WebContainer-specific global objects or properties
-		// @ts-ignore
+		// @ts-expect-error
 		if (window.__WC_VERSION__ || window.__WEBCONTAINER__) {
 			return true;
 		}
@@ -64,7 +64,7 @@ export function shouldDisableAnalytics(): boolean {
 	// Check for other conditions where analytics should be disabled
 	if (typeof window !== "undefined") {
 		// Disable if explicitly set in window object
-		// @ts-ignore
+		// @ts-expect-error
 		if (window.__DISABLE_ANALYTICS__) {
 			return true;
 		}

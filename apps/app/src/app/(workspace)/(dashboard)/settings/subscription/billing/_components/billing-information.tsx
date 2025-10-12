@@ -1,6 +1,5 @@
 "use client";
 
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, useAction, useCachedQuery } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -23,6 +22,7 @@ import {
 	XCircle,
 } from "@firebuzz/ui/icons/lucide";
 import { useState } from "react";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 export const BillingInformation = () => {
 	const { currentWorkspace } = useWorkspace();

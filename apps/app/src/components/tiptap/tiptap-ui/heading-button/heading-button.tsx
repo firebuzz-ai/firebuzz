@@ -2,10 +2,6 @@
 
 import { type Editor, isNodeSelection } from "@tiptap/react";
 import * as React from "react";
-
-// --- Hooks ---
-import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 import { HeadingFiveIcon } from "@/components/tiptap/tiptap-icons/heading-five-icon";
 import { HeadingFourIcon } from "@/components/tiptap/tiptap-icons/heading-four-icon";
 // --- Icons ---
@@ -13,13 +9,13 @@ import { HeadingOneIcon } from "@/components/tiptap/tiptap-icons/heading-one-ico
 import { HeadingSixIcon } from "@/components/tiptap/tiptap-icons/heading-six-icon";
 import { HeadingThreeIcon } from "@/components/tiptap/tiptap-icons/heading-three-icon";
 import { HeadingTwoIcon } from "@/components/tiptap/tiptap-icons/heading-two-icon";
-
-// --- Lib ---
-import { isNodeInSchema } from "@/lib/tiptap-utils";
-
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
+// --- Hooks ---
+import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
+// --- Lib ---
+import { isNodeInSchema } from "@/lib/tiptap-utils";
 
 export type Level = 1 | 2 | 3 | 4 | 5 | 6;
 

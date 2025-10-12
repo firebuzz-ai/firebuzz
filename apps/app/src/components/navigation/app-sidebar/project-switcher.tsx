@@ -1,7 +1,5 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -22,6 +20,8 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 export const ProjectSwitcher = () => {
 	const router = useRouter();

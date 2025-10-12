@@ -83,7 +83,7 @@ export const TableOfContents = ({ headings }: TableOfContentsProps) => {
 	}, [headings, activeId]);
 
 	// Update thumb position when active item changes
-	// biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only want to run on activeId change, not containerRef
 	useEffect(() => {
 		if (!containerRef.current || !activeId) {
 			setThumbPosition({ top: 0, height: 0 });

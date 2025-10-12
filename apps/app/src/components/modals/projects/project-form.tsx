@@ -1,8 +1,7 @@
 "use client";
 
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import type { Doc } from "@firebuzz/convex";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent, CardHeader } from "@firebuzz/ui/components/ui/card";
 import {
@@ -28,6 +27,7 @@ import { Info } from "@firebuzz/ui/icons/lucide";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 import { z } from "zod";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 const formSchema = z.object({
 	title: z.string().min(3, "Title must be at least 3 characters"),

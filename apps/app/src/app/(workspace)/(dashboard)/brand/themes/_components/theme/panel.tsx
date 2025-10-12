@@ -1,9 +1,9 @@
-import { BrowserPreview } from "@/lib/theme/preview";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { DottedGridBackground } from "@firebuzz/ui/components/reusable/dotted-grid-background";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useHotkeys } from "react-hotkeys-hook";
+import { BrowserPreview } from "@/lib/theme/preview";
 import type { ThemeFormType } from "./form";
 
 interface ThemePanelProps {

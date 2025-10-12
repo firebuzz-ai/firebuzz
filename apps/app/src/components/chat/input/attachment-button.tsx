@@ -1,5 +1,5 @@
-import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
+import type { Id } from "@firebuzz/convex";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Drawer,
@@ -24,13 +24,12 @@ import {
 	Wand2,
 } from "@firebuzz/ui/icons/lucide";
 import { useMediaQuery } from "@uidotdev/usehooks";
-import { useState } from "react";
-
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
-import { attachmentsAtom } from "@/lib/workbench/atoms";
-import type { Id } from "@firebuzz/convex";
-import { envCloudflarePublic } from "@firebuzz/env";
 import { useAtom } from "jotai";
+import { useState } from "react";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
+import { attachmentsAtom } from "@/lib/workbench/atoms";
 export const AttachmentButton = () => {
 	const isMobile = useMediaQuery("(max-width: 768px)");
 	const { setState: setGalleryModalState } = useMediaGalleryModal();

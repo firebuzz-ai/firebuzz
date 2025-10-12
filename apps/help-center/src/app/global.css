@@ -6,7 +6,9 @@
 @layer base {
 	body {
 		font-family: var(--font-geist-sans), system-ui, sans-serif;
-		font-feature-settings: "rlig" 1, "calt" 1;
+		font-feature-settings:
+			"rlig" 1,
+			"calt" 1;
 	}
 
 	code,
@@ -29,7 +31,9 @@
 	--color-fd-primary: hsl(25 94.6% 56.5%); /* --brand */
 	--color-fd-primary-foreground: hsl(240 5.9% 10%); /* --brand-foreground */
 	--color-fd-secondary: hsl(240 4.8% 95.9%); /* --secondary */
-	--color-fd-secondary-foreground: hsl(240 5.3% 26.1%); /* --secondary-foreground */
+	--color-fd-secondary-foreground: hsl(
+		240 5.3% 26.1%
+	); /* --secondary-foreground */
 	--color-fd-accent: hsl(0 0% 98%); /* --accent */
 	--color-fd-accent-foreground: hsl(240 5.9% 10%); /* --accent-foreground */
 	--color-fd-ring: hsl(240 4.8% 95.9%); /* --ring */

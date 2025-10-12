@@ -1,11 +1,11 @@
 // Re-export all email templates with consistent naming
 export {
-  default as AuthInvitationTemplate,
   type AuthInvitationTemplateProps,
+  default as AuthInvitationTemplate,
 } from "./auth-invitation";
 export {
-  default as AuthOTPTemplate,
   type AuthOTPTemplateProps,
+  default as AuthOTPTemplate,
 } from "./auth-otp";
 
 // Future email templates can be added here

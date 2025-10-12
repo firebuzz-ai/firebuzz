@@ -1,9 +1,8 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import {
-	type Doc,
 	api,
+	type Doc,
 	useCachedQuery,
 	usePaginatedQuery,
 } from "@firebuzz/convex";
@@ -26,6 +25,7 @@ import {
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Define the structure for a selected document item
 interface SelectedDocumentItem {

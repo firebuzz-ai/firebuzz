@@ -1,6 +1,5 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
 import { api, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
@@ -15,6 +14,7 @@ import { Crown, Sparkles, Zap } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useSubscription } from "@/hooks/auth/use-subscription";
 
 interface FinishTrialModalProps {
 	isOpen: boolean;

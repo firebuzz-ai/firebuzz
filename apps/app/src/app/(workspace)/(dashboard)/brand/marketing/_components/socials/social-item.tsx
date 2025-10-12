@@ -1,7 +1,6 @@
 "use client";
 
-import { useEditSocialModal } from "@/hooks/ui/use-edit-social-modal";
-import { type Doc, type Id, api, useMutation } from "@firebuzz/convex";
+import { api, type Doc, type Id, useMutation } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -40,7 +39,6 @@ import {
 	YouTubeIcon,
 } from "@firebuzz/ui/icons/social";
 import { cn } from "@firebuzz/ui/lib/utils";
-
 import {
 	type Dispatch,
 	type SetStateAction,
@@ -48,6 +46,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useEditSocialModal } from "@/hooks/ui/use-edit-social-modal";
 
 interface SocialItemProps {
 	social: Doc<"socials">;

@@ -1,10 +1,9 @@
 "use client";
 
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
-import * as React from "react";
-
 import { buttonVariants } from "@firebuzz/ui/components/ui/button";
 import { cn } from "@firebuzz/ui/lib/utils";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
+import * as React from "react";
 
 const AlertDialog = AlertDialogPrimitive.Root;
 

@@ -2,10 +2,17 @@
 // Public API Exports
 // ============================================================================
 
+// API client (for manual usage)
+export { configureApiClient, initializeAnalytics, trackEvent } from "./api";
+// Batching utilities (for advanced usage)
+export { clearBatchTracker, getBatchTracker } from "./batch-tracker";
 // Main components
 export { useAnalytics } from "./hooks";
-export { AnalyticsProvider } from "./provider";
+// Default export
+export { AnalyticsProvider, AnalyticsProvider as default } from "./provider";
 
+// Debug utilities
+export { getAllTrackedEvents } from "./tracking/default-events";
 // Types
 export type {
 	AnalyticsContextValue,
@@ -15,18 +22,5 @@ export type {
 	TrackEventParams,
 	UserCookieData,
 } from "./types";
-
 // Environment detection utilities
 export { isWebContainer, shouldDisableAnalytics } from "./utils/environment";
-
-// API client (for manual usage)
-export { configureApiClient, initializeAnalytics, trackEvent } from "./api";
-
-// Debug utilities
-export { getAllTrackedEvents } from "./tracking/default-events";
-
-// Batching utilities (for advanced usage)
-export { clearBatchTracker, getBatchTracker } from "./batch-tracker";
-
-// Default export
-export { AnalyticsProvider as default } from "./provider";

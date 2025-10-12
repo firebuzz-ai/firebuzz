@@ -342,7 +342,7 @@ export function extractSiteLogo(html: string, domain: string): string | null {
 			const sizeMatch =
 				logo.url.match(/(\d+)x(\d+)/) || logo.url.match(/(\d+)/);
 			if (sizeMatch) {
-				const size = Number.parseInt(sizeMatch[1]);
+				const size = Number.parseInt(sizeMatch[1], 10);
 				if (size >= 200) logo.score += 2; // Boost larger images
 				if (size >= 400) logo.score += 1; // Extra boost for high-res
 			}
@@ -1579,9 +1579,9 @@ export function extractHeadquartersContact(
 
 	// Enhanced phone number extraction (prioritize main/headquarters numbers)
 	const phonePatterns = [
-		/(?:headquarters|main|office|general)[:\s]*(?:phone|tel|call)[:\s]*([+]?[\d\s\-\(\)\.]{10,})/gi,
-		/(?:phone|tel|call|contact)[:\s]*([+]?[\d\s\-\(\)\.]{10,})/gi,
-		/([+]?1?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{4})/g, // US format priority
+		/(?:headquarters|main|office|general)[:\s]*(?:phone|tel|call)[:\s]*([+]?[\d\s\-().]{10,})/gi,
+		/(?:phone|tel|call|contact)[:\s]*([+]?[\d\s\-().]{10,})/gi,
+		/([+]?1?[\s-]?\(?[0-9]{3}\)?[\s-]?[0-9]{3}[\s-]?[0-9]{4})/g, // US format priority
 	];
 
 	// Enhanced email extraction (prioritize business emails)
@@ -1602,7 +1602,7 @@ export function extractHeadquartersContact(
 		const matches = searchContent.match(pattern);
 		if (matches) {
 			for (const match of matches) {
-				const cleanPhone = match.replace(/[^+\d\s\-\(\)]/g, "").trim();
+				const cleanPhone = match.replace(/[^+\d\s\-()]/g, "").trim();
 				if (cleanPhone.length >= 10) {
 					contactInfo.phone = cleanPhone;
 					break;
@@ -1742,24 +1742,24 @@ function getEnhancedPlatformPatterns(platform: string): RegExp[] {
 	switch (platform) {
 		case "linkedin":
 			return [
-				/https?:\/\/(?:www\.)?linkedin\.com\/(company|in)\/([^\/?\s]+)/gi,
-				/https?:\/\/linkedin\.com\/(company|in)\/([^\/?\s]+)/gi,
+				/https?:\/\/(?:www\.)?linkedin\.com\/(company|in)\/([^/?\s]+)/gi,
+				/https?:\/\/linkedin\.com\/(company|in)\/([^/?\s]+)/gi,
 			];
 		case "twitter":
 			return [
-				/https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^\/?\s]+)/gi,
-				/https?:\/\/(?:twitter|x)\.com\/([^\/?\s]+)/gi,
+				/https?:\/\/(?:www\.)?(?:twitter|x)\.com\/([^/?\s]+)/gi,
+				/https?:\/\/(?:twitter|x)\.com\/([^/?\s]+)/gi,
 			];
 		case "facebook":
 			return [
-				/https?:\/\/(?:www\.)?facebook\.com\/([^\/?\s]+)/gi,
-				/https?:\/\/facebook\.com\/([^\/?\s]+)/gi,
-				/https?:\/\/(?:www\.)?fb\.com\/([^\/?\s]+)/gi,
+				/https?:\/\/(?:www\.)?facebook\.com\/([^/?\s]+)/gi,
+				/https?:\/\/facebook\.com\/([^/?\s]+)/gi,
+				/https?:\/\/(?:www\.)?fb\.com\/([^/?\s]+)/gi,
 			];
 		case "instagram":
 			return [
-				/https?:\/\/(?:www\.)?instagram\.com\/([^\/?\s]+)/gi,
-				/https?:\/\/instagram\.com\/([^\/?\s]+)/gi,
+				/https?:\/\/(?:www\.)?instagram\.com\/([^/?\s]+)/gi,
+				/https?:\/\/instagram\.com\/([^/?\s]+)/gi,
 			];
 		default:
 			return basePatterns;
@@ -1782,7 +1782,7 @@ function extractSocialData(
 		switch (platform) {
 			case "linkedin": {
 				const linkedinMatch = url.match(
-					/linkedin\.com\/(company|in)\/([^\/?\s]+)/i,
+					/linkedin\.com\/(company|in)\/([^/?\s]+)/i,
 				);
 				if (linkedinMatch) {
 					const type = linkedinMatch[1];
@@ -1794,7 +1794,7 @@ function extractSocialData(
 			}
 
 			case "twitter": {
-				const twitterMatch = url.match(/(?:twitter|x)\.com\/([^\/?\s]+)/i);
+				const twitterMatch = url.match(/(?:twitter|x)\.com\/([^/?\s]+)/i);
 				if (twitterMatch) {
 					handle = twitterMatch[1];
 					cleanUrl = `https://twitter.com/${handle}`;
@@ -1803,7 +1803,7 @@ function extractSocialData(
 			}
 
 			case "facebook": {
-				const facebookMatch = url.match(/(?:facebook|fb)\.com\/([^\/?\s]+)/i);
+				const facebookMatch = url.match(/(?:facebook|fb)\.com\/([^/?\s]+)/i);
 				if (facebookMatch) {
 					handle = facebookMatch[1];
 					cleanUrl = `https://www.facebook.com/${handle}`;

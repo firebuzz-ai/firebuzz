@@ -1,6 +1,5 @@
 "use client";
 
-import { Presence } from "@/components/presence/presence";
 import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
@@ -11,6 +10,7 @@ import { ChartBar, Database, Table, Workflow } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { Presence } from "@/components/presence/presence";
 import { CampaignStatusButton } from "./campaign-status-button";
 
 interface CampaignTabsProps {

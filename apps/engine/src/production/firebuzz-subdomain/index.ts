@@ -1,6 +1,6 @@
-import { evaluateGDPRSettings } from "@/lib/gdpr";
 import type { CampaignConfig } from "@firebuzz/shared-types/campaign";
 import { Hono } from "hono";
+import { evaluateGDPRSettings } from "@/lib/gdpr";
 import { evaluateCampaign } from "../../lib/campaign";
 import { getTrafficQueueService } from "../../lib/queue";
 import { parseRequest } from "../../lib/request";

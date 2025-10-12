@@ -2,6 +2,7 @@
 
 # Script to generate tarball files for templates
 # Excludes node_modules, build artifacts, and local files
+# To run: ./scripts/pack-templates.sh
 
 set -e
 
@@ -34,18 +35,37 @@ create_tarball() {
   tar -czf "$OUTPUT_DIR/$template_name.tar.gz" \
     -C "$template_path" \
     --exclude="node_modules" \
+    --exclude=".pnpm-store" \
+    --exclude=".yarn" \
+    --exclude=".npm" \
     --exclude="dist" \
     --exclude="build" \
+    --exclude="out" \
     --exclude=".turbo" \
     --exclude=".next" \
     --exclude=".vite" \
+    --exclude=".vercel" \
+    --exclude=".cache" \
+    --exclude="*.tar" \
+    --exclude="*.tar.gz" \
+    --exclude="*.tgz" \
+    --exclude="*.zip" \
     --exclude="*.log" \
     --exclude=".DS_Store" \
     --exclude="coverage" \
-    --exclude=".cache" \
+    --exclude=".env.local" \
+    --exclude=".env.*.local" \
     .
 
-  echo -e "${GREEN}✓ Created: $OUTPUT_DIR/$template_name.tar.gz${NC}"
+  # Get file size in KB
+  local file_size=$(du -k "$OUTPUT_DIR/$template_name.tar.gz" | cut -f1)
+  echo -e "${GREEN}✓ Created: $OUTPUT_DIR/$template_name.tar.gz (${file_size}KB)${NC}"
+
+  # Warn if file is unusually large
+  if [ "$file_size" -gt 5120 ]; then
+    echo -e "${YELLOW}  ⚠ Warning: Tar file is larger than expected (${file_size}KB). Check exclusions.${NC}"
+  fi
+
   return 0
 }
 

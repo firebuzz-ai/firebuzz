@@ -1,7 +1,6 @@
 "use client";
 
-import { useEditAudienceModal } from "@/hooks/ui/use-edit-audience-modal";
-import { type Doc, type Id, api, useMutation } from "@firebuzz/convex";
+import { api, type Doc, type Id, useMutation } from "@firebuzz/convex";
 import {
 	Avatar,
 	AvatarFallback,
@@ -24,7 +23,6 @@ import {
 	Trash,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
-
 import {
 	type Dispatch,
 	type SetStateAction,
@@ -32,6 +30,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useEditAudienceModal } from "@/hooks/ui/use-edit-audience-modal";
 
 interface AudienceItemProps {
 	audience: Doc<"audiences">;

@@ -1,7 +1,6 @@
 "use client";
 
-import { useConfigureDomainModal } from "@/hooks/ui/use-configure-domain-modal";
-import { type Doc, api, useAction } from "@firebuzz/convex";
+import { api, type Doc, useAction } from "@firebuzz/convex";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -43,6 +42,7 @@ import {
 import { toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
+import { useConfigureDomainModal } from "@/hooks/ui/use-configure-domain-modal";
 
 interface DomainItemProps {
 	domain: Doc<"customDomains">;

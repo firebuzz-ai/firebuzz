@@ -1,11 +1,11 @@
 "use client";
 
-import { EmptyState } from "@/components/reusables/empty-state";
-import { useNewAudienceModal } from "@/hooks/ui/use-new-audience-modal";
-import { type Doc, type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Doc, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Users } from "@firebuzz/ui/icons/lucide";
 import { useMemo, useState } from "react";
+import { EmptyState } from "@/components/reusables/empty-state";
+import { useNewAudienceModal } from "@/hooks/ui/use-new-audience-modal";
 import { AudienceItem } from "./audience-item";
 import { AudienceSearchBar } from "./audience-search-bar";
 import { AudienceSelectedMenu } from "./audience-selected-menu";

@@ -1,10 +1,10 @@
-import type { SelectedElement } from "@/lib/workbench/atoms";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import {
 	ChevronRight,
 	CornerDownRight,
 	MousePointerClick,
 } from "@firebuzz/ui/icons/lucide";
+import type { SelectedElement } from "@/lib/workbench/atoms";
 
 interface ElementReferenceProps {
 	message: string;

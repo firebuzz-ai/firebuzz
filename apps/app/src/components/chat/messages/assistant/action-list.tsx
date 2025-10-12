@@ -1,10 +1,10 @@
-import type { Action } from "@/lib/workbench/atoms";
 import { javascript } from "@codemirror/lang-javascript";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { CircleCheck, XIcon } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import CodeMirror from "@uiw/react-codemirror";
 import { motion } from "motion/react";
+import type { Action } from "@/lib/workbench/atoms";
 
 interface ActionListProps {
 	actions: Action[];

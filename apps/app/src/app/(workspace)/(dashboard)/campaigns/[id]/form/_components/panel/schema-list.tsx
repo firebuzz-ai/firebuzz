@@ -1,6 +1,5 @@
 "use client";
 
-import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { Id } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -8,6 +7,7 @@ import { ArrowRight, GripVertical } from "@firebuzz/ui/icons/lucide";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { Reorder } from "motion/react";
 import { useMemo, useRef } from "react";
+import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { FormField, PanelScreen } from "../form-types";
 
 interface SchemaListProps {

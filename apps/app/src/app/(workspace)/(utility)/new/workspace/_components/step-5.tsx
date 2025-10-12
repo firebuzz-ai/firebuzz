@@ -1,8 +1,7 @@
-import { AnimatedButton } from "@/components/reusables/animated-button";
 import {
+	api,
 	ConvexError,
 	type Doc,
-	api,
 	useAction,
 	useCachedRichQuery,
 } from "@firebuzz/convex";
@@ -20,6 +19,7 @@ import { CheckIcon } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useState } from "react";
+import { AnimatedButton } from "@/components/reusables/animated-button";
 
 type Step5Props = {
 	onboardingData: Doc<"onboarding">;

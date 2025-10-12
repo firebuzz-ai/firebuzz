@@ -1,9 +1,5 @@
 "use client";
 
-import type {
-	FilterOperator,
-	RuleTypeId,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import {
@@ -20,6 +16,10 @@ import {
 	SearchX,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import type {
+	FilterOperator,
+	RuleTypeId,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import { getOperatorLabel } from "../helpers/rule-types";
 
 // Icon mapping for each operator

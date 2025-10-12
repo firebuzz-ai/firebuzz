@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	ANALYTICS_PERIODS,
-	useCampaignAnalytics,
-} from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Label } from "@firebuzz/ui/components/ui/label";
@@ -23,6 +19,10 @@ import {
 	Split,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
+import {
+	ANALYTICS_PERIODS,
+	useCampaignAnalytics,
+} from "@/hooks/state/use-campaign-analytics";
 
 interface AnalyticsControlBarProps {
 	campaignId: Id<"campaigns">;

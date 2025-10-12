@@ -1,6 +1,5 @@
 "use client";
 
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
@@ -13,6 +12,7 @@ import { Button } from "@firebuzz/ui/components/ui/button";
 import { Checkbox } from "@firebuzz/ui/components/ui/checkbox";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useMemo } from "react";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 interface MemberSelectionProps {
 	decreaseAmount: number;

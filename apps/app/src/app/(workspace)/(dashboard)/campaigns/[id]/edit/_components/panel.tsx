@@ -1,3 +1,7 @@
+import type { Doc } from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { useNodes } from "@xyflow/react";
+import { useMemo, useState } from "react";
 import type {
 	ABTestNode,
 	AllCampaignNodes,
@@ -6,10 +10,6 @@ import type {
 	VariantNode,
 } from "@/components/canvas/campaign/nodes/campaign/types";
 import { useCampaignNavigation } from "@/hooks/ui/use-campaign-navigation";
-import type { Doc } from "@firebuzz/convex";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { useNodes } from "@xyflow/react";
-import { useMemo, useState } from "react";
 import { ABTestPanel } from "./panel/screens/abtest-panel";
 import { CampaignOverviewPanel } from "./panel/screens/campaign-overview-panel";
 import { CustomEventsPanel } from "./panel/screens/custom-events-panel";

@@ -1,7 +1,5 @@
 import { paginationOptsValidator } from "convex/server";
-import { ConvexError } from "convex/values";
-
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
 import {
 	aggregateDocuments,
@@ -100,7 +98,7 @@ export const getTotalSize = query({
 	handler: async (ctx, args) => {
 		return await aggregateDocuments.sum(ctx, {
 			namespace: args.projectId,
-			// @ts-ignore
+			// @ts-expect-error
 			bounds: {},
 		});
 	},
@@ -229,7 +227,7 @@ export const getTotalCountByKnowledgeBase = query({
 	handler: async (ctx, args) => {
 		return await aggregateMemoizedDocuments.count(ctx, {
 			namespace: args.knowledgeBaseId,
-			// @ts-ignore
+			// @ts-expect-error
 			bounds: {},
 		});
 	},

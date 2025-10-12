@@ -44,7 +44,7 @@ function useActiveSection(sectionIds: string[], rootMargin: string) {
 
 export const ScrollTracking = ({ sections, offset = 120 }: Props) => {
 	const sectionIds = useMemo(() => sections.map((s) => s.id), [sections]);
-	const activeId = useActiveSection(sectionIds, `-${offset}px 0px -60% 0px`);
+	const _activeId = useActiveSection(sectionIds, `-${offset}px 0px -60% 0px`);
 	const railRef = useRef<HTMLDivElement>(null);
 
 	return (

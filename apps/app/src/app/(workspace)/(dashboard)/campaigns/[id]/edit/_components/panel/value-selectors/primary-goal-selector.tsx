@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	createTrackingSetupState,
-	useTrackingSetupModal,
-} from "@/hooks/ui/use-tracking-setup-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Command,
@@ -43,6 +39,10 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import {
+	createTrackingSetupState,
+	useTrackingSetupModal,
+} from "@/hooks/ui/use-tracking-setup-modal";
 
 // Map icon names to actual icon components
 const iconMap: Record<string, LucideIcon> = {
@@ -155,7 +155,6 @@ export const PrimaryGoalSelector = ({
 					<PopoverTrigger asChild>
 						<Button
 							variant="outline"
-							// biome-ignore lint/a11y/useSemanticElements: <explanation>
 							role="combobox"
 							aria-expanded={open}
 							className="justify-between w-full h-8"

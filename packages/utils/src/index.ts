@@ -1,5 +1,3 @@
-import hash from "hash-it";
-
 import {
 	differenceInHours,
 	differenceInMinutes,
@@ -8,7 +6,9 @@ import {
 	formatDistance,
 	isToday,
 } from "date-fns";
+import hash from "hash-it";
 import { countriesAndLanguages } from "./constants";
+
 export {
 	AVATARS,
 	countriesAndLanguages,
@@ -51,7 +51,7 @@ export const slugify = (str: string) => {
 
 export const stripIndents = (
 	arg0: string | TemplateStringsArray,
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: template string values can be of any type
 	...values: any[]
 ) => {
 	function _stripIndents(value: string) {
@@ -387,9 +387,9 @@ export function hslToHex(hsl: string): string {
 		return "#000000";
 	}
 
-	const h = Number.parseInt(values[0] ?? "0") / 360;
-	const s = Number.parseInt(values[1] ?? "0") / 100;
-	const l = Number.parseInt(values[2] ?? "0") / 100;
+	const h = Number.parseInt(values[0] ?? "0", 10) / 360;
+	const s = Number.parseInt(values[1] ?? "0", 10) / 100;
+	const l = Number.parseInt(values[2] ?? "0", 10) / 100;
 
 	const hue2rgb = (p: number, q: number, t: number) => {
 		let normalizedT = t;
@@ -453,12 +453,12 @@ export function normalizeHex(hex: string): string {
 /* Currency Operations */
 export {
 	CURRENCY_SYMBOLS,
-	type SupportedCurrency,
-	getCurrencySymbol,
-	getSupportedCurrencies,
-	isSupportedCurrency,
 	formatCurrency,
 	getCurrencyInfo,
 	getCurrencyOptions,
+	getCurrencySymbol,
 	getPopularCurrencies,
+	getSupportedCurrencies,
+	isSupportedCurrency,
+	type SupportedCurrency,
 } from "./currency";

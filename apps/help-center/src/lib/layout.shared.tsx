@@ -1,5 +1,5 @@
-import { Wordmark } from "@/components/brand/wordmark";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import { Wordmark } from "@/components/brand/wordmark";
 
 /**
  * Shared layout configurations

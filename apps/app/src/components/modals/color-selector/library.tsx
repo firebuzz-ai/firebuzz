@@ -1,4 +1,3 @@
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
 	Tooltip,
@@ -9,6 +8,7 @@ import { Search } from "@firebuzz/ui/icons/lucide";
 import { TailwindIcon } from "@firebuzz/ui/icons/social";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 
 interface ColorItem {
 	name: string;

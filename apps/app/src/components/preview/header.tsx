@@ -1,8 +1,3 @@
-import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
-import {
-	isElementSelectionEnabledAtom,
-	selectedElementAtom,
-} from "@/lib/workbench/atoms";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -10,6 +5,11 @@ import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { ChevronsRight } from "@firebuzz/ui/icons/lucide";
 import { useSetAtom } from "jotai";
 import { useParams } from "next/navigation";
+import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
+import {
+	isElementSelectionEnabledAtom,
+	selectedElementAtom,
+} from "@/lib/workbench/atoms";
 import { CreateVariantButton } from "./create-variant-button";
 import { PublishButton } from "./publish-button";
 import { SettingsButton } from "./settings-button";

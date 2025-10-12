@@ -1,4 +1,3 @@
-import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
@@ -11,6 +10,7 @@ import { Filter, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 
 interface ControlsProps {
 	searchQuery: string;
@@ -33,14 +33,14 @@ export const Controls = ({
 	const [, { openModal }] = useNewLandingPageModal();
 
 	return (
-		<div className="flex flex-col gap-2 max-h-min px-4 py-3 border-b border-border">
-			<div className="flex items-center gap-2 justify-between">
+		<div className="flex flex-col gap-2 px-4 py-3 border-b max-h-min border-border">
+			<div className="flex gap-2 justify-between items-center">
 				<div>
-					<div className="w-full relative">
+					<div className="relative w-full">
 						<Search className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" />
 						<Input
 							type="search"
-							className="w-full h-8 pl-8"
+							className="pl-8 w-full h-8"
 							placeholder="Search by title"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
@@ -48,8 +48,8 @@ export const Controls = ({
 					</div>
 				</div>
 
-				<div className="flex items-center justify-end gap-4 flex-1">
-					<div className="flex items-center flex-1 justify-end gap-2">
+				<div className="flex flex-1 gap-4 justify-end items-center">
+					<div className="flex flex-1 gap-2 justify-end items-center">
 						<Button
 							variant="outline"
 							size="sm"
@@ -65,7 +65,7 @@ export const Controls = ({
 							<TooltipTrigger asChild>
 								<Button
 									variant="outline"
-									className="h-8 w-8"
+									className="w-8 h-8"
 									disabled={debouncedSearchQuery !== ""}
 									onClick={() =>
 										setSortOrder((prev) => (prev === "desc" ? "asc" : "desc"))

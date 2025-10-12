@@ -1,13 +1,12 @@
 "use client";
 
 import "@/components/tiptap/tiptap-ui-primitive/dropdown-menu/dropdown-menu.scss";
-import { Separator } from "@/components/tiptap/tiptap-ui-primitive/separator";
 import type { Placement } from "@floating-ui/react";
 import {
+	autoUpdate,
 	FloatingFocusManager,
 	FloatingList,
 	FloatingPortal,
-	autoUpdate,
 	flip,
 	offset,
 	shift,
@@ -22,6 +21,7 @@ import {
 	useTypeahead,
 } from "@floating-ui/react";
 import * as React from "react";
+import { Separator } from "@/components/tiptap/tiptap-ui-primitive/separator";
 
 interface DropdownMenuOptions {
 	initialOpen?: boolean;
@@ -160,10 +160,10 @@ export const DropdownMenuTrigger = React.forwardRef<
 	const childrenRef = React.isValidElement(children)
 		? Number.parseInt(React.version, 10) >= 19
 			? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 				(children as { props: { ref?: React.Ref<any> } }).props.ref
 			: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 				(children as any).ref
 		: undefined;
 	const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
@@ -253,7 +253,6 @@ export const DropdownMenuContent = React.forwardRef<
 						outline: "none",
 						...style,
 					}}
-					aria-orientation={orientation}
 					data-orientation={orientation}
 					data-state={context.open ? "open" : "closed"}
 					data-side={side}
@@ -366,7 +365,6 @@ export const DropdownMenuGroup = React.forwardRef<
 		<div
 			{...props}
 			ref={ref}
-			// biome-ignore lint/a11y/useSemanticElements: <explanation>
 			role="group"
 			aria-label={label}
 			className={`tiptap-button-group pointer-events-auto ${className || ""}`}

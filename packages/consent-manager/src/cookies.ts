@@ -39,11 +39,6 @@ export class ConsentCookieManager {
 		};
 	}
 
-	private shouldSetCookies(): boolean {
-		// Don't set cookies in dev environment, but allow banner to show
-		return this.environment !== "dev";
-	}
-
 	setConsentCookie(consentState: ConsentState): void {
 		const cookieValue = {
 			preferences: consentState.preferences,

@@ -7,6 +7,7 @@ export const landingPagesSchema = defineTable(
 		description: v.optional(v.string()),
 		status: v.union(v.literal("draft"), v.literal("published")),
 		isPublished: v.boolean(),
+		isPublishing: v.optional(v.boolean()),
 		isArchived: v.boolean(),
 		deletedAt: v.optional(v.string()),
 		publishedAt: v.optional(v.string()),
@@ -17,6 +18,7 @@ export const landingPagesSchema = defineTable(
 		workspaceId: v.id("workspaces"),
 		projectId: v.id("projects"),
 		campaignId: v.id("campaigns"),
+		threadId: v.optional(v.string()),
 		originalId: v.optional(v.id("landingPages")), // For translations
 		parentId: v.optional(v.id("landingPages")), // For Variants
 		templateId: v.id("landingPageTemplates"),

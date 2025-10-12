@@ -1,6 +1,5 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -20,6 +19,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage
 interface SelectedMediaItem {

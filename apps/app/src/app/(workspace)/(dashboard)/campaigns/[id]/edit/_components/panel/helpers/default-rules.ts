@@ -1,5 +1,5 @@
-import type { SegmentRule } from "@/components/canvas/campaign/nodes/campaign/types";
 import { nanoid } from "nanoid";
+import type { SegmentRule } from "@/components/canvas/campaign/nodes/campaign/types";
 
 export const createDefaultVisitorTypeRule = (): SegmentRule => {
 	return {

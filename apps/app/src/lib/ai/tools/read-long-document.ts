@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import {
-	ConvexError,
 	api,
+	ConvexError,
 	fetchAction,
 	fetchQuery,
 } from "@firebuzz/convex/nextjs";

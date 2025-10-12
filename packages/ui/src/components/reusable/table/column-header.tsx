@@ -1,6 +1,3 @@
-import type { Column } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	DropdownMenu,
@@ -10,6 +7,8 @@ import {
 	DropdownMenuTrigger,
 } from "@firebuzz/ui/components/ui/dropdown-menu";
 import { cn } from "@firebuzz/ui/lib/utils";
+import type { Column } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ChevronsUpDown, EyeOff } from "lucide-react";
 
 interface ColumnHeaderProps<TData, TValue>
 	extends React.HTMLAttributes<HTMLDivElement> {

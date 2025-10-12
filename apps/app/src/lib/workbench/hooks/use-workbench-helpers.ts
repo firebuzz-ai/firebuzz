@@ -27,7 +27,7 @@ export const useWorkbenchHelpers = () => {
 				new WritableStream({
 					write(data) {
 						// Remove ANSI escape codes for cleaner output
-						// biome-ignore lint/suspicious/noControlCharactersInRegex: <explanation>
+						// biome-ignore lint/suspicious/noControlCharactersInRegex: regex intentionally matches ANSI control sequences
 						const cleanedData = data.replace(/\u001b\[[0-9;]*[mGKH]/g, "");
 						buildOutput += cleanedData;
 					},

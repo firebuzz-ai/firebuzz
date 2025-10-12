@@ -1,7 +1,5 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { useAuth } from "@clerk/nextjs";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -15,6 +13,8 @@ import { ArrowRightIcon, LogOut } from "@firebuzz/ui/icons/lucide";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { CompleteAnimation } from "../../_components/onboarding/complete-animation";
 import { OnboardingFlowPreview } from "../../_components/onboarding/flow-preview";
 import { Indicators } from "../../_components/onboarding/indicators";

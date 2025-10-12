@@ -1,6 +1,6 @@
 "use client";
 
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import {
 	Breadcrumb,
 	BreadcrumbItem,

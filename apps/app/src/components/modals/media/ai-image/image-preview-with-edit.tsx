@@ -1,6 +1,3 @@
-import { useProject } from "@/hooks/auth/use-project";
-import { useAIImageModal, useBrush } from "@/hooks/ui/use-ai-image-modal";
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -12,6 +9,9 @@ import { motion } from "motion/react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
+import { useProject } from "@/hooks/auth/use-project";
+import { useAIImageModal, useBrush } from "@/hooks/ui/use-ai-image-modal";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { MaskCanvas } from "./mask-canvas";
 import { SelectedImageMenu } from "./selected-image-menu";
 

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Slot } from "@radix-ui/react-slot";
-import { type VirtualItem, useVirtualizer } from "@tanstack/react-virtual";
-import { type VariantProps, cva } from "class-variance-authority";
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual";
+import { cva, type VariantProps } from "class-variance-authority";
 import { type ClassValue, clsx } from "clsx";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";

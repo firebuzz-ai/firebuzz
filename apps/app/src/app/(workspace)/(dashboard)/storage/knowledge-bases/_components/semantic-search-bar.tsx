@@ -1,6 +1,6 @@
 "use client";
 
-import { type Id, api, useAction } from "@firebuzz/convex";
+import { api, type Id, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
@@ -91,7 +91,7 @@ export const SemanticSearchBar = ({
 		try {
 			const results = await performVectorSearch({
 				query: searchQuery,
-				knowledgeBase: knowledgeBaseId,
+				knowledgeBase: [knowledgeBaseId],
 			});
 			setSearchResults(results);
 			setLastSearchQuery(searchQuery);
@@ -177,7 +177,7 @@ export const SemanticSearchBar = ({
 					variants={animations.searchBar}
 					animate={isFocused ? "focused" : "unfocused"}
 					layoutId="searchBar"
-					className="relative flex items-center w-full max-w-xl border rounded-md shadow-sm pointer-events-auto bg-background border-border"
+					className="flex relative items-center w-full max-w-xl rounded-md border shadow-sm pointer-events-auto bg-background border-border"
 					onClick={(e) => e.stopPropagation()}
 				>
 					{isSearchActive && lastSearchQuery && (
@@ -193,7 +193,7 @@ export const SemanticSearchBar = ({
 						</motion.div>
 					)}
 
-					<div className="pl-3 pr-2 text-muted-foreground">
+					<div className="pr-2 pl-3 text-muted-foreground">
 						<Search className="size-4" />
 					</div>
 
@@ -201,7 +201,7 @@ export const SemanticSearchBar = ({
 						ref={inputRef}
 						type="text"
 						placeholder="Search memory items..."
-						className="flex-1 text-sm bg-transparent border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-9"
+						className="flex-1 h-9 text-sm bg-transparent border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
 						value={searchQuery}
 						onChange={(e) => setSearchQuery(e.target.value)}
 						onFocus={() => !isFocused && setIsFocused(true)}
@@ -209,7 +209,7 @@ export const SemanticSearchBar = ({
 						onKeyDown={handleKeyDown}
 					/>
 
-					<div className="flex items-center gap-1">
+					<div className="flex gap-1 items-center">
 						<Button
 							className="hover:bg-transparent"
 							variant="ghost"
@@ -220,7 +220,7 @@ export const SemanticSearchBar = ({
 						<Button
 							variant="ghost"
 							size="iconSm"
-							className="w-auto h-auto p-2 mr-1 rounded-md text-muted-foreground hover:bg-muted disabled:bg-transparent"
+							className="p-2 mr-1 w-auto h-auto rounded-md text-muted-foreground hover:bg-muted disabled:bg-transparent"
 							onClick={(e) => {
 								e.stopPropagation();
 								void handleSearch();

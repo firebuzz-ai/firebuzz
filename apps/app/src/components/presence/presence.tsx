@@ -1,6 +1,5 @@
 "use client";
 
-import { usePresence } from "@/hooks/auth/use-presence";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -11,6 +10,7 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { TooltipProvider } from "@firebuzz/ui/components/ui/tooltip";
 import { cn } from "@firebuzz/ui/lib/utils";
 import * as React from "react";
+import { usePresence } from "@/hooks/auth/use-presence";
 import { getTimeAgo } from "./helpers";
 import { PresenceAvatar } from "./presence-avatar";
 
@@ -81,7 +81,6 @@ export const Presence: React.FC<PresenceProps> = ({
 										"rounded-full border size-8 bg-background text-foreground",
 										"ring-1 cursor-pointer select-none ring-border hover:bg-muted",
 									)}
-									aria-label={`+${hidden.length} more`}
 									style={{ zIndex: 1 }}
 								>
 									+{hidden.length}

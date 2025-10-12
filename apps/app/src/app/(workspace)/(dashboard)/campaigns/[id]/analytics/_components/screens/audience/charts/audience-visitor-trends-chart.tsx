@@ -1,5 +1,5 @@
-import { TimeSeriesChartWrapper } from "@/components/analytics/charts/time-series-chart";
 import type { Doc } from "@firebuzz/convex";
+import { TimeSeriesChartWrapper } from "@/components/analytics/charts/time-series-chart";
 
 interface AudienceVisitorTrendsChartProps {
 	timeseriesData?: Extract<

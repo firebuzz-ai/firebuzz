@@ -1,13 +1,13 @@
 "use client";
 
+import { api, useCachedQuery } from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { Globe } from "@firebuzz/ui/icons/lucide";
 import { ConfigureDomainModal } from "@/components/modals/domains/configure-domain/configure-domain-modal";
 import { NewDomainModal } from "@/components/modals/domains/new-domain/new-domain-modal";
 import { EmptyState } from "@/components/reusables/empty-state";
 import { useProject } from "@/hooks/auth/use-project";
 import { useNewDomainModal } from "@/hooks/ui/use-new-domain-modal";
-import { api, useCachedQuery } from "@firebuzz/convex";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { Globe } from "@firebuzz/ui/icons/lucide";
 import { DomainItem } from "./domain-item";
 
 export const CustomDomains = () => {

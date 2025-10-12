@@ -1,10 +1,9 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import type { Id } from "@firebuzz/convex";
 import {
-	ConvexError,
 	api,
+	ConvexError,
 	useCachedQuery,
 	useMutation,
 	usePaginatedQuery,
@@ -53,6 +52,7 @@ import { hslToHex, sleep } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
+import { useProject } from "@/hooks/auth/use-project";
 
 const formSchema = z.object({
 	title: z.string().min(3, "Title must be at least 3 characters"),
@@ -174,7 +174,7 @@ export const LandingPageForm = ({
 			onSuccess?.();
 
 			// Redirect to the landing page editor
-			router.push(`/assets/landing-pages/${landingPageId}/edit`);
+			router.push(`/assets/pages-v2/${data.campaignId}/${landingPageId}`);
 		} catch (error) {
 			console.error("Error creating landing page:", error);
 			toast.error("Failed to create landing page", {
@@ -325,7 +325,6 @@ export const LandingPageForm = ({
 															<FormControl>
 																<Button
 																	variant="outline"
-																	// biome-ignore lint/a11y/useSemanticElements: <explanation>
 																	role="combobox"
 																	aria-expanded={themePopoverOpen}
 																	className="justify-between w-full h-8 font-normal text-left"

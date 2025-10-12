@@ -1,6 +1,5 @@
 "use client";
 
-import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
 import { InvitationForm } from "./invitation-form";
 
 export const InviteMemberModal = () => {

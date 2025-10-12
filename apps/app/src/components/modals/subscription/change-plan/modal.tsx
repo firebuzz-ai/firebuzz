@@ -1,13 +1,9 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useChangePlan } from "@/hooks/ui/use-change-plan";
 import {
+	api,
 	ConvexError,
 	type Doc,
-	api,
 	useAction,
 	useCachedRichQuery,
 } from "@firebuzz/convex";
@@ -33,6 +29,10 @@ import {
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useProject } from "@/hooks/auth/use-project";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useChangePlan } from "@/hooks/ui/use-change-plan";
 
 type PlanWithPrices = Doc<"products"> & {
 	prices: Doc<"prices">[];

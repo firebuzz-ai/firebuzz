@@ -1,8 +1,7 @@
-import { useEditSocialModal } from "@/hooks/ui/use-edit-social-modal";
 import {
+	api,
 	ConvexError,
 	type Id,
-	api,
 	useCachedRichQuery,
 } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
@@ -16,6 +15,7 @@ import {
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import { useEditSocialModal } from "@/hooks/ui/use-edit-social-modal";
 import { SocialForm } from "./social-form";
 
 export const EditSocialModal = () => {

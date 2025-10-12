@@ -1,5 +1,4 @@
 "use client";
-import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -21,6 +20,7 @@ import {
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { useMemo } from "react";
+import type { FormNodeData } from "@/components/canvas/forms/nodes/form-node";
 import {
 	type FormField,
 	INPUT_TYPES,

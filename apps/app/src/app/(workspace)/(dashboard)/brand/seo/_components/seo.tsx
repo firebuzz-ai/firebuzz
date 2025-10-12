@@ -1,10 +1,10 @@
 "use client";
-import { FormLayout } from "@/components/layouts/two-panels/panels/brand/identity/form";
-import { PanelLayout } from "@/components/layouts/two-panels/panels/brand/identity/panel";
-import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useState } from "react";
+import { FormLayout } from "@/components/layouts/two-panels/panels/brand/identity/form";
+import { PanelLayout } from "@/components/layouts/two-panels/panels/brand/identity/panel";
+import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { BrandSeoForm, type BrandSeoType } from "./form";
 import { Panel } from "./panel";
 

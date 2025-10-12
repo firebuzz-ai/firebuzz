@@ -1,4 +1,3 @@
-import { useUser } from "@/hooks/auth/use-user";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
@@ -8,6 +7,7 @@ import {
 import type { Message as MessageType } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { type Dispatch, type SetStateAction, useState } from "react";
+import { useUser } from "@/hooks/auth/use-user";
 import { Attachments } from "../attachments";
 import { Markdown } from "../markdown";
 import { MessageEditor } from "../message-editor";
@@ -55,7 +55,7 @@ export const UserMessage = ({
 						<Attachments message={message} />
 
 						{mode === "view" &&
-							message.parts?.map((part, index) => {
+							message.parts?.map((part: any, index: number) => {
 								if (part.type === "text") {
 									return (
 										<div
@@ -70,6 +70,7 @@ export const UserMessage = ({
 										</div>
 									);
 								}
+								return null;
 							})}
 
 						{message.content && mode === "edit" && (

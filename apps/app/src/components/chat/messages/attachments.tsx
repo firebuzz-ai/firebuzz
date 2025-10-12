@@ -1,11 +1,11 @@
 "use client";
 
-import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { getAttachmentType } from "@firebuzz/utils";
 import type { Message as MessageType } from "ai";
 import { motion } from "motion/react";
 import Image from "next/image";
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 
 // Helper type for attachments
 export interface Attachment {

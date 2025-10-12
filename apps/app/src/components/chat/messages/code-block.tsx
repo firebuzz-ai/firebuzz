@@ -1,10 +1,10 @@
 "use client";
 interface CodeBlockProps {
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: react-markdown node type
 	node: any; // Replaced 'any' with 'unknown' for better type safety
 	inline: boolean;
 	className: string;
-	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	// biome-ignore lint/suspicious/noExplicitAny: react-markdown node type
 	children: any; // Specified a more accurate type for children
 }
 

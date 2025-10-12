@@ -1,9 +1,5 @@
 "use client";
 
-import { NewWorkspaceModal } from "@/components/modals/workspaces/workspace-modal";
-import { useRouterContext } from "@/components/providers/workspace/router";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
@@ -14,6 +10,10 @@ import { buttonVariants } from "@firebuzz/ui/components/ui/button";
 import { ArrowRightIcon, Plus } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import Link from "next/link";
+import { NewWorkspaceModal } from "@/components/modals/workspaces/workspace-modal";
+import { useRouterContext } from "@/components/providers/workspace/router";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useNewWorkspaceModal } from "@/hooks/ui/use-new-workspace-modal";
 
 const container = {
 	hidden: { opacity: 0 },

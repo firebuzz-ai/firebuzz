@@ -1,10 +1,10 @@
 "use client";
 
+import type { Id } from "@firebuzz/convex";
+import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { KPICardsContainer } from "@/components/analytics/containers/kpi-cards-container";
 import { EmptyState } from "@/components/analytics/states";
 import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
-import type { Id } from "@firebuzz/convex";
-import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { RealtimeDevicesChart } from "./charts/realtime-devices-chart";
 import { RealtimeEventsChart } from "./charts/realtime-events-chart";
 import { RealtimeLandingPagesChart } from "./charts/realtime-landing-pages-chart";
@@ -40,7 +40,7 @@ export const CampaignAnalyticsRealtime = ({
 					{Array.from({ length: 4 }).map((_, i) => (
 						<div
 							key={`realtime-skeleton-${
-								// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items don't have stable IDs
 								i
 							}`}
 							className="p-4 space-y-3 rounded-lg border"

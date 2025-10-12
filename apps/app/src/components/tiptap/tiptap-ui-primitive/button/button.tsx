@@ -1,11 +1,11 @@
 "use client";
 
+import * as React from "react";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/tiptap/tiptap-ui-primitive/tooltip";
-import * as React from "react";
 
 import "@/components/tiptap/tiptap-ui-primitive/button/button-colors.scss";
 import "@/components/tiptap/tiptap-ui-primitive/button/button-group.scss";
@@ -55,7 +55,7 @@ export const ShortcutDisplay: React.FC<{ shortcuts: string[] }> = ({
 	return (
 		<div>
 			{shortcuts.map((key, index) => (
-				// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+				// biome-ignore lint/suspicious/noArrayIndexKey: shortcut keys combined with index for uniqueness
 				<React.Fragment key={index}>
 					{index > 0 && <kbd>+</kbd>}
 					<kbd>{key}</kbd>

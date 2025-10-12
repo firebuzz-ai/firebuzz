@@ -2,15 +2,15 @@
 
 import "@/components/tiptap/tiptap-ui-primitive/tooltip/tooltip.scss";
 import {
+	autoUpdate,
 	FloatingDelayGroup,
 	FloatingPortal,
-	type Placement,
-	type ReferenceType,
-	type UseFloatingReturn,
-	autoUpdate,
 	flip,
 	offset,
+	type Placement,
+	type ReferenceType,
 	shift,
+	type UseFloatingReturn,
 	useDismiss,
 	useFloating,
 	useFocus,
@@ -162,10 +162,10 @@ export const TooltipTrigger = React.forwardRef<
 	const childrenRef = React.isValidElement(children)
 		? Number.parseInt(React.version, 10) >= 19
 			? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 				(children as { props: { ref?: React.Ref<any> } }).props.ref
 			: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 				(children as any).ref
 		: undefined;
 	const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);

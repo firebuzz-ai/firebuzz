@@ -2,19 +2,11 @@
 
 import { type Editor, isNodeSelection } from "@tiptap/react";
 import * as React from "react";
-
-// --- Hooks ---
-import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 // --- Icons ---
 import { CornerDownLeftIcon } from "@/components/tiptap/tiptap-icons/corner-down-left-icon";
 import { ExternalLinkIcon } from "@/components/tiptap/tiptap-icons/external-link-icon";
 import { LinkIcon } from "@/components/tiptap/tiptap-icons/link-icon";
 import { TrashIcon } from "@/components/tiptap/tiptap-icons/trash-icon";
-
-// --- Lib ---
-import { isMarkInSchema } from "@/lib/tiptap-utils";
-
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
@@ -24,6 +16,10 @@ import {
 	PopoverTrigger,
 } from "@/components/tiptap/tiptap-ui-primitive/popover";
 import { Separator } from "@/components/tiptap/tiptap-ui-primitive/separator";
+// --- Hooks ---
+import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
+// --- Lib ---
+import { isMarkInSchema } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap/tiptap-ui/link-popover/link-popover.scss";

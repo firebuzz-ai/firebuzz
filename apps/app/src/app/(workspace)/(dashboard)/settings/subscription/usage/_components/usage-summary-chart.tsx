@@ -1,6 +1,5 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
 import {
 	Card,
 	CardContent,
@@ -21,6 +20,7 @@ import {
 	RadialBar,
 	RadialBarChart,
 } from "recharts";
+import { useSubscription } from "@/hooks/auth/use-subscription";
 
 const chartConfig = {
 	used: {

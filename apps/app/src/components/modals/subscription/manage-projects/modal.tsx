@@ -1,13 +1,9 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useManageProjects } from "@/hooks/ui/use-manage-projects";
 import {
+	api,
 	ConvexError,
 	type Id,
-	api,
 	useAction,
 	useCachedRichQuery,
 	useMutation,
@@ -27,6 +23,10 @@ import { ArrowLeft, Minus, Plus } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useProject } from "@/hooks/auth/use-project";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useManageProjects } from "@/hooks/ui/use-manage-projects";
 import { ProjectSelection } from "./project-selection";
 
 type ModalStep = "projects" | "selection";

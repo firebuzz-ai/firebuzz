@@ -1,8 +1,8 @@
-import { editImageParamsSchema } from "@/lib/ai/image/client";
-import { openAIRaw } from "@/lib/ai/openai";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { editImageParamsSchema } from "@/lib/ai/image/client";
+import { openAIRaw } from "@/lib/ai/openai";
 
 // Standard error response structure - shared with generate route
 interface ApiErrorResponse {
@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
 		}
 
 		// Prepare base params for OpenAI, removing imageKeys and the incompatible size
+		// biome-ignore lint/correctness/noUnusedVariables: intentionally destructuring to exclude from openaiBaseParams
 		const { imageKeys, size, ...openaiBaseParams } = params;
 
 		// --- Fetch All Image Files Concurrently ---

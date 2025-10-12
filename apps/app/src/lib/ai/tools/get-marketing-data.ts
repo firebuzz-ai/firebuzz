@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { ConvexError, type Id, api, fetchQuery } from "@firebuzz/convex/nextjs";
+import { api, ConvexError, fetchQuery, type Id } from "@firebuzz/convex/nextjs";
 import { stripIndents } from "@firebuzz/utils";
 import { tool } from "ai";
 import { z } from "zod";

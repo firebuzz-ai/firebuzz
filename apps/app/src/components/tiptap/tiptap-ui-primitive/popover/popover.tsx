@@ -2,9 +2,9 @@
 
 import type { Placement } from "@floating-ui/react";
 import {
+	autoUpdate,
 	FloatingFocusManager,
 	FloatingPortal,
-	autoUpdate,
 	flip,
 	limitShift,
 	offset,
@@ -170,9 +170,9 @@ const PopoverTrigger = React.forwardRef<HTMLElement, TriggerElementProps>(
 		const context = usePopoverContext();
 		const childrenRef = React.isValidElement(children)
 			? Number.parseInt(React.version, 10) >= 19
-				? // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				? // biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					(children.props as any).ref
-				: // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				: // biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					(children as any).ref
 			: undefined;
 		const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
@@ -183,7 +183,7 @@ const PopoverTrigger = React.forwardRef<HTMLElement, TriggerElementProps>(
 				context.getReferenceProps({
 					ref,
 					...props,
-					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+					// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					...(children.props as any),
 					"data-state": context.open ? "open" : "closed",
 				}),
@@ -232,9 +232,9 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 		const context = usePopoverContext();
 		const childrenRef = React.isValidElement(children)
 			? Number.parseInt(React.version, 10) >= 19
-				? // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				? // biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					(children.props as any).ref
-				: // biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				: // biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					(children as any).ref
 			: undefined;
 		const ref = useMergeRefs([context.refs.setFloating, propRef, childrenRef]);
@@ -266,7 +266,7 @@ const PopoverContent = React.forwardRef<HTMLDivElement, PopoverContentProps>(
 			asChild && React.isValidElement(children) ? (
 				React.cloneElement(children, {
 					...contentProps,
-					// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+					// biome-ignore lint/suspicious/noExplicitAny: React version compatibility requires flexible ref typing
 					...(children.props as any),
 				})
 			) : (

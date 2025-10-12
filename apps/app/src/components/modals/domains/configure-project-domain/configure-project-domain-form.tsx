@@ -1,6 +1,6 @@
 "use client";
 
-import { ConvexError, type Doc, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, type Doc, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";

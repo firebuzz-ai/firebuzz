@@ -1,7 +1,5 @@
 "use client";
 
-import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
-import { useProject } from "@/hooks/auth/use-project";
 import {
 	api,
 	useCachedQuery,
@@ -17,6 +15,8 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
+import { useProject } from "@/hooks/auth/use-project";
 
 type FileWithProgress = {
 	file: File;

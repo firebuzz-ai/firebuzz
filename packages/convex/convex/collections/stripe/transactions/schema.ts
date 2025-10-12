@@ -24,6 +24,7 @@ export const transactionSchema = defineTable(
 		createdBy: v.optional(v.id("users")),
 		projectId: v.optional(v.id("projects")),
 		subscriptionId: v.optional(v.id("subscriptions")),
+		sessionId: v.optional(v.id("agentSessions")),
 		// System fields
 		reason: v.optional(v.string()), // Human readable reason for the credit transaction
 		metadata: v.optional(v.record(v.string(), v.any())), // Additional data
@@ -36,4 +37,5 @@ export const transactionSchema = defineTable(
 	.index("by_workspace_period", ["workspaceId", "periodStart"])
 	.index("by_subscription_id", ["subscriptionId"])
 	.index("by_idempotency_key", ["idempotencyKey"])
-	.index("by_type_expires", ["type", "expiresAt"]);
+	.index("by_type_expires", ["type", "expiresAt"])
+	.index("by_session_id", ["sessionId"]);

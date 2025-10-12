@@ -1,3 +1,3 @@
 export default function BrandPage() {
-	return <></>;
+	return null;
 }

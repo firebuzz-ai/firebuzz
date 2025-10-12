@@ -1,6 +1,5 @@
 "use client";
 
-import { RADIUS_OPTIONS } from "@/lib/theme/constants";
 import {
 	FormControl,
 	FormField,
@@ -10,6 +9,7 @@ import {
 } from "@firebuzz/ui/components/ui/form";
 import { Slider } from "@firebuzz/ui/components/ui/slider";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { RADIUS_OPTIONS } from "@/lib/theme/constants";
 
 // SVG component for radius visualization
 const RadiusIcon = ({ radius }: { radius: string }) => {

@@ -1,10 +1,10 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 
 import { InviteMemberModal } from "@/components/modals/members/invitation/create-invitation-modal";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { useSubscription } from "@/hooks/auth/use-subscription";
 import { Invitations } from "./invitations";
 import { TeamMembers } from "./team-members";
 

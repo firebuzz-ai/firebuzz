@@ -1,4 +1,3 @@
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -14,6 +13,7 @@ import {
 } from "@firebuzz/ui/components/ui/dialog";
 import { GalleryHorizontal, Layers2, Palette } from "@firebuzz/ui/icons/lucide";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { CustomColorPicker } from "./custom";
 import { ColorLibrary } from "./library";
 import { ThemeColors } from "./themes";

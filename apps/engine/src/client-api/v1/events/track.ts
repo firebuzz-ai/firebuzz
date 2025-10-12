@@ -13,14 +13,8 @@ export const trackRoute = new Hono<{ Bindings: Env }>().post(
 				event_id: eventData.event_id,
 				event_type: eventData.event_type,
 				session_id: eventData.session_id,
-				has_ab_test_id: Object.prototype.hasOwnProperty.call(
-					eventData,
-					"ab_test_id",
-				),
-				has_ab_test_variant_id: Object.prototype.hasOwnProperty.call(
-					eventData,
-					"ab_test_variant_id",
-				),
+				has_ab_test_id: Object.hasOwn(eventData, "ab_test_id"),
+				has_ab_test_variant_id: Object.hasOwn(eventData, "ab_test_variant_id"),
 				timestamp: new Date().toISOString(),
 			});
 
@@ -32,14 +26,8 @@ export const trackRoute = new Hono<{ Bindings: Env }>().post(
 				event_id: eventData.event_id,
 				doId: doId.toString(),
 				session_id: eventData.session_id,
-				has_ab_test_id: Object.prototype.hasOwnProperty.call(
-					eventData,
-					"ab_test_id",
-				),
-				has_ab_test_variant_id: Object.prototype.hasOwnProperty.call(
-					eventData,
-					"ab_test_variant_id",
-				),
+				has_ab_test_id: Object.hasOwn(eventData, "ab_test_id"),
+				has_ab_test_variant_id: Object.hasOwn(eventData, "ab_test_variant_id"),
 			});
 
 			// Forward event to DO using RPC method

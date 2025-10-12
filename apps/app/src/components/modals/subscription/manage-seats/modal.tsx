@@ -1,11 +1,8 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 import {
-	ConvexError,
 	api,
+	ConvexError,
 	useAction,
 	useCachedRichQuery,
 	useMutation,
@@ -25,6 +22,9 @@ import { ArrowLeft, Minus, Plus } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useEffect, useMemo, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 import { MemberSelection } from "./member-selection";
 
 type ModalStep = "seats" | "members";

@@ -1,6 +1,5 @@
 "use client";
 
-import { useAddEmailModal } from "@/hooks/ui/use-add-email-modal";
 import { useUser } from "@clerk/nextjs";
 import type { EmailAddressResource } from "@clerk/types";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -29,6 +28,7 @@ import {
 	XCircle,
 } from "@firebuzz/ui/icons/lucide";
 import { useState } from "react";
+import { useAddEmailModal } from "@/hooks/ui/use-add-email-modal";
 import { AddEmailModal } from "./add-email-modal";
 
 export const EmailSettings = () => {

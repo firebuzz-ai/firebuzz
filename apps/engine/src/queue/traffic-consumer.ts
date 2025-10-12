@@ -1,5 +1,5 @@
 import { logQueueMetrics } from "../lib/monitoring";
-import { type TrafficData, batchIngestTraffic } from "../lib/tinybird";
+import { batchIngestTraffic, type TrafficData } from "../lib/tinybird";
 import type {
 	TrafficBatchProcessingResult,
 	TrafficQueueMessage,

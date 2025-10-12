@@ -4,9 +4,9 @@ import { useNewMemoryItem } from "@/hooks/ui/use-new-memory-item";
 import "@/styles/tiptap/_keyframe-animations.scss";
 import "@/styles/tiptap/_variables.scss";
 import {
+	api,
 	ConvexError,
 	type Id,
-	api,
 	useMutation,
 	useUploadFile,
 } from "@firebuzz/convex";

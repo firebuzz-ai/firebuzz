@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	createTrackingSetupState,
-	useTrackingSetupModal,
-} from "@/hooks/ui/use-tracking-setup-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button, buttonVariants } from "@firebuzz/ui/components/ui/button";
@@ -60,6 +56,10 @@ import {
 	getPopularCurrencies,
 } from "@firebuzz/utils";
 import { useState } from "react";
+import {
+	createTrackingSetupState,
+	useTrackingSetupModal,
+} from "@/hooks/ui/use-tracking-setup-modal";
 
 // Map icon names to actual icon components
 const iconMap: Record<string, LucideIcon> = {
@@ -200,7 +200,6 @@ export const GoalSelector = ({
 						<PopoverTrigger asChild>
 							<Button
 								variant="outline"
-								// biome-ignore lint/a11y/useSemanticElements: <explanation>
 								role="combobox"
 								aria-expanded={open}
 								className="justify-between w-full h-8"
@@ -346,7 +345,6 @@ export const GoalSelector = ({
 								<PopoverTrigger asChild>
 									<Button
 										variant="outline"
-										// biome-ignore lint/a11y/useSemanticElements: <explanation>
 										role="combobox"
 										aria-expanded={currencyOpen}
 										className="justify-between w-full h-8"

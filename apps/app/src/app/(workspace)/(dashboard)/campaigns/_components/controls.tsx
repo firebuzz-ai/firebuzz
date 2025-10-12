@@ -1,4 +1,3 @@
-import { useNewCampaignModal } from "@/hooks/ui/use-new-campaign-modal";
 import type { Doc } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -19,6 +18,8 @@ import { Filter, Search, SortAsc } from "@firebuzz/ui/icons/lucide";
 import { motion } from "motion/react";
 import type { Dispatch, SetStateAction } from "react";
 import { useDebounce } from "use-debounce";
+import { useNewCampaignModal } from "@/hooks/ui/use-new-campaign-modal";
+
 interface ControlsProps {
 	searchQuery: string;
 	setSearchQuery: Dispatch<SetStateAction<string>>;

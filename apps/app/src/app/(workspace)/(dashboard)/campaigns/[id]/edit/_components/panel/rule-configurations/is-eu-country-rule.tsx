@@ -1,7 +1,7 @@
 "use client";
 
-import type { SegmentRule } from "@/components/canvas/campaign/nodes/campaign/types";
 import { useState } from "react";
+import type { SegmentRule } from "@/components/canvas/campaign/nodes/campaign/types";
 import { RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { EUCountrySelector } from "../value-selectors/eu-country-selector";
 

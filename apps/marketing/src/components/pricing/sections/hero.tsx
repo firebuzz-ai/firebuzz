@@ -1,6 +1,6 @@
 "use client";
-import { DotScreenShader } from "@/components/landing/animated-grid";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
+import { DotScreenShader } from "@/components/landing/animated-grid";
 
 export const Hero = () => {
 	return (

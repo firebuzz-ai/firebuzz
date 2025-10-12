@@ -1,6 +1,6 @@
-import { cn } from "@/lib/utils";
-import { type VariantProps, cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import type * as React from "react";
+import { cn } from "@/lib/utils";
 
 const spinnerVariants = cva("inline animate-spin text-accent", {
   variants: {
@@ -28,7 +28,7 @@ export interface SpinnerProps
 
 const Spinner = ({ className, variant, size, ...props }: SpinnerProps) => {
   return (
-    // biome-ignore lint/a11y/useSemanticElements: <explanation>
+    // biome-ignore lint/a11y/useSemanticElements: div with role="status" is acceptable for loading indicator
     <div role="status">
       <svg
         className={cn(spinnerVariants({ variant, size, className }))}

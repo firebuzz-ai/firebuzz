@@ -1,11 +1,11 @@
 "use client";
 
-import type { GeneratedImage } from "@/hooks/ui/use-ai-image-modal";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { motion } from "motion/react";
 import Image from "next/image";
+import type { GeneratedImage } from "@/hooks/ui/use-ai-image-modal";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 
 const GenrationItem = ({ generation }: { generation: GeneratedImage }) => {
 	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();

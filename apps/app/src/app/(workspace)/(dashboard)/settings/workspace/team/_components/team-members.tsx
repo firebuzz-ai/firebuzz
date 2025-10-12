@@ -1,8 +1,8 @@
 "use client";
 
+import type { Doc } from "@firebuzz/convex";
 import { useSubscription } from "@/hooks/auth/use-subscription";
 import { useInviteMemberModal } from "@/hooks/ui/use-invite-member-modal";
-import type { Doc } from "@firebuzz/convex";
 import { MemberListItem } from "./member-list-item";
 
 export const TeamMembers = ({

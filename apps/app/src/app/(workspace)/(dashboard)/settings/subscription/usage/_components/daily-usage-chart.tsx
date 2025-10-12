@@ -1,7 +1,5 @@
 "use client";
 
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import {
 	Card,
 	CardContent,
@@ -19,6 +17,8 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import * as React from "react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 const chartConfig = {
 	credits: {

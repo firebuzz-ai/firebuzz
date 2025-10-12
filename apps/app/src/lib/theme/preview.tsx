@@ -1,4 +1,3 @@
-import { getFontFamilyWithFallbacks } from "@/lib/theme/utils";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -30,6 +29,7 @@ import {
 import { cn } from "@firebuzz/ui/lib/utils";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { getFontFamilyWithFallbacks } from "@/lib/theme/utils";
 import type { ThemeFormType } from "../../app/(workspace)/(dashboard)/brand/themes/_components/theme/form";
 
 interface BrandData {

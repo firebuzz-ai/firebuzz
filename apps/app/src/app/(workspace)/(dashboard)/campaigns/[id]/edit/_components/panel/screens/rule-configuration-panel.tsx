@@ -1,10 +1,5 @@
 "use client";
 
-import type {
-	RuleTypeId,
-	SegmentNode,
-	SegmentRule,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
@@ -12,6 +7,11 @@ import { ArrowLeft } from "@firebuzz/ui/icons/lucide";
 import { useReactFlow } from "@xyflow/react";
 import { nanoid } from "nanoid";
 import { useState } from "react";
+import type {
+	RuleTypeId,
+	SegmentNode,
+	SegmentRule,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import { RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { BrowserRule } from "../rule-configurations/browser-rule";
 import { CountryRule } from "../rule-configurations/country-rule";

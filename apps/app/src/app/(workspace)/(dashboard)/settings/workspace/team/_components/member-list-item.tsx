@@ -1,7 +1,5 @@
 "use client";
 
-import { useUser } from "@/hooks/auth/use-user";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 import type { Doc } from "@firebuzz/convex";
 import { api, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
@@ -28,6 +26,8 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { useUser } from "@/hooks/auth/use-user";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 interface MemberListItemProps {
 	member: Doc<"members"> & {

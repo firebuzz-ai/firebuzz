@@ -1,9 +1,5 @@
 "use client";
 
-import {
-	parseTrackingSetupState,
-	useTrackingSetupModal,
-} from "@/hooks/ui/use-tracking-setup-modal";
 import { envVercel } from "@firebuzz/env";
 import {
 	AnimatedTabs,
@@ -19,6 +15,10 @@ import {
 import { Code2 } from "@firebuzz/ui/icons/lucide";
 import { GoogleTagManagerIcon } from "@firebuzz/ui/icons/social";
 import { useState } from "react";
+import {
+	parseTrackingSetupState,
+	useTrackingSetupModal,
+} from "@/hooks/ui/use-tracking-setup-modal";
 import { CustomCodeTab } from "./custom-code-tab";
 import { GTMTab } from "./gtm-tab";
 import { InternalTrackingContent } from "./internal-tracking-content";

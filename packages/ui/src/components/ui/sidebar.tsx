@@ -1,10 +1,5 @@
 "use client";
 
-import { Slot } from "@radix-ui/react-slot";
-import { type VariantProps, cva } from "class-variance-authority";
-import { PanelLeft, PanelRight } from "lucide-react";
-import * as React from "react";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
@@ -18,6 +13,10 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { useIsMobile } from "@firebuzz/ui/hooks/use-mobile";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { PanelLeft, PanelRight } from "lucide-react";
+import * as React from "react";
 
 interface SidebarConfig {
 	width: string;

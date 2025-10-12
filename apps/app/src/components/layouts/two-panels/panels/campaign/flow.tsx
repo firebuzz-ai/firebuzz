@@ -1,6 +1,6 @@
-import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import { ResizablePanel } from "@firebuzz/ui/components/ui/resizable";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 
 export const FlowLayout = ({ children }: { children: React.ReactNode }) => {
 	const { rightPanelSize, isDragging, id } = useTwoPanelsLayout();

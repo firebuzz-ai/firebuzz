@@ -1,3 +1,7 @@
+import type { Message } from "ai";
+import type { Dispatch, SetStateAction } from "react";
+import { memo, useMemo } from "react";
+import ReactMarkdown, { type Components } from "react-markdown";
 import { ActionErrorExplanation } from "@/components/chat/messages/action-error-explanation";
 import { Artifact } from "@/components/chat/messages/assistant/artifact";
 import { ElementReference } from "@/components/chat/messages/element-reference";
@@ -8,10 +12,6 @@ import {
 	rehypePlugins,
 	remarkPlugins,
 } from "@/utils/markdown";
-import type { Message } from "ai";
-import type { Dispatch, SetStateAction } from "react";
-import { memo, useMemo } from "react";
-import ReactMarkdown, { type Components } from "react-markdown";
 
 interface MarkdownProps {
 	children: string;
@@ -81,11 +81,11 @@ export const Markdown = memo(
 				div: ({ className, children, node, ...props }) => {
 					const isArtifact =
 						className?.includes("__firebuzzArtifact__") ||
-						// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+						// biome-ignore lint/suspicious/noExplicitAny: react-markdown node properties access
 						(node as any)?.properties?.dataArtifactId;
 
 					if (isArtifact && setMessages) {
-						// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+						// biome-ignore lint/suspicious/noExplicitAny: react-markdown node properties access
 						const artifactId = (node as any)?.properties
 							?.dataArtifactId as string;
 

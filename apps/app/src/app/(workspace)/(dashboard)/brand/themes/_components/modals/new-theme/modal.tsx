@@ -1,7 +1,6 @@
 "use client";
 
-import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Dialog,
@@ -24,6 +23,7 @@ import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
 import { z } from "zod";
+import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
 import { defaultDarkTheme, defaultLightTheme } from "../../../theme-variables";
 
 const newThemeFormSchema = z.object({

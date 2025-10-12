@@ -1,5 +1,13 @@
 "use client";
 
+import type { ConsentPreferences } from "@firebuzz/consent-manager";
+import { 
+  useConsent, 
+  useConsentCategories,
+  useConsentModal 
+} from "@firebuzz/consent-manager";
+import { Cookie, Shield, Target, Zap } from "lucide-react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,14 +18,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import type { ConsentPreferences } from "@firebuzz/consent-manager";
-import { 
-  useConsent, 
-  useConsentCategories,
-  useConsentModal 
-} from "@firebuzz/consent-manager";
-import { Cookie, Shield, Target, Zap } from "lucide-react";
-import * as React from "react";
 
 interface CookiePreferencesDialogProps {
   /** Whether the dialog is open */

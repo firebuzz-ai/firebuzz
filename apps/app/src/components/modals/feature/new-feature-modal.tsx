@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
 import { api, useMutation } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
@@ -15,6 +14,7 @@ import { Label } from "@firebuzz/ui/components/ui/label";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Textarea } from "@firebuzz/ui/components/ui/textarea";
 import { useState } from "react";
+import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
 
 export const NewFeatureModal = () => {
 	const [modalState, setModalState] = useNewFeatureModal();

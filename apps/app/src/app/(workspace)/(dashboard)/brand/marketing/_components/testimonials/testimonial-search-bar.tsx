@@ -1,6 +1,6 @@
 "use client";
 
-import { type Doc, api, usePaginatedQuery } from "@firebuzz/convex";
+import { api, type Doc, usePaginatedQuery } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";

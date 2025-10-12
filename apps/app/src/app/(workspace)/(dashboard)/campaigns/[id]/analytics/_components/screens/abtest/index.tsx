@@ -1,10 +1,10 @@
 "use client";
 
-import { EmptyState } from "@/components/analytics/states";
-import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
 import type { Id } from "@firebuzz/convex";
 import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { useMemo } from "react";
+import { EmptyState } from "@/components/analytics/states";
+import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
 import { AbTestItem } from "./charts/ab-test-item";
 
 // Helper function to infer the processed AB test type
@@ -80,7 +80,7 @@ export const CampaignAnalyticsAbtest = ({
 					{Array.from({ length: 4 }).map((_, i) => (
 						<div
 							key={`abtest-skeleton-${
-								// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items don't have stable IDs
 								i
 							}`}
 							className="p-4 space-y-3 rounded-lg border"

@@ -42,24 +42,7 @@ const nextConfig: NextConfig = {
 			},
 		];
 	},
-	async headers() {
-		return [
-			// Apply strict headers only for WebContainer routes
-			{
-				source: "/(.*)",
-				headers: [
-					{
-						key: "Cross-Origin-Embedder-Policy",
-						value: "require-corp",
-					},
-					{
-						key: "Cross-Origin-Opener-Policy",
-						value: "same-origin",
-					},
-				],
-			},
-		];
-	},
+
 	images: {
 		remotePatterns: [
 			{
@@ -100,8 +83,16 @@ const nextConfig: NextConfig = {
 				port: "",
 				pathname: "/**",
 			},
+			{
+				protocol: "https",
+				hostname: "vercel.com",
+				port: "",
+				pathname: "/api/www/avatar/**",
+			},
 		],
 	},
+	contentDispositionType: "attachment",
+	contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
 	experimental: {
 		turbo: {
 			resolveAlias: {

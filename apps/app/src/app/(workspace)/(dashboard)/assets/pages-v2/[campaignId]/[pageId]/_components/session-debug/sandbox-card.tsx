@@ -1,6 +1,5 @@
 "use client";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import {
 	Card,
@@ -11,6 +10,7 @@ import {
 } from "@firebuzz/ui/components/ui/card";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { useMemo } from "react";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
 
 export const SandboxCard = () => {
 	const sandbox = useSandbox();

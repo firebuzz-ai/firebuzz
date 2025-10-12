@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewCampaignModal } from "@/hooks/ui/use-new-campaign-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useNewCampaignModal } from "@/hooks/ui/use-new-campaign-modal";
 import { CampaignForm } from "./campaign-form";
 
 export const NewCampaignModal = () => {

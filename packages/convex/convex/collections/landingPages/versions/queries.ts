@@ -99,3 +99,40 @@ export const getFilesInternal = internalQuery({
 		return template.files;
 	},
 });
+
+export const getByIdInternal = internalQuery({
+	args: {
+		id: v.id("landingPageVersions"),
+	},
+	handler: async (ctx, args) => {
+		const landingPageVersion = await ctx.db.get(args.id);
+
+		if (!landingPageVersion) {
+			return null;
+		}
+
+		return landingPageVersion;
+	},
+});
+
+export const listByLandingPageIdInternal = internalQuery({
+	args: {
+		landingPageId: v.id("landingPages"),
+	},
+	handler: async (ctx, args) => {
+		const versions = await ctx.db
+			.query("landingPageVersions")
+			.withIndex("by_landing_page_id", (q) =>
+				q.eq("landingPageId", args.landingPageId),
+			)
+			.order("desc")
+			.collect();
+
+		return versions.map((v) => ({
+			_id: v._id,
+			number: v.number,
+			commitMessage: v.commitMessage,
+			_creationTime: v._creationTime,
+		}));
+	},
+});

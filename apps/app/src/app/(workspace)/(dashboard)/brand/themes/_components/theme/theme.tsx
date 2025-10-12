@@ -1,13 +1,13 @@
 "use client";
+import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { useTheme } from "next-themes";
+import { useState } from "react";
 import { FormLayout } from "@/components/layouts/two-panels/panels/brand/identity/form";
 import { PanelLayout } from "@/components/layouts/two-panels/panels/brand/identity/panel";
 import { TwoPanelsProvider } from "@/components/layouts/two-panels/provider";
 import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
 import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { type Id, api, useCachedRichQuery } from "@firebuzz/convex";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { useTheme } from "next-themes";
-import { useState } from "react";
 import { ThemeForm, type ThemeFormType } from "./form";
 import { ThemePanel } from "./panel";
 

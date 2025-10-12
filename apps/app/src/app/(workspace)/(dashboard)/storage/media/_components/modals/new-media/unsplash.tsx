@@ -1,5 +1,3 @@
-import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
-import { useProject } from "@/hooks/auth/use-project";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -18,6 +16,8 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useNewMediaModal } from "@/app/(workspace)/(dashboard)/storage/media/_components/modals/new-media/use-new-media-modal";
+import { useProject } from "@/hooks/auth/use-project";
 
 interface UnsplashImage {
 	id: string;

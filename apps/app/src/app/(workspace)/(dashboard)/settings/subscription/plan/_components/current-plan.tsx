@@ -1,13 +1,5 @@
 "use client";
 
-import { CancelSubscriptionModal } from "@/components/modals/subscription/cancel-subscription/modal";
-import { ChangePlanModal } from "@/components/modals/subscription/change-plan/modal";
-import { FinishTrialModal } from "@/components/modals/subscription/finish-trial/modal";
-import { ResubscribeModal } from "@/components/modals/subscription/resubscribe/modal";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useChangePlan } from "@/hooks/ui/use-change-plan";
 import { api, useAction } from "@firebuzz/convex";
 import { Icon } from "@firebuzz/ui/components/brand/icon";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -17,6 +9,14 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { ArrowDownRight, ArrowRight } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { CancelSubscriptionModal } from "@/components/modals/subscription/cancel-subscription/modal";
+import { ChangePlanModal } from "@/components/modals/subscription/change-plan/modal";
+import { FinishTrialModal } from "@/components/modals/subscription/finish-trial/modal";
+import { ResubscribeModal } from "@/components/modals/subscription/resubscribe/modal";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useChangePlan } from "@/hooks/ui/use-change-plan";
 
 export const CurrentPlan = () => {
 	const { currentWorkspace } = useWorkspace();

@@ -1,5 +1,4 @@
-import { useEditAudienceModal } from "@/hooks/ui/use-edit-audience-modal";
-import { ConvexError, api, useQuery } from "@firebuzz/convex";
+import { api, ConvexError, useQuery } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import {
 	Dialog,
@@ -11,6 +10,7 @@ import {
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useState } from "react";
+import { useEditAudienceModal } from "@/hooks/ui/use-edit-audience-modal";
 import { AudienceForm } from "./audience-form";
 
 export const EditAudienceModal = () => {

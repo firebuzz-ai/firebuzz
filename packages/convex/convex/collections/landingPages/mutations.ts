@@ -1,18 +1,15 @@
-import { asyncMap } from "convex-helpers";
+import { createThread, listStreams } from "@convex-dev/agent";
 import { ConvexError, v } from "convex/values";
-import { internal } from "../../_generated/api";
+import { asyncMap } from "convex-helpers";
+import { components, internal } from "../../_generated/api";
 import { mutation } from "../../_generated/server";
 import { retrier } from "../../components/actionRetrier";
 import {
 	internalMutationWithTrigger,
 	mutationWithTrigger,
 } from "../../triggers";
+import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
-import { applyBrandAssetsToTemplate } from "./helpers/brand";
-import { applyCampaignToTemplate } from "./helpers/campaign";
-import { applySeoToTemplate } from "./helpers/seo";
-import { applyThemeToTemplate } from "./helpers/theme";
-import { createInternal } from "./versions/utils";
 
 export const create = mutationWithTrigger({
 	args: {
@@ -39,34 +36,13 @@ export const create = mutationWithTrigger({
 			throw new ConvexError("Campaign not found");
 		}
 
-		// Get form if campaign is lead-generation
-		const form =
-			campaign.type === "lead-generation"
-				? await ctx.db
-						.query("forms")
-						.withIndex("by_campaign_id", (q) =>
-							q.eq("campaignId", args.campaignId),
-						)
-						.first()
-				: null;
+		// Create Thread
+		const threadId = await createThread(ctx, components.agent, {
+			userId: user._id,
+			title: args.title,
+		});
 
-		// Get theme
-		const theme = await ctx.db.get(args.themeId);
-		if (!theme) {
-			throw new ConvexError("Theme not found");
-		}
-
-		// Get Brand
-		const brand = await ctx.db
-			.query("brands")
-			.withIndex("by_project_id", (q) => q.eq("projectId", args.projectId))
-			.first();
-
-		if (!brand) {
-			throw new ConvexError("Brand not found");
-		}
-
-		// Create landing page
+		// Create landing page (version will be created on first sandbox load)
 		const landingPageId = await ctx.db.insert("landingPages", {
 			...args,
 			createdBy: user._id,
@@ -77,37 +53,7 @@ export const create = mutationWithTrigger({
 			isArchived: false,
 			language: campaign.primaryLanguage,
 			isChampion: true, // True by default
-		});
-
-		// Apply customizations to template in sequence
-		// 1. Apply theme (colors, fonts, CSS)
-		const themedTemplateFiles = applyThemeToTemplate(template.files, theme);
-
-		// 2. Apply campaign configuration
-		const campaignTemplateFiles = applyCampaignToTemplate(
-			themedTemplateFiles,
-			campaign,
-			form,
-		);
-
-		// 3. Apply SEO configuration
-		const seoTemplateFiles = applySeoToTemplate(campaignTemplateFiles, brand);
-
-		// 4. Apply brand assets (logos, icons)
-		const finalTemplateFiles = applyBrandAssetsToTemplate(
-			seoTemplateFiles,
-			brand,
-		);
-
-		// Create landing page version
-		await createInternal(ctx, {
-			userId: user._id,
-			landingPageId,
-			filesString: finalTemplateFiles,
-			workspaceId: user.currentWorkspaceId,
-			projectId: args.projectId,
-			campaignId: args.campaignId,
-			messageId: undefined,
+			threadId,
 		});
 
 		return landingPageId;
@@ -154,6 +100,14 @@ export const createVariant = mutationWithTrigger({
 			.filter((q) => q.eq(q.field("deletedAt"), undefined))
 			.collect();
 
+		const title = `${parentLandingPage.title} [V${existingVariants.length + 1}]`;
+
+		// Create Thread
+		const threadId = await createThread(ctx, components.agent, {
+			userId: user._id,
+			title,
+		});
+
 		// Create New Variant
 		const variantId = await ctx.db.insert("landingPages", {
 			parentId: args.parentId,
@@ -165,7 +119,8 @@ export const createVariant = mutationWithTrigger({
 			campaignId: parentLandingPage.campaignId,
 			templateId: parentLandingPage.templateId,
 			themeId: parentLandingPage.themeId,
-			title: `${parentLandingPage.title} [V${existingVariants.length + 1}]`,
+			threadId,
+			title,
 			description: parentLandingPage.description,
 			workspaceId: user.currentWorkspaceId,
 			isArchived: false,
@@ -230,9 +185,17 @@ export const createTranslation = mutationWithTrigger({
 			throw new ConvexError("Original landing page version not found");
 		}
 
+		const title = `${original.title} [${args.language}]`;
+
+		// Create Thread
+		const threadId = await createThread(ctx, components.agent, {
+			userId: user._id,
+			title,
+		});
+
 		// Create translation landing page (same base attributes as original)
 		const translationId = await ctx.db.insert("landingPages", {
-			title: original.title,
+			title,
 			description: args.description || original.description,
 			status: "draft" as const,
 			isPublished: false,
@@ -242,6 +205,7 @@ export const createTranslation = mutationWithTrigger({
 			campaignId: original.campaignId,
 			templateId: original.templateId,
 			themeId: original.themeId,
+			threadId,
 			createdBy: user._id,
 			updatedAt: Date.now(),
 			originalId: original._id,
@@ -299,6 +263,18 @@ export const update = mutation({
 });
 
 export const updateLandingPageVersion = mutation({
+	args: {
+		id: v.id("landingPages"),
+		landingPageVersionId: v.id("landingPageVersions"),
+	},
+	handler: async (ctx, args) => {
+		await ctx.db.patch(args.id, {
+			landingPageVersionId: args.landingPageVersionId,
+		});
+	},
+});
+
+export const updateLandingPageVersionInternal = internalMutationWithTrigger({
 	args: {
 		id: v.id("landingPages"),
 		landingPageVersionId: v.id("landingPageVersions"),
@@ -399,6 +375,46 @@ export const publishPreview = mutationWithTrigger({
 	},
 });
 
+export const publishPreviewInternal = internalMutationWithTrigger({
+	args: {
+		id: v.id("landingPages"),
+		html: v.string(),
+		js: v.string(),
+		css: v.string(),
+	},
+	handler: async (ctx, { id, html, js, css }) => {
+		await ctx.db.patch(id, {
+			status: "published",
+			previewPublishedAt: new Date().toISOString(),
+			previewUrl: `${process.env.PREVIEW_URL}/landing/${id}`,
+			isPublishing: false,
+		});
+
+		const key = `landing:preview:${id}`;
+
+		await retrier.run(
+			ctx,
+			internal.collections.landingPages.actions.storeInKV,
+			{
+				key,
+				html,
+				js,
+				css,
+			},
+		);
+	},
+});
+
+export const updatePublishingStatusInternal = internalMutationWithTrigger({
+	args: {
+		id: v.id("landingPages"),
+		isPublishing: v.boolean(),
+	},
+	handler: async (ctx, { id, isPublishing }) => {
+		await ctx.db.patch(id, { isPublishing });
+	},
+});
+
 export const promoteToChampion = mutationWithTrigger({
 	args: {
 		id: v.id("landingPages"),
@@ -448,5 +464,88 @@ export const promoteToChampion = mutationWithTrigger({
 				}
 			});
 		}
+	},
+});
+
+export const buildAndPublishPreview = mutation({
+	args: {
+		id: v.id("landingPages"),
+	},
+	handler: async (ctx, { id }) => {
+		// 1. Auth
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// 2. Get landing page
+		const landingPage = await ctx.db.get(id);
+
+		if (!landingPage) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (landingPage.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		if (!landingPage.threadId) {
+			throw new ConvexError("Landing page has no thread");
+		}
+
+		if (landingPage.isPublishing) {
+			throw new ConvexError("Publish already in progress");
+		}
+
+		// 3. Get session
+		const session = await ctx.db
+			.query("agentSessions")
+			.withIndex("by_landing_page_id", (q) => q.eq("landingPageId", id))
+			.filter((q) => q.eq(q.field("status"), "active"))
+			.first();
+
+		if (!session) {
+			throw new ConvexError("No active session found");
+		}
+
+		if (!session.sandboxId) {
+			throw new ConvexError("Session has no sandbox");
+		}
+
+		// 4. Get sandbox
+		const sandbox = await ctx.db.get(session.sandboxId);
+
+		if (!sandbox) {
+			throw new ConvexError("Sandbox not found");
+		}
+
+		if (sandbox.status !== "running") {
+			throw new ConvexError("Sandbox is not running");
+		}
+
+		if (sandbox.isBuilding) {
+			throw new ConvexError("Build already in progress");
+		}
+
+		const streams = await listStreams(ctx, components.agent, {
+			threadId: landingPage.threadId,
+		});
+
+		const activeStreams = streams.filter(
+			(stream) => stream.status === "streaming",
+		);
+
+		console.log("activeStreams", activeStreams);
+		console.log("threadId", landingPage.threadId);
+
+		if (activeStreams.length > 0) {
+			throw new ConvexError(
+				"Agent is currently working. Please wait for it to finish.",
+			);
+		}
+
+		// 6. Schedule build action
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.landingPages.actions.buildAndPublishPreview,
+			{ landingPageId: id, sessionId: session._id, userId: user._id },
+		);
 	},
 });

@@ -1,7 +1,5 @@
 "use client";
 
-import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
-import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
@@ -15,6 +13,8 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { Pencil, Plus } from "@firebuzz/ui/icons/lucide";
 import type { Dispatch, SetStateAction } from "react";
+import { useNewThemeModal } from "@/hooks/ui/use-new-theme-modal";
+import { useSheet } from "@/hooks/ui/use-sheet";
 
 interface ThemeTabsProps {
 	id: Id<"themes"> | undefined;

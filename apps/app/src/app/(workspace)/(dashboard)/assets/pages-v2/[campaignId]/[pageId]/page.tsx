@@ -1,8 +1,11 @@
-import { ThreePanelsProvider } from "@/components/layouts/three-panels/provider";
-import { SanboxProvider } from "@/components/providers/agent/sandbox";
-import { AgentSessionProvider } from "@/components/providers/agent/session";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { cookies } from "next/headers";
+import { LandingPageProvider } from "@/components/chat-v2/providers/landing-page-provider";
+import { PreviewSizeProvider } from "@/components/chat-v2/providers/preview-size-provider";
+import { PreviewTabsProvider } from "@/components/chat-v2/providers/preview-tabs-provider";
+import { TwoPanelsAgentProvider } from "@/components/layouts/two-panels-agent/provider";
+import { SanboxProvider } from "@/components/providers/agent/sandbox";
+import { AgentSessionProvider } from "@/components/providers/agent/session";
 import { Edit } from "./_components/edit";
 
 export default async function Page({
@@ -14,40 +17,33 @@ export default async function Page({
 	const cookieStore = await cookies();
 
 	const leftPanelSize = Number.parseFloat(
-		cookieStore.get("asset-agent-left-panel-size")?.value || "50",
-	);
-	const rightPanelSize = Number.parseFloat(
-		cookieStore.get("asset-agent-right-panel-size")?.value || "50",
-	);
-	const bottomPanelSize = Number.parseFloat(
-		cookieStore.get("asset-agent-bottom-panel-size")?.value || "30",
+		cookieStore.get("asset-agent-left-panel-size")?.value || "35",
 	);
 
 	return (
-		<>
+		<LandingPageProvider landingPageId={pageId} campaignId={campaignId}>
 			<AgentSessionProvider
 				campaignId={campaignId}
 				type="landingPage"
 				landingPageId={pageId}
 			>
 				<SanboxProvider>
-					<ThreePanelsProvider
-						id="asset-agent"
-						leftPanelSizeFromCookie={leftPanelSize}
-						rightPanelSizeFromCookie={rightPanelSize}
-						bottomPanelSizeFromCookie={bottomPanelSize}
-					>
-						<div className="flex overflow-hidden flex-col w-full h-screen max-h-screen">
-							{/* Header */}
-							<div className="px-4 py-4 w-full border-b bg-background">
-								Header
+					<PreviewTabsProvider>
+						<PreviewSizeProvider>
+							<div className="flex flex-col flex-1 px-2 pb-2 h-screen">
+								<TwoPanelsAgentProvider
+									id="asset-agent"
+									leftPanelSizeFromCookie={leftPanelSize}
+								>
+									<div className="flex overflow-hidden flex-col w-full max-h-screen">
+										<Edit landingPageId={pageId} campaignId={campaignId} />
+									</div>
+								</TwoPanelsAgentProvider>
 							</div>
-							{/* Edit */}
-							<Edit />
-						</div>
-					</ThreePanelsProvider>
+						</PreviewSizeProvider>
+					</PreviewTabsProvider>
 				</SanboxProvider>
 			</AgentSessionProvider>
-		</>
+		</LandingPageProvider>
 	);
 }

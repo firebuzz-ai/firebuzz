@@ -1,6 +1,6 @@
-import { useBrush } from "@/hooks/ui/use-ai-image-modal";
 import paper from "paper";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { useBrush } from "@/hooks/ui/use-ai-image-modal";
 import { useMaskState } from "./use-mask-state";
 
 const maskColorString = "rgba(249, 127, 39, 0.5)"; // Semi-transparent orange

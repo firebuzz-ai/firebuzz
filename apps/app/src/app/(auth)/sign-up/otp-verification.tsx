@@ -112,7 +112,7 @@ const OTPVerification = ({ email }: { email: string }) => {
 								{slots.slice(0, 3).map((slot, idx) => (
 									<Slot
 										key={`slot-${
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											// biome-ignore lint/suspicious/noArrayIndexKey: OTP input boxes indexed by position
 											idx
 										}-1`}
 										{...slot}
@@ -126,7 +126,7 @@ const OTPVerification = ({ email }: { email: string }) => {
 								{slots.slice(3).map((slot, idx) => (
 									<Slot
 										key={`slot-${
-											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											// biome-ignore lint/suspicious/noArrayIndexKey: OTP input boxes indexed by position
 											idx
 										}-2`}
 										{...slot}

@@ -1,7 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, v } from "convex/values";
 
-import { query } from "../../_generated/server";
+import { internalQuery, query } from "../../_generated/server";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 
 export const getCurrent = query({
@@ -121,5 +121,19 @@ export const getMarketingData = query({
 			default:
 				throw new ConvexError("Invalid data type");
 		}
+	},
+});
+
+export const getByProjectIdInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+	},
+	handler: async (ctx, args) => {
+		const brand = await ctx.db
+			.query("brands")
+			.withIndex("by_project_id", (q) => q.eq("projectId", args.projectId))
+			.first();
+
+		return brand;
 	},
 });

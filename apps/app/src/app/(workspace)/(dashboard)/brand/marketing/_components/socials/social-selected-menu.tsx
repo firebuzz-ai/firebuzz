@@ -1,6 +1,6 @@
 "use client";
 
-import { ConvexError, type Id, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, type Id, useMutation } from "@firebuzz/convex";
 import {
 	DropdownMenu,
 	DropdownMenuContent,

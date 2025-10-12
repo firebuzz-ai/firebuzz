@@ -10,17 +10,17 @@ import {
 	heartbeatResponseSchema,
 	initializeSessionBodySchema,
 	initializeSessionResponseSchema,
-} from '@firebuzz/shared-types/api/do/agent-session';
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
+} from "@firebuzz/shared-types/api/do/agent-session";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
 // Initialize session route
 const initializeRoute = createRoute({
-	path: '/initialize',
-	method: 'post',
+	path: "/initialize",
+	method: "post",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: initializeSessionBodySchema,
 				},
 			},
@@ -29,11 +29,11 @@ const initializeRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: initializeSessionResponseSchema,
 				},
 			},
-			description: 'Agent session initialized successfully',
+			description: "Agent session initialized successfully",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -41,12 +41,12 @@ const initializeRoute = createRoute({
 
 // Extend session route
 const extendSessionRoute = createRoute({
-	path: '/extend',
-	method: 'post',
+	path: "/extend",
+	method: "post",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: extendSessionBodySchema,
 				},
 			},
@@ -55,11 +55,11 @@ const extendSessionRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: extendSessionResponseSchema,
 				},
 			},
-			description: 'Session extended successfully',
+			description: "Session extended successfully",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -67,8 +67,8 @@ const extendSessionRoute = createRoute({
 
 // Get state route
 const getStateRoute = createRoute({
-	path: '/state/{sessionId}',
-	method: 'get',
+	path: "/state/{sessionId}",
+	method: "get",
 	request: {
 		params: z.object({
 			sessionId: z.string(),
@@ -77,11 +77,11 @@ const getStateRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: getStateResponseSchema,
 				},
 			},
-			description: 'Session state retrieved successfully',
+			description: "Session state retrieved successfully",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -89,8 +89,8 @@ const getStateRoute = createRoute({
 
 // Cleanup session route
 const cleanupRoute = createRoute({
-	path: '/cleanup/{sessionId}',
-	method: 'post',
+	path: "/cleanup/{sessionId}",
+	method: "post",
 	request: {
 		params: z.object({
 			sessionId: z.string(),
@@ -99,11 +99,11 @@ const cleanupRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: cleanupSessionResponseSchema,
 				},
 			},
-			description: 'Session cleaned up successfully',
+			description: "Session cleaned up successfully",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -111,12 +111,12 @@ const cleanupRoute = createRoute({
 
 // Heartbeat route (update activity timestamp)
 const heartbeatRoute = createRoute({
-	path: '/heartbeat',
-	method: 'post',
+	path: "/heartbeat",
+	method: "post",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: heartbeatBodySchema,
 				},
 			},
@@ -125,11 +125,11 @@ const heartbeatRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: heartbeatResponseSchema,
 				},
 			},
-			description: 'Heartbeat received, activity updated',
+			description: "Heartbeat received, activity updated",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -137,12 +137,12 @@ const heartbeatRoute = createRoute({
 
 // End session route
 const endSessionRoute = createRoute({
-	path: '/end',
-	method: 'post',
+	path: "/end",
+	method: "post",
 	request: {
 		body: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: endSessionBodySchema,
 				},
 			},
@@ -151,11 +151,11 @@ const endSessionRoute = createRoute({
 	responses: {
 		200: {
 			content: {
-				'application/json': {
+				"application/json": {
 					schema: endSessionResponseSchema,
 				},
 			},
-			description: 'Session ended successfully',
+			description: "Session ended successfully",
 		},
 		...agentSessionErrorResponses,
 	},
@@ -167,10 +167,10 @@ export const agentSessionRoute = app
 
 	.openapi(initializeRoute, async (c) => {
 		try {
-			const { sessionId, maxDuration, maxIdleTime } = c.req.valid('json');
+			const { sessionId, maxDuration, maxIdleTime } = c.req.valid("json");
 
 			if (!sessionId) {
-				return c.json({ error: 'sessionId is required' }, 400);
+				return c.json({ error: "sessionId is required" }, 400);
 			}
 
 			// Create or get Durable Object instance using session ID
@@ -185,13 +185,13 @@ export const agentSessionRoute = app
 			});
 
 			if (!result.success) {
-				return c.json({ error: result.error || 'Unknown error' }, 500);
+				return c.json({ error: result.error || "Unknown error" }, 500);
 			}
 
 			return c.json(
 				{
 					success: true,
-					message: 'Agent session initialized',
+					message: "Agent session initialized",
 					sessionId,
 					config: {
 						maxDuration: maxDuration || 30 * 60 * 1000,
@@ -201,10 +201,10 @@ export const agentSessionRoute = app
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to initialize agent session:', error);
+			console.error("Failed to initialize agent session:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
@@ -212,10 +212,10 @@ export const agentSessionRoute = app
 	})
 	.openapi(extendSessionRoute, async (c) => {
 		try {
-			const { sessionId } = c.req.valid('json');
+			const { sessionId } = c.req.valid("json");
 
 			if (!sessionId) {
-				return c.json({ error: 'sessionId is required' }, 400);
+				return c.json({ error: "sessionId is required" }, 400);
 			}
 
 			const doId = c.env.AGENT_SESSION.idFromName(`agent-session-${sessionId}`);
@@ -226,16 +226,16 @@ export const agentSessionRoute = app
 			return c.json(
 				{
 					success: true,
-					message: 'Session extended',
+					message: "Session extended",
 					sessionId,
 				},
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to extend session:', error);
+			console.error("Failed to extend session:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
@@ -243,7 +243,7 @@ export const agentSessionRoute = app
 	})
 	.openapi(getStateRoute, async (c) => {
 		try {
-			const { sessionId } = c.req.valid('param');
+			const { sessionId } = c.req.valid("param");
 
 			// Get the Durable Object instance
 			const doId = c.env.AGENT_SESSION.idFromName(`agent-session-${sessionId}`);
@@ -255,7 +255,7 @@ export const agentSessionRoute = app
 			if (!state) {
 				return c.json(
 					{
-						error: 'Session not found or not initialized',
+						error: "Session not found or not initialized",
 					},
 					404,
 				);
@@ -269,10 +269,10 @@ export const agentSessionRoute = app
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to get session state:', error);
+			console.error("Failed to get session state:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
@@ -280,7 +280,7 @@ export const agentSessionRoute = app
 	})
 	.openapi(cleanupRoute, async (c) => {
 		try {
-			const { sessionId } = c.req.valid('param');
+			const { sessionId } = c.req.valid("param");
 
 			// Get the Durable Object instance
 			const doId = c.env.AGENT_SESSION.idFromName(`agent-session-${sessionId}`);
@@ -292,15 +292,15 @@ export const agentSessionRoute = app
 			return c.json(
 				{
 					success: true,
-					message: 'Session cleaned up',
+					message: "Session cleaned up",
 				},
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to cleanup session:', error);
+			console.error("Failed to cleanup session:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
@@ -308,10 +308,10 @@ export const agentSessionRoute = app
 	})
 	.openapi(heartbeatRoute, async (c) => {
 		try {
-			const { sessionId } = c.req.valid('json');
+			const { sessionId } = c.req.valid("json");
 
 			if (!sessionId) {
-				return c.json({ error: 'sessionId is required' }, 400);
+				return c.json({ error: "sessionId is required" }, 400);
 			}
 
 			const doId = c.env.AGENT_SESSION.idFromName(`agent-session-${sessionId}`);
@@ -320,7 +320,7 @@ export const agentSessionRoute = app
 			const result = await stub.updateActivity();
 
 			if (!result.success) {
-				if (result.error === 'Session has ended') {
+				if (result.error === "Session has ended") {
 					return c.json(
 						{
 							success: false,
@@ -332,7 +332,7 @@ export const agentSessionRoute = app
 				}
 				return c.json(
 					{
-						error: result.error || 'Failed to update activity',
+						error: result.error || "Failed to update activity",
 					},
 					500,
 				);
@@ -341,16 +341,16 @@ export const agentSessionRoute = app
 			return c.json(
 				{
 					success: true,
-					message: 'Heartbeat received',
+					message: "Heartbeat received",
 					sessionId,
 				},
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to send heartbeat:', error);
+			console.error("Failed to send heartbeat:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
@@ -358,10 +358,10 @@ export const agentSessionRoute = app
 	})
 	.openapi(endSessionRoute, async (c) => {
 		try {
-			const { sessionId, reason } = c.req.valid('json');
+			const { sessionId, reason } = c.req.valid("json");
 
 			if (!sessionId) {
-				return c.json({ error: 'sessionId is required' }, 400);
+				return c.json({ error: "sessionId is required" }, 400);
 			}
 
 			const doId = c.env.AGENT_SESSION.idFromName(`agent-session-${sessionId}`);
@@ -372,7 +372,7 @@ export const agentSessionRoute = app
 			if (!state) {
 				return c.json(
 					{
-						error: 'Session not found or not initialized',
+						error: "Session not found or not initialized",
 					},
 					404,
 				);
@@ -384,29 +384,29 @@ export const agentSessionRoute = app
 			return c.json(
 				{
 					success: true,
-					message: `Session ended${reason ? `: ${reason}` : ''}`,
+					message: `Session ended${reason ? `: ${reason}` : ""}`,
 					sessionId,
 				},
 				200,
 			);
 		} catch (error) {
-			console.error('Failed to end session:', error);
+			console.error("Failed to end session:", error);
 			return c.json(
 				{
-					error: error instanceof Error ? error.message : 'Unknown error',
+					error: error instanceof Error ? error.message : "Unknown error",
 				},
 				500,
 			);
 		}
 	})
-	.options('*', (c) => {
-		return c.text('', {
+	.options("*", (c) => {
+		return c.text("", {
 			status: 200,
 			headers: {
-				'Access-Control-Allow-Origin': '*',
-				'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-				'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-				'Access-Control-Max-Age': '86400',
+				"Access-Control-Allow-Origin": "*",
+				"Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+				"Access-Control-Allow-Headers": "Content-Type, Authorization",
+				"Access-Control-Max-Age": "86400",
 			},
 		});
 	});

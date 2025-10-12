@@ -1,8 +1,8 @@
-import { asyncMap } from "convex-helpers";
 import { v } from "convex/values";
+import { asyncMap } from "convex-helpers";
 import { internal } from "../../../_generated/api";
 import type { Id } from "../../../_generated/dataModel";
-import { type MutationCtx, internalMutation } from "../../../_generated/server";
+import { internalMutation, type MutationCtx } from "../../../_generated/server";
 import { retrier } from "../../../components/actionRetrier";
 import { aggregateLandingPageVersions } from "../../../components/aggregates";
 import {
@@ -33,7 +33,6 @@ export const createInternal = async (
 	// Check last count of landing page versions
 	const lastCount = await aggregateLandingPageVersions.count(ctx, {
 		namespace: landingPageId,
-		// @ts-ignore
 		bounds: {},
 	});
 

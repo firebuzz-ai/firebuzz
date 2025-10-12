@@ -1,14 +1,9 @@
 "use client";
 
-import type {
-	ABTestNode,
-	VariantNode,
-} from "@/components/canvas/campaign/nodes/campaign/types";
-import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import {
+	api,
 	type Doc,
 	type Id,
-	api,
 	useCachedQuery,
 	useConvex,
 	useMutation,
@@ -57,6 +52,11 @@ import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { useNodes, useReactFlow } from "@xyflow/react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import type {
+	ABTestNode,
+	VariantNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 
 interface VariantPanelProps {
 	node: VariantNode;

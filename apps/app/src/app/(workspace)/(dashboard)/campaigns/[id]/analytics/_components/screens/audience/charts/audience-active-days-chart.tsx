@@ -1,10 +1,10 @@
+import type { Doc } from "@firebuzz/convex";
+import { capitalizeFirstLetter } from "@firebuzz/utils";
+import { useMemo } from "react";
 import {
 	VerticalBarChart,
 	type VerticalBarChartData,
 } from "@/components/analytics/charts/vertical-bar-chart";
-import type { Doc } from "@firebuzz/convex";
-import { capitalizeFirstLetter } from "@firebuzz/utils";
-import { useMemo } from "react";
 
 interface AudienceActiveDaysChartProps {
 	timeseriesData?: Extract<

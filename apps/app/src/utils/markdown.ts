@@ -155,7 +155,7 @@ const enhancedLimitedMarkdownPlugin: Plugin = () => {
 			parent.children[index] = {
 				type: "text",
 				value,
-				// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+				// biome-ignore lint/suspicious/noExplicitAny: unist tree node manipulation requires flexible typing
 			} as any;
 
 			return [SKIP, index] as const;

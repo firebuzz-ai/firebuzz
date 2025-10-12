@@ -1,4 +1,3 @@
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -6,6 +5,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { GenerateImage } from "./generate-image";
 
 export const AIImageModal = () => {

@@ -2,18 +2,14 @@
 
 import { type Editor, isNodeSelection } from "@tiptap/react";
 import * as React from "react";
-
-// --- Hooks ---
-import { useMenuNavigation } from "@/hooks/tiptap/use-menu-navigation";
-import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 // --- Icons ---
 import { BanIcon } from "@/components/tiptap/tiptap-icons/ban-icon";
 import { HighlighterIcon } from "@/components/tiptap/tiptap-icons/highlighter-icon";
-
-// --- Lib ---
-import { isMarkInSchema } from "@/lib/tiptap-utils";
-
+// --- Tiptap UI ---
+import {
+	ColorHighlightButton,
+	canToggleHighlight,
+} from "@/components/tiptap/tiptap-ui/color-highlight-button";
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
@@ -23,12 +19,11 @@ import {
 	PopoverTrigger,
 } from "@/components/tiptap/tiptap-ui-primitive/popover";
 import { Separator } from "@/components/tiptap/tiptap-ui-primitive/separator";
-
-// --- Tiptap UI ---
-import {
-	ColorHighlightButton,
-	canToggleHighlight,
-} from "@/components/tiptap/tiptap-ui/color-highlight-button";
+// --- Hooks ---
+import { useMenuNavigation } from "@/hooks/tiptap/use-menu-navigation";
+import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
+// --- Lib ---
+import { isMarkInSchema } from "@/lib/tiptap-utils";
 
 // --- Styles ---
 import "@/components/tiptap/tiptap-ui/color-highlight-popover/color-highlight-popover.scss";
@@ -140,7 +135,7 @@ export function ColorHighlightPopoverContent({
 		<div
 			ref={containerRef}
 			className="tiptap-color-highlight-content"
-			// biome-ignore lint/a11y/noNoninteractiveTabindex: <explanation>
+			// biome-ignore lint/a11y/noNoninteractiveTabindex: color picker grid needs tabIndex for keyboard navigation
 			tabIndex={0}
 		>
 			<div className="tiptap-button-group" data-orientation="horizontal">

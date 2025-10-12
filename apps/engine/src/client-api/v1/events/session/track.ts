@@ -1,7 +1,7 @@
+import type { Context } from "hono";
 import { getSessionQueueService } from "@/lib/queue";
 import { parseRequest } from "@/lib/request";
 import { formatSessionData } from "@/lib/tinybird";
-import type { Context } from "hono";
 
 interface SessionTrackingData {
 	timestamp: string;

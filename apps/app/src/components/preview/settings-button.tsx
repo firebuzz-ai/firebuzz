@@ -1,6 +1,5 @@
 "use client";
 
-import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
@@ -9,6 +8,7 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import { Settings } from "@firebuzz/ui/icons/lucide";
+import { useSheet } from "@/hooks/ui/use-sheet";
 
 interface SettingsButtonProps {
 	landingPageId: Id<"landingPages">;

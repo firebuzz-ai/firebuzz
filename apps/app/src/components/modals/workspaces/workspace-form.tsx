@@ -1,6 +1,6 @@
 "use client";
 
-import { ConvexError, api, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { Avatar, AvatarFallback } from "@firebuzz/ui/components/ui/avatar";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent, CardHeader } from "@firebuzz/ui/components/ui/card";

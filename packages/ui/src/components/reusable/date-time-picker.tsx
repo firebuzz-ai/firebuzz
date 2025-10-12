@@ -1,8 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
-import * as React from "react";
-
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Calendar } from "@firebuzz/ui/components/ui/calendar";
 import {
@@ -12,7 +9,9 @@ import {
 } from "@firebuzz/ui/components/ui/popover";
 import { ScrollArea, ScrollBar } from "@firebuzz/ui/components/ui/scroll-area";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
+import * as React from "react";
 
 export interface DateTimePickerProps {
 	value?: Date;

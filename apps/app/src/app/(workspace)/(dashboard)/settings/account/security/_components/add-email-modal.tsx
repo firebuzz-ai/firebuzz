@@ -1,6 +1,5 @@
 "use client";
 
-import { useAddEmailModal } from "@/hooks/ui/use-add-email-modal";
 import {
 	Dialog,
 	DialogContent,
@@ -8,6 +7,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
+import { useAddEmailModal } from "@/hooks/ui/use-add-email-modal";
 import { EmailForm } from "./email-form";
 
 export const AddEmailModal = () => {

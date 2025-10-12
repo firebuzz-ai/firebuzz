@@ -2,10 +2,6 @@
 
 import { type Editor, isNodeSelection } from "@tiptap/react";
 import * as React from "react";
-
-// --- Hooks ---
-import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
-
 // --- Icons ---
 import { BoldIcon } from "@/components/tiptap/tiptap-icons/bold-icon";
 import { Code2Icon } from "@/components/tiptap/tiptap-icons/code2-icon";
@@ -14,13 +10,13 @@ import { StrikeIcon } from "@/components/tiptap/tiptap-icons/strike-icon";
 import { SubscriptIcon } from "@/components/tiptap/tiptap-icons/subscript-icon";
 import { SuperscriptIcon } from "@/components/tiptap/tiptap-icons/superscript-icon";
 import { UnderlineIcon } from "@/components/tiptap/tiptap-icons/underline-icon";
-
-// --- Lib ---
-import { isMarkInSchema } from "@/lib/tiptap-utils";
-
 // --- UI Primitives ---
 import type { ButtonProps } from "@/components/tiptap/tiptap-ui-primitive/button";
 import { Button } from "@/components/tiptap/tiptap-ui-primitive/button";
+// --- Hooks ---
+import { useTiptapEditor } from "@/hooks/tiptap/use-tiptap-editor";
+// --- Lib ---
+import { isMarkInSchema } from "@/lib/tiptap-utils";
 
 export type Mark =
 	| "bold"

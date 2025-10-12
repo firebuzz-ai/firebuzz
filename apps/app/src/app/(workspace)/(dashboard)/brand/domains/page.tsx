@@ -1,7 +1,7 @@
 "use client";
 
-import { DomainsTabs } from "@/components/navigation/brand/domains-tabs";
 import { parseAsStringLiteral, useQueryStates } from "nuqs";
+import { DomainsTabs } from "@/components/navigation/brand/domains-tabs";
 import { CustomDomains } from "./_components/custom-domains";
 import { ProjectDomains } from "./_components/project-domains";
 

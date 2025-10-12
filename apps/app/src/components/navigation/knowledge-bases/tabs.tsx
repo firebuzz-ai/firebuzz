@@ -1,9 +1,5 @@
 "use client";
 
-import { useNewDocumentModal } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/new-document/use-new-document-modal";
-import { useNewKnowledgeBaseModal } from "@/hooks/ui/use-new-knowledgebase-modal";
-import { useNewMemoryItem } from "@/hooks/ui/use-new-memory-item";
-import { useSheet } from "@/hooks/ui/use-sheet";
 import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
@@ -23,6 +19,10 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import { ChevronDown, Pencil, Plus, Upload } from "@firebuzz/ui/icons/lucide";
 import type { Dispatch, SetStateAction } from "react";
+import { useNewDocumentModal } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/new-document/use-new-document-modal";
+import { useNewKnowledgeBaseModal } from "@/hooks/ui/use-new-knowledgebase-modal";
+import { useNewMemoryItem } from "@/hooks/ui/use-new-memory-item";
+import { useSheet } from "@/hooks/ui/use-sheet";
 
 interface KnowledgeBaseTabsProps {
 	id: Id<"knowledgeBases"> | undefined;

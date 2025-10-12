@@ -1,0 +1,25 @@
+TOKEN read_write READ
+TOKEN read_write APPEND
+TOKEN read_only READ
+
+DESCRIPTION "Stores token usage data from AI Calls."
+
+SCHEMA >
+    outputType LowCardinality(String) `json:$.outputType`,
+    inputTokens Int64 `json:$.inputTokens`,
+    cachedInputTokens Int64 `json:$.cachedInputTokens`,
+    reasoningTokens Int64 `json:$.reasoningTokens`,
+    outputTokens Int64 `json:$.outputTokens`,
+    totalTokens Int64 `json:$.totalTokens`,
+    model LowCardinality(String) `json:$.model`,
+    provider LowCardinality(String) `json:$.provider`,
+    cost Float64 `json:$.cost`,
+    environment LowCardinality(String) `json:$.environment`,
+    createdAt DateTime64(3, 'UTC') `json:$.createdAt`,
+    sessionId  Nullable(String) `json:$.sessionId`,
+    workspaceId String `json:$.workspaceId`,
+    userId String `json:$.userId`,
+    projectId String `json:$.projectId`
+    
+ENGINE "MergeTree"
+ENGINE_SORTING_KEY "workspaceId, projectId, userId, createdAt" 

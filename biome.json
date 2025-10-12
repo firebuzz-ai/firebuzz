@@ -1,49 +1,68 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.2.5/schema.json",
 	"vcs": {
-		"enabled": false,
+		"enabled": true,
 		"clientKind": "git",
-		"useIgnoreFile": false
+		"useIgnoreFile": true
 	},
 	"files": {
-		"ignoreUnknown": false,
-		"ignore": [
-			".wrangler",
-			"node_modules",
-			".vitest",
-			".next",
-			"dist",
-			"_generated",
-			"templates",
-			"worker-configuration.d.ts",
-			"templates/**"
-		]
+		"ignoreUnknown": false
 	},
 	"formatter": {
 		"enabled": true,
-		"indentStyle": "tab"
+		"indentStyle": "tab",
+		"includes": [
+			"**",
+			"!**/.wrangler/**",
+			"!**/node_modules/**",
+			"!**/.vitest/**",
+			"!**/.next/**",
+			"!**/dist/**",
+			"!**/_generated/**",
+			"!**/templates/**",
+			"!**/worker-configuration.d.ts",
+			"!**/.claude/**",
+			"!**/.cursor/**",
+			"!packages/ui/src/components/ui/**"
+		]
 	},
-	"organizeImports": {
-		"enabled": true
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"linter": {
 		"enabled": true,
-		"ignore": [
-			".wrangler",
-			"node_modules",
-			".vitest",
-			".next",
-			"dist",
-			"_generated",
-			"templates",
-			"templates/**",
-			"worker-configuration.d.ts"
+		"includes": [
+			"**",
+			"!**/.wrangler/**",
+			"!**/node_modules/**",
+			"!**/.vitest/**",
+			"!**/.next/**",
+			"!**/dist/**",
+			"!**/_generated/**",
+			"!**/templates/**",
+			"!**/worker-configuration.d.ts",
+			"!**/.claude/**",
+			"!**/.cursor/**",
+			"!packages/ui/src/components/ui/**"
 		],
 		"rules": {
 			"recommended": true,
 			"a11y": {
 				"noSvgWithoutTitle": "off",
-				"useKeyWithClickEvents": "off"
+				"useKeyWithClickEvents": "off",
+				"noStaticElementInteractions": "off",
+				"useSemanticElements": "off"
+			},
+			"suspicious": {
+				"noUnknownAtRules": "off",
+				"noDocumentCookie": "off"
+			},
+			"performance": {
+				"noImgElement": "off"
 			},
 			"style": {
 				"noNonNullAssertion": "off"
@@ -51,7 +70,8 @@
 			"correctness": {
 				"noUnusedVariables": "error",
 				"useExhaustiveDependencies": "warn",
-				"noUnusedImports": "warn"
+				"noUnusedImports": "warn",
+				"useUniqueElementIds": "off"
 			}
 		}
 	},

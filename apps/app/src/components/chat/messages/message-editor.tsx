@@ -27,18 +27,18 @@ export function MessageEditor({
 	const [draftContent, setDraftContent] = useState<string>(message.content);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-	useEffect(() => {
-		if (textareaRef.current) {
-			adjustHeight();
-		}
-	}, []);
-
-	const adjustHeight = () => {
+	const adjustHeight = useCallback(() => {
 		if (textareaRef.current) {
 			textareaRef.current.style.height = "auto";
 			textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
 		}
-	};
+	}, []);
+
+	useEffect(() => {
+		if (textareaRef.current) {
+			adjustHeight();
+		}
+	}, [adjustHeight]);
 
 	const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
 		setDraftContent(event.target.value);

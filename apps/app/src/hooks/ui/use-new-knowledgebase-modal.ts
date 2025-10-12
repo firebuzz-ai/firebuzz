@@ -1,6 +1,4 @@
-import { parseAsBoolean } from "nuqs";
-
-import { useQueryStates } from "nuqs";
+import { parseAsBoolean, useQueryStates } from "nuqs";
 
 export const useNewKnowledgeBaseModal = () => {
 	return useQueryStates(

@@ -1,8 +1,9 @@
-import { ResizableHandle } from "@firebuzz/ui/components/ui/resizable";
-
-import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
-import { ResizablePanel } from "@firebuzz/ui/components/ui/resizable";
+import {
+	ResizableHandle,
+	ResizablePanel,
+} from "@firebuzz/ui/components/ui/resizable";
 import { cn } from "@firebuzz/ui/lib/utils";
+import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 
 export const PanelLayout = ({ children }: { children: React.ReactNode }) => {
 	const {

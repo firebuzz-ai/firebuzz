@@ -1,7 +1,7 @@
 import type { Doc } from "@firebuzz/convex";
 import type { WebContainerProcess } from "@webcontainer/api";
 import { atom, createStore } from "jotai";
-import { RESET, atomWithReset } from "jotai/utils";
+import { atomWithReset, RESET } from "jotai/utils";
 import type { ActionError } from "./action-error";
 import type { ParsedFile } from "./parser/current-files-parser";
 import { generateFileTreeString } from "./parser/file-tree-parser";
@@ -10,6 +10,7 @@ import type {
 	Action as ActionType,
 	ArtifactCallbackData,
 } from "./parser/message-parser";
+
 interface ServerState {
 	port: number | null;
 	url: string | null;

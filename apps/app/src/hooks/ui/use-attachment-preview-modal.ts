@@ -1,6 +1,4 @@
-import { parseAsString, parseAsStringEnum } from "nuqs";
-
-import { useQueryStates } from "nuqs";
+import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 
 export const useAttachmentPreviewModal = () => {
 	return useQueryStates(

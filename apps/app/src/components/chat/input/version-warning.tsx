@@ -1,12 +1,5 @@
 "use client";
 
-import {
-	currentPreviewVersionAtom,
-	currentVersionAtom,
-	isPreviewVersionDifferentAtom,
-} from "@/lib/workbench/atoms";
-import { WORK_DIR } from "@/lib/workbench/constants";
-import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { api } from "@firebuzz/convex/nextjs";
@@ -17,6 +10,13 @@ import { useAtom, useAtomValue } from "jotai";
 import { motion } from "motion/react";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import {
+	currentPreviewVersionAtom,
+	currentVersionAtom,
+	isPreviewVersionDifferentAtom,
+} from "@/lib/workbench/atoms";
+import { WORK_DIR } from "@/lib/workbench/constants";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 
 interface VersionWarningProps {
 	inputValue: string;

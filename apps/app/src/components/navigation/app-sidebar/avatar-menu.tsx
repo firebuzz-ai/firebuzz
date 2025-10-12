@@ -1,10 +1,11 @@
 "use client";
-import { useUser } from "@/hooks/auth/use-user";
 import { useAuth } from "@clerk/nextjs";
 import { envCloudflarePublic } from "@firebuzz/env";
-import { AvatarFallback, AvatarImage } from "@firebuzz/ui/components/ui/avatar";
-
-import { Avatar } from "@firebuzz/ui/components/ui/avatar";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "@firebuzz/ui/components/ui/avatar";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -34,6 +35,7 @@ import {
 	Sun,
 } from "@firebuzz/ui/icons/lucide";
 import { useTheme } from "next-themes";
+import { useUser } from "@/hooks/auth/use-user";
 
 const AvatarMenu = () => {
 	const { signOut } = useAuth();

@@ -1,11 +1,11 @@
 "use client";
 
+import type { Id } from "@firebuzz/convex";
+import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { WorldMapChart } from "@/components/analytics/charts/world-map-chart";
 import { KPICardsContainer } from "@/components/analytics/containers/kpi-cards-container";
 import { EmptyState } from "@/components/analytics/states";
 import { useCampaignAnalytics } from "@/hooks/state/use-campaign-analytics";
-import type { Id } from "@firebuzz/convex";
-import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { AudienceActiveDaysChart } from "./charts/audience-active-days-chart";
 import { AudienceCitiesChart } from "./charts/audience-cities-chart";
 import { AudienceContinentsChart } from "./charts/audience-continents-chart";
@@ -42,7 +42,7 @@ export const CampaignAnalyticsAudience = ({
 					{Array.from({ length: 4 }).map((_, i) => (
 						<div
 							key={`audience-skeleton-${
-								// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items don't have stable IDs
 								i
 							}`}
 							className="p-4 space-y-3 rounded-lg border"

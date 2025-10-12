@@ -103,7 +103,7 @@ export async function resolveClickId(
 		});
 
 		// Return clean session data (remove createdAt)
-		const { createdAt, ...cleanSessionData } = sessionData;
+		const { createdAt: _createdAt, ...cleanSessionData } = sessionData;
 		return cleanSessionData;
 	} catch (error) {
 		console.error("❌ Error resolving click ID:", error);

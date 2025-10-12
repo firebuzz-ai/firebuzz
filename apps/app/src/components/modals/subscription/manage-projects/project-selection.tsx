@@ -1,12 +1,12 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Checkbox } from "@firebuzz/ui/components/ui/checkbox";
 import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { useMemo } from "react";
+import { useProject } from "@/hooks/auth/use-project";
 
 interface ProjectSelectionProps {
 	deleteAmount: number;
@@ -102,9 +102,9 @@ export const ProjectSelection = ({
 							/>
 
 							<ColoredIconPreview
-								// @ts-ignore
+								// @ts-expect-error
 								icon={project.icon}
-								// @ts-ignore
+								// @ts-expect-error
 								color={project.color}
 								iconClassName="size-4"
 								className="size-8"

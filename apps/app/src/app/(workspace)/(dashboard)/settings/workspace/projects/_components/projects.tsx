@@ -1,10 +1,10 @@
 "use client";
 
+import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { ProjectModal } from "@/components/modals/projects/project-modal";
 import { useProject } from "@/hooks/auth/use-project";
 import { useSubscription } from "@/hooks/auth/use-subscription";
 import { useProjectModal } from "@/hooks/ui/use-project-modal";
-import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { ProjectItem } from "./project-item";
 
 export const Projects = () => {

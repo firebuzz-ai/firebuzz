@@ -1,4 +1,3 @@
-import { isIframeFullScreenAtom } from "@/lib/workbench/atoms";
 import {
 	Drawer,
 	DrawerContent,
@@ -7,6 +6,7 @@ import {
 } from "@firebuzz/ui/components/ui/drawer";
 import { useAtom } from "jotai";
 import { useRef } from "react";
+import { isIframeFullScreenAtom } from "@/lib/workbench/atoms";
 import { Frame } from "./frame";
 export const FullScreenModal = () => {
 	const [isOpen, setIsOpen] = useAtom(isIframeFullScreenAtom);

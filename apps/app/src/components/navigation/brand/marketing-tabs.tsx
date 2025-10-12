@@ -1,9 +1,5 @@
 "use client";
 
-import { useNewAudienceModal } from "@/hooks/ui/use-new-audience-modal";
-import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
-import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
-import { useNewTestimonialModal } from "@/hooks/ui/use-new-testimonial-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -11,6 +7,10 @@ import {
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Hash, Star, Table2, Users } from "@firebuzz/ui/icons/lucide";
 import { useCallback, useMemo } from "react";
+import { useNewAudienceModal } from "@/hooks/ui/use-new-audience-modal";
+import { useNewFeatureModal } from "@/hooks/ui/use-new-feature-modal";
+import { useNewSocialModal } from "@/hooks/ui/use-new-social-modal";
+import { useNewTestimonialModal } from "@/hooks/ui/use-new-testimonial-modal";
 
 const TABS: TabItem[] = [
 	{

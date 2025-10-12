@@ -1,6 +1,5 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import { api, useCachedRichQuery } from "@firebuzz/convex";
 import { ColoredIconPreview } from "@firebuzz/ui/components/ui/colored-icon-preview";
 import {
@@ -13,6 +12,7 @@ import {
 import { Plus } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import Link from "next/link";
+import { useProject } from "@/hooks/auth/use-project";
 
 export const ProjectsSidebarList = () => {
 	const { data: projects, isPending } = useCachedRichQuery(
@@ -28,7 +28,7 @@ export const ProjectsSidebarList = () => {
 					Array.from({ length: 3 }).map((_, index) => (
 						<SidebarMenuItem
 							key={`skeleton-${
-								// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+								// biome-ignore lint/suspicious/noArrayIndexKey: skeleton items don't have stable IDs
 								index
 							}`}
 						>

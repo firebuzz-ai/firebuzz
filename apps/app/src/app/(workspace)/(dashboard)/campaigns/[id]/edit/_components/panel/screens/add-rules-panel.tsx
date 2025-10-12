@@ -1,15 +1,15 @@
 "use client";
 
-import type {
-	RuleTypeId,
-	SegmentNode,
-} from "@/components/canvas/campaign/nodes/campaign/types";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Label } from "@firebuzz/ui/components/ui/label";
 import { ArrowLeft, ArrowRight, Search, X } from "@firebuzz/ui/icons/lucide";
 import { useState } from "react";
+import type {
+	RuleTypeId,
+	SegmentNode,
+} from "@/components/canvas/campaign/nodes/campaign/types";
 import { RULE_TYPE_DEFINITIONS } from "../helpers/rule-types";
 import { RuleConfigurationPanel } from "./rule-configuration-panel";
 
