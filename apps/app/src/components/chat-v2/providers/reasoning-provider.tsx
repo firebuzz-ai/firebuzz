@@ -3,8 +3,8 @@
 import { createContext, useContext, useState } from "react";
 
 interface ReasoningContextType {
-	expandedReasoningIndex: number | null;
-	setExpandedReasoningIndex: (index: number | null) => void;
+	expandedReasoningId: string | null;
+	setExpandedReasoningId: (id: string | null) => void;
 }
 
 const ReasoningContext = createContext<ReasoningContextType | null>(null);
@@ -19,13 +19,13 @@ interface ReasoningProviderProps {
 }
 
 export const ReasoningProvider = ({ children }: ReasoningProviderProps) => {
-	const [expandedReasoningIndex, setExpandedReasoningIndex] = useState<
-		number | null
-	>(null);
+	const [expandedReasoningId, setExpandedReasoningId] = useState<string | null>(
+		null,
+	);
 
 	return (
 		<ReasoningContext.Provider
-			value={{ expandedReasoningIndex, setExpandedReasoningIndex }}
+			value={{ expandedReasoningId, setExpandedReasoningId }}
 		>
 			{children}
 		</ReasoningContext.Provider>

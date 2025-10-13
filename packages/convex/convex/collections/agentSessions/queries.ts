@@ -1,3 +1,5 @@
+import type { Doc } from "_generated/dataModel";
+import { asyncMap } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { ERRORS } from "../../utils/errors";
@@ -20,9 +22,21 @@ export const getById = query({
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
-		const session = await ctx.db.get(args.id);
+		const joinedUsers = await asyncMap(
+			agentSession.joinedUsers,
+			async (userId) => {
+				return await ctx.db.get(userId);
+			},
+		);
 
-		return session;
+		const filteredJoinedUsers = joinedUsers.filter(
+			(user) => user !== undefined && user !== null,
+		) as Doc<"users">[];
+
+		return {
+			...agentSession,
+			joinedUsers: filteredJoinedUsers,
+		};
 	},
 });
 

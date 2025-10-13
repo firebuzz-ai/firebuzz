@@ -1,12 +1,13 @@
 import { openai } from "@ai-sdk/openai";
 import {
 	Agent,
-	abortStream,
-	listStreams,
-	listUIMessages,
 	type StreamArgs,
+	abortStream,
+	listMessages,
+	listStreams,
 	saveMessage,
 	syncStreams,
+	toUIMessages,
 	vStreamArgs,
 } from "@convex-dev/agent";
 import type { LanguageModel } from "ai";
@@ -18,9 +19,9 @@ import { components, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import {
 	type ActionCtx,
+	type QueryCtx,
 	internalAction,
 	mutation,
-	type QueryCtx,
 	query,
 } from "../_generated/server";
 import {
@@ -30,9 +31,9 @@ import {
 	getProviderOptions,
 	normalizeModel,
 } from "../ai/models/helpers";
-import { modelSchema } from "../ai/models/schema";
+import { Model, modelSchema } from "../ai/models/schema";
 import { LANDING_MAIN_PROMPT } from "../ai/prompts/landingMain";
-import { tools } from "../ai/tools/landingPage/index";
+import { Metadata, tools } from "../ai/tools/landingPage/index";
 import { sandboxSchema } from "../collections/sandboxes/schema";
 import { getCurrentUserWithWorkspace } from "../collections/users/utils";
 import { ERRORS } from "../utils/errors";
@@ -436,46 +437,47 @@ export const sendMessageToLandingPageRegularAgent = mutation({
 });
 
 export const abortStreamByStreamId = mutation({
-	args: { landingPageId: v.id("landingPages") },
-	handler: async (ctx, { landingPageId }) => {
+	args: { threadId: v.string() },
+	handler: async (ctx, { threadId }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
-		const landingPage = await ctx.db.get(landingPageId);
+		const streams = await listStreams(ctx, components.agent, {
+			threadId,
+			includeStatuses: ["streaming"],
+		});
 
-		if (!landingPage) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
+		const activeStreams = streams.filter(
+			(stream) => stream.status === "streaming",
+		);
+
+		if (activeStreams.length === 0) {
+			console.log("No active streams found");
+			return;
 		}
 
-		if (landingPage.workspaceId !== user.currentWorkspaceId) {
-			throw new ConvexError(ERRORS.UNAUTHORIZED);
-		}
-
-		if (!landingPage.threadId) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
-
-		const threadId = landingPage.threadId;
-
-		const streams = await listStreams(ctx, components.agent, { threadId });
-		for (const stream of streams) {
+		for (const stream of activeStreams) {
 			console.log("Aborting stream", stream);
 			await abortStream(ctx, components.agent, {
 				reason: "Aborting via async call",
 				streamId: stream.streamId,
 			});
 		}
-		if (!streams.length) {
-			console.log("No streams found");
-		}
+
+		// Fail pending messages in the same transaction
+		await ctx.runMutation(components.agent.messages.addMessages, {
+			threadId,
+			messages: [],
+			failPendingSteps: true,
+		});
 	},
 });
 
 // QUERIES
-export const listThreadMessages = async (
+export const listThreadUIMessages = async (
 	ctx: QueryCtx,
 	{
 		threadId,
@@ -488,17 +490,72 @@ export const listThreadMessages = async (
 	},
 ) => {
 	// Fetches the regular non-streaming messages.
-	const paginated = await listUIMessages(ctx, components.agent, {
+	const paginated = await listMessages(ctx, components.agent, {
 		threadId,
 		paginationOpts,
 	});
+
+	const paginatedPagedWithMetadata = paginated.page.map((message) => {
+		const model = message.model as Model | undefined;
+		const rawUsage = message.usage;
+		let credits = 0;
+		let normalizedModel = model;
+		if (rawUsage && model) {
+			normalizedModel = normalizeModel(model);
+			const promptTokens = rawUsage.promptTokens || 0;
+			const completionTokens =
+				(rawUsage.completionTokens || 0) + (rawUsage.reasoningTokens || 0);
+
+			const cachedInputTokens = rawUsage.cachedInputTokens || 0;
+			const usage = calculateModelCost(
+				normalizedModel,
+				promptTokens,
+				completionTokens,
+				cachedInputTokens,
+			);
+			credits = calculateCreditsFromSpend(usage);
+		}
+		return {
+			...message,
+			metadata: {
+				userId: message.userId as Id<"users"> | undefined,
+				usage: credits,
+				error: message.error,
+				model: normalizedModel,
+				provider: message.provider,
+			},
+		};
+	});
+
+	const uiMessages = toUIMessages<Metadata>(paginatedPagedWithMetadata);
 
 	const streams = await syncStreams(ctx, components.agent, {
 		threadId,
 		streamArgs,
 	});
 
-	return { ...paginated, streams };
+	return {
+		page: uiMessages,
+		continueCursor: paginated.continueCursor,
+		isDone: paginated.isDone,
+		streams,
+	};
+};
+
+export const listThreadMessageDocs = async (
+	ctx: QueryCtx,
+	{
+		threadId,
+		paginationOpts,
+	}: {
+		threadId: string;
+		paginationOpts: Infer<typeof paginationOptsValidator>;
+	},
+) => {
+	return await listMessages(ctx, components.agent, {
+		threadId,
+		paginationOpts,
+	});
 };
 
 export const listLandingPageMessages = query({
@@ -531,10 +588,43 @@ export const listLandingPageMessages = query({
 			throw new ConvexError(ERRORS.NOT_FOUND);
 		}
 
-		return await listThreadMessages(ctx, {
+		return await listThreadUIMessages(ctx, {
 			threadId,
 			paginationOpts,
 			streamArgs,
+		});
+	},
+});
+
+export const listLandingPageMessagesMetadata = query({
+	args: {
+		landingPageId: v.id("landingPages"),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, { landingPageId, paginationOpts }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const landingPage = await ctx.db.get(landingPageId);
+
+		if (!landingPage) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (landingPage.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		if (!landingPage.threadId) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		return await listThreadMessageDocs(ctx, {
+			threadId: landingPage.threadId,
+			paginationOpts,
 		});
 	},
 });

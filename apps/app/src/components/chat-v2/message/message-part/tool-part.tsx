@@ -20,13 +20,13 @@ export const ToolPart = ({
 	return (
 		<div
 			className={cn(
-				"flex gap-4 justify-between items-center text-sm text-muted-foreground",
+				"flex gap-4 justify-between items-center text-xs text-muted-foreground",
 				className,
 			)}
 		>
 			<div className="flex gap-2 items-center">
 				{status === "loading" && (
-					<Loader className="animate-spin size-3 text-muted-foreground" />
+					<Loader className="animate-spin size-2 text-muted-foreground" />
 				)}
 				{status === "success" && (
 					<div className="bg-emerald-600 rounded-[2px] size-2" />
@@ -44,7 +44,7 @@ export const ToolPart = ({
 						{toolName}
 					</TextShimmer>
 				) : (
-					<span className="text-sm font-medium">{toolName}</span>
+					<span className="text-xs font-medium">{toolName}</span>
 				)}
 			</div>
 			{/* Children or Null */}

@@ -1,5 +1,5 @@
 "use client";
-import { api, useCachedRichQuery } from "@firebuzz/convex";
+import { api, type Doc, useCachedRichQuery } from "@firebuzz/convex";
 import {
 	createContext,
 	type RefObject,
@@ -16,6 +16,8 @@ interface SanboxContextType {
 	previewURL: string | undefined;
 	installCmdId: string | undefined;
 	devCmdId: string | undefined;
+	devCommand: Doc<"sandboxCommands"> | null;
+	installCommand: Doc<"sandboxCommands"> | null;
 	ports: number[];
 	cwd: string;
 	vcpus: number;
@@ -35,6 +37,8 @@ export const SanboxContext = createContext<SanboxContextType>({
 	installCmdId: undefined,
 	devCmdId: undefined,
 	isBuilding: false,
+	devCommand: null,
+	installCommand: null,
 	ports: [5173],
 	cwd: "/vercel/sandbox",
 	vcpus: 2,
@@ -51,11 +55,11 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 	const [isPreviewIframeLoaded, setIsPreviewIframeLoaded] = useState(false);
 
 	const { data: sandbox } = useCachedRichQuery(
-		api.collections.sandboxes.queries.getById,
+		api.collections.sandboxes.queries.getByIdWithCommands,
 		session.session?.sandboxId ? { id: session.session.sandboxId } : "skip",
 	);
 
-	const exposedSession = useMemo(() => {
+	const exposedSandbox = useMemo(() => {
 		if (!sandbox) {
 			return {
 				sandboxId: undefined,
@@ -64,6 +68,8 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 				previewURL: undefined,
 				installCmdId: undefined,
 				devCmdId: undefined,
+				devCommand: null,
+				installCommand: null,
 				ports: [5173],
 				cwd: "/vercel/sandbox",
 				vcpus: 2,
@@ -83,6 +89,8 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 			previewURL: sandbox.previewUrl,
 			installCmdId: sandbox.installCmdId,
 			devCmdId: sandbox.devCmdId,
+			devCommand: sandbox.devCommand,
+			installCommand: sandbox.installCommand,
 			ports: sandbox.ports,
 			cwd: sandbox.cwd,
 			vcpus: sandbox.vcpus,
@@ -96,7 +104,7 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 	}, [sandbox, isPreviewIframeLoaded]);
 
 	return (
-		<SanboxContext.Provider value={exposedSession}>
+		<SanboxContext.Provider value={exposedSandbox}>
 			{children}
 		</SanboxContext.Provider>
 	);

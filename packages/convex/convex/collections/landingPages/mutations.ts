@@ -526,6 +526,7 @@ export const buildAndPublishPreview = mutation({
 
 		const streams = await listStreams(ctx, components.agent, {
 			threadId: landingPage.threadId,
+			includeStatuses: ["streaming"],
 		});
 
 		const activeStreams = streams.filter(

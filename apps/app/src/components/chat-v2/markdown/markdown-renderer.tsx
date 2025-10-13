@@ -22,25 +22,24 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 				const match = /language-(\w+)/.exec(className || "");
 				return match ? (
 					<code
-						className={`${className} bg-muted px-1 py-0.5 rounded text-sm font-mono`}
+						className={`${className} bg-muted px-1 py-0.5 rounded border  font-mono`}
 						{...props}
 					>
 						{children}
 					</code>
 				) : (
-					<code
-						className="bg-muted px-1 py-0.5 rounded text-sm font-mono"
-						{...props}
-					>
-						{children}
-					</code>
+					<span className="inline-block py-1">
+						<code
+							className="bg-muted px-1 py-0.5 rounded border text-brand  font-mono"
+							{...props}
+						>
+							{children}
+						</code>
+					</span>
 				);
 			},
 			pre: ({ children, ...props }) => (
-				<pre
-					className="overflow-x-auto p-3 text-sm rounded-sm bg-muted"
-					{...props}
-				>
+				<pre className="overflow-x-auto p-3 rounded-sm bg-muted" {...props}>
 					{children}
 				</pre>
 			),

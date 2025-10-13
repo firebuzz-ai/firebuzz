@@ -49,12 +49,21 @@ The landing pages you create use:
 │   ├── index.css            # Global styles
 │   ├── components/
 │   │   ├── ui/              # Shadcn UI components (DO NOT MODIFY)
+│   │   ├── brand/           # Brand components
+│   │   │   ├── logo-light.tsx           # Light theme logo with fallback
+│   │   │   ├── logo-dark.tsx            # Dark theme logo with fallback
+│   │   │   ├── icon-light.tsx           # Light theme icon with fallback
+│   │   │   └── icon-dark.tsx            # Dark theme icon with fallback
+│   │   ├── cookie-banner                # Cookie banner components
 │   │   └── [your-components]  # Your custom components
 │   ├── configuration/
 │   │   └── campaign.ts      # Campaign config (campaign type, form schema)
+│   │   └── seo.ts           # Seo config
+│   │   └── tags.ts          # Tags config (Search console, Facebook Pixel, Google Tag Manager)
 │   └── lib/
 │       └── form-api.ts      # Pre-configured form API client
 ├── package.json
+├── tailwind.config.js       # Tailwind configuration file
 ├── vite.config.ts
 └── tsconfig.json
 \`\`\`

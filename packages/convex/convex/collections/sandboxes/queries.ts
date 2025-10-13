@@ -1,3 +1,4 @@
+import type { Doc } from "_generated/dataModel";
 import { ConvexError, v } from "convex/values";
 import { internalQuery, query } from "../../_generated/server";
 import { ERRORS } from "../../utils/errors";
@@ -21,6 +22,41 @@ export const getById = query({
 		}
 
 		return sandbox;
+	},
+});
+
+export const getByIdWithCommands = query({
+	args: {
+		id: v.id("sandboxes"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		const sandbox = await ctx.db.get(args.id);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (sandbox.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		let installCommand: Doc<"sandboxCommands"> | null = null;
+		let devCommand: Doc<"sandboxCommands"> | null = null;
+
+		if (sandbox.installCmdId) {
+			installCommand = await ctx.db.get(sandbox.installCmdId);
+		}
+		if (sandbox.devCmdId) {
+			devCommand = await ctx.db.get(sandbox.devCmdId);
+		}
+
+		return {
+			...sandbox,
+			installCommand,
+			devCommand,
+		};
 	},
 });
 

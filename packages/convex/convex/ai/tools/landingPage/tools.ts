@@ -73,7 +73,9 @@ export const getReadFileTool = ({ sandbox }: { sandbox: Doc<"sandboxes"> }) => {
 			cwd: z
 				.string()
 				.optional()
-				.describe("Optional working directory to resolve the file path from"),
+				.describe(
+					"Optional working directory to resolve the file path from. If not provided, the sandbox's current working directory will be used.",
+				),
 		}),
 		handler: async (ctx, args): Promise<ReadFileToolResult> => {
 			const result = await ctx.runAction(
@@ -81,7 +83,7 @@ export const getReadFileTool = ({ sandbox }: { sandbox: Doc<"sandboxes"> }) => {
 				{
 					sandboxId: sandbox._id,
 					filePath: args.filePath,
-					cwd: args.cwd,
+					cwd: args.cwd ?? sandbox.cwd,
 				},
 			);
 			return result;
@@ -211,7 +213,9 @@ export const getRunCommandTool = ({
 			cwd: z
 				.string()
 				.optional()
-				.describe("Working directory to run the command in"),
+				.describe(
+					"Working directory to run the command in. If not provided, the sandbox's current working directory will be used.",
+				),
 			detached: z
 				.boolean()
 				.optional()
@@ -226,7 +230,7 @@ export const getRunCommandTool = ({
 					sandboxId: sandbox._id,
 					command: args.command,
 					args: args.args,
-					cwd: args.cwd,
+					cwd: args.cwd ?? sandbox.cwd,
 					detached: args.detached,
 				},
 			);

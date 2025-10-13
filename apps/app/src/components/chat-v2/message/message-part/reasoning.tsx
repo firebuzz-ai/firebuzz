@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "motion/react";
 import type { CSSProperties, ElementType } from "react";
 import { memo, useMemo } from "react";
 import { MarkdownRenderer } from "../../markdown/markdown-renderer";
-import { useReasoningContext } from "../../providers/reasoning-provider";
+import { useReasoningContext } from "../utils/reasoning-context";
 
 interface TextShimmerProps {
 	children: string;
@@ -89,15 +89,12 @@ export const Reasoning = ({ part, partIndex }: ReasoningProps) => {
 	};
 
 	return (
-		<div className="overflow-hidden w-full rounded-md border">
+		<div className="overflow-hidden w-full text-xs rounded-md border">
 			{/* Header */}
 			<div
-				className={cn(
-					"flex justify-between items-center px-3 py-2 bg-muted/30",
-					{
-						"border-b": isExpanded,
-					},
-				)}
+				className={cn("flex justify-between items-center px-2 py-1 bg-muted", {
+					"border-b": isExpanded,
+				})}
 			>
 				<div className="flex gap-1 items-center">
 					<Button
@@ -117,13 +114,13 @@ export const Reasoning = ({ part, partIndex }: ReasoningProps) => {
 							<TextShimmer
 								as="span"
 								duration={1.5}
-								className="text-sm italic font-medium"
+								className="text-xs italic font-medium"
 								active={true}
 							>
 								Thinking
 							</TextShimmer>
 						) : (
-							<span className="text-sm font-medium">
+							<span className="text-xs font-medium text-muted-foreground">
 								Thought for {thinkingTime}{" "}
 								{thinkingTime === 1 ? "second" : "seconds"}
 							</span>
@@ -141,7 +138,7 @@ export const Reasoning = ({ part, partIndex }: ReasoningProps) => {
 						exit={{ height: 0 }}
 						className="overflow-hidden"
 					>
-						<div className="p-3 text-sm text-muted-foreground">
+						<div className="p-3 text-xs text-muted-foreground">
 							<MarkdownRenderer content={text} />
 						</div>
 					</motion.div>

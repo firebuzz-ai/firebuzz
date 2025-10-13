@@ -28,6 +28,11 @@ export const AI_MODELS_PRICING = {
 		outputPerMillion: 10.0,
 		cachedInputPerMillion: 0.125,
 	},
+	"gpt-5-codex": {
+		inputPerMillion: 1.25,
+		outputPerMillion: 10.0,
+		cachedInputPerMillion: 0.125,
+	},
 	"gpt-5-mini": {
 		inputPerMillion: 0.25,
 		outputPerMillion: 2.0,
@@ -38,22 +43,22 @@ export const AI_MODELS_PRICING = {
 		outputPerMillion: 10.0,
 		cachedInputPerMillion: 0.31,
 	},
-	"google/gemini-2.5-flash": {
+	"gemini-2.5-flash": {
 		inputPerMillion: 0.15,
 		outputPerMillion: 0.6,
 		cachedInputPerMillion: 0.03,
 	},
-	"z-ai/glm-4.6": {
+	"glm-4.6": {
 		inputPerMillion: 0.5,
 		outputPerMillion: 2.2,
 		cachedInputPerMillion: 0.11,
 	},
-	"x-ai/grok-code-fast-1": {
+	"grok-code-fast-1": {
 		inputPerMillion: 0.2,
 		outputPerMillion: 1.5,
 		cachedInputPerMillion: 0.02,
 	},
-	"x-ai/grok-4-fast": {
+	"grok-4-fast": {
 		inputPerMillion: 0.2,
 		outputPerMillion: 0.5,
 		cachedInputPerMillion: 0.05,
@@ -104,41 +109,32 @@ export function calculateCreditsFromSpend(totalSpend: number): number {
  * @returns Normalized model name or undefined if not supported
  */
 export function normalizeModel(modelString: string): Model {
-	if (modelString.startsWith("claude-sonnet-4.5")) {
+	if (modelString.includes("claude-sonnet-4.5")) {
 		return "claude-sonnet-4.5";
 	}
-	if (modelString.startsWith("gpt-5-mini")) {
+	if (modelString.includes("gpt-5-mini")) {
 		return "gpt-5-mini";
 	}
-	if (modelString.startsWith("gpt-5")) {
+	if (modelString.includes("gpt-5-codex")) {
+		return "gpt-5-codex";
+	}
+	if (modelString.includes("gpt-5")) {
 		return "gpt-5";
 	}
-	if (modelString.startsWith("gemini-2.5-pro")) {
+	if (modelString.includes("gemini-2.5-pro")) {
 		return "gemini-2.5-pro";
 	}
-	if (
-		modelString.startsWith("google/gemini-2.5-flash") ||
-		modelString.startsWith("gemini-2.5-flash")
-	) {
-		return "google/gemini-2.5-flash";
+	if (modelString.includes("gemini-2.5-flash")) {
+		return "gemini-2.5-flash";
 	}
-	if (
-		modelString.startsWith("z-ai/glm-4.6") ||
-		modelString.startsWith("glm-4.6")
-	) {
-		return "z-ai/glm-4.6";
+	if (modelString.includes("glm-4.6")) {
+		return "glm-4.6";
 	}
-	if (
-		modelString.startsWith("x-ai/grok-code-fast-1") ||
-		modelString.startsWith("grok-code-fast-1")
-	) {
-		return "x-ai/grok-code-fast-1";
+	if (modelString.includes("grok-code-fast-1")) {
+		return "grok-code-fast-1";
 	}
-	if (
-		modelString.startsWith("x-ai/grok-4-fast") ||
-		modelString.startsWith("grok-4-fast")
-	) {
-		return "x-ai/grok-4-fast";
+	if (modelString.includes("grok-4-fast")) {
+		return "grok-4-fast";
 	}
 	return "claude-sonnet-4.5";
 }
@@ -155,25 +151,32 @@ const openRouterSettings = {
 
 export const getModel = (model: Model) => {
 	switch (model) {
+		/* OpenAI models */
 		case "gpt-5":
+			return openRouter.chat("openai/gpt-5", openRouterSettings);
+		case "gpt-5-codex":
 			return openRouter.chat("openai/gpt-5-codex", openRouterSettings);
+		case "gpt-5-mini":
+			return openRouter.chat("openai/gpt-5-mini", openRouterSettings);
+		/* Google models */
 		case "gemini-2.5-pro":
 			return openRouter.chat("google/gemini-2.5-pro");
-		case "z-ai/glm-4.6":
+		case "gemini-2.5-flash":
+			return openRouter.chat("google/gemini-2.5-flash", openRouterSettings);
+		/* Z.ai models */
+		case "glm-4.6":
 			return openRouter.chat("z-ai/glm-4.6", openRouterSettings);
+		/* Anthropic models */
 		case "claude-sonnet-4.5":
 			return openRouter.chat("anthropic/claude-sonnet-4.5", openRouterSettings);
-		case "gpt-5-mini":
-			return openRouter.chat("gpt-5-mini", openRouterSettings);
-		case "google/gemini-2.5-flash":
-			return openRouter.chat("google/gemini-2.5-flash", openRouterSettings);
-		case "x-ai/grok-code-fast-1":
+		/* X.ai models */
+		case "grok-code-fast-1":
 			return openRouter.chat("x-ai/grok-code-fast-1", openRouterSettings);
-		case "x-ai/grok-4-fast":
+		case "grok-4-fast":
 			return openRouter.chat("x-ai/grok-4-fast", openRouterSettings);
-
+		/* Default */
 		default:
-			return openRouter.chat("gpt-5-mini", openRouterSettings);
+			return openRouter.chat("gemini-2.5-flash", openRouterSettings);
 	}
 };
 
@@ -195,7 +198,7 @@ export const getProviderOptions = (
 			};
 		/* Google models */
 		case "gemini-2.5-pro":
-		case "google/gemini-2.5-flash":
+		case "gemini-2.5-flash":
 			return {
 				google: {
 					responseModalities: ["TEXT"] as const,
@@ -208,7 +211,7 @@ export const getProviderOptions = (
 		/* OpenAI models */
 		case "gpt-5":
 		case "gpt-5-mini":
-		case "z-ai/glm-4.6":
+		case "glm-4.6":
 			return {
 				openai: {
 					reasoningEffort: "medium" as const,
@@ -217,8 +220,8 @@ export const getProviderOptions = (
 			};
 
 		/* XAI models */
-		case "x-ai/grok-code-fast-1":
-		case "x-ai/grok-4-fast":
+		case "grok-code-fast-1":
+		case "grok-4-fast":
 			return {
 				xai: {
 					reasoningEffort: "high" as const,

@@ -1,5 +1,6 @@
 import type { UIMessage } from "@convex-dev/agent";
 import type { InferUITools } from "ai";
+import { Model } from "ai/models/schema";
 import type { z } from "zod";
 import type { Doc, Id } from "../../../_generated/dataModel";
 import type { dataPartSchema } from "./schema";
@@ -63,4 +64,11 @@ export function tools(
 
 export type ToolSet = InferUITools<ReturnType<typeof tools>>;
 export type DataPart = z.infer<typeof dataPartSchema>;
-export type LandingPageUIMessage = UIMessage<unknown, DataPart, ToolSet>;
+export type Metadata = {
+	userId: Id<"users"> | undefined;
+	usage: number | undefined;
+	error: string | undefined;
+	model: Model | undefined;
+	provider: string | undefined;
+};
+export type LandingPageUIMessage = UIMessage<Metadata, DataPart, ToolSet>;

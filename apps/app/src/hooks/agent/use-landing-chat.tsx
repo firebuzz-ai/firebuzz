@@ -26,11 +26,15 @@ export const useLandingChat = ({
 			id: landingPageId,
 		});
 
-	const { results, status, loadMore } = useUIMessages(
+	const result = useUIMessages(
 		api.components.agent.listLandingPageMessages,
 		{ landingPageId, threadId: "" }, // threadId is passed as empty string to make ts happy (We are inheriting it from the landing page)
 		{ initialNumItems: 140, stream: true },
 	);
+
+	const { results, status, loadMore } = result;
+
+	console.log("result", result);
 
 	const typedMessages = useMemo(() => {
 		return results as LandingPageUIMessage[];
@@ -165,9 +169,22 @@ export const useLandingChat = ({
 		api.components.agent.abortStreamByStreamId,
 	);
 
+	const pendingMessageId = useMemo(() => {
+		return typedMessages.find(
+			(message) =>
+				message.role === "assistant" && message.status === "streaming",
+		)?.id;
+	}, [typedMessages]);
+
 	const abortStream = useCallback(async () => {
-		await abortStreamMutation({ landingPageId });
-	}, [abortStreamMutation, landingPageId]);
+		if (!pendingMessageId || !landingPage?.threadId) {
+			toast.error("No pending message found");
+			return;
+		}
+		await abortStreamMutation({
+			threadId: landingPage.threadId,
+		});
+	}, [abortStreamMutation, landingPage?.threadId, pendingMessageId]);
 
 	return {
 		messages: typedMessages,

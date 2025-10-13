@@ -33,7 +33,11 @@ type AgentSessionProviderProps =
 	  };
 
 interface AgentSessionContextValue {
-	session: Doc<"agentSessions"> | undefined;
+	session:
+		| (Omit<Doc<"agentSessions">, "joinedUsers"> & {
+				joinedUsers: Doc<"users">[];
+		  })
+		| undefined;
 	isLoading: boolean;
 }
 

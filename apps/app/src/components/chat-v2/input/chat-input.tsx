@@ -1,5 +1,7 @@
 "use client";
 
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
+import { useLandingChat } from "@/hooks/agent/use-landing-chat";
 import type { Id } from "@firebuzz/convex/nextjs";
 import {
 	Avatar,
@@ -42,13 +44,6 @@ import {
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
-	AnthropicIcon,
-	GeminiIcon,
-	OpenAIIcon,
-	XaiIcon,
-	ZaiIcon,
-} from "@firebuzz/ui/icons/ai-providers";
-import {
 	IconArrowUp,
 	IconAt,
 	IconBook,
@@ -58,8 +53,7 @@ import {
 } from "@firebuzz/ui/icons/tabler";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
-import { useLandingChat } from "@/hooks/agent/use-landing-chat";
+import { MODEL_CONFIG } from "../models";
 
 const SAMPLE_DATA = {
 	mentionable: [
@@ -91,49 +85,6 @@ const SAMPLE_DATA = {
 		},
 	],
 };
-
-const MODEL_CONFIG = {
-	"claude-sonnet-4.5": {
-		name: "Claude Sonnet 4.5",
-		provider: "Anthropic",
-		icon: AnthropicIcon,
-	},
-	"gpt-5": {
-		name: "GPT-5",
-		provider: "OpenAI",
-		icon: OpenAIIcon,
-	},
-	"gpt-5-mini": {
-		name: "GPT-5 Mini",
-		provider: "OpenAI",
-		icon: OpenAIIcon,
-	},
-	"gemini-2.5-pro": {
-		name: "Gemini 2.5 Pro",
-		provider: "Google",
-		icon: GeminiIcon,
-	},
-	"z-ai/glm-4.6": {
-		name: "GLM 4.6",
-		provider: "Z.ai",
-		icon: ZaiIcon,
-	},
-	"google/gemini-2.5-flash": {
-		name: "Gemini 2.5 Flash",
-		provider: "Google",
-		icon: GeminiIcon,
-	},
-	"x-ai/grok-code-fast-1": {
-		name: "Grok Code Fast 1",
-		provider: "X.ai",
-		icon: XaiIcon,
-	},
-	"x-ai/grok-4-fast": {
-		name: "Grok 4 Fast",
-		provider: "X.ai",
-		icon: XaiIcon,
-	},
-} as const;
 
 function MentionableIcon({
 	item,
@@ -482,8 +433,7 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 							<InputGroupButton
 								type="button"
 								aria-label="Pause"
-								className="ml-auto rounded-full"
-								variant="brand"
+								className="ml-auto rounded-lg"
 								size="icon-sm"
 								onClick={handleAbort}
 							>
@@ -493,8 +443,8 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 							<InputGroupButton
 								type="submit"
 								aria-label="Send"
-								className="ml-auto rounded-full"
-								variant="brand"
+								className="ml-auto rounded-lg"
+								variant="default"
 								size="icon-sm"
 								disabled={isDisabled || !inputValue.trim()}
 							>
