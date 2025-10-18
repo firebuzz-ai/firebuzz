@@ -2,7 +2,6 @@
 
 import type { ToolSet } from "@firebuzz/convex";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
-import { RotateCcw } from "@firebuzz/ui/icons/lucide";
 import type { UIToolInvocation } from "ai";
 import { useMemo } from "react";
 import { ToolPart } from "./tool-part";
@@ -28,8 +27,7 @@ export const RevertToVersion = ({ part }: RevertToVersionProps) => {
 		if (part?.output?.success) {
 			return (
 				<Badge variant="outline" className="flex gap-1 items-center">
-					<RotateCcw className="w-3 h-3" />
-					Reverted successfully
+					{part.input.versionId}
 				</Badge>
 			);
 		}

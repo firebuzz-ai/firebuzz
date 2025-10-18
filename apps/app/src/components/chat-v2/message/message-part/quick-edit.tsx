@@ -26,10 +26,14 @@ export const QuickEdit = ({ part }: QuickEditProps) => {
 	const message = useMemo(() => {
 		if (part?.output) {
 			if (part.output.success) {
+				const filePath = part.input?.filePath;
+				const replacements = part.output?.replacements;
 				return (
-					<Badge variant="outline" className="bg-muted">
-						{part.output.replacements}{" "}
-						{part.output.replacements === 1 ? "replacement" : "replacements"}
+					<Badge variant="outline" className="flex gap-1 items-center bg-muted">
+						<span>{filePath}</span> <span>-</span>
+						<span className="text-xs text-muted-foreground">
+							{replacements} replacements
+						</span>
 					</Badge>
 				);
 			}

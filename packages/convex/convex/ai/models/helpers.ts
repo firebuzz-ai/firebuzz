@@ -1,8 +1,8 @@
 import type { AnthropicProviderOptions } from "@ai-sdk/anthropic";
 import type { GoogleGenerativeAIProviderOptions } from "@ai-sdk/google";
 import type { OpenAIResponsesProviderOptions } from "@ai-sdk/openai";
-import type { XaiProviderOptions } from "@ai-sdk/xai";
-import { openRouter } from "lib/openRouter";
+import { anthropic } from "../../lib/anthropic";
+import { openRouter } from "../../lib/openRouter";
 import type { Model } from "./schema";
 
 /* Context Window Sizes
@@ -18,6 +18,11 @@ x-ai/grok-4-fast	256K tokens	Standard */
 
 // Pricing per million tokens (updated 2025-10-10)
 export const AI_MODELS_PRICING = {
+	"claude-haiku-4.5": {
+		inputPerMillion: 1,
+		outputPerMillion: 5,
+		cachedInputPerMillion: 0.1,
+	},
 	"claude-sonnet-4.5": {
 		inputPerMillion: 3.0,
 		outputPerMillion: 15.0,
@@ -109,6 +114,12 @@ export function calculateCreditsFromSpend(totalSpend: number): number {
  * @returns Normalized model name or undefined if not supported
  */
 export function normalizeModel(modelString: string): Model {
+	if (
+		modelString.includes("claude-haiku-4.5") ||
+		modelString.includes("claude-haiku-4-5-20251001")
+	) {
+		return "claude-haiku-4.5";
+	}
 	if (modelString.includes("claude-sonnet-4.5")) {
 		return "claude-sonnet-4.5";
 	}
@@ -127,15 +138,6 @@ export function normalizeModel(modelString: string): Model {
 	if (modelString.includes("gemini-2.5-flash")) {
 		return "gemini-2.5-flash";
 	}
-	if (modelString.includes("glm-4.6")) {
-		return "glm-4.6";
-	}
-	if (modelString.includes("grok-code-fast-1")) {
-		return "grok-code-fast-1";
-	}
-	if (modelString.includes("grok-4-fast")) {
-		return "grok-4-fast";
-	}
 	return "claude-sonnet-4.5";
 }
 
@@ -146,6 +148,9 @@ const openRouterSettings = {
 	},
 	usage: {
 		include: true,
+	},
+	extraBody: {
+		"anthropic-beta": "prompt-caching-2024-07-31",
 	},
 };
 
@@ -160,20 +165,15 @@ export const getModel = (model: Model) => {
 			return openRouter.chat("openai/gpt-5-mini", openRouterSettings);
 		/* Google models */
 		case "gemini-2.5-pro":
-			return openRouter.chat("google/gemini-2.5-pro");
+			return openRouter.chat("google/gemini-2.5-pro", openRouterSettings);
 		case "gemini-2.5-flash":
 			return openRouter.chat("google/gemini-2.5-flash", openRouterSettings);
-		/* Z.ai models */
-		case "glm-4.6":
-			return openRouter.chat("z-ai/glm-4.6", openRouterSettings);
 		/* Anthropic models */
 		case "claude-sonnet-4.5":
 			return openRouter.chat("anthropic/claude-sonnet-4.5", openRouterSettings);
-		/* X.ai models */
-		case "grok-code-fast-1":
-			return openRouter.chat("x-ai/grok-code-fast-1", openRouterSettings);
-		case "grok-4-fast":
-			return openRouter.chat("x-ai/grok-4-fast", openRouterSettings);
+		case "claude-haiku-4.5":
+			return anthropic.chat("claude-haiku-4-5-20251001");
+
 		/* Default */
 		default:
 			return openRouter.chat("gemini-2.5-flash", openRouterSettings);
@@ -186,14 +186,16 @@ export const getProviderOptions = (
 	| { anthropic: AnthropicProviderOptions }
 	| { google: GoogleGenerativeAIProviderOptions }
 	| { openai: OpenAIResponsesProviderOptions }
-	| { xai: XaiProviderOptions }
 	| undefined => {
 	switch (model) {
 		/* Anthropic models */
 		case "claude-sonnet-4.5":
+		case "claude-haiku-4.5":
 			return {
 				anthropic: {
 					thinking: { type: "enabled" as const, budgetTokens: 12000 },
+					cacheControl: { type: "ephemeral", ttl: "5m" },
+					sendReasoning: true,
 				},
 			};
 		/* Google models */
@@ -211,28 +213,5 @@ export const getProviderOptions = (
 		/* OpenAI models */
 		case "gpt-5":
 		case "gpt-5-mini":
-		case "glm-4.6":
-			return {
-				openai: {
-					reasoningEffort: "medium" as const,
-					reasoningSummary: "auto",
-				},
-			};
-
-		/* XAI models */
-		case "grok-code-fast-1":
-		case "grok-4-fast":
-			return {
-				xai: {
-					reasoningEffort: "high" as const,
-				},
-			};
-		default:
-			return {
-				openai: {
-					reasoningEffort: "medium" as const,
-					reasoningSummary: "auto",
-				},
-			};
 	}
 };

@@ -1,75 +1,21 @@
 "use client";
 
+import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ChevronDown, ChevronRight } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { ReasoningUIPart } from "ai";
 import { AnimatePresence, motion } from "motion/react";
-import type { CSSProperties, ElementType } from "react";
 import { memo, useMemo } from "react";
 import { MarkdownRenderer } from "../../markdown/markdown-renderer";
 import { useReasoningContext } from "../utils/reasoning-context";
-
-interface TextShimmerProps {
-	children: string;
-	as?: ElementType;
-	className?: string;
-	duration?: number;
-	spread?: number;
-	active?: boolean;
-}
-
-const TextShimmer = memo(
-	({
-		children,
-		as: Component = "span",
-		className,
-		duration = 2,
-		spread = 2,
-		active = true,
-	}: TextShimmerProps) => {
-		const MotionComponent = motion(Component as ElementType);
-
-		const dynamicSpread = useMemo(() => {
-			return children.length * spread;
-		}, [children, spread]);
-
-		return (
-			<MotionComponent
-				className={cn(
-					"relative inline-block bg-[length:250%_100%,auto] bg-clip-text",
-					"text-transparent [--base-color:#a1a1aa] [--base-gradient-color:#000]",
-					"[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))] [background-repeat:no-repeat,padding-box]",
-					"dark:[--base-color:#71717a] dark:[--base-gradient-color:#ffffff] dark:[--bg:linear-gradient(90deg,#0000_calc(50%-var(--spread)),var(--base-gradient-color),#0000_calc(50%+var(--spread)))]",
-					className,
-				)}
-				initial={{ backgroundPosition: "100% center" }}
-				animate={{ backgroundPosition: "0% center" }}
-				transition={{
-					repeat: active ? Number.POSITIVE_INFINITY : 0,
-					duration,
-					ease: "linear",
-				}}
-				style={
-					{
-						"--spread": `${dynamicSpread}px`,
-						backgroundImage:
-							"var(--bg), linear-gradient(var(--base-color), var(--base-color))",
-					} as CSSProperties
-				}
-			>
-				{children}
-			</MotionComponent>
-		);
-	},
-);
 
 interface ReasoningProps {
 	part: ReasoningUIPart;
 	partIndex: number;
 }
 
-export const Reasoning = ({ part, partIndex }: ReasoningProps) => {
+export const Reasoning = memo(({ part, partIndex }: ReasoningProps) => {
 	const context = useReasoningContext();
 	const isExpanded = context?.expandedReasoningIndex === partIndex;
 
@@ -146,4 +92,4 @@ export const Reasoning = ({ part, partIndex }: ReasoningProps) => {
 			</AnimatePresence>
 		</div>
 	);
-};
+});

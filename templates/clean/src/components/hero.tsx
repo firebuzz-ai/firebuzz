@@ -1,7 +1,8 @@
-import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { motion } from "motion/react";
 
 export function Hero() {
+
   return (
     <section className="relative flex-1 py-20 h-full bg-gradient-to-br lg:py-28 from-background to-muted/50">
       <div className="container px-4 mx-auto">

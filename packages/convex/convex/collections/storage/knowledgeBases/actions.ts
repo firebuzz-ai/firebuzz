@@ -1,6 +1,6 @@
 import { embed } from "ai";
-import { ConvexError, v } from "convex/values";
 import { asyncMap } from "convex-helpers";
+import { ConvexError, v } from "convex/values";
 import { internal } from "../../../_generated/api";
 import type { Doc, Id } from "../../../_generated/dataModel";
 import { action } from "../../../_generated/server";
@@ -27,9 +27,7 @@ export const vectorSearch = action({
 		}
 
 		const embedding = await embed({
-			model: openai.embedding("text-embedding-3-large", {
-				dimensions: 1536,
-			}),
+			model: openai.embedding("text-embedding-3-large"),
 			value: query,
 		});
 

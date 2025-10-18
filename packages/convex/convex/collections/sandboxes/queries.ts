@@ -1,5 +1,5 @@
-import type { Doc } from "_generated/dataModel";
 import { ConvexError, v } from "convex/values";
+import type { Doc } from "../../_generated/dataModel";
 import { internalQuery, query } from "../../_generated/server";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";

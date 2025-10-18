@@ -1,20 +1,38 @@
 import type { UIMessage } from "@convex-dev/agent";
 import type { InferUITools } from "ai";
-import { Model } from "ai/models/schema";
 import type { z } from "zod";
 import type { Doc, Id } from "../../../_generated/dataModel";
+import type { Model } from "../../../ai/models/schema";
 import type { dataPartSchema } from "./schema";
 import {
+	getAskToWebsiteTool,
+	getBuildLandingPageTool,
+	getCheckDevServerAndLogsTool,
 	getCheckSandboxHealthTool,
 	getCreateTodoListTool,
+	getCustomEventsTool,
+	getEditImageTool,
+	getFeaturesOrServicesTool,
+	getFormSchemaTool,
+	getGenerateImageTool,
+	getGrepTool,
 	getListLandingPageVersionsTool,
 	getPreviewVersionRevertTool,
+	getPublishToPreviewTool,
 	getQuickEditTool,
 	getReadFileTool,
+	getRenewSandboxTool,
+	getRestartDevServerTool,
 	getRevertToVersionTool,
 	getRunCommandTool,
 	getSaveLandingPageVersionTool,
+	getSocialsTool,
+	getTakeWebsiteSnapshotTool,
+	getTargetAudiencesTool,
+	getTestimonialsTool,
 	getUpdateTodoListTool,
+	getUploadImageToCDNTool,
+	getWebSearchTool,
 	getWriteFilesTool,
 } from "./tools";
 
@@ -23,12 +41,28 @@ export function tools(
 	sandbox: Doc<"sandboxes">,
 	landingPageId: Id<"landingPages">,
 	sessionId: Id<"agentSessions">,
+	workspaceId: Id<"workspaces">,
+	userId: Id<"users">,
+	projectId: Id<"projects">,
 ) {
 	return {
 		checkSandboxHealth: getCheckSandboxHealthTool({
 			sandbox,
 		}),
+		checkDevServerAndLogs: getCheckDevServerAndLogsTool({
+			sandbox,
+		}),
+		restartDevServer: getRestartDevServerTool({
+			sandbox,
+		}),
+		renewSandbox: getRenewSandboxTool({
+			sessionId,
+			sandbox,
+		}),
 		readFile: getReadFileTool({
+			sandbox,
+		}),
+		grep: getGrepTool({
 			sandbox,
 		}),
 		writeFiles: getWriteFilesTool({
@@ -58,6 +92,58 @@ export function tools(
 		}),
 		updateTodoList: getUpdateTodoListTool({
 			sessionId,
+		}),
+		uploadImageToCDN: getUploadImageToCDNTool({
+			sessionId,
+		}),
+		generateImage: getGenerateImageTool({
+			sessionId,
+			workspaceId,
+			userId,
+			projectId,
+		}),
+		editImage: getEditImageTool({
+			sessionId,
+			workspaceId,
+			userId,
+			projectId,
+		}),
+		takeWebsiteSnapshot: getTakeWebsiteSnapshotTool({
+			sessionId,
+		}),
+		askToWebsite: getAskToWebsiteTool({
+			sessionId,
+		}),
+		webSearch: getWebSearchTool({
+			sessionId,
+			workspaceId,
+			userId,
+			projectId,
+		}),
+		getTargetAudiences: getTargetAudiencesTool({
+			projectId,
+		}),
+		getTestimonials: getTestimonialsTool({
+			projectId,
+		}),
+		getSocials: getSocialsTool({
+			projectId,
+		}),
+		getFeaturesOrServices: getFeaturesOrServicesTool({
+			projectId,
+		}),
+		getFormSchema: getFormSchemaTool({
+			landingPageId,
+		}),
+		getCustomEvents: getCustomEventsTool({
+			landingPageId,
+		}),
+		buildLandingPage: getBuildLandingPageTool({
+			sandbox,
+		}),
+		publishToPreview: getPublishToPreviewTool({
+			sandbox,
+			landingPageId,
 		}),
 	};
 }

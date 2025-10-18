@@ -1,5 +1,10 @@
-import * as React from "react";
 import { cn } from "@/lib/utils";
+import * as React from "react";
+
+/**
+ * Allowed CDN hosts that support Cloudflare image transformations
+ */
+const CDN_HOSTS = ["cdn-dev.getfirebuzz.com", "cdn.getfirebuzz.com"];
 
 export type StaticImport = {
 	src: string;
@@ -60,18 +65,74 @@ export interface ImageProps
 	objectPosition?: ObjectPosition;
 }
 
-const normalizeSrc = (src: string) => {
-	return src.startsWith("/") ? src.slice(1) : src;
+/**
+ * Normalizes image source URL and determines if it can be transformed via CDN
+ * @param src - Image source URL (relative or absolute)
+ * @returns Object with normalized path and canTransform flag
+ */
+const normalizeSrc = (
+	src: string,
+): { path: string; canTransform: boolean; cdnHost: string } => {
+	// Check if already wrapped with cdn-cgi/image to avoid double-wrapping
+	if (src.includes("/cdn-cgi/image/")) {
+		console.warn(
+			`Image src already contains cdn-cgi/image prefix, using as-is: ${src}`,
+		);
+		return { path: src, canTransform: false, cdnHost: CDN_HOSTS[0] };
+	}
+
+	// Check if absolute URL
+	if (/^https?:\/\//.test(src)) {
+		try {
+			const url = new URL(src);
+
+			// Check if hostname matches allowed CDN hosts
+			const matchedHost = CDN_HOSTS.find((host) => url.hostname === host);
+			if (matchedHost) {
+				// Remove leading slash from pathname for CDN transform URL
+				const path = url.pathname.startsWith("/")
+					? url.pathname.slice(1)
+					: url.pathname;
+				return {
+					path: `${path}${url.search}${url.hash}`,
+					canTransform: true,
+					cdnHost: matchedHost,
+				};
+			}
+
+			// External URL - cannot transform
+			console.warn(
+				`External image URL cannot be transformed via CDN: ${url.hostname}`,
+			);
+			return { path: src, canTransform: false, cdnHost: CDN_HOSTS[0] };
+		} catch (error) {
+			console.warn(`Failed to parse image URL: ${src}`, error);
+			return { path: src, canTransform: false, cdnHost: CDN_HOSTS[0] };
+		}
+	}
+
+	// Relative path - can transform
+	const path = src.startsWith("/") ? src.slice(1) : src;
+	return { path, canTransform: true, cdnHost: CDN_HOSTS[0] };
 };
 
 /**
  * Default Cloudflare image loader
+ * Returns original src for external/non-transformable URLs
  */
 const defaultLoader: ImageLoader = ({
 	src,
 	width,
 	quality = 80,
 }: ImageLoaderProps) => {
+	const { path, canTransform, cdnHost } = normalizeSrc(src);
+
+	// If URL cannot be transformed, return as-is
+	if (!canTransform) {
+		return path;
+	}
+
+	// Build transformation parameters
 	const params: string[] = [];
 
 	if (width) {
@@ -84,11 +145,12 @@ const defaultLoader: ImageLoader = ({
 	params.push("format=auto");
 
 	const paramsString = params.join(",");
-	return `https://cdn-dev.getfirebuzz.com/cdn-cgi/image/${paramsString}/${normalizeSrc(src)}`;
+	return `https://${cdnHost}/cdn-cgi/image/${paramsString}/${path}`;
 };
 
 /**
  * Cloudflare blur image loader
+ * Returns original src for external/non-transformable URLs
  */
 const blurLoader = ({
 	src,
@@ -96,6 +158,14 @@ const blurLoader = ({
 	quality = 10,
 	blur = 50,
 }: ImageLoaderProps & { blur?: number }) => {
+	const { path, canTransform, cdnHost } = normalizeSrc(src);
+
+	// If URL cannot be transformed, return as-is
+	if (!canTransform) {
+		return path;
+	}
+
+	// Build transformation parameters
 	const params: string[] = [];
 
 	if (width) {
@@ -112,7 +182,7 @@ const blurLoader = ({
 	params.push("format=auto");
 
 	const paramsString = params.join(",");
-	return `https://cdn-dev.getfirebuzz.com/cdn-cgi/image/${paramsString}/${normalizeSrc(src)}`;
+	return `https://${cdnHost}/cdn-cgi/image/${paramsString}/${path}`;
 };
 
 /**
@@ -214,10 +284,14 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 		// Default width for quality if not specified (especially for fill mode)
 		const defaultWidth = fill && !width ? 1920 : width || 800;
 
+		// Check if source can be transformed for srcSet generation
+		const { canTransform } = normalizeSrc(src);
+
 		// For responsive images, create srcSet with multiple sizes
+		// Only generate srcSet for transformable images
 		const generateSizes = [0.25, 0.5, 0.75, 1, 2];
 		const srcSet =
-			!unoptimized && defaultWidth
+			!unoptimized && defaultWidth && canTransform
 				? generateSizes
 						.map((scale) => {
 							const scaledWidth = Math.round(defaultWidth * scale);
@@ -239,8 +313,9 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 				: undefined;
 
 		// Generate blur placeholder if needed
+		// Only use blur for transformable images to avoid double-transforming external URLs
 		const shouldUseBlurPlaceholder =
-			placeholder === "blur" && (blurDataURL || src);
+			placeholder === "blur" && (blurDataURL || src) && canTransform;
 		const placeholderSrc =
 			blurDataURL || (shouldUseBlurPlaceholder ? src : undefined);
 		const placeholderUrl =
@@ -294,7 +369,7 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 						aria-hidden="true"
 						src={placeholderUrl}
 						alt=""
-						className="absolute inset-0 object-cover w-full h-full transition-opacity duration-500 ease-in-out"
+						className="object-cover absolute inset-0 w-full h-full transition-opacity duration-500 ease-in-out"
 						style={{
 							opacity: isLoaded ? 0 : 1,
 							transitionDelay: "500ms",

@@ -5,6 +5,7 @@ import aggregate from "@convex-dev/aggregate/convex.config";
 import migrations from "@convex-dev/migrations/convex.config";
 import presence from "@convex-dev/presence/convex.config";
 import r2 from "@convex-dev/r2/convex.config";
+import rag from "@convex-dev/rag/convex.config";
 import rateLimiter from "@convex-dev/rate-limiter/convex.config";
 import resend from "@convex-dev/resend/convex.config";
 import workflow from "@convex-dev/workflow/convex.config";
@@ -58,4 +59,8 @@ app.use(presence);
 
 // Agents
 app.use(agent);
+
+// RAG
+app.use(rag);
+
 export default app;

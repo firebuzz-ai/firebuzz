@@ -5,16 +5,13 @@ import { api, useQuery, useStablePaginatedQuery } from "@firebuzz/convex";
 
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { use, useMemo, useState } from "react";
+import { useParams } from "next/navigation";
+import { useMemo, useState } from "react";
 import { Controls } from "./_components/controls";
 import { Table } from "./_components/table";
 
-interface PageProps {
-	params: Promise<{ id: string }>;
-}
-
-export default function FormDataPage({ params }: PageProps) {
-	const { id } = use(params);
+export default function FormDataPage() {
+	const { id } = useParams<{ id: string }>();
 	const [selection, setSelection] = useState<Record<string, boolean>>({});
 	const [isPreview, setIsPreview] = useState<boolean>(false);
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");

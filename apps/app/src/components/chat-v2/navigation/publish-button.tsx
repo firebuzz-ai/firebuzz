@@ -1,5 +1,7 @@
 "use client";
 
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
 import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
 import { ReadonlyInputWithClipboard } from "@firebuzz/ui/components/reusable/readonly-input-with-clipboard";
@@ -25,8 +27,6 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { useLandingPageContext } from "@/components/chat-v2/providers/landing-page-provider";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
 
 // Status configuration
 const statusConfig = {
@@ -44,7 +44,6 @@ const statusConfig = {
 
 export const PublishButton = () => {
 	const [open, setOpen] = useState(false);
-	const [isPublishing, setIsPublishing] = useState(false);
 	const { landingPage } = useLandingPageContext();
 
 	// Get sandbox to check build status
@@ -59,8 +58,6 @@ export const PublishButton = () => {
 		if (!landingPage?._id) return;
 
 		try {
-			setIsPublishing(true);
-
 			await buildAndPublishMutation({ id: landingPage._id });
 
 			toast.success("Build started", {
@@ -75,7 +72,6 @@ export const PublishButton = () => {
 				id: "build-failed",
 			});
 		} finally {
-			setIsPublishing(false);
 			setOpen(false);
 		}
 	};
@@ -94,17 +90,47 @@ export const PublishButton = () => {
 
 	// Check if busy - either publishing locally, building in sandbox, or publishing in backend
 	const isLandingPagePublishing = landingPage?.isPublishing || false;
-	const isBusy = isPublishing || isBuilding || isLandingPagePublishing;
+	const isBusy = isBuilding || isLandingPagePublishing;
+
+	console.log({
+		isBuilding,
+		isLandingPagePublishing,
+		isBusy,
+	});
 
 	return (
 		<ButtonGroup>
 			<Button size="sm" variant="outline" className="!py-0 !pr-2">
-				<div className="flex items-center space-x-2">
-					<div className={cn("w-2 h-2 rounded-full", config?.color)} />
-					<span>
-						{isBusy ? <Spinner size="xs" className="mb-0.5" /> : config?.label}
-					</span>
-				</div>
+				<AnimatePresence initial={false} mode="wait">
+					{isBusy ? (
+						<motion.div
+							key="publishing"
+							className="flex gap-1 gap-2 items-center"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+						>
+							<div
+								className={cn(
+									"w-2 h-2 rounded-full animate-pulse",
+									config?.color,
+								)}
+							/>
+							Publishing...
+						</motion.div>
+					) : (
+						<motion.div
+							key="status"
+							className="flex items-center space-x-2"
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 10 }}
+						>
+							<div className={cn("w-2 h-2 rounded-full", config?.color)} />
+							<span>{config?.label}</span>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</Button>
 
 			<DropdownMenu open={open} onOpenChange={setOpen}>

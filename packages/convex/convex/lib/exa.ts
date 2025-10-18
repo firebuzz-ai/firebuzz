@@ -1,8 +1,8 @@
-import { ConvexError, v } from "convex/values";
+import { v } from "convex/values";
 import Exa from "exa-js";
-import { api, internal } from "../_generated/api";
-import { action } from "../_generated/server";
-import { ERRORS } from "../utils/errors";
+import { internal } from "../_generated/api";
+import { internalAction } from "../_generated/server";
+import { calculateCreditsFromSpend } from "../ai/models/helpers";
 
 const exaApiKey = process.env.EXA_API_KEY;
 
@@ -12,11 +12,13 @@ if (!exaApiKey) {
 
 export const exa = new Exa(exaApiKey);
 
-export const searchAndCrawl = action({
+export const searchAndCrawl = internalAction({
 	args: {
 		query: v.string(),
 		includeDomains: v.optional(v.array(v.string())),
 		excludeDomains: v.optional(v.array(v.string())),
+		numResults: v.optional(v.number()),
+		userLocation: v.optional(v.string()),
 		category: v.optional(
 			v.union(
 				v.literal("company"),
@@ -30,20 +32,30 @@ export const searchAndCrawl = action({
 				v.literal("financial report"),
 			),
 		),
+		workspaceId: v.id("workspaces"),
+		sessionId: v.optional(v.id("agentSessions")),
+		userId: v.id("users"),
+		projectId: v.id("projects"),
 	},
-	handler: async (ctx, { query, includeDomains, excludeDomains, category }) => {
-		// 1) Get User
-		const user = await ctx.runQuery(
-			internal.collections.users.queries.getCurrentUserInternal,
-		);
-
-		if (!user) {
-			throw new ConvexError(ERRORS.UNAUTHORIZED);
-		}
-
-		// 2) Search and Crawl
+	handler: async (
+		ctx,
+		{
+			query,
+			includeDomains,
+			excludeDomains,
+			category,
+			numResults,
+			userLocation,
+			workspaceId,
+			sessionId,
+			userId,
+			projectId,
+		},
+	) => {
+		// 1) Search and Crawl
 		const searchResults = await exa.searchAndContents(query, {
-			numResults: 5,
+			numResults: Math.min(numResults ?? 5, 8),
+			userLocation: userLocation ?? "US",
 			includeDomains,
 			excludeDomains,
 			category,
@@ -54,16 +66,24 @@ export const searchAndCrawl = action({
 		const randomHex = Math.floor(Math.random() * 0xffffff)
 			.toString(16)
 			.padStart(6, "0");
-		const idempotencyKey = `${user._id}:${timestampMs}-${randomHex}-exa-search`;
+		const idempotencyKey = `exa-search:${timestampMs}-${randomHex}`;
 
-		// 3) Add usage to the database
+		const cost = searchResults.costDollars?.total ?? 0.1;
+
+		const calculateCredits = calculateCreditsFromSpend(cost);
+
+		// 2) Add usage to the database
 		await ctx.runMutation(
-			api.collections.stripe.transactions.mutations
-				.addUsageIdempotentSyncWithTinybird,
+			internal.collections.stripe.transactions.mutations
+				.addUsageIdempotentSyncWithTinybirdInternal,
 			{
-				amount: 0.25,
+				amount: calculateCredits,
 				idempotencyKey,
 				reason: "Search and Crawl with Exa",
+				workspaceId,
+				sessionId,
+				userId,
+				projectId,
 			},
 		);
 

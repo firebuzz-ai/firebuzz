@@ -1,3 +1,4 @@
+import type { Id } from "@firebuzz/convex";
 import { atom, useAtom } from "jotai";
 
 type Tab = "gallery" | "unsplash" | "upload";
@@ -12,6 +13,7 @@ interface MediaModalAtom {
 	activeTab: Tab;
 	onSelect: (
 		data: {
+			id: Id<"media">;
 			url: string;
 			key: string;
 			fileName: string;
@@ -66,6 +68,7 @@ export const useMediaGalleryModal = () => {
 		setOnSelect: (
 			handler: (
 				data: {
+					id: Id<"media">;
 					url: string;
 					key: string;
 					fileName: string;

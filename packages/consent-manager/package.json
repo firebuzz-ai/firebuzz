@@ -1,6 +1,6 @@
 {
 	"name": "@firebuzz/consent-manager",
-	"version": "0.2.14",
+	"version": "0.2.15",
 	"description": "Consent management for Firebuzz platform",
 	"author": "Firebuzz Team",
 	"license": "MIT",

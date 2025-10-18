@@ -1,8 +1,9 @@
 import { createThread, listStreams } from "@convex-dev/agent";
-import { ConvexError, v } from "convex/values";
 import { asyncMap } from "convex-helpers";
+import { ConvexError, v } from "convex/values";
 import { components, internal } from "../../_generated/api";
-import { mutation } from "../../_generated/server";
+import type { Doc } from "../../_generated/dataModel";
+import { internalMutation, mutation } from "../../_generated/server";
 import { retrier } from "../../components/actionRetrier";
 import {
 	internalMutationWithTrigger,
@@ -238,8 +239,17 @@ export const createTranslation = mutationWithTrigger({
 export const update = mutation({
 	args: {
 		id: v.id("landingPages"),
-		title: v.string(),
-		description: v.string(),
+		title: v.optional(v.string()),
+		description: v.optional(v.string()),
+		publishStatus: v.optional(
+			v.union(v.literal("draft"), v.literal("published")),
+		),
+		landingPageVersionId: v.optional(v.id("landingPageVersions")),
+		lastPublishedVersionId: v.optional(v.id("landingPageVersions")),
+		isPublishing: v.optional(v.boolean()),
+		isPublished: v.optional(v.boolean()),
+		previewPublishedAt: v.optional(v.string()),
+		previewUrl: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -247,42 +257,124 @@ export const update = mutation({
 		const landingPage = await ctx.db.get(args.id);
 
 		if (!landingPage) {
-			throw new ConvexError("Landing page not found");
+			throw new ConvexError(ERRORS.NOT_FOUND);
 		}
 
 		if (landingPage.workspaceId !== user.currentWorkspaceId) {
-			throw new ConvexError("You are not allowed to update this landing page");
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
-		await ctx.db.patch(args.id, {
-			title: args.title,
-			description: args.description,
+		const updateFields: Partial<Doc<"landingPages">> = {
 			updatedAt: Date.now(),
-		});
+		};
+
+		if (args.title) {
+			updateFields.title = args.title;
+		}
+
+		if (args.description) {
+			updateFields.description = args.description;
+		}
+
+		if (args.publishStatus) {
+			updateFields.status = args.publishStatus;
+		}
+
+		if (args.landingPageVersionId) {
+			updateFields.landingPageVersionId = args.landingPageVersionId;
+		}
+
+		if (args.lastPublishedVersionId) {
+			updateFields.lastPublishedVersionId = args.lastPublishedVersionId;
+		}
+
+		if (args.isPublishing) {
+			updateFields.isPublishing = args.isPublishing;
+		}
+
+		if (args.isPublished) {
+			updateFields.isPublished = args.isPublished;
+		}
+
+		if (args.previewPublishedAt) {
+			updateFields.previewPublishedAt = args.previewPublishedAt;
+		}
+
+		if (args.previewUrl) {
+			updateFields.previewUrl = args.previewUrl;
+		}
+
+		await ctx.db.patch(args.id, updateFields);
 	},
 });
 
-export const updateLandingPageVersion = mutation({
+export const updateInternal = internalMutation({
 	args: {
 		id: v.id("landingPages"),
-		landingPageVersionId: v.id("landingPageVersions"),
+		title: v.optional(v.string()),
+		description: v.optional(v.string()),
+		publishStatus: v.optional(
+			v.union(v.literal("draft"), v.literal("published")),
+		),
+		landingPageVersionId: v.optional(v.id("landingPageVersions")),
+		lastPublishedVersionId: v.optional(v.id("landingPageVersions")),
+		revertingToVersionId: v.optional(v.id("landingPageVersions")),
+		isPublishing: v.optional(v.boolean()),
+		isPublished: v.optional(v.boolean()),
+		previewPublishedAt: v.optional(v.string()),
+		previewUrl: v.optional(v.string()),
+		thumbnailUrl: v.optional(v.string()),
 	},
 	handler: async (ctx, args) => {
-		await ctx.db.patch(args.id, {
-			landingPageVersionId: args.landingPageVersionId,
-		});
-	},
-});
+		const updateFields: Partial<Doc<"landingPages">> = {
+			updatedAt: Date.now(),
+		};
 
-export const updateLandingPageVersionInternal = internalMutationWithTrigger({
-	args: {
-		id: v.id("landingPages"),
-		landingPageVersionId: v.id("landingPageVersions"),
-	},
-	handler: async (ctx, args) => {
-		await ctx.db.patch(args.id, {
-			landingPageVersionId: args.landingPageVersionId,
-		});
+		if (args.title) {
+			updateFields.title = args.title;
+		}
+
+		if (args.description) {
+			updateFields.description = args.description;
+		}
+
+		if (args.publishStatus) {
+			updateFields.status = args.publishStatus;
+		}
+
+		if (args.landingPageVersionId) {
+			updateFields.landingPageVersionId = args.landingPageVersionId;
+		}
+
+		if (args.lastPublishedVersionId) {
+			updateFields.lastPublishedVersionId = args.lastPublishedVersionId;
+		}
+
+		if ("revertingToVersionId" in args) {
+			updateFields.revertingToVersionId = args.revertingToVersionId;
+		}
+
+		if (args.isPublishing) {
+			updateFields.isPublishing = args.isPublishing;
+		}
+
+		if (args.isPublished) {
+			updateFields.isPublished = args.isPublished;
+		}
+
+		if (args.previewPublishedAt) {
+			updateFields.previewPublishedAt = args.previewPublishedAt;
+		}
+
+		if (args.previewUrl) {
+			updateFields.previewUrl = args.previewUrl;
+		}
+
+		if (args.thumbnailUrl) {
+			updateFields.thumbnailUrl = args.thumbnailUrl;
+		}
+
+		await ctx.db.patch(args.id, updateFields);
 	},
 });
 
@@ -381,10 +473,12 @@ export const publishPreviewInternal = internalMutationWithTrigger({
 		html: v.string(),
 		js: v.string(),
 		css: v.string(),
+		landingPageVersionId: v.id("landingPageVersions"),
 	},
-	handler: async (ctx, { id, html, js, css }) => {
+	handler: async (ctx, { id, html, js, css, landingPageVersionId }) => {
 		await ctx.db.patch(id, {
 			status: "published",
+			lastPublishedVersionId: landingPageVersionId,
 			previewPublishedAt: new Date().toISOString(),
 			previewUrl: `${process.env.PREVIEW_URL}/landing/${id}`,
 			isPublishing: false,
@@ -402,16 +496,16 @@ export const publishPreviewInternal = internalMutationWithTrigger({
 				css,
 			},
 		);
-	},
-});
 
-export const updatePublishingStatusInternal = internalMutationWithTrigger({
-	args: {
-		id: v.id("landingPages"),
-		isPublishing: v.boolean(),
-	},
-	handler: async (ctx, { id, isPublishing }) => {
-		await ctx.db.patch(id, { isPublishing });
+		// Schedule screenshot capture (non-blocking)
+		await ctx.scheduler.runAfter(
+			1000 * 60, // 1 minute delay
+			internal.lib.cloudflare.captureLandingPageScreenshot,
+			{
+				landingPageId: id,
+				url: `${process.env.PREVIEW_URL}/landing/${id}?disableCookieBanner=true&disableFirebuzzBadge=true`,
+			},
+		);
 	},
 });
 
@@ -533,14 +627,14 @@ export const buildAndPublishPreview = mutation({
 			(stream) => stream.status === "streaming",
 		);
 
-		console.log("activeStreams", activeStreams);
-		console.log("threadId", landingPage.threadId);
-
 		if (activeStreams.length > 0) {
 			throw new ConvexError(
 				"Agent is currently working. Please wait for it to finish.",
 			);
 		}
+
+		// Set isPublishing = true at the start
+		await ctx.db.patch(id, { isPublishing: true });
 
 		// 6. Schedule build action
 		await ctx.scheduler.runAfter(

@@ -1,5 +1,8 @@
 "use client";
 
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
 import { api, type Doc, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -28,9 +31,6 @@ import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import type React from "react";
 import { useCallback, useEffect } from "react";
 import { z } from "zod";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
 
 // Define schema for SEO configuration based on the convex schema
 const seoSchema = z.object({
@@ -237,14 +237,14 @@ export const BrandSeoForm = ({
 	// Loading state
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center flex-1">
+			<div className="flex flex-1 justify-center items-center">
 				<Spinner size="sm" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex-1 w-full max-h-full py-4 overflow-y-auto">
+		<div className="overflow-y-auto flex-1 py-4 w-full max-h-full">
 			<Form {...form}>
 				<form onSubmit={(e) => e.preventDefault()}>
 					{/* Meta Title Template */}
@@ -256,9 +256,9 @@ export const BrandSeoForm = ({
 								pages
 							</p>
 						</div>
-						<div className="flex items-baseline gap-4">
+						<div className="flex gap-4 items-baseline">
 							<div className="flex-1 space-y-2">
-								<div className="flex items-center justify-between gap-2">
+								<div className="flex gap-2 justify-between items-center">
 									<Label>Page Title</Label>{" "}
 									<Badge variant="outline">Placeholder</Badge>
 								</div>
@@ -423,7 +423,7 @@ export const BrandSeoForm = ({
 									control={form.control}
 									name="noIndex"
 									render={({ field }) => (
-										<FormItem className="flex flex-row items-center justify-between flex-1 p-4 border rounded-lg">
+										<FormItem className="flex flex-row flex-1 justify-between items-center p-4 rounded-lg border">
 											<div className="space-y-0.5">
 												<FormLabel className="text-base">No Index</FormLabel>
 												<FormDescription>
@@ -445,7 +445,7 @@ export const BrandSeoForm = ({
 									control={form.control}
 									name="noFollow"
 									render={({ field }) => (
-										<FormItem className="flex flex-row items-center justify-between flex-1 p-4 border rounded-lg">
+										<FormItem className="flex flex-row flex-1 justify-between items-center p-4 rounded-lg border">
 											<div className="space-y-0.5">
 												<FormLabel className="text-base">No Follow</FormLabel>
 												<FormDescription>

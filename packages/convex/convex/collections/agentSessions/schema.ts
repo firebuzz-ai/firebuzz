@@ -2,13 +2,27 @@ import { defineTable } from "convex/server";
 import { v } from "convex/values";
 import { modelSchema } from "../../ai/models/schema";
 
+// Attachment schema for agent session (moved up for use in queueSchema)
+const attachmentSchema = v.union(
+	v.object({
+		type: v.literal("media"),
+		id: v.id("media"),
+	}),
+	v.object({
+		type: v.literal("document"),
+		id: v.id("documents"),
+	}),
+);
+
 // Message queue schema for agent
 const queueSchema = v.object({
+	id: v.string(), // Unique identifier (nanoid from client)
 	prompt: v.string(),
 	createdAt: v.string(),
 	createdBy: v.id("users"),
 	updatedBy: v.optional(v.id("users")),
 	order: v.number(),
+	attachments: v.array(attachmentSchema), // Attachments for this queued message
 });
 
 // Todo list schema for agent
@@ -68,6 +82,7 @@ const baseSchema = v.object({
 	autoErrorFix: v.boolean(),
 	joinedUsers: v.array(v.id("users")),
 	sessionType: v.union(v.literal("background"), v.literal("regular")),
+	attachments: v.array(attachmentSchema),
 });
 
 export const landingPageSessionSchema = v.object({

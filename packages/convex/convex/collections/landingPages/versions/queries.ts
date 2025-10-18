@@ -136,3 +136,60 @@ export const listByLandingPageIdInternal = internalQuery({
 		}));
 	},
 });
+
+export const listByLandingPageId = query({
+	args: {
+		landingPageId: v.id("landingPages"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Verify landing page exists and user has access
+		const landingPage = await ctx.db.get(args.landingPageId);
+
+		if (!landingPage) {
+			throw new ConvexError("Landing page not found");
+		}
+
+		if (landingPage.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Fetch all versions for this landing page
+		const versions = await ctx.db
+			.query("landingPageVersions")
+			.withIndex("by_landing_page_id", (q) =>
+				q.eq("landingPageId", args.landingPageId),
+			)
+			.order("desc")
+			.collect();
+
+		// Enrich with user data
+		const enrichedVersions = await Promise.all(
+			versions.map(async (version) => {
+				const creator = await ctx.db.get(version.createdBy);
+
+				// Get avatar URL if imageKey exists
+				let avatarUrl: string | undefined;
+				if (creator?.imageKey) {
+					avatarUrl = await r2.getUrl(creator.imageKey);
+				}
+
+				return {
+					_id: version._id,
+					number: version.number,
+					commitMessage: version.commitMessage,
+					_creationTime: version._creationTime,
+					messageId: version.messageId,
+					createdBy: {
+						_id: creator?._id,
+						fullName: creator?.fullName || "Unknown",
+						avatarUrl,
+					},
+				};
+			}),
+		);
+
+		return enrichedVersions;
+	},
+});

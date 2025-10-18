@@ -35,9 +35,7 @@ export const vectorize = internalAction({
 
 			// Create embedding
 			const embedding = await embed({
-				model: openai.embedding("text-embedding-3-large", {
-					dimensions: 1536,
-				}),
+				model: openai.embedding("text-embedding-3-large"),
 				value: result.text,
 			});
 
@@ -76,9 +74,7 @@ export const vectorSearch = action({
 		const { query, projectId } = args;
 
 		const embedding = await embed({
-			model: openai.embedding("text-embedding-3-large", {
-				dimensions: 1536,
-			}),
+			model: openai.embedding("text-embedding-3-large"),
 			value: query,
 		});
 

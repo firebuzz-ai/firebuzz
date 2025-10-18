@@ -8,8 +8,8 @@ import { useEffect, useMemo, useState } from "react";
 import { MODEL_CONFIG } from "../models";
 import { MessagePart } from "./message-part/message-part";
 import { ToolGroup } from "./message-part/tool-group";
-import { ReasoningContext } from "./utils/reasoning-context";
 import { groupToolCalls } from "./utils/group-tool-calls";
+import { ReasoningContext } from "./utils/reasoning-context";
 
 interface AssistantMessageProps {
 	message: LandingPageUIMessage;
@@ -26,6 +26,12 @@ export const AssistantMessage = ({ message }: AssistantMessageProps) => {
 			message.parts
 				.map((part, index) => ({ part, index }))
 				.filter(({ part }) => part.type === "reasoning"),
+		[message.parts],
+	);
+
+	// Memoize grouped parts to prevent recalculation on every render
+	const groupedParts = useMemo(
+		() => groupToolCalls(message.parts),
 		[message.parts],
 	);
 
@@ -104,7 +110,7 @@ export const AssistantMessage = ({ message }: AssistantMessageProps) => {
 					{/* Parts */}
 					<div className="flex overflow-hidden flex-col gap-4 w-full max-w-full text-sm">
 						<div className="space-y-5">
-							{groupToolCalls(message.parts).map((groupedPart) => {
+							{groupedParts.map((groupedPart) => {
 								if (groupedPart.type === "group") {
 									return (
 										<ToolGroup

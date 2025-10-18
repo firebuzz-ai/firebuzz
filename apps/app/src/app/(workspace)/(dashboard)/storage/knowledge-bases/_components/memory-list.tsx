@@ -1,3 +1,6 @@
+"use client";
+import { TableFooter } from "@/components/tables/paginated-footer";
+import { useProject } from "@/hooks/auth/use-project";
 import {
 	api,
 	type Doc,
@@ -12,8 +15,6 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
-import { TableFooter } from "@/components/tables/paginated-footer";
-import { useProject } from "@/hooks/auth/use-project";
 import { useNewDocumentModal } from "../../documents/_components/modals/new-document/use-new-document-modal";
 import { MemoryItem } from "./memory-item";
 import { SelectedMenu } from "./selected-menu";
@@ -173,7 +174,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 
 	if (!knowledgeBaseId) {
 		return (
-			<div className="flex items-center justify-center flex-1">
+			<div className="flex flex-1 justify-center items-center">
 				<p className="text-sm text-muted-foreground">
 					Select a knowledge base to see its memories.
 				</p>
@@ -184,7 +185,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 	return (
 		<div className="flex flex-col w-full h-full max-h-full overflow-hidden @container">
 			<div
-				className="relative flex flex-col flex-1 overflow-hidden"
+				className="flex overflow-hidden relative flex-col flex-1"
 				{...getRootProps()}
 			>
 				<input {...getInputProps()} />
@@ -195,16 +196,16 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 							initial={{ opacity: 0 }}
 							animate={{ opacity: 1 }}
 							exit={{ opacity: 0 }}
-							className="absolute inset-0 z-50 flex flex-col items-center justify-center text-white bg-background/95 backdrop-blur-xs"
+							className="flex absolute inset-0 z-50 flex-col justify-center items-center text-white bg-background/95 backdrop-blur-xs"
 						>
-							<div className="flex items-center justify-center p-4 mb-4 border rounded-full bg-muted">
-								<Upload className="size-8 animate-pulse" />
+							<div className="flex justify-center items-center p-4 mb-4 rounded-full border bg-muted">
+								<Upload className="animate-pulse size-8" />
 							</div>
 							<div className="text-center text-white">
 								<p className="text-lg font-bold">
 									Drop documents here to upload
 								</p>
-								<p className="max-w-xs mt-1 text-xs">
+								<p className="mt-1 max-w-xs text-xs">
 									Supported formats: PDF, DOCX, DOC, CSV, TXT, HTML, MD, MDX. Up
 									to {MAX_FILES_PER_UPLOAD} files.
 								</p>
@@ -218,7 +219,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 						e.stopPropagation();
 						setSelected([]);
 					}}
-					className="flex-1 p-4 overflow-y-auto select-none"
+					className="overflow-y-auto flex-1 p-4 select-none"
 				>
 					{status === "LoadingFirstPage" && !memories ? (
 						<div className="grid grid-cols-1 @md:grid-cols-2 @xl:grid-cols-3 @3xl:grid-cols-4 @5xl:grid-cols-5 gap-4">
@@ -226,14 +227,14 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 								<Skeleton
 									// biome-ignore lint/suspicious/noArrayIndexKey: Loading skeleton
 									key={index}
-									className="w-full rounded-md h-60"
+									className="w-full h-60 rounded-md"
 								/>
 							))}
 						</div>
 					) : memories && memories.length === 0 && !isSearchActive ? (
 						<div
 							className={cn(
-								"flex items-center justify-center h-full transition-opacity duration-300 ease-in-out",
+								"flex justify-center items-center h-full transition-opacity duration-300 ease-in-out",
 								isDragActive ? "opacity-0" : "opacity-100",
 							)}
 						>
@@ -242,7 +243,7 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 							</p>
 						</div>
 					) : isSearchActive && searchResults.length === 0 ? (
-						<div className="flex items-center justify-center h-full">
+						<div className="flex justify-center items-center h-full">
 							<p className="text-sm text-center text-muted-foreground">
 								No results found. Try a different search query.
 							</p>
@@ -261,12 +262,12 @@ export const MemoryList = ({ knowledgeBaseId }: MemoryListProps) => {
 						</div>
 					)}
 					{status === "CanLoadMore" && (
-						<div ref={loaderRef} className="flex justify-center w-full p-4">
+						<div ref={loaderRef} className="flex justify-center p-4 w-full">
 							<Spinner size="xs" />
 						</div>
 					)}
 					{status === "LoadingMore" && (
-						<div className="flex items-center justify-center w-full h-24">
+						<div className="flex justify-center items-center w-full h-24">
 							<Spinner size="xs" />
 						</div>
 					)}

@@ -137,3 +137,85 @@ export const getByProjectIdInternal = internalQuery({
 		return brand;
 	},
 });
+
+export const getTargetAudiencesInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+		paginationOpts: paginationOptsValidator,
+		searchQuery: v.optional(v.string()),
+	},
+	handler: async (ctx, { projectId, paginationOpts, searchQuery }) => {
+		const query = searchQuery
+			? ctx.db
+					.query("audiences")
+					.withSearchIndex("by_name", (q) => q.search("name", searchQuery))
+					.paginate(paginationOpts)
+			: ctx.db
+					.query("audiences")
+					.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+					.paginate(paginationOpts);
+
+		return await query;
+	},
+});
+
+export const getTestimonialsInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+		paginationOpts: paginationOptsValidator,
+		searchQuery: v.optional(v.string()),
+	},
+	handler: async (ctx, { projectId, paginationOpts, searchQuery }) => {
+		const query = searchQuery
+			? ctx.db
+					.query("testimonials")
+					.withSearchIndex("by_search_content", (q) =>
+						q.search("searchContent", searchQuery),
+					)
+					.paginate(paginationOpts)
+			: ctx.db
+					.query("testimonials")
+					.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+					.paginate(paginationOpts);
+
+		return await query;
+	},
+});
+
+export const getSocialsInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+		paginationOpts: paginationOptsValidator,
+		searchQuery: v.optional(v.string()),
+	},
+	handler: async (ctx, { projectId, paginationOpts, searchQuery }) => {
+		const query = searchQuery
+			? ctx.db
+					.query("socials")
+					.withSearchIndex("by_platform", (q) =>
+						q.search("platform", searchQuery),
+					)
+					.paginate(paginationOpts)
+			: ctx.db
+					.query("socials")
+					.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+					.paginate(paginationOpts);
+
+		return await query;
+	},
+});
+
+export const getFeaturesInternal = internalQuery({
+	args: {
+		projectId: v.id("projects"),
+		paginationOpts: paginationOptsValidator,
+	},
+	handler: async (ctx, { projectId, paginationOpts }) => {
+		const query = ctx.db
+			.query("features")
+			.withIndex("by_project_id", (q) => q.eq("projectId", projectId))
+			.paginate(paginationOpts);
+
+		return await query;
+	},
+});

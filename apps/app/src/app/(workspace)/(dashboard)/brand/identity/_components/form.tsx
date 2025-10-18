@@ -1,5 +1,8 @@
 "use client";
 
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
 import { api, type Doc, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -21,9 +24,6 @@ import { useTheme } from "next-themes";
 import type React from "react";
 import { useCallback, useEffect } from "react";
 import { z } from "zod";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
 
 // Define schema for brand identity configuration
 const brandSchema = z.object({
@@ -178,14 +178,14 @@ export const BrandIdentityForm = ({
 	// Loading state
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center flex-1">
+			<div className="flex flex-1 justify-center items-center">
 				<Spinner size="sm" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex-1 w-full max-h-full py-4 overflow-y-auto">
+		<div className="overflow-y-auto flex-1 py-4 w-full max-h-full">
 			<Form {...form}>
 				<form onSubmit={(e) => e.preventDefault()}>
 					<div className="px-4 pt-4 pb-8 space-y-6 border-b">
@@ -289,7 +289,7 @@ export const BrandIdentityForm = ({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											<div className="flex items-center justify-between">
+											<div className="flex justify-between items-center">
 												Logo
 												<Badge
 													variant={
@@ -341,7 +341,7 @@ export const BrandIdentityForm = ({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											<div className="flex items-center justify-between">
+											<div className="flex justify-between items-center">
 												Logo
 												<Badge
 													variant={
@@ -393,7 +393,7 @@ export const BrandIdentityForm = ({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											<div className="flex items-center justify-between">
+											<div className="flex justify-between items-center">
 												Icon
 												<Badge
 													variant={
@@ -445,7 +445,7 @@ export const BrandIdentityForm = ({
 								render={({ field }) => (
 									<FormItem>
 										<FormLabel>
-											<div className="flex items-center justify-between">
+											<div className="flex justify-between items-center">
 												Icon
 												<Badge
 													variant={

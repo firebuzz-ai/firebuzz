@@ -1,7 +1,9 @@
 "use client";
 
+import { useProject } from "@/hooks/auth/use-project";
 import {
 	api,
+	type Id,
 	useCachedQuery,
 	useMutation,
 	useUploadFile,
@@ -28,10 +30,10 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import { type Accept, type FileRejection, useDropzone } from "react-dropzone";
-import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage (same as GalleryTab)
 interface SelectedMediaItem {
+	id: Id<"media">;
 	url: string;
 	key: string;
 	fileName: string;
@@ -178,7 +180,7 @@ export const UploadTab = ({
 		const uploadPromises = filesWithProgress.map(async (item, index) => {
 			try {
 				const key = await uploadFile(item.file);
-				await createMedia({
+				const mediaId = await createMedia({
 					key,
 					name: item.file.name,
 					type: item.file.type.split("/")[0] as "image" | "video" | "audio",
@@ -193,6 +195,7 @@ export const UploadTab = ({
 					),
 				);
 				return {
+					id: mediaId,
 					url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
 					key,
 					fileName: item.file.name,
@@ -268,12 +271,12 @@ export const UploadTab = ({
 						allowedTypes.length === 0 && "opacity-50 cursor-not-allowed", // Disable visually if no types allowed
 					)}
 				>
-					<div className="flex items-center justify-center p-4 mb-4 border rounded-full bg-muted">
-						<Upload className="size-8 animate-pulse text-muted-foreground" />
+					<div className="flex justify-center items-center p-4 mb-4 rounded-full border bg-muted">
+						<Upload className="animate-pulse size-8 text-muted-foreground" />
 					</div>
 					<div className="text-center">
 						<p className="text-lg font-medium">Drag and drop media here</p>
-						<p className="max-w-xs mt-1 text-xs text-muted-foreground">
+						<p className="mt-1 max-w-xs text-xs text-muted-foreground">
 							Allowed: {allowedTypes.join(", ") || "None"}. Max{" "}
 							{currentMaxFiles} file{currentMaxFiles > 1 ? "s" : ""}, up to 50MB
 							each.
@@ -303,7 +306,7 @@ export const UploadTab = ({
 					<AnimatePresence initial={false}>
 						<motion.div
 							layout
-							className="flex-1 px-4 pt-3 pb-4 space-y-4 overflow-y-auto"
+							className="overflow-y-auto flex-1 px-4 pt-3 pb-4 space-y-4"
 						>
 							{filesWithProgress.map((item, index) => {
 								const { type, size, extension } = parseMediaFile(item.file);
@@ -320,12 +323,12 @@ export const UploadTab = ({
 										)}
 									>
 										{/* Preview */}
-										<div className="relative flex items-center justify-center rounded-md size-16 bg-background-subtle shrink-0">
+										<div className="flex relative justify-center items-center rounded-md size-16 bg-background-subtle shrink-0">
 											{item.uploading && (
-												<div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-muted/90">
+												<div className="flex absolute inset-0 z-10 justify-center items-center rounded-md bg-muted/90">
 													{/* Spinner SVG */}
 													<svg
-														className="size-8 animate-spin text-primary" /* ... spinner svg paths ... */
+														className="animate-spin size-8 text-primary" /* ... spinner svg paths ... */
 													>
 														<circle
 															className="text-muted/30"
@@ -353,13 +356,13 @@ export const UploadTab = ({
 											)}
 											{!item.uploading &&
 												item.key && ( // Show checkmark on success
-													<div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-success/10">
+													<div className="flex absolute inset-0 z-10 justify-center items-center rounded-md bg-success/10">
 														<Check className="text-success size-8" />
 													</div>
 												)}
 											{!item.uploading &&
 												item.error && ( // Show X on error
-													<div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-destructive/10">
+													<div className="flex absolute inset-0 z-10 justify-center items-center rounded-md bg-destructive/10">
 														<X className="text-destructive size-8" />
 													</div>
 												)}
@@ -382,7 +385,7 @@ export const UploadTab = ({
 											)}
 										</div>
 										{/* File Info */}
-										<div className="flex flex-col justify-between flex-1 min-w-0">
+										<div className="flex flex-col flex-1 justify-between min-w-0">
 											{" "}
 											{/* Added min-w-0 for truncation */}
 											<div className="max-w-full truncate">
@@ -436,7 +439,7 @@ export const UploadTab = ({
 									disabled={
 										isUploading || filesWithProgress.length >= currentMaxFiles
 									}
-									className="flex items-center justify-center w-full h-16 gap-2 text-sm border-2 border-dashed rounded-md border-border/50 text-muted-foreground hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
+									className="flex gap-2 justify-center items-center w-full h-16 text-sm rounded-md border-2 border-dashed border-border/50 text-muted-foreground hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
 								>
 									<Plus className="size-4" /> Add More
 								</motion.button>
@@ -445,7 +448,7 @@ export const UploadTab = ({
 					</AnimatePresence>
 
 					{/* Footer with Actions */}
-					<div className="flex justify-end gap-2 px-4 py-2 border-t">
+					<div className="flex gap-2 justify-end px-4 py-2 border-t">
 						<Button
 							size="sm"
 							variant="outline"

@@ -24,8 +24,8 @@ import { cn, toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
 
 // Define schema for testimonial creation based on the convex schema
 const testimonialSchema = z.object({
@@ -162,7 +162,7 @@ export const TestimonialForm = ({
 		};
 
 		return (
-			<div className="flex items-center justify-between gap-1 px-2 py-1 border rounded-md">
+			<div className="flex gap-1 justify-between items-center px-2 py-1 rounded-md border">
 				<div>
 					{Array.from({ length: 5 }).map((_, index) => {
 						const starValue = index + 1;
@@ -177,16 +177,16 @@ export const TestimonialForm = ({
 										type="button"
 										variant="ghost"
 										size="iconXs"
-										className="relative h-auto p-1 group"
+										className="relative p-1 h-auto group"
 										onClick={() => onRatingChange(starValue)}
 										onMouseEnter={() => setHoveredRating(starValue)}
 										onMouseLeave={() => setHoveredRating(0)}
 									>
 										<Star
 											className={cn(
-												"size-6 transition-all duration-200 ease-out",
+												"transition-all duration-200 ease-out size-6",
 												isActive
-													? "fill-[hsl(var(--brand))] text-brand scale-110"
+													? "scale-110 fill-[hsl(var(--brand))] text-brand"
 													: "text-muted-foreground/30 hover:text-[hsl(var(--brand))]/70 hover:scale-105",
 											)}
 										/>
@@ -209,7 +209,7 @@ export const TestimonialForm = ({
 	};
 
 	return (
-		<div className="flex-1 w-full max-h-full px-4 overflow-y-auto">
+		<div className="overflow-y-auto flex-1 px-4 w-full max-h-full">
 			<Form {...form}>
 				<form onSubmit={(e) => e.preventDefault()}>
 					<div className="space-y-4">
@@ -236,7 +236,7 @@ export const TestimonialForm = ({
 							name="title"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel className="flex items-center justify-between">
+									<FormLabel className="flex justify-between items-center">
 										Title/Position{" "}
 										<span className="text-xs text-muted-foreground">
 											Optional
@@ -312,7 +312,7 @@ export const TestimonialForm = ({
 							name="rating"
 							render={({ field }) => (
 								<FormItem>
-									<FormLabel className="flex items-center justify-between">
+									<FormLabel className="flex justify-between items-center">
 										Rating{" "}
 										<span className="text-xs text-muted-foreground">
 											Optional

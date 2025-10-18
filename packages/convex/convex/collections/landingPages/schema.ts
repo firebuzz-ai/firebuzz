@@ -13,6 +13,7 @@ export const landingPagesSchema = defineTable(
 		publishedAt: v.optional(v.string()),
 		previewPublishedAt: v.optional(v.string()),
 		previewUrl: v.optional(v.string()),
+		thumbnailUrl: v.optional(v.string()),
 		language: v.optional(v.string()),
 		// Relations
 		workspaceId: v.id("workspaces"),
@@ -25,6 +26,8 @@ export const landingPagesSchema = defineTable(
 		isChampion: v.boolean(),
 		themeId: v.optional(v.id("themes")), // Theme selection
 		landingPageVersionId: v.optional(v.id("landingPageVersions")),
+		lastPublishedVersionId: v.optional(v.id("landingPageVersions")),
+		revertingToVersionId: v.optional(v.id("landingPageVersions")),
 		createdBy: v.id("users"),
 		// System
 		updatedAt: v.number(),

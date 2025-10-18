@@ -1,8 +1,8 @@
-import { internal } from "_generated/api";
-import { internalMutation } from "_generated/server";
-import { retrier } from "components/actionRetrier";
-import { cascadePool } from "components/workpools";
 import { v } from "convex/values";
+import { internal } from "../../_generated/api";
+import { internalMutation } from "../../_generated/server";
+import { retrier } from "../../components/actionRetrier";
+import { cascadePool } from "../../components/workpools";
 
 // Sync session token usage to Tinybird
 export const batchAggregateAndSyncWithTinybird = internalMutation({

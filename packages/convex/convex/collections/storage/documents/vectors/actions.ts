@@ -1,6 +1,6 @@
 import { embed, embedMany } from "ai";
-import { ConvexError, v } from "convex/values";
 import { asyncMap } from "convex-helpers";
+import { ConvexError, v } from "convex/values";
 import { internal } from "../../../../_generated/api";
 import type { Doc } from "../../../../_generated/dataModel";
 import { action, internalAction } from "../../../../_generated/server";
@@ -34,9 +34,7 @@ export const vectorSearch = action({
 		}
 
 		const embedding = await embed({
-			model: openai.embedding("text-embedding-3-large", {
-				dimensions: 1536,
-			}),
+			model: openai.embedding("text-embedding-3-large"),
 			value: query,
 		});
 
@@ -145,9 +143,7 @@ export const vectorSearchInternal = internalAction({
 		const { query, knowledgeBaseId, projectId, limit } = args;
 
 		const embedding = await embed({
-			model: openai.embedding("text-embedding-3-large", {
-				dimensions: 1536,
-			}),
+			model: openai.embedding("text-embedding-3-large"),
 			value: query,
 		});
 
@@ -260,9 +256,7 @@ export const vectorize = internalAction({
 
 			// 3. Vectorize Chunks
 			const embeddings = await embedMany({
-				model: openai.embedding("text-embedding-3-large", {
-					dimensions: 1536,
-				}),
+				model: openai.embedding("text-embedding-3-large"),
 				values: chunks.map((chunk: Doc<"documentChunks">) => chunk.content),
 			});
 

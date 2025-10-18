@@ -85,6 +85,9 @@ export const appendCommandLogs = internalMutation({
 		),
 	},
 	handler: async (ctx, { cmdId, logs }) => {
+		// Early return if no logs to append
+		if (logs.length === 0) return { success: true };
+
 		const command = await ctx.db
 			.query("sandboxCommands")
 			.withIndex("by_cmd_id", (q) => q.eq("cmdId", cmdId))
@@ -92,12 +95,22 @@ export const appendCommandLogs = internalMutation({
 
 		if (!command) throw new ConvexError(ERRORS.NOT_FOUND);
 
-		// Merge new logs with existing logs
-		const updatedLogs = [...command.logs, ...logs];
+		// Optimize: if existing logs are already at limit, slice from the start
+		const maxLogs = 10000;
+		const existingLogs = command.logs;
+		const totalLogs = existingLogs.length + logs.length;
 
-		// Keep only last 10000 logs to prevent memory issues
-		const trimmedLogs =
-			updatedLogs.length > 10000 ? updatedLogs.slice(-10000) : updatedLogs;
+		let trimmedLogs: typeof logs;
+		if (totalLogs > maxLogs) {
+			// Calculate how many existing logs to keep
+			const logsToKeep = Math.max(0, maxLogs - logs.length);
+			trimmedLogs = [
+				...existingLogs.slice(existingLogs.length - logsToKeep),
+				...logs,
+			];
+		} else {
+			trimmedLogs = [...existingLogs, ...logs];
+		}
 
 		await ctx.db.patch(command._id, {
 			logs: trimmedLogs,

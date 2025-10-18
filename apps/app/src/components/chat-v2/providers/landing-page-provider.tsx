@@ -3,7 +3,7 @@
 import { useCachedRichQuery } from "@firebuzz/convex";
 import type { Doc, Id } from "@firebuzz/convex/nextjs";
 import { api } from "@firebuzz/convex/nextjs";
-import { createContext, type ReactNode, useContext } from "react";
+import { createContext, type ReactNode } from "react";
 
 interface LandingPageContextValue {
 	landingPageId: Id<"landingPages">;
@@ -14,17 +14,9 @@ interface LandingPageContextValue {
 	isLoading: boolean;
 }
 
-const LandingPageContext = createContext<LandingPageContextValue | null>(null);
-
-export const useLandingPageContext = () => {
-	const context = useContext(LandingPageContext);
-	if (!context) {
-		throw new Error(
-			"useLandingPageContext must be used within LandingPageProvider",
-		);
-	}
-	return context;
-};
+export const LandingPageContext = createContext<LandingPageContextValue | null>(
+	null,
+);
 
 interface LandingPageProviderProps {
 	children: ReactNode;
@@ -38,15 +30,14 @@ export const LandingPageProvider = ({
 	campaignId,
 }: LandingPageProviderProps) => {
 	const { data: landingPage, isPending: isLandingPageLoading } =
-		useCachedRichQuery(api.collections.landingPages.queries.getById, {
-			id: landingPageId,
-		});
+		useCachedRichQuery(
+			api.collections.landingPages.queries.getById,
+			landingPageId ? { id: landingPageId } : "skip",
+		);
 
 	const { data: campaign, isPending: isCampaignLoading } = useCachedRichQuery(
 		api.collections.campaigns.queries.getById,
-		{
-			id: campaignId,
-		},
+		campaignId ? { id: campaignId } : "skip",
 	);
 
 	const value: LandingPageContextValue = {

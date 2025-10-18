@@ -1,7 +1,7 @@
 "use client";
 
 import type { Id } from "@firebuzz/convex";
-import { api, ConvexError, useMutation } from "@firebuzz/convex";
+import { api, ConvexError, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { LocaleSelector } from "@firebuzz/ui/components/reusable/locale-selector";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -44,6 +44,12 @@ export const TranslationForm = ({
 	);
 	const [isLoading, setIsLoading] = useState(false);
 
+	// Fetch original landing page to get campaignId for redirect
+	const { data: originalLandingPage } = useCachedQuery(
+		api.collections.landingPages.queries.getById,
+		{ id: originalLandingPageId },
+	);
+
 	const form = useForm<FormData>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -73,8 +79,12 @@ export const TranslationForm = ({
 			// Close the modal
 			onSuccess?.();
 
-			// Redirect to the translation editor
-			router.push(`/assets/landing-pages/${translationId}/edit`);
+			// Redirect to the translation editor with new path
+			if (originalLandingPage?.campaignId) {
+				router.push(
+					`/assets/pages-v2/${originalLandingPage.campaignId}/${translationId}`,
+				);
+			}
 		} catch (error) {
 			console.error("Error creating translation:", error);
 			toast.error("Failed to create translation", {

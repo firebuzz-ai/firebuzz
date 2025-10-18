@@ -1,3 +1,8 @@
+import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { api, ConvexError, type Doc, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
@@ -22,11 +27,6 @@ import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { z } from "zod";
-import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 
 const formSchema = z.object({
 	logo: z.string().optional(),
@@ -180,12 +180,12 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 					y: 0,
 					transition: { duration: 0.3, ease: "easeInOut" },
 				}}
-				className="flex flex-col items-start justify-center flex-1 w-full gap-8 overflow-hidden"
+				className="flex overflow-hidden flex-col flex-1 gap-8 justify-center items-start w-full"
 			>
 				{/* Middle */}
-				<div className="flex flex-col items-start justify-center flex-1 w-full max-h-full overflow-hidden">
+				<div className="flex overflow-hidden flex-col flex-1 justify-center items-start w-full max-h-full">
 					{/* Title */}
-					<div className="flex flex-col w-full gap-2 px-8 text-left">
+					<div className="flex flex-col gap-2 px-8 w-full text-left">
 						<h1 className="max-w-sm text-4xl font-bold">
 							Visual <span className="font-mono italic">#identity</span>
 						</h1>
@@ -196,11 +196,11 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 					</div>
 
 					{/* Form */}
-					<div className="flex flex-col w-full max-h-full gap-6 px-8 mt-8 overflow-y-auto">
+					<div className="flex overflow-y-auto flex-col gap-6 px-8 mt-8 w-full max-h-full">
 						<Form {...form}>
 							<form
 								onSubmit={form.handleSubmit(onSubmitHandler)}
-								className="w-full space-y-6"
+								className="space-y-6 w-full"
 							>
 								{/* Logo Section */}
 								<FormField
@@ -208,7 +208,7 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 									name="logo"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel className="flex items-center gap-2">
+											<FormLabel className="flex gap-2 items-center">
 												Logo{" "}
 												<Tooltip delayDuration={0}>
 													<TooltipTrigger>
@@ -244,9 +244,9 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 								/>
 
 								{/* Colors Section */}
-								<div className="w-full space-y-4">
+								<div className="space-y-4 w-full">
 									<div>
-										<FormLabel className="flex items-center gap-2">
+										<FormLabel className="flex gap-2 items-center">
 											Brand Colors{" "}
 											<Tooltip delayDuration={0}>
 												<TooltipTrigger>
@@ -262,7 +262,7 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 										</FormLabel>
 									</div>
 
-									<div className="flex w-full gap-6">
+									<div className="flex gap-6 w-full">
 										{/* Primary Color */}
 										<FormField
 											control={form.control}
@@ -275,10 +275,10 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 															onClick={() =>
 																handleColorClick("primary", field.value)
 															}
-															className="flex items-center w-full gap-3 p-3 transition-all duration-200 border rounded-lg border-border/40 hover:border-border hover:shadow-sm hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-background active:scale-98 active:duration-75"
+															className="flex gap-3 items-center p-3 w-full rounded-lg border transition-all duration-200 border-border/40 hover:border-border hover:shadow-sm hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-background active:scale-98 active:duration-75"
 														>
 															<div
-																className="w-8 h-8 border rounded-lg shadow-sm border-border/40 shrink-0"
+																className="w-8 h-8 rounded-lg border shadow-sm border-border/40 shrink-0"
 																style={{ backgroundColor: field.value }}
 															/>
 															<div className="flex-1 text-left">
@@ -308,10 +308,10 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 															onClick={() =>
 																handleColorClick("secondary", field.value)
 															}
-															className="flex items-center w-full gap-3 p-3 transition-all duration-200 border rounded-lg border-border/40 hover:border-border hover:shadow-sm hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-background active:scale-98 active:duration-75"
+															className="flex gap-3 items-center p-3 w-full rounded-lg border transition-all duration-200 border-border/40 hover:border-border hover:shadow-sm hover:bg-muted/30 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-background active:scale-98 active:duration-75"
 														>
 															<div
-																className="w-8 h-8 border rounded-lg shadow-sm border-border/40 shrink-0"
+																className="w-8 h-8 rounded-lg border shadow-sm border-border/40 shrink-0"
 																style={{ backgroundColor: field.value }}
 															/>
 															<div className="flex-1 text-left">
@@ -336,7 +336,7 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 				</div>
 
 				{/* Buttons */}
-				<div className="flex flex-row justify-between w-full gap-8 px-8">
+				<div className="flex flex-row gap-8 justify-between px-8 w-full">
 					<Button
 						onClick={handleBack}
 						size="sm"
@@ -345,7 +345,7 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 						disabled={isHandlingBack}
 					>
 						{isHandlingBack ? (
-							<div className="flex items-center gap-2">
+							<div className="flex gap-2 items-center">
 								<Spinner size="xs" className="mb-0.5" />
 								<span>Processing...</span>
 							</div>
@@ -362,7 +362,7 @@ export const Step4 = ({ onboardingData }: Step4Props) => {
 						disabled={isHandlingStep || !form.formState.isValid}
 					>
 						{isHandlingStep ? (
-							<div className="flex items-center gap-2">
+							<div className="flex gap-2 items-center">
 								<Spinner size="xs" className="mb-0.5" />
 								<span>Processing...</span>
 							</div>

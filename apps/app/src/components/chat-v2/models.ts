@@ -2,11 +2,14 @@ import {
 	AnthropicIcon,
 	GeminiIcon,
 	OpenAIIcon,
-	XaiIcon,
-	ZaiIcon,
 } from "@firebuzz/ui/icons/ai-providers";
 
 export const MODEL_CONFIG = {
+	"claude-haiku-4.5": {
+		name: "Claude Haiku 4.5",
+		provider: "Anthropic",
+		icon: AnthropicIcon,
+	},
 	"claude-sonnet-4.5": {
 		name: "Claude Sonnet 4.5",
 		provider: "Anthropic",
@@ -36,20 +39,5 @@ export const MODEL_CONFIG = {
 		name: "Gemini 2.5 Flash",
 		provider: "Google",
 		icon: GeminiIcon,
-	},
-	"glm-4.6": {
-		name: "GLM 4.6",
-		provider: "Z.ai",
-		icon: ZaiIcon,
-	},
-	"grok-code-fast-1": {
-		name: "Grok Code Fast 1",
-		provider: "X.ai",
-		icon: XaiIcon,
-	},
-	"grok-4-fast": {
-		name: "Grok 4 Fast",
-		provider: "X.ai",
-		icon: XaiIcon,
 	},
 } as const;

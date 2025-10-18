@@ -1,5 +1,6 @@
 "use client";
 
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import type { ToolSet } from "@firebuzz/convex";
 import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -8,13 +9,11 @@ import {
 	ChevronDown,
 	ChevronRight,
 	GitCommit,
-	RotateCcw,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { UIToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
-import { useLandingPageContext } from "../../providers/landing-page-provider";
 
 interface SaveVersionProps {
 	part: UIToolInvocation<ToolSet["saveLandingPageVersion"]>;
@@ -76,13 +75,13 @@ export const SaveVersion = ({ part }: SaveVersionProps) => {
 
 		return (
 			<div
-				className={cn("relative overflow-hidden w-full rounded-md border", {
+				className={cn("overflow-hidden relative w-full rounded-md border", {
 					"border-l-4 border-l-brand": isCurrent,
 				})}
 			>
 				{/* Current Badge */}
-				{isCurrent && (
-					<div className="absolute top-2 right-2">
+				{isCurrent ? (
+					<div className="absolute right-0 top-2 pr-2 bg-muted">
 						<Badge
 							variant="secondary"
 							className="bg-brand/10 text-brand border-brand/20"
@@ -90,18 +89,29 @@ export const SaveVersion = ({ part }: SaveVersionProps) => {
 							Current
 						</Badge>
 					</div>
+				) : (
+					<div className="absolute right-0 top-2 pr-2 bg-muted">
+						<Button
+							variant="outline"
+							size="sm"
+							className="px-2 h-7 text-xs bg-muted"
+							onClick={handleRestore}
+						>
+							Restore
+						</Button>
+					</div>
 				)}
 
 				{/* Header */}
 				<div
 					className={cn(
-						"flex justify-between items-center px-3 py-2 bg-muted/30",
+						"flex justify-between items-center px-3 py-2 bg-muted overflow-hidden",
 						{
 							"border-b": isExpanded && hasDescription,
 						},
 					)}
 				>
-					<div className="flex gap-2 items-center flex-1">
+					<div className="flex flex-1 gap-2 items-center">
 						{hasDescription && (
 							<Button
 								variant="ghost"
@@ -116,15 +126,15 @@ export const SaveVersion = ({ part }: SaveVersionProps) => {
 								)}
 							</Button>
 						)}
-						<div className="flex gap-2 items-center flex-1">
+						<div className="flex overflow-hidden flex-1 gap-2 items-center max-w-full">
 							<Badge variant="outline" className="flex gap-1 items-center">
 								<GitCommit className="w-3 h-3" />
-								Version {part.output.versionNumber}
+								{part.output.versionNumber}
 							</Badge>
 							{commitMessage && (
-								<span className="text-xs text-muted-foreground">
+								<div className="max-w-full text-xs truncate text-muted-foreground">
 									{commitMessage}
-								</span>
+								</div>
 							)}
 						</div>
 						{!isCurrent && (
@@ -134,7 +144,6 @@ export const SaveVersion = ({ part }: SaveVersionProps) => {
 								className="px-2 h-7 text-xs"
 								onClick={handleRestore}
 							>
-								<RotateCcw className="mr-1 w-3 h-3" />
 								Restore
 							</Button>
 						)}

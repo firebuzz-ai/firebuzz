@@ -3,6 +3,7 @@ import {
 	Agent,
 	type StreamArgs,
 	abortStream,
+	createThread,
 	listMessages,
 	listStreams,
 	saveMessage,
@@ -11,7 +12,6 @@ import {
 	vStreamArgs,
 } from "@convex-dev/agent";
 import type { LanguageModel } from "ai";
-import { ERROR_ANALYSIS_PROMPT } from "ai/prompts/landingError";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, type Infer, v } from "convex/values";
 import { z } from "zod/v4";
@@ -21,6 +21,7 @@ import {
 	type ActionCtx,
 	type QueryCtx,
 	internalAction,
+	internalMutation,
 	mutation,
 	query,
 } from "../_generated/server";
@@ -28,12 +29,12 @@ import {
 	calculateCreditsFromSpend,
 	calculateModelCost,
 	getModel,
-	getProviderOptions,
 	normalizeModel,
 } from "../ai/models/helpers";
-import { Model, modelSchema } from "../ai/models/schema";
+import { type Model, modelSchema } from "../ai/models/schema";
+import { ERROR_ANALYSIS_PROMPT } from "../ai/prompts/landingError";
 import { LANDING_MAIN_PROMPT } from "../ai/prompts/landingMain";
-import { Metadata, tools } from "../ai/tools/landingPage/index";
+import { type Metadata, tools } from "../ai/tools/landingPage/index";
 import { sandboxSchema } from "../collections/sandboxes/schema";
 import { getCurrentUserWithWorkspace } from "../collections/users/utils";
 import { ERRORS } from "../utils/errors";
@@ -74,6 +75,7 @@ export async function createLandingPageRegularAgent(
 	landingPageId: Id<"landingPages">,
 	workspaceId: Id<"workspaces">,
 	projectId: Id<"projects">,
+	userId: Id<"users">,
 	model: LanguageModel,
 ) {
 	return new Agent<{
@@ -83,6 +85,7 @@ export async function createLandingPageRegularAgent(
 	}>(components.agent, {
 		name: "landing-page-regular",
 		languageModel: model,
+
 		instructions: LANDING_MAIN_PROMPT,
 		usageHandler: async (ctx, args) => {
 			const userId = args.userId;
@@ -145,16 +148,23 @@ export async function createLandingPageRegularAgent(
 				},
 			);
 		},
+
 		contextOptions: {
-			recentMessages: 10,
 			// Options for searching messages via text and/or vector search.
 			searchOptions: {
 				limit: 10, // The maximum number of messages to fetch.
 				messageRange: { before: 2, after: 1 },
 			},
 		},
-		maxSteps: 40, // Alternative to stopWhen: stepCountIs(20)
-		tools: tools(sandbox, landingPageId, sessionId),
+		maxSteps: 100, // Alternative to stopWhen: stepCountIs(20)
+		tools: tools(
+			sandbox,
+			landingPageId,
+			sessionId,
+			workspaceId,
+			userId,
+			projectId,
+		),
 	});
 }
 
@@ -173,7 +183,6 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 			landingPageId: v.id("landingPages"),
 			model: modelSchema,
 			knowledgeBases: v.array(v.id("knowledgeBases")),
-			ignoreAutoFix: v.optional(v.boolean()),
 			workspaceId: v.id("workspaces"),
 			projectId: v.id("projects"),
 			campaignId: v.id("campaigns"),
@@ -189,7 +198,7 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 				knowledgeBases,
 				sandbox,
 				landingPageId,
-				ignoreAutoFix,
+				/* ignoreAutoFix, */
 				workspaceId,
 				projectId,
 				campaignId,
@@ -197,7 +206,7 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 			},
 		) => {
 			const agentModel = getModel(model);
-			const providerOptions = getProviderOptions(model);
+			/* const providerOptions = getProviderOptions(model); */
 
 			// Create Agent
 			const agent = await createLandingPageRegularAgent(
@@ -208,6 +217,7 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 				landingPageId,
 				workspaceId,
 				projectId,
+				userId,
 				agentModel,
 			);
 
@@ -223,11 +233,17 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 			const result = await thread.streamText(
 				{
 					promptMessageId,
-					providerOptions,
+					providerOptions: {
+						anthropic: {
+							thinking: { type: "enabled", budgetTokens: 12000 },
+							cacheControl: { type: "ephemeral", ttl: "5m" },
+							sendReasoning: true,
+						},
+					},
 				},
 				{
 					saveStreamDeltas: {
-						chunking: "line",
+						/* chunking: "line", */
 						throttleMs: 250,
 					},
 				},
@@ -235,114 +251,215 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 
 			await result.consumeStream();
 
-			if (!ignoreAutoFix) {
-				console.log("Running AutoFix");
-				// After stream finishes, check for errors to analyze and apply
-				const session = await ctx.runQuery(
-					internal.collections.agentSessions.queries.getByIdInternal,
-					{ id: sessionId },
+			// Streaming Finished (Check if there are any queued messages)
+			const sessionAfterStream = await ctx.runQuery(
+				internal.collections.agentSessions.queries.getByIdInternal,
+				{ id: sessionId },
+			);
+
+			if (sessionAfterStream?.messageQueue && sessionAfterStream.messageQueue.length > 0) {
+				console.log(`[Queue] Stream finished, processing next of ${sessionAfterStream.messageQueue.length} queued messages`);
+				// Schedule processing the next queued message
+				await ctx.scheduler.runAfter(
+					0,
+					internal.collections.agentSessions.mutations.processNextQueuedMessageInternal,
+					{ sessionId },
 				);
-
-				// Check if auto-error-fix is enabled
-				if (session?.autoErrorFix && session.devServerErrors?.length > 0) {
-					console.log("[AutoFix] Checking for errors...");
-
-					const devServerErrors = session.devServerErrors || [];
-					console.log(
-						"[AutoFix] Total errors in session:",
-						devServerErrors.length,
-					);
-
-					// Step 1: Analyze all errors
-					const errorsToAnalyze = devServerErrors;
-
-					console.log(
-						`[AutoFix] Analyzing ${errorsToAnalyze.length} errors...`,
-					);
-
-					// Analyze all errors
-					const { object: analysisResult } =
-						await landingPageErrorAnalysisAgent.generateObject(
-							ctx,
-							{},
-							{
-								prompt: `Analyze the following errors: ${errorsToAnalyze.map((e) => e.errorMessage).join("\n")}`,
-								schema: z.array(landingPageErrorAnalysisSchema),
-							},
-						);
-
-					console.log("[AutoFix] Analysis complete");
-
-					console.log("[AutoFix] Analysis result:", analysisResult);
-
-					if (analysisResult?.length && analysisResult.length > 0) {
-						// Combine all error solutions into a single message
-						const errorCount = analysisResult.length;
-						const solutionsText = analysisResult
-							.map((error, index) => {
-								return `### Error ${index + 1}\n\n${error.solution}`;
-							})
-							.join("\n\n---\n\n");
-
-						// Format as tool-call style message for special rendering
-						const fixPrompt = `<div data-error-fix="true" data-error-count="${errorCount}">
-
-${solutionsText}
-
-</div>`;
-
-						// Step 2: Save the Message
-						await saveMessage(ctx, components.agent, {
-							threadId,
-							userId,
-							message: {
-								role: "user",
-								content: fixPrompt,
-							},
-						});
-
-						// Step 2: Send Message
-						const { thread: newThread } = await agent.continueThread(
-							{ ...ctx, workspaceId, projectId, campaignId },
-							{
-								threadId,
-								userId,
-							},
-						);
-
-						// Step 3: Stream text
-						const result = await newThread.streamText(
-							{
-								prompt: fixPrompt,
-								providerOptions,
-							},
-							{
-								saveStreamDeltas: {
-									returnImmediately: true,
-									throttleMs: 100,
-								},
-							},
-						);
-
-						await result.consumeStream();
-
-						// Step 4: Remove applied errors from session after stream completes
-						await ctx.runMutation(
-							internal.collections.agentSessions.mutations
-								.removeAppliedDevServerError,
-							{ sessionId },
-						);
-					}
-				}
-
-				console.log("No errors found...");
-
-				return "No errors found...";
 			}
+
 		},
 	});
 
 // MUTATIONS
+/**
+ * Internal mutation to send message to agent (used for queue processing)
+ * Does not check user auth, takes attachments as parameter instead of from session
+ */
+export const sendMessageToLandingPageRegularAgentInternal = internalMutation({
+	args: {
+		threadId: v.string(),
+		prompt: v.string(),
+		sessionId: v.id("agentSessions"),
+		model: modelSchema,
+		knowledgeBases: v.array(v.id("knowledgeBases")),
+		userId: v.id("users"),
+		attachments: v.array(
+			v.union(
+				v.object({ type: v.literal("media"), id: v.id("media") }),
+				v.object({ type: v.literal("document"), id: v.id("documents") }),
+			),
+		),
+	},
+	handler: async (
+		ctx,
+		{ threadId, prompt, sessionId, model, knowledgeBases, userId, attachments },
+	) => {
+		// Get Session
+		const session = await ctx.runQuery(
+			internal.collections.agentSessions.queries.getByIdInternal,
+			{ id: sessionId },
+		);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.status !== "active") {
+			throw new ConvexError("Session is not active");
+		}
+
+		if (!session.sandboxId) {
+			throw new ConvexError("Sandbox not found");
+		}
+
+		// Get Sandbox
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: session.sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (sandbox.status !== "running") {
+			throw new ConvexError("Sandbox is not running");
+		}
+
+		// Get landingPageId from session
+		if (session.assetType !== "landingPage") {
+			throw new ConvexError("Session is not for a landing page");
+		}
+
+		// Build message content from attachments passed as parameter
+		let messageContent:
+			| string
+			| Array<
+					| { type: "text"; text: string }
+					| { type: "image"; image: string; mimeType?: string }
+					| { type: "file"; data: string; mimeType: string }
+			  > = prompt;
+
+		if (attachments && attachments.length > 0) {
+			const contentParts: Array<
+				| { type: "text"; text: string }
+				| {
+						type: "image";
+						image: string;
+						mimeType?: string;
+				  }
+				| {
+						type: "file";
+						data: string;
+						mimeType: string;
+				  }
+			> = [];
+
+			// Add the user's prompt first
+			contentParts.push({
+				type: "text" as const,
+				text: prompt,
+			});
+
+			// Fetch and format attachments
+			for (const attachment of attachments) {
+				if (attachment.type === "media") {
+					const media = await ctx.db.get(attachment.id);
+					if (media) {
+						const cdnUrl = `${process.env.R2_PUBLIC_URL}/${media.key}`;
+
+						// Add the image
+						contentParts.push({
+							type: "image" as const,
+							image: cdnUrl,
+							mimeType: media.contentType,
+						});
+
+						// Add CDN URL right after the image (hidden in UI, visible to agent)
+						const urlDiv = `<div data-hidden-from-ui="true" data-image-cdn-url="${cdnUrl}">${cdnUrl}</div>`;
+						contentParts.push({
+							type: "text" as const,
+							text: urlDiv,
+						});
+
+						console.log("[Agent] Added CDN URL after image:", cdnUrl);
+					}
+				} else if (attachment.type === "document") {
+					const document = await ctx.db.get(attachment.id);
+					if (document) {
+						const url = `${process.env.R2_PUBLIC_URL}/${document.key}`;
+						const mimeType = document.contentType;
+
+						// AI models can read PDFs and some other formats natively
+						const nativelyReadableTypes = [
+							"application/pdf",
+							"text/plain",
+							"text/markdown",
+							"text/csv",
+							"text/html",
+						];
+
+						if (nativelyReadableTypes.includes(mimeType)) {
+							console.log("Sending file as data", url, mimeType);
+							contentParts.push({
+								type: "file" as const,
+								data: url,
+								mimeType: mimeType,
+							});
+						} else {
+							// For other document types, send as text reference
+							contentParts.push({
+								type: "text" as const,
+								text: `[Document: ${document.name}]\nURL: ${url}`,
+							});
+						}
+					}
+				}
+			}
+
+			messageContent = contentParts;
+		}
+
+		// Save the message
+		const { messageId } = await saveMessage(ctx, components.agent, {
+			threadId,
+			userId,
+			message: {
+				role: "user",
+				content: messageContent,
+			},
+			agentName: "landing-page-regular",
+		});
+
+		// Send heartbeat to keep session alive
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.agentSessions.actions.sendHeartbeatToAgentSession,
+			{ sessionId },
+		);
+
+		// Send Message
+		await ctx.scheduler.runAfter(
+			0,
+			internal.components.agent
+				.sendMessageToLandingPageRegularAgentActionInternal,
+			{
+				threadId,
+				promptMessageId: messageId,
+				sessionId,
+				sandbox,
+				landingPageId: session.landingPageId,
+				model,
+				knowledgeBases,
+				workspaceId: session.workspaceId,
+				projectId: session.projectId,
+				campaignId: session.campaignId,
+				userId,
+			},
+		);
+	},
+});
+
 export const sendMessageToLandingPageRegularAgent = mutation({
 	args: {
 		threadId: v.string(),
@@ -402,16 +519,120 @@ export const sendMessageToLandingPageRegularAgent = mutation({
 			throw new ConvexError("Session is not for a landing page");
 		}
 
+		// Fetch attachments from session and format them
+		let messageContent:
+			| string
+			| Array<
+					| { type: "text"; text: string }
+					| { type: "image"; image: string; mimeType?: string }
+					| { type: "file"; data: string; mimeType: string }
+			  > = prompt;
+
+		if (session.attachments && session.attachments.length > 0) {
+			const contentParts: Array<
+				| { type: "text"; text: string }
+				| {
+						type: "image";
+						image: string;
+						mimeType?: string;
+				  }
+				| {
+						type: "file";
+						data: string;
+						mimeType: string;
+				  }
+			> = [];
+
+			// Add the user's prompt first
+			contentParts.push({
+				type: "text" as const,
+				text: prompt,
+			});
+
+			// Fetch and format attachments
+			for (const attachment of session.attachments) {
+				if (attachment.type === "media") {
+					const media = await ctx.db.get(attachment.id);
+					if (media) {
+						const cdnUrl = `${process.env.R2_PUBLIC_URL}/${media.key}`;
+
+						// Add the image
+						contentParts.push({
+							type: "image" as const,
+							image: cdnUrl,
+							mimeType: media.contentType,
+						});
+
+						// Add CDN URL right after the image (hidden in UI, visible to agent)
+						const urlDiv = `<div data-hidden-from-ui="true" data-image-cdn-url="${cdnUrl}">${cdnUrl}</div>`;
+						contentParts.push({
+							type: "text" as const,
+							text: urlDiv,
+						});
+
+						console.log("[Agent] Added CDN URL after image:", cdnUrl);
+					}
+				} else if (attachment.type === "document") {
+					const document = await ctx.db.get(attachment.id);
+					if (document) {
+						const url = `${process.env.R2_PUBLIC_URL}/${document.key}`;
+						const mimeType = document.contentType;
+
+						// AI models can read PDFs and some other formats natively
+						const nativelyReadableTypes = [
+							"application/pdf",
+							"text/plain",
+							"text/markdown",
+							"text/csv",
+							"text/html",
+						];
+
+						if (nativelyReadableTypes.includes(mimeType)) {
+							console.log("Sending file as data", url, mimeType);
+							contentParts.push({
+								type: "file" as const,
+								data: url,
+								mimeType: mimeType,
+							});
+						} else {
+							// For other document types, send as text reference
+							contentParts.push({
+								type: "text" as const,
+								text: `[Document: ${document.name}]\nURL: ${url}`,
+							});
+						}
+					}
+				}
+			}
+
+			messageContent = contentParts;
+		}
+
 		// Save the message
 		const { messageId } = await saveMessage(ctx, components.agent, {
 			threadId,
 			userId: user._id,
 			message: {
 				role: "user",
-				content: prompt,
+				content: messageContent,
 			},
 			agentName: "landing-page-regular",
 		});
+
+		// Clear attachments after sending message
+		if (session.attachments && session.attachments.length > 0) {
+			await ctx.db.patch(sessionId, {
+				attachments: [],
+				updatedAt: new Date().toISOString(),
+			});
+		}
+
+		// Send heartbeat to keep session alive
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.agentSessions.actions.sendHeartbeatToAgentSession,
+			{ sessionId },
+		);
 
 		// Send Message
 		await ctx.scheduler.runAfter(
@@ -430,7 +651,7 @@ export const sendMessageToLandingPageRegularAgent = mutation({
 				projectId: session.projectId,
 				campaignId: session.campaignId,
 				userId: user._id,
-				ignoreAutoFix: false,
+			
 			},
 		);
 	},
@@ -495,31 +716,68 @@ export const listThreadUIMessages = async (
 		paginationOpts,
 	});
 
+	// Group messages by order to aggregate usage across message parts
+	const messagesByOrder = new Map<number, typeof paginated.page>();
+	for (const message of paginated.page) {
+		if (!messagesByOrder.has(message.order)) {
+			messagesByOrder.set(message.order, []);
+		}
+		messagesByOrder.get(message.order)?.push(message);
+	}
+
+	// Calculate aggregated usage for each order group (user message + all assistant parts)
+	const aggregatedUsage = new Map<string, number>();
+	for (const [_order, messages] of messagesByOrder.entries()) {
+		// Only aggregate for assistant/tool messages (skip user messages)
+		const assistantMessages = messages.filter((m) => {
+			const role = m.message?.role;
+			return role === "assistant" || role === "tool";
+		});
+
+		if (assistantMessages.length === 0) continue;
+
+		let totalCredits = 0;
+
+		for (const message of assistantMessages) {
+			const model = message.model as Model | undefined;
+			const rawUsage = message.usage;
+
+			if (rawUsage && model) {
+				const normalizedModel = normalizeModel(model);
+				const promptTokens = rawUsage.promptTokens || 0;
+				const completionTokens =
+					(rawUsage.completionTokens || 0) + (rawUsage.reasoningTokens || 0);
+				const cachedInputTokens = rawUsage.cachedInputTokens || 0;
+
+				const usage = calculateModelCost(
+					normalizedModel,
+					promptTokens,
+					completionTokens,
+					cachedInputTokens,
+				);
+				totalCredits += calculateCreditsFromSpend(usage);
+			}
+		}
+
+		if (totalCredits > 0) {
+			// Store aggregated usage on the last assistant message in the group
+			const lastMessage = assistantMessages[assistantMessages.length - 1];
+			aggregatedUsage.set(lastMessage._id, totalCredits);
+		}
+	}
+
 	const paginatedPagedWithMetadata = paginated.page.map((message) => {
 		const model = message.model as Model | undefined;
-		const rawUsage = message.usage;
-		let credits = 0;
-		let normalizedModel = model;
-		if (rawUsage && model) {
-			normalizedModel = normalizeModel(model);
-			const promptTokens = rawUsage.promptTokens || 0;
-			const completionTokens =
-				(rawUsage.completionTokens || 0) + (rawUsage.reasoningTokens || 0);
+		const normalizedModel = model ? normalizeModel(model) : undefined;
 
-			const cachedInputTokens = rawUsage.cachedInputTokens || 0;
-			const usage = calculateModelCost(
-				normalizedModel,
-				promptTokens,
-				completionTokens,
-				cachedInputTokens,
-			);
-			credits = calculateCreditsFromSpend(usage);
-		}
+		// Only attach usage if this is the last message in its order group
+		const credits = aggregatedUsage.get(message._id) || 0;
+
 		return {
 			...message,
 			metadata: {
 				userId: message.userId as Id<"users"> | undefined,
-				usage: credits,
+				usage: Number(credits.toFixed(2)),
 				error: message.error,
 				model: normalizedModel,
 				provider: message.provider,
@@ -542,50 +800,17 @@ export const listThreadUIMessages = async (
 	};
 };
 
-export const listThreadMessageDocs = async (
-	ctx: QueryCtx,
-	{
-		threadId,
-		paginationOpts,
-	}: {
-		threadId: string;
-		paginationOpts: Infer<typeof paginationOptsValidator>;
-	},
-) => {
-	return await listMessages(ctx, components.agent, {
-		threadId,
-		paginationOpts,
-	});
-};
-
 export const listLandingPageMessages = query({
 	args: {
 		threadId: v.string(),
 		paginationOpts: paginationOptsValidator,
 		streamArgs: vStreamArgs,
-		landingPageId: v.id("landingPages"),
 	},
-	handler: async (ctx, { landingPageId, paginationOpts, streamArgs }) => {
+	handler: async (ctx, { threadId, paginationOpts, streamArgs }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
-		}
-
-		const landingPage = await ctx.db.get(landingPageId);
-
-		if (!landingPage) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
-
-		if (landingPage.workspaceId !== user.currentWorkspaceId) {
-			throw new ConvexError(ERRORS.UNAUTHORIZED);
-		}
-
-		const threadId = landingPage.threadId;
-
-		if (!threadId) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
 		}
 
 		return await listThreadUIMessages(ctx, {
@@ -596,18 +821,18 @@ export const listLandingPageMessages = query({
 	},
 });
 
-export const listLandingPageMessagesMetadata = query({
+export const clearThreadAndCreateNew = mutation({
 	args: {
 		landingPageId: v.id("landingPages"),
-		paginationOpts: paginationOptsValidator,
 	},
-	handler: async (ctx, { landingPageId, paginationOpts }) => {
+	handler: async (ctx, { landingPageId }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
+		// Get landing page
 		const landingPage = await ctx.db.get(landingPageId);
 
 		if (!landingPage) {
@@ -619,12 +844,28 @@ export const listLandingPageMessagesMetadata = query({
 		}
 
 		if (!landingPage.threadId) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
+			throw new ConvexError("Landing page has no thread");
 		}
 
-		return await listThreadMessageDocs(ctx, {
-			threadId: landingPage.threadId,
-			paginationOpts,
+		const oldThreadId = landingPage.threadId;
+
+		// Create new thread
+		const newThreadId = await createThread(ctx, components.agent, {
+			userId: user._id,
+			title: landingPage.title,
 		});
+
+		// Update landing page with new thread
+		await ctx.db.patch(landingPageId, {
+			threadId: newThreadId,
+			updatedAt: Date.now(),
+		});
+
+		// Delete old thread asynchronously
+		await ctx.runMutation(components.agent.threads.deleteAllForThreadIdAsync, {
+			threadId: oldThreadId,
+		});
+
+		return newThreadId;
 	},
 });

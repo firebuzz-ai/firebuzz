@@ -1,8 +1,8 @@
 "use client";
 
-import { Separator } from "@firebuzz/ui/components/ui/separator";
-import { useLandingPageContext } from "@/components/chat-v2/providers/landing-page-provider";
 import { Presence } from "@/components/presence/presence";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { PublishButton } from "./publish-button";
 
 export const PreviewActions = () => {

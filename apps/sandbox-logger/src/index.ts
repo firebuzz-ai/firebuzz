@@ -117,7 +117,12 @@ async function sendErrorToConvex(
 		const { url: convexSiteUrl, token: webhookToken } = getWebhookConfig();
 		const webhookUrl = `${convexSiteUrl}/sandbox/dev-server-error`;
 
-		await fetch(webhookUrl, {
+		console.log(
+			`[Error] Sending error to Convex: ${sandboxId} - ${errorInfo.errorHash.substring(0, 8)}...`,
+		);
+
+		const sendStart = Date.now();
+		const response = await fetch(webhookUrl, {
 			method: "POST",
 			headers: {
 				Authorization: `Bearer ${webhookToken}`,
@@ -131,11 +136,21 @@ async function sendErrorToConvex(
 			signal: AbortSignal.timeout(5000),
 		});
 
-		console.log(
-			`[Error] Sent error to Convex: ${sandboxId} - ${errorInfo.errorHash}`,
-		);
+		const duration = Date.now() - sendStart;
+		if (response.ok) {
+			console.log(
+				`[Error] Successfully sent error to Convex: ${sandboxId} - ${errorInfo.errorHash.substring(0, 8)}... (${duration}ms)`,
+			);
+		} else {
+			console.warn(
+				`[Error] Convex returned ${response.status} for error ${errorInfo.errorHash.substring(0, 8)}... (${duration}ms)`,
+			);
+		}
 	} catch (error) {
-		console.error("[Error] Failed to send error to Convex:", error);
+		console.error(
+			"[Error] Failed to send error to Convex:",
+			error instanceof Error ? error.message : error,
+		);
 	}
 }
 
@@ -322,11 +337,16 @@ async function startMonitoring(
 		// Try to get sandbox - if it fails, sandbox is gone
 		let sandbox: Sandbox;
 		try {
+			console.log(`[Monitor] Fetching sandbox ${sandboxId}...`);
+			const sandboxFetchStart = Date.now();
 			sandbox = await SandboxClass.get({ sandboxId, ...credentials });
+			console.log(
+				`[Monitor] Sandbox ${sandboxId} fetched (${Date.now() - sandboxFetchStart}ms)`,
+			);
 		} catch (error) {
 			console.error(
 				`[Monitor] Sandbox ${sandboxId} not found or stopped:`,
-				error,
+				error instanceof Error ? error.message : error,
 			);
 
 			// Notify Convex that sandbox is gone
@@ -352,10 +372,11 @@ async function startMonitoring(
 			return;
 		}
 
+		console.log(`[Monitor] Fetching command ${cmdId} from sandbox...`);
 		const command = await sandbox.getCommand(cmdId);
 
 		if (!command) {
-			console.error(`[Monitor] Command ${cmdId} not found`);
+			console.error(`[Monitor] Command ${cmdId} not found in sandbox`);
 
 			// Notify Convex that command is gone
 			try {
@@ -380,6 +401,10 @@ async function startMonitoring(
 			return;
 		}
 
+		console.log(
+			`[Monitor] Command ${cmdId} found, starting log stream (command status: ${command.exitCode !== undefined ? "exited" : "running"})`,
+		);
+
 		// Batch logs before sending
 		const LOG_BATCH_SIZE = 10;
 		const LOG_BATCH_INTERVAL = 500; // ms
@@ -389,15 +414,22 @@ async function startMonitoring(
 			timestamp: string;
 		}> = [];
 		let lastSent = Date.now();
+		let isFlushingInProgress = false;
 
 		const flushLogs = async () => {
-			if (logBuffer.length === 0) return;
+			if (logBuffer.length === 0 || isFlushingInProgress) return;
 
+			isFlushingInProgress = true;
 			const logsToSend = [...logBuffer];
 			logBuffer = [];
 
+			const startTime = Date.now();
+			console.log(
+				`[Monitor] Flushing ${logsToSend.length} logs for ${key} (buffer size: ${JSON.stringify({ cmdId, logCount: logsToSend.length }).length} bytes)`,
+			);
+
 			try {
-				await fetch(webhookUrl, {
+				const response = await fetch(webhookUrl, {
 					method: "POST",
 					headers: {
 						Authorization: `Bearer ${webhookToken}`,
@@ -409,57 +441,174 @@ async function startMonitoring(
 					}),
 					signal: AbortSignal.timeout(5000),
 				});
+
+				const duration = Date.now() - startTime;
+				if (!response.ok) {
+					console.warn(
+						`[Monitor] Webhook returned ${response.status} for ${key} (${duration}ms)`,
+					);
+				} else {
+					console.log(
+						`[Monitor] Successfully sent ${logsToSend.length} logs for ${key} (${duration}ms)`,
+					);
+				}
 			} catch (error) {
-				console.error(`[Monitor] Failed to send logs for ${key}:`, error);
+				const duration = Date.now() - startTime;
+				// Handle network errors gracefully - these are transient and expected
+				const errorMessage =
+					error instanceof Error ? error.message : "Unknown error";
+				const errorName = error instanceof Error ? error.name : "UnknownError";
+
+				if (
+					errorMessage.includes("terminated") ||
+					errorMessage.includes("UND_ERR_SOCKET") ||
+					errorMessage.includes("ECONNRESET")
+				) {
+					console.log(
+						`[Monitor] Transient network error (${errorName}) for ${key} after ${duration}ms, will retry on next batch. Logs in batch: ${logsToSend.length}`,
+					);
+					// Put logs back in buffer to retry
+					logBuffer.unshift(...logsToSend);
+				} else {
+					console.error(
+						`[Monitor] Failed to send logs for ${key} after ${duration}ms:`,
+						{
+							errorName,
+							errorMessage,
+							logCount: logsToSend.length,
+						},
+					);
+				}
+			} finally {
+				isFlushingInProgress = false;
 			}
 		};
 
-		// Setup periodic flush
+		// Setup periodic flush - runs async, doesn't block stream
 		const flushInterval = setInterval(() => {
 			if (Date.now() - lastSent >= LOG_BATCH_INTERVAL) {
+				// Fire and forget - don't await
 				flushLogs().catch(console.error);
 				lastSent = Date.now();
 			}
 		}, LOG_BATCH_INTERVAL);
 
+		console.log(`[Monitor] Opening log stream for ${key}...`);
 		const stream = command.logs({
 			signal: abortController.signal,
 		});
 
-		for await (const chunk of stream) {
-			if (abortController.signal.aborted) break;
+		let chunkCount = 0;
+		let lastChunkTime = Date.now();
 
-			// Detect errors in stderr for dev commands
-			if (chunk.stream === "stderr" && commandType === "dev") {
-				const errorInfo = detectAndHashError(chunk.data);
-				if (errorInfo) {
+		try {
+			for await (const chunk of stream) {
+				if (abortController.signal.aborted) {
+					console.log(`[Monitor] Stream aborted for ${key} at chunk ${chunkCount}`);
+					break;
+				}
+
+				chunkCount++;
+				lastChunkTime = Date.now();
+
+				// Detect errors in stderr for dev commands
+				if (chunk.stream === "stderr" && commandType === "dev") {
+					const errorInfo = detectAndHashError(chunk.data);
+					if (errorInfo) {
+						console.log(
+							`[Error] Detected error in ${sandboxId}: ${errorInfo.errorHash.substring(0, 8)}... (chunk #${chunkCount})`,
+						);
+						console.log(
+							`[Error] Error preview: ${errorInfo.errorMessage.substring(0, 200)}${errorInfo.errorMessage.length > 200 ? "..." : ""}`,
+						);
+						// Send to Convex asynchronously (don't block log streaming)
+						const errorSendStart = Date.now();
+						sendErrorToConvex(sandboxId, errorInfo)
+							.then(() => {
+								console.log(
+									`[Error] Sent error to Convex (${Date.now() - errorSendStart}ms)`,
+								);
+							})
+							.catch((error) => {
+								console.error(
+									`[Error] Failed to send error to Convex after ${Date.now() - errorSendStart}ms:`,
+									error instanceof Error ? error.message : error,
+								);
+							});
+					}
+				}
+
+				logBuffer.push({
+					stream: chunk.stream,
+					data: chunk.data,
+					timestamp: new Date().toISOString(),
+				});
+
+				// Don't await flush - let it run async to avoid blocking stream
+				if (logBuffer.length >= LOG_BATCH_SIZE && !isFlushingInProgress) {
 					console.log(
-						`[Error] Detected error in ${sandboxId}: ${errorInfo.errorHash}`,
+						`[Monitor] Batch size reached (${LOG_BATCH_SIZE}), triggering flush for ${key}`,
 					);
-					// Send to Convex asynchronously (don't block log streaming)
-					sendErrorToConvex(sandboxId, errorInfo).catch((error) => {
-						console.error("[Error] Failed to send error to Convex:", error);
-					});
+					flushLogs().catch(console.error);
+					lastSent = Date.now();
 				}
 			}
 
-			logBuffer.push({
-				stream: chunk.stream,
-				data: chunk.data,
-				timestamp: new Date().toISOString(),
-			});
+			console.log(
+				`[Monitor] Stream ended normally for ${key} after ${chunkCount} chunks. Buffer has ${logBuffer.length} remaining logs`,
+			);
+		} catch (streamError) {
+			const timeSinceLastChunk = Date.now() - lastChunkTime;
+			console.error(
+				`[Monitor] Stream error for ${key} after ${chunkCount} chunks (${timeSinceLastChunk}ms since last chunk):`,
+				streamError instanceof Error
+					? `${streamError.name}: ${streamError.message}`
+					: streamError,
+			);
 
-			if (logBuffer.length >= LOG_BATCH_SIZE) {
-				await flushLogs();
-				lastSent = Date.now();
+			// Check if sandbox/command still exists
+			try {
+				const checkSandbox = await SandboxClass.get({
+					sandboxId,
+					...credentials,
+				});
+				const checkCommand = await checkSandbox.getCommand(cmdId);
+
+				if (!checkCommand) {
+					console.log(
+						`[Monitor] Command ${cmdId} no longer exists after stream error`,
+					);
+				} else {
+					console.log(
+						`[Monitor] Command ${cmdId} still exists after stream error (exitCode: ${checkCommand.exitCode})`,
+					);
+				}
+			} catch (checkError) {
+				console.error(
+					`[Monitor] Failed to verify command/sandbox after stream error:`,
+					checkError instanceof Error ? checkError.message : checkError,
+				);
 			}
+
+			// Flush any remaining logs before handling the error
+			if (logBuffer.length > 0) {
+				console.log(
+					`[Monitor] Flushing ${logBuffer.length} remaining logs after stream error`,
+				);
+				await flushLogs();
+			}
+
+			// Re-throw to be handled by outer catch
+			throw streamError;
 		}
 
 		// Final flush
 		clearInterval(flushInterval);
+		console.log(`[Monitor] Performing final flush for ${key}`);
 		await flushLogs();
 
 		// Check if command actually exited (vs still running)
+		console.log(`[Monitor] Checking final command state for ${key}`);
 		const finalCommand = await sandbox.getCommand(cmdId);
 		const exitCode = finalCommand?.exitCode ?? undefined;
 
@@ -468,14 +617,17 @@ async function startMonitoring(
 		if (exitCode !== undefined) {
 			const status = exitCode === 0 ? "completed" : "error";
 
-			console.log(`[Monitor] Command ${cmdId} finished with status: ${status}`);
+			console.log(
+				`[Monitor] Command ${cmdId} finished with status: ${status}, exitCode: ${exitCode}`,
+			);
 
 			// Handle command exit and check sandbox health
 			await handleCommandExit(sandboxId, commandType, exitCode);
 
 			// Send completion status
 			try {
-				await fetch(webhookUrl, {
+				const statusSendStart = Date.now();
+				const response = await fetch(webhookUrl, {
 					method: "POST",
 					headers: {
 						Authorization: `Bearer ${webhookToken}`,
@@ -488,11 +640,20 @@ async function startMonitoring(
 					}),
 					signal: AbortSignal.timeout(5000),
 				});
+
+				console.log(
+					`[Monitor] Sent completion status for ${key} (${Date.now() - statusSendStart}ms, response: ${response.status})`,
+				);
 			} catch (error) {
-				console.error(`[Monitor] Failed to send completion for ${key}:`, error);
+				console.error(
+					`[Monitor] Failed to send completion for ${key}:`,
+					error instanceof Error ? error.message : error,
+				);
 			}
 		} else {
-			console.log(`[Monitor] Command ${cmdId} still running (no exit code)`);
+			console.log(
+				`[Monitor] Command ${cmdId} still running (no exit code), will continue monitoring`,
+			);
 		}
 
 		// Clean up command monitor
@@ -517,12 +678,33 @@ async function startMonitoring(
 			}
 		}
 	} catch (error) {
-		if ((error as Error).name === "AbortError") {
-			console.log(`[Monitor] Monitoring aborted for ${key}`);
-		} else {
-			console.error(`[Monitor] Error monitoring ${key}:`, error);
+		const errorName = error instanceof Error ? error.name : "UnknownError";
+		const errorMessage =
+			error instanceof Error ? error.message : "Unknown error";
 
-			// Notify Convex of error
+		if (errorName === "AbortError") {
+			console.log(`[Monitor] Monitoring aborted for ${key}`);
+		} else if (
+			errorMessage.includes("terminated") ||
+			errorMessage.includes("UND_ERR_SOCKET") ||
+			errorMessage.includes("ECONNRESET")
+		) {
+			// Vercel sandbox stream connection error - this is somewhat expected
+			console.log(
+				`[Monitor] Vercel sandbox stream connection closed for ${key} (${errorName}: ${errorMessage})`,
+			);
+			console.log(
+				`[Monitor] This is likely due to Vercel's streaming API timeout or network issue`,
+			);
+
+			// Don't notify Convex of error - the command may still be running
+			// The health check will detect if sandbox is actually dead
+		} else {
+			console.error(
+				`[Monitor] Unexpected error monitoring ${key}: ${errorName} - ${errorMessage}`,
+			);
+
+			// Notify Convex of error only for unexpected errors
 			try {
 				const { url: convexSiteUrl, token: webhookToken } = getWebhookConfig();
 				const webhookUrl = `${convexSiteUrl}/sandbox/stream-logs`;
@@ -535,22 +717,30 @@ async function startMonitoring(
 					body: JSON.stringify({
 						cmdId,
 						status: "error",
-						error: error instanceof Error ? error.message : "Unknown error",
+						error: errorMessage,
 					}),
 					signal: AbortSignal.timeout(5000),
 				});
-			} catch {
-				// Ignore webhook errors
+				console.log(`[Monitor] Notified Convex of error for ${key}`);
+			} catch (notifyError) {
+				console.error(
+					`[Monitor] Failed to notify Convex of error:`,
+					notifyError instanceof Error ? notifyError.message : notifyError,
+				);
 			}
 		}
 
 		// Clean up command monitor
+		console.log(`[Monitor] Cleaning up monitor for ${key}`);
 		monitoredCommands.delete(key);
 
 		// Remove from sandbox monitor
 		const sandboxMonitor = sandboxMonitors.get(sandboxId);
 		if (sandboxMonitor) {
 			sandboxMonitor.commandMonitors.delete(cmdId);
+			console.log(
+				`[Monitor] Removed ${cmdId} from sandbox monitor (${sandboxMonitor.commandMonitors.size} commands remaining)`,
+			);
 		}
 	}
 }

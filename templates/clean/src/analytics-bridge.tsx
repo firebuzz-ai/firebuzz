@@ -29,14 +29,16 @@ interface AnalyticsBridgeProps
 export function AnalyticsBridge({ children, ...props }: AnalyticsBridgeProps) {
   const { consentState } = useConsent();
 
-  // Don't render until we have consent state
-  if (!consentState) {
-    return <>{children}</>;
-  }
+  // During SSR or when no consent state, use default disabled state
+  const effectiveConsentState = consentState || {
+    analytics: false,
+    functional: false,
+    marketing: false,
+  };
 
   const analyticsProps = {
     ...props,
-    consentState,
+    consentState: effectiveConsentState,
     children,
   } satisfies AnalyticsProviderProps;
 

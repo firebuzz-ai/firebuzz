@@ -63,7 +63,7 @@ export const createRoot = ViteReactSSG(
           security_storage: "granted",
         },
       }}
-      debug={true} // Enable debug for development
+      debug={false} // Enable debug for development
     >
       <AnalyticsBridge
         // Note: enabled, apiUrl, campaignId, workspaceId, projectId, landingPageId
@@ -71,6 +71,7 @@ export const createRoot = ViteReactSSG(
         // No enabled flag needed - presence of session context determines enablement
         customEvents={campaignConfiguration.customEvents}
         primaryGoal={campaignConfiguration.primaryGoal}
+        debug={false} // Enable debug for development
       >
         <TooltipProvider>
           <Head />
@@ -79,7 +80,7 @@ export const createRoot = ViteReactSSG(
         </TooltipProvider>
 
         {/* Cookie Banner - shows when no consent given */}
-        <CookieBanner privacyPolicyUrl="/privacy-policy" />
+        <CookieBanner />
       </AnalyticsBridge>
     </ConsentProvider>
 

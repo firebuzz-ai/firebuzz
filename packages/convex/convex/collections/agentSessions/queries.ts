@@ -1,6 +1,6 @@
-import type { Doc } from "_generated/dataModel";
 import { asyncMap } from "convex-helpers";
 import { ConvexError, v } from "convex/values";
+import type { Doc } from "../../_generated/dataModel";
 import { internalQuery, query } from "../../_generated/server";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
@@ -63,5 +63,43 @@ export const getByActiveSandboxIdInternal = internalQuery({
 				),
 			)
 			.first();
+	},
+});
+
+export const getAttachmentsWithDetails = query({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Fetch attachment details
+		const attachmentsWithDetails = await Promise.all(
+			session.attachments.map(async (attachment) => {
+				if (attachment.type === "media") {
+					const media = await ctx.db.get(attachment.id);
+					return media ? { ...attachment, details: media } : null;
+				}
+				const document = await ctx.db.get(attachment.id);
+				return document ? { ...attachment, details: document } : null;
+			}),
+		);
+
+		// Filter out null values (deleted attachments)
+		return attachmentsWithDetails.filter(Boolean);
 	},
 });

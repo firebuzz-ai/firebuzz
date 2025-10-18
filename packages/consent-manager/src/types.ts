@@ -175,6 +175,7 @@ export interface ConsentContextValue {
 declare global {
 	interface Window {
 		__FIREBUZZ_SESSION_CONTEXT__?: SessionContext;
+		__FIREBUZZ_DISABLE_CONSENT_BANNER__?: boolean;
 		dataLayer?: Array<unknown>;
 		gtag?: (...args: unknown[]) => void;
 	}

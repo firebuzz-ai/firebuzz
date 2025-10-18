@@ -1,17 +1,22 @@
 "use client";
 
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Image } from "@firebuzz/ui/icons/lucide";
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
+import { cn } from "@firebuzz/ui/lib/utils";
 
 export const ImageSelect = ({
 	onChange,
 	allowedSources,
 	activeTab,
+	className,
+	buttonType,
 }: {
 	onChange: (url: string) => void;
 	allowedSources?: ("gallery" | "unsplash" | "upload")[];
 	activeTab?: "gallery" | "unsplash" | "upload";
+	buttonType?: "icon" | "default";
+	className?: string;
 }) => {
 	const { setState } = useMediaGalleryModal();
 
@@ -33,14 +38,21 @@ export const ImageSelect = ({
 	};
 
 	return (
-		<div className="flex items-center justify-center h-40 gap-4 p-4 border rounded-md">
+		<div
+			className={cn(
+				"flex gap-4 justify-center items-center p-4 h-40 rounded-md border",
+				className,
+			)}
+		>
 			<Button
 				type="button"
-				size="sm"
+				size={buttonType === "icon" ? "iconSm" : "sm"}
+				className={buttonType === "icon" ? "size-8" : ""}
 				variant="outline"
 				onClick={handleGalleryClick}
 			>
-				<Image className="size-3" /> Select Image
+				<Image className="size-3" />{" "}
+				{buttonType === "icon" ? "" : "Select Image"}
 			</Button>
 		</div>
 	);

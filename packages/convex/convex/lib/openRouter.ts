@@ -1,5 +1,5 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { ERRORS } from "utils/errors";
+import { ERRORS } from "../utils/errors";
 
 const apiKey = process.env.OPEN_ROUTER_API_KEY;
 

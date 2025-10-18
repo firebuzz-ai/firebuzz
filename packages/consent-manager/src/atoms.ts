@@ -46,6 +46,14 @@ export const showBannerAtom = atom((get) => {
 	const consentState = get(consentStateAtom);
 	const sessionContext = get(sessionContextAtom);
 
+	// Check if banner is explicitly disabled via window flag (used in preview mode)
+	if (
+		typeof window !== "undefined" &&
+		window.__FIREBUZZ_DISABLE_CONSENT_BANNER__
+	) {
+		return false;
+	}
+
 	// In dev environment (no session context), show banner only if user hasn't interacted
 	if (!sessionContext) {
 		return !consentState?.hasUserInteracted;

@@ -28,9 +28,24 @@ export const ReadFile = ({ part }: ReadFileProps) => {
 			if (part.output.success) {
 				const contentLength = part.output.content?.length || 0;
 				const filePath = part.input?.filePath;
+				const startLine = part.input?.startLine;
+				const endLine = part.input?.endLine;
+
+				// Determine if partial read or full file
+				const isPartialRead = startLine !== undefined || endLine !== undefined;
+
 				return (
 					<Badge variant="outline" className="flex gap-1 items-center bg-muted">
-						<span>{filePath}</span> <span>-</span>
+						<span>{filePath}</span>
+						{isPartialRead && (
+							<>
+								<span>-</span>
+								<span className="text-xs text-muted-foreground">
+									lines {startLine || 1}-{endLine || "end"}
+								</span>
+							</>
+						)}
+						<span>-</span>
 						<span className="text-xs text-muted-foreground">
 							{contentLength} characters
 						</span>
@@ -48,7 +63,21 @@ export const ReadFile = ({ part }: ReadFileProps) => {
 		}
 
 		if (part.input) {
-			return <span className="text-xs">{part.input.filePath}</span>;
+			const startLine = part.input?.startLine;
+			const endLine = part.input?.endLine;
+			const isPartialRead = startLine !== undefined || endLine !== undefined;
+
+			return (
+				<span className="text-xs">
+					{part.input.filePath}
+					{isPartialRead && (
+						<span className="text-muted-foreground">
+							{" "}
+							(lines {startLine || 1}-{endLine || "end"})
+						</span>
+					)}
+				</span>
+			);
 		}
 
 		return null;

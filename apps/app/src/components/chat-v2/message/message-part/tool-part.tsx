@@ -1,5 +1,4 @@
 import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
-import { Loader } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import type { ReactNode } from "react";
 
@@ -25,9 +24,6 @@ export const ToolPart = ({
 			)}
 		>
 			<div className="flex gap-2 items-center">
-				{status === "loading" && (
-					<Loader className="animate-spin size-2 text-muted-foreground" />
-				)}
 				{status === "success" && (
 					<div className="bg-emerald-600 rounded-[2px] size-2" />
 				)}
@@ -38,7 +34,7 @@ export const ToolPart = ({
 					<TextShimmer
 						as="span"
 						duration={1.5}
-						className="text-sm italic font-medium"
+						className="text-sm italic font-medium whitespace-nowrap"
 						active={true}
 					>
 						{toolName}

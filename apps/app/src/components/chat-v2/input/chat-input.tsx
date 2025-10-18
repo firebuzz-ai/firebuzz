@@ -2,20 +2,19 @@
 
 import { useAgentSession } from "@/hooks/agent/use-agent-session";
 import { useLandingChat } from "@/hooks/agent/use-landing-chat";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
+import { useProject } from "@/hooks/auth/use-project";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
+import { nanoid } from "nanoid";
+import {
+	api,
+	useCachedQuery,
+	useMutation,
+	useUploadFile,
+} from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
-import {
-	Avatar,
-	AvatarFallback,
-	AvatarImage,
-} from "@firebuzz/ui/components/ui/avatar";
-import {
-	Command,
-	CommandEmpty,
-	CommandGroup,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from "@firebuzz/ui/components/ui/command";
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
@@ -32,11 +31,7 @@ import {
 	InputGroupButton,
 	InputGroupTextarea,
 } from "@firebuzz/ui/components/ui/input-group";
-import {
-	Popover,
-	PopoverContent,
-	PopoverTrigger,
-} from "@firebuzz/ui/components/ui/popover";
+import { ScrollArea } from "@firebuzz/ui/components/ui/scroll-area";
 import { Switch } from "@firebuzz/ui/components/ui/switch";
 import {
 	Tooltip,
@@ -45,67 +40,35 @@ import {
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
 	IconArrowUp,
-	IconAt,
 	IconBook,
-	IconPaperclip,
+	IconFile,
+	IconPhoto,
 	IconPlayerPause,
-	IconX,
+	IconPlus,
+	IconUpload,
 } from "@firebuzz/ui/icons/tabler";
-import { cn } from "@firebuzz/ui/lib/utils";
-import { useMemo, useState } from "react";
+import { cn, toast } from "@firebuzz/ui/lib/utils";
+import { isMediaFile } from "@firebuzz/utils";
+import { AnimatePresence, motion } from "motion/react";
+import { useState } from "react";
+import { type Accept, type FileRejection, useDropzone } from "react-dropzone";
 import { MODEL_CONFIG } from "../models";
-
-const SAMPLE_DATA = {
-	mentionable: [
-		{
-			type: "page",
-			title: "Landing Page 1",
-			image: "=�",
-		},
-		{
-			type: "page",
-			title: "Campaign Dashboard",
-			image: "=�",
-		},
-		{
-			type: "page",
-			title: "Form Builder",
-			image: "=�",
-		},
-		{
-			type: "page",
-			title: "Analytics",
-			image: "=�",
-		},
-		{
-			type: "user",
-			title: "John Doe",
-			image: "https://github.com/shadcn.png",
-			workspace: "Workspace",
-		},
-	],
-};
-
-function MentionableIcon({
-	item,
-}: {
-	item: (typeof SAMPLE_DATA.mentionable)[0];
-}) {
-	return item.type === "page" ? (
-		<span className="flex justify-center items-center size-4">
-			{item.image}
-		</span>
-	) : (
-		<Avatar className="size-4">
-			<AvatarImage src={item.image} />
-			<AvatarFallback>{item.title[0]}</AvatarFallback>
-		</Avatar>
-	);
-}
+import { AttachmentPreview } from "./attachment-preview";
+import { ChatNotification } from "./chat-notification";
 
 interface ChatInputProps {
 	landingPageId: Id<"landingPages">;
 }
+
+// Sanitize user input by escaping HTML entities
+const sanitizeUserInput = (input: string): string => {
+	return input
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#039;");
+};
 
 export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 	const {
@@ -117,47 +80,136 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 		updateKnowledgeBases,
 		model,
 		updateModelMutation,
+		attachments,
+		addAttachment,
+		removeAttachment,
 	} = useLandingChat({ landingPageId });
 
 	const { session } = useAgentSession();
+	const { sandboxStatus } = useSandbox();
+	const { isActive, creditBalance } = useSubscription();
+	const { currentProject } = useProject();
+	const { setState: setGalleryModalState } = useMediaGalleryModal();
+	const { setState: setDocumentsModalState } = useDocumentsSelectorModal();
 
 	const [inputValue, setInputValue] = useState("");
-	const [mentions, setMentions] = useState<string[]>([]);
-	const [mentionPopoverOpen, setMentionPopoverOpen] = useState(false);
+	const [filesMenuOpen, setFilesMenuOpen] = useState(false);
 	const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
 	const [scopeMenuOpen, setScopeMenuOpen] = useState(false);
+	const [isUploading, setIsUploading] = useState(false);
+
+	const uploadFile = useUploadFile(api.components.r2);
+	const createMedia = useMutation(
+		api.collections.storage.media.mutations.create,
+	);
+	const createDocument = useMutation(
+		api.collections.storage.documents.mutations.create,
+	);
+	const addMessageToQueueMutation = useMutation(
+		api.collections.agentSessions.mutations.addMessageToQueue,
+	);
+
+	const totalSize = useCachedQuery(
+		api.collections.storage.media.queries.getTotalSize,
+		currentProject ? { projectId: currentProject._id } : "skip",
+	);
+
+	// Constants
+	const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+	const MAX_STORAGE = 1024 * 1024 * 1024; // 1GB
+	const MAX_FILES = 5;
 
 	const selectedModelConfig = model
 		? MODEL_CONFIG[model]
 		: MODEL_CONFIG["claude-sonnet-4.5"];
 	const isDisabled = chatStatus !== "ready" && chatStatus !== "error";
 	const isStreaming = chatStatus === "streaming";
+	// Allow input during streaming for queueing messages
+	const isInputDisabled = isDisabled && !isStreaming;
 
-	const grouped = useMemo(() => {
-		return SAMPLE_DATA.mentionable.reduce(
-			(acc, item) => {
-				const isAvailable = !mentions.includes(item.title);
-
-				if (isAvailable) {
-					if (!acc[item.type]) {
-						acc[item.type] = [];
-					}
-					acc[item.type].push(item);
+	const openMediaModal = (activeTab: "gallery" | "upload") => {
+		setGalleryModalState((prev) => ({
+			...prev,
+			allowedTypes: ["image"],
+			allowMultiple: true,
+			maxFiles: 5,
+			activeTab: activeTab,
+			onSelect: (data) => {
+				for (const item of data) {
+					addAttachment({
+						type: "media",
+						id: item.id as Id<"media">,
+					});
 				}
-				return acc;
+				setFilesMenuOpen(false);
 			},
-			{} as Record<string, typeof SAMPLE_DATA.mentionable>,
-		);
-	}, [mentions]);
+			isOpen: true,
+		}));
+	};
 
-	const hasMentions = mentions.length > 0;
+	const openDocumentsModal = () => {
+		setDocumentsModalState((prev) => ({
+			...prev,
+			allowedTypes: ["pdf"],
+			allowMultiple: true,
+			maxFiles: 5,
+			activeTab: "documents",
+			onSelect: (data) => {
+				for (const item of data) {
+					addAttachment({
+						type: "document",
+						id: item.id as Id<"documents">,
+					});
+				}
+				setFilesMenuOpen(false);
+			},
+			isOpen: true,
+		}));
+	};
+
+	const handleQueueMessage = async () => {
+		if (!inputValue.trim() || !session?._id) return;
+
+		try {
+			const sanitizedInput = sanitizeUserInput(inputValue);
+			const id = nanoid(); // Generate unique ID for queue message
+			await addMessageToQueueMutation({
+				sessionId: session._id,
+				id,
+				prompt: sanitizedInput,
+				attachments: session.attachments || [], // Pass current session attachments
+			});
+			setInputValue("");
+			toast.success("Message added to queue");
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to add message to queue";
+			toast.error(errorMessage);
+		}
+	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		if (!inputValue.trim() || isDisabled) return;
+		if (!inputValue.trim()) return;
 
-		await sendMessage(inputValue);
+		// If streaming, queue the message instead
+		if (isStreaming) {
+			await handleQueueMessage();
+			return;
+		}
+
+		if (isDisabled) return;
+
+		const sanitizedInput = sanitizeUserInput(inputValue);
+		await sendMessage(sanitizedInput);
 		setInputValue("");
+	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+		if (e.key === "Enter" && !e.shiftKey) {
+			e.preventDefault();
+			handleSubmit(e);
+		}
 	};
 
 	const handleAbort = async () => {
@@ -198,112 +250,271 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 		});
 	};
 
+	// Drag & Drop handlers
+	const generateAcceptTypes = (): Accept => {
+		return {
+			"image/*": [".png", ".jpg", ".jpeg", ".webp", ".gif"],
+			"application/pdf": [".pdf"],
+		};
+	};
+
+	const onDrop = async (acceptedFiles: File[]) => {
+		if (!currentProject) return;
+
+		// Check if adding these files would exceed max files
+		const totalFiles = attachments.length + acceptedFiles.length;
+		if (totalFiles > MAX_FILES) {
+			toast.error(
+				`You can only attach up to ${MAX_FILES} files. Please remove some attachments first.`,
+			);
+			return;
+		}
+
+		// Check storage limits
+		const usedStorage = totalSize ?? 0;
+		const totalUploadSize = acceptedFiles.reduce(
+			(acc, file) => acc + file.size,
+			0,
+		);
+
+		if (usedStorage + totalUploadSize > MAX_STORAGE) {
+			toast.error("Not enough storage space.", {
+				description: "You do not have enough storage to upload these files.",
+			});
+			return;
+		}
+
+		setIsUploading(true);
+
+		// Upload files one by one
+		for (const file of acceptedFiles) {
+			try {
+				const key = await uploadFile(file);
+				const isMedia = isMediaFile(file);
+
+				if (isMedia) {
+					// Upload as media (image)
+					const mediaId = await createMedia({
+						key,
+						name: file.name,
+						type: "image",
+						contentType: file.type,
+						size: file.size,
+						source: "uploaded",
+					});
+
+					addAttachment({
+						type: "media",
+						id: mediaId,
+					});
+				} else {
+					// Upload as document (PDF)
+					const documentId = await createDocument({
+						key,
+						name: file.name,
+						type: "pdf",
+						contentType: file.type,
+						size: file.size,
+					});
+
+					addAttachment({
+						type: "document",
+						id: documentId,
+					});
+				}
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: `Failed to upload ${file.name}`;
+				toast.error(errorMessage);
+			}
+		}
+
+		setIsUploading(false);
+		toast.success(
+			`${acceptedFiles.length} file${acceptedFiles.length > 1 ? "s" : ""} uploaded successfully!`,
+		);
+	};
+
+	const onDropRejected = (fileRejections: FileRejection[]) => {
+		for (const fileRejection of fileRejections) {
+			const message = fileRejection.errors[0]?.message ?? "Unknown error";
+			const fileName = fileRejection.file.name;
+
+			if (message.includes("Too many files")) {
+				toast.error(
+					`Cannot add ${fileName}: Exceeds max file limit of ${MAX_FILES}.`,
+				);
+			} else if (message.includes("File is larger than")) {
+				toast.error(`Cannot add ${fileName}: Exceeds 50MB size limit.`);
+			} else if (message.includes("File type must be one of")) {
+				toast.error(
+					`Cannot add ${fileName}: Only images and PDF files are allowed.`,
+				);
+			} else {
+				toast.error(`Cannot add ${fileName}: ${message}`);
+			}
+		}
+	};
+
+	const { getRootProps, getInputProps, isDragActive } = useDropzone({
+		onDrop,
+		onDropRejected,
+		accept: generateAcceptTypes(),
+		maxSize: MAX_FILE_SIZE,
+		maxFiles: MAX_FILES - attachments.length, // Only allow remaining files
+		multiple: true,
+		noClick: true,
+		noKeyboard: true,
+		disabled: isDisabled || isUploading,
+	});
+
+	// Check if notification should be shown
+	const CREDIT_LOW_THRESHOLD = 100;
+	const hasNotification =
+		!isActive ||
+		creditBalance < CREDIT_LOW_THRESHOLD ||
+		session?.status === "completed" ||
+		sandboxStatus === "stopped" ||
+		sandboxStatus === "failed" ||
+		(session?.messageQueue && session.messageQueue.length > 0);
+
 	return (
-		<form onSubmit={handleSubmit} className="">
-			<Field>
-				<FieldLabel htmlFor="chat-prompt" className="sr-only">
-					Prompt
-				</FieldLabel>
-				<InputGroup>
+		<div {...getRootProps()} className="relative">
+			<input {...getInputProps()} />
+
+			{/* Drag Overlay */}
+			<AnimatePresence>
+				{isDragActive && (
+					<motion.div
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						className="flex absolute inset-0 z-50 justify-center items-center rounded-lg border-2 border backdrop-blur-sm pointer-events-none bg-background/95"
+					>
+						<div className="flex flex-col gap-3 items-center">
+							<div className="flex justify-center items-center p-2 rounded-full border bg-muted">
+								<IconUpload className="animate-bounce size-4 text-primary" />
+							</div>
+							<div className="text-center">
+								<p className="text-base font-semibold text-foreground">
+									Drop files here
+								</p>
+								<p className="text-xs text-muted-foreground">
+									Images and PDFs only (max {MAX_FILES - attachments.length}{" "}
+									files)
+								</p>
+							</div>
+						</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
+
+			<div
+				className={cn(
+					"rounded-md transition-[box-shadow]",
+					hasNotification &&
+						"has-[[data-slot=input-group-control]:focus-visible]:ring-ring has-[[data-slot=input-group-control]:focus-visible]:ring-1",
+				)}
+			>
+				{/* Notification */}
+				<ChatNotification />
+
+				<form onSubmit={handleSubmit}>
+					<Field>
+						<FieldLabel htmlFor="chat-prompt" className="sr-only">
+							Prompt
+						</FieldLabel>
+						<InputGroup
+							className={cn(
+								hasNotification &&
+									"[&]:rounded-t-none [&]:border-t [&]:shadow-none has-[[data-slot=input-group-control]:focus-visible]:!ring-0 overflow-hidden",
+							)}
+						>
 					<InputGroupTextarea
 						id="chat-prompt"
-						placeholder="Ask me anything..."
+						placeholder={
+							isUploading
+								? "Uploading files..."
+								: isStreaming
+									? "Queue a follow-up message..."
+									: "Ask me anything..."
+						}
 						value={inputValue}
 						onChange={(e) => setInputValue(e.target.value)}
-						disabled={isDisabled}
+						onKeyDown={handleKeyDown}
+						disabled={isInputDisabled || isUploading}
 					/>
 					<InputGroupAddon align="block-start">
-						<Popover
-							open={mentionPopoverOpen}
-							onOpenChange={setMentionPopoverOpen}
-						>
+						<DropdownMenu open={filesMenuOpen} onOpenChange={setFilesMenuOpen}>
 							<Tooltip>
 								<TooltipTrigger
 									asChild
 									onFocusCapture={(e) => e.stopPropagation()}
 								>
-									<PopoverTrigger asChild>
+									<DropdownMenuTrigger asChild>
 										<InputGroupButton
 											variant="outline"
-											size={!hasMentions ? "sm" : "icon-sm"}
-											className="rounded-full transition-transform"
+											size="sm"
+											className="rounded-full"
 										>
-											<IconAt /> {!hasMentions && "Add context"}
+											<IconPlus /> Add
 										</InputGroupButton>
-									</PopoverTrigger>
+									</DropdownMenuTrigger>
 								</TooltipTrigger>
-								<TooltipContent>Mention a page or person</TooltipContent>
+								<TooltipContent>Add files to your message</TooltipContent>
 							</Tooltip>
-							<PopoverContent className="p-0 [--radius:1.2rem]" align="start">
-								<Command>
-									<CommandInput placeholder="Search..." />
-									<CommandList>
-										<CommandEmpty>No results found</CommandEmpty>
-										{Object.entries(grouped).map(([type, items]) => (
-											<CommandGroup
-												key={type}
-												heading={type === "page" ? "Pages" : "Users"}
-											>
-												{items.map((item) => (
-													<CommandItem
-														key={item.title}
-														value={item.title}
-														onSelect={(currentValue) => {
-															setMentions((prev) => [...prev, currentValue]);
-															setMentionPopoverOpen(false);
-														}}
-													>
-														<MentionableIcon item={item} />
-														{item.title}
-													</CommandItem>
-												))}
-											</CommandGroup>
-										))}
-									</CommandList>
-								</Command>
-							</PopoverContent>
-						</Popover>
-						<div className="no-scrollbar -m-1.5 flex gap-1 overflow-y-auto p-1.5">
-							{mentions.map((mention) => {
-								const item = SAMPLE_DATA.mentionable.find(
-									(item) => item.title === mention,
-								);
-
-								if (!item) {
-									return null;
-								}
-
-								return (
-									<InputGroupButton
-										key={mention}
-										size="sm"
-										variant="secondary"
-										className="rounded-full !pl-2"
-										onClick={() => {
-											setMentions((prev) => prev.filter((m) => m !== mention));
+							<DropdownMenuContent
+								align="start"
+								side="top"
+								className="[--radius:1rem]"
+							>
+								<DropdownMenuGroup>
+									<DropdownMenuLabel className="text-xs text-muted-foreground">
+										Files
+									</DropdownMenuLabel>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.preventDefault();
+											openMediaModal("upload");
 										}}
 									>
-										<MentionableIcon item={item} />
-										{item.title}
-										<IconX />
-									</InputGroupButton>
-								);
-							})}
+										<IconUpload className="mr-2 size-4" />
+										Upload Images
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.preventDefault();
+											openMediaModal("gallery");
+										}}
+									>
+										<IconPhoto className="mr-2 size-4" />
+										Gallery
+									</DropdownMenuItem>
+									<DropdownMenuItem
+										onClick={(e) => {
+											e.preventDefault();
+											openDocumentsModal();
+										}}
+									>
+										<IconFile className="mr-2 size-4" />
+										Documents
+									</DropdownMenuItem>
+								</DropdownMenuGroup>
+							</DropdownMenuContent>
+						</DropdownMenu>
+						<div className="no-scrollbar -m-1.5 flex gap-1 overflow-y-auto p-1.5">
+							{attachments.map((attachment) => (
+								<AttachmentPreview
+									key={`${attachment.type}-${attachment.id}`}
+									attachment={attachment}
+									onRemove={() => removeAttachment(attachment)}
+								/>
+							))}
 						</div>
 					</InputGroupAddon>
 					<InputGroupAddon align="block-end" className="gap-1">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<InputGroupButton
-									size="icon-sm"
-									className="rounded-full"
-									aria-label="Attach file"
-								>
-									<IconPaperclip />
-								</InputGroupButton>
-							</TooltipTrigger>
-							<TooltipContent>Attach file</TooltipContent>
-						</Tooltip>
 						<DropdownMenu
 							open={modelPopoverOpen}
 							onOpenChange={setModelPopoverOpen}
@@ -327,47 +538,51 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 							<DropdownMenuContent
 								side="top"
 								align="start"
-								className="[--radius:1rem]"
+								className="[--radius:1rem] overflow-hidden "
 							>
 								<DropdownMenuGroup className="w-48">
 									<DropdownMenuLabel className="text-xs text-muted-foreground">
 										Select AI Model
 									</DropdownMenuLabel>
-									{Object.entries(MODEL_CONFIG).map(([key, modelData]) => {
-										const ModelIcon = modelData.icon;
-										const isSelected = model === key;
-										return (
-											<DropdownMenuCheckboxItem
-												key={key}
-												checked={isSelected}
-												onCheckedChange={(checked) => {
-													if (checked) {
-														handleModelChange(key as keyof typeof MODEL_CONFIG);
-													}
-												}}
-												className={cn(
-													"gap-2 pl-2",
-													isSelected && "first:*:hidden",
-													!isSelected && "opacity-50",
-												)}
-											>
-												<div className="p-1 rounded-sm border bg-muted">
-													<div className="size-4">
-														<ModelIcon />
+									<ScrollArea className="h-[200px]">
+										{Object.entries(MODEL_CONFIG).map(([key, modelData]) => {
+											const ModelIcon = modelData.icon;
+											const isSelected = model === key;
+											return (
+												<DropdownMenuCheckboxItem
+													key={key}
+													checked={isSelected}
+													onCheckedChange={(checked) => {
+														if (checked) {
+															handleModelChange(
+																key as keyof typeof MODEL_CONFIG,
+															);
+														}
+													}}
+													className={cn(
+														"gap-2 pl-2",
+														isSelected && "first:*:hidden",
+														!isSelected && "opacity-50",
+													)}
+												>
+													<div className="p-1 rounded-sm border bg-muted">
+														<div className="size-4">
+															<ModelIcon />
+														</div>
 													</div>
-												</div>
 
-												<div className="flex flex-col">
-													<span className="text-sm font-medium">
-														{modelData.name}
-													</span>
-													<span className="text-xs text-muted-foreground">
-														{modelData.provider}
-													</span>
-												</div>
-											</DropdownMenuCheckboxItem>
-										);
-									})}
+													<div className="flex flex-col">
+														<span className="text-sm font-medium">
+															{modelData.name}
+														</span>
+														<span className="text-xs text-muted-foreground">
+															{modelData.provider}
+														</span>
+													</div>
+												</DropdownMenuCheckboxItem>
+											);
+										})}
+									</ScrollArea>
 								</DropdownMenuGroup>
 							</DropdownMenuContent>
 						</DropdownMenu>
@@ -430,15 +645,29 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 							</DropdownMenuContent>
 						</DropdownMenu>
 						{isStreaming ? (
-							<InputGroupButton
-								type="button"
-								aria-label="Pause"
-								className="ml-auto rounded-lg"
-								size="icon-sm"
-								onClick={handleAbort}
-							>
-								<IconPlayerPause />
-							</InputGroupButton>
+							<>
+								{inputValue.trim() ? (
+									<InputGroupButton
+										type="submit"
+										aria-label="Queue Message"
+										className="ml-auto rounded-lg"
+										variant="default"
+										size="icon-sm"
+									>
+										<IconArrowUp />
+									</InputGroupButton>
+								) : (<InputGroupButton
+									type="button"
+									aria-label="Pause"
+									className="ml-auto rounded-lg"
+									variant="default"
+									size="icon-sm"
+									onClick={handleAbort}
+								>
+									<IconPlayerPause />
+								</InputGroupButton>)}
+								
+							</>
 						) : (
 							<InputGroupButton
 								type="submit"
@@ -455,5 +684,7 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 				</InputGroup>
 			</Field>
 		</form>
+			</div>
+		</div>
 	);
 };

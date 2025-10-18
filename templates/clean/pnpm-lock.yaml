@@ -9,8 +9,8 @@ dependencies:
     specifier: ^1.6.1
     version: 1.6.1(react-dom@18.3.1)(react@18.3.1)
   '@firebuzz/consent-manager':
-    specifier: ^0.2.14
-    version: 0.2.14(@babel/core@7.28.3)(@types/react@18.3.24)(react@18.3.1)
+    specifier: ^0.2.15
+    version: 0.2.15(@babel/core@7.28.3)(@types/react@18.3.24)(react@18.3.1)
   '@hookform/resolvers':
     specifier: ^3.9.1
     version: 3.10.0(react-hook-form@7.62.0)
@@ -639,8 +639,8 @@ packages:
       react-dom: 18.3.1(react@18.3.1)
     dev: false
 
-  /@firebuzz/consent-manager@0.2.14(@babel/core@7.28.3)(@types/react@18.3.24)(react@18.3.1):
-    resolution: {integrity: sha512-t7VR0hI7nferteMC6i2/8cutzpmj8hmibZsxFzOEjOk/TVDY8CiZBT97kQ6brAKxludltuVJkHf6Vb9amJWkGw==}
+  /@firebuzz/consent-manager@0.2.15(@babel/core@7.28.3)(@types/react@18.3.24)(react@18.3.1):
+    resolution: {integrity: sha512-elKpNN2yxvpQEdNphNk+UZYOuELH1gfbHZhIEOZvsb/YnTp5Bcwv3SX941JoNe8e7T8wd+c3zrBwDLz4Rv4GQA==}
     peerDependencies:
       react: '>=18.0.0'
     dependencies:

@@ -1,3 +1,5 @@
+"use client";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -11,7 +13,6 @@ import {
 } from "@firebuzz/ui/components/ui/dialog";
 import { GalleryHorizontal, Layers2, Upload } from "@firebuzz/ui/icons/lucide";
 import { useMemo } from "react";
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { GalleryTab } from "./gallery";
 import { UnsplashTab } from "./unsplash";
 import { UploadTab } from "./upload";
@@ -84,7 +85,7 @@ export const MediaGalleryModal = () => {
 					indicatorPadding={16}
 				/>
 
-				<div className="flex flex-col flex-1 h-full overflow-hidden">
+				<div className="flex overflow-hidden flex-col flex-1 h-full">
 					{activeTab === "gallery" && (
 						<GalleryTab
 							onSelect={onSelect}

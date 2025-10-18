@@ -55,7 +55,7 @@ export const UserMessage = ({
 						<Attachments message={message} />
 
 						{mode === "view" &&
-							message.parts?.map((part: any, index: number) => {
+							message.parts?.map((part, index: number) => {
 								if (part.type === "text") {
 									return (
 										<div
@@ -70,7 +70,6 @@ export const UserMessage = ({
 										</div>
 									);
 								}
-								return null;
 							})}
 
 						{message.content && mode === "edit" && (

@@ -181,3 +181,69 @@ export const createWithCommit = internalMutationWithTrigger({
 		};
 	},
 });
+
+export const revert = mutation({
+	args: {
+		landingPageId: v.id("landingPages"),
+		versionId: v.id("landingPageVersions"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Verify landing page exists and user has access
+		const landingPage = await ctx.db.get(args.landingPageId);
+
+		if (!landingPage) {
+			throw new ConvexError("Landing page not found");
+		}
+
+		if (landingPage.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		// Verify version exists and belongs to landing page
+		const version = await ctx.db.get(args.versionId);
+
+		if (!version) {
+			throw new ConvexError("Version not found");
+		}
+
+		if (version.landingPageId !== args.landingPageId) {
+			throw new ConvexError("Version does not belong to this landing page");
+		}
+
+		// Get active session for this landing page
+		const session = await ctx.db
+			.query("agentSessions")
+			.withIndex("by_landing_page_id", (q) =>
+				q.eq("landingPageId", args.landingPageId),
+			)
+			.filter((q) => q.eq(q.field("status"), "active"))
+			.first();
+
+		if (!session) {
+			throw new ConvexError("No active session found");
+		}
+
+		if (!session.sandboxId) {
+			throw new ConvexError("Session has no sandbox");
+		}
+
+		// Set reverting state immediately for UI feedback
+		await ctx.db.patch(args.landingPageId, {
+			revertingToVersionId: args.versionId,
+		});
+
+		// Call revert action
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.sandboxes.actions.revertToVersionTool,
+			{
+				sandboxId: session.sandboxId,
+				versionId: args.versionId,
+			},
+		);
+
+		return { success: true };
+	},
+});

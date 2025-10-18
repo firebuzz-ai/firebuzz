@@ -37,27 +37,45 @@ export const SessionExpiryDialog = () => {
 	useEffect(() => {
 		if (!shouldShowWarning || !session?.shutdownAt) {
 			setShowWarning(false);
+			setTimeRemaining("");
 			return;
 		}
 
 		setShowWarning(true);
 
-		const updateTimer = setInterval(() => {
-			const shutdownTime = new Date(session.shutdownAt as string).getTime();
+		// Set initial time immediately
+		const shutdownTime = new Date(session.shutdownAt).getTime();
+		const updateTime = () => {
 			const remaining = shutdownTime - Date.now();
 
 			if (remaining <= 0) {
 				setShowWarning(false);
-				clearInterval(updateTimer);
-				return;
+				setTimeRemaining("");
+				return false;
 			}
 
 			const minutes = Math.floor(remaining / 60000);
 			const seconds = Math.floor((remaining % 60000) / 1000);
 			setTimeRemaining(minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`);
+			return true;
+		};
+
+		// Update immediately
+		if (!updateTime()) {
+			return;
+		}
+
+		// Then update every second
+		const updateTimer = setInterval(() => {
+			if (!updateTime()) {
+				clearInterval(updateTimer);
+			}
 		}, 1000);
 
-		return () => clearInterval(updateTimer);
+		return () => {
+			clearInterval(updateTimer);
+			setTimeRemaining("");
+		};
 	}, [shouldShowWarning, session?.shutdownAt]);
 
 	const handleExtend = async () => {

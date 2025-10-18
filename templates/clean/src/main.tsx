@@ -44,11 +44,12 @@ export const createRoot = ViteReactSSG(
           security_storage: "granted",
         },
       }}
-      debug={true} // Enable debug for development
+      debug={false} // Enable debug for development
     >
       <AnalyticsBridge
         customEvents={campaignConfiguration.customEvents}
         primaryGoal={campaignConfiguration.primaryGoal}
+        debug={false}
       >
         <TooltipProvider>
           <Head />
@@ -57,7 +58,7 @@ export const createRoot = ViteReactSSG(
         </TooltipProvider>
 
         {/* Cookie Banner - shows when no consent given */}
-        <CookieBanner privacyPolicyUrl="/privacy-policy" />
+        <CookieBanner  />
       </AnalyticsBridge>
     </ConsentProvider>
 

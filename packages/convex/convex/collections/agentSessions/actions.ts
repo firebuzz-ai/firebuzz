@@ -185,40 +185,50 @@ export const createTodoListTool = internalAction({
 export const updateTodoListTool = internalAction({
 	args: {
 		sessionId: v.id("agentSessions"),
-		operation: v.union(
-			v.literal("add"),
-			v.literal("update"),
-			v.literal("delete"),
-		),
-		todo: v.object({
-			id: v.optional(v.string()),
-			title: v.optional(v.string()),
-			description: v.optional(v.string()),
-			status: v.optional(
-				v.union(
-					v.literal("todo"),
-					v.literal("in-progress"),
-					v.literal("completed"),
-					v.literal("cancelled"),
-					v.literal("failed"),
+		operations: v.array(
+			v.object({
+				operation: v.union(
+					v.literal("add"),
+					v.literal("update"),
+					v.literal("delete"),
 				),
-			),
-		}),
+				todo: v.object({
+					id: v.optional(v.string()),
+					title: v.optional(v.string()),
+					description: v.optional(v.string()),
+					status: v.optional(
+						v.union(
+							v.literal("todo"),
+							v.literal("in-progress"),
+							v.literal("completed"),
+							v.literal("cancelled"),
+							v.literal("failed"),
+						),
+					),
+				}),
+			}),
+		),
 	},
-	handler: async (ctx, { sessionId, operation, todo }): Promise<TodoResult> => {
+	handler: async (ctx, { sessionId, operations }): Promise<TodoResult> => {
 		try {
-			const result = await ctx.runMutation(
-				internal.collections.agentSessions.mutations.updateTodoList,
-				{
-					sessionId,
-					operation,
-					todo,
-				},
-			);
+			// Process operations sequentially to maintain order
+			let currentTodos = null;
+
+			for (const { operation, todo } of operations) {
+				const result = await ctx.runMutation(
+					internal.collections.agentSessions.mutations.updateTodoList,
+					{
+						sessionId,
+						operation,
+						todo,
+					},
+				);
+				currentTodos = result.todos;
+			}
 
 			return {
 				success: true,
-				todos: result.todos,
+				todos: currentTodos,
 				error: null,
 			};
 		} catch (error) {

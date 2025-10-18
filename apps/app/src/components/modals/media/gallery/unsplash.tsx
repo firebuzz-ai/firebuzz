@@ -1,6 +1,8 @@
 "use client";
 
+import { useProject } from "@/hooks/auth/use-project";
 import { api, useMutation, useUploadFile } from "@firebuzz/convex";
+import type { Id } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
@@ -19,10 +21,10 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage
 interface SelectedMediaItem {
+	id: Id<"media">;
 	url: string;
 	key: string;
 	fileName: string;
@@ -195,7 +197,7 @@ export const UnsplashTab = ({
 				const key = await uploadFile(file);
 
 				// Create Convex media document
-				await createMedia({
+				const mediaId = await createMedia({
 					key,
 					name: fileName,
 					type: "image",
@@ -209,6 +211,7 @@ export const UnsplashTab = ({
 
 				// Return data needed for onSelect
 				return {
+					id: mediaId,
 					url: `${NEXT_PUBLIC_R2_PUBLIC_URL}/${key}`,
 					key,
 					fileName,

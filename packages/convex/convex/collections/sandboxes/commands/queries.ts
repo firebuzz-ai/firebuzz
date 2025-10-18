@@ -1,6 +1,13 @@
 import { v } from "convex/values";
 import { internalQuery, query } from "../../../_generated/server";
 
+export const getByIdInternal = internalQuery({
+	args: { id: v.id("sandboxCommands") },
+	handler: async (ctx, { id }) => {
+		return await ctx.db.get(id);
+	},
+});
+
 export const getBySandboxId = internalQuery({
 	args: { sandboxId: v.id("sandboxes") },
 	handler: async (ctx, { sandboxId }) => {

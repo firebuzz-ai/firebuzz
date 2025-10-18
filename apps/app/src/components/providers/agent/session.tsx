@@ -39,11 +39,15 @@ interface AgentSessionContextValue {
 		  })
 		| undefined;
 	isLoading: boolean;
+	renewSession: () => Promise<Id<"agentSessions">>;
 }
 
 const AgentSessionContext = createContext<AgentSessionContextValue>({
 	session: undefined,
 	isLoading: true,
+	renewSession: async () => {
+		throw new Error("renewSession must be used within AgentSessionProvider");
+	},
 });
 
 export const AgentSessionProvider = (props: AgentSessionProviderProps) => {
@@ -65,6 +69,24 @@ export const AgentSessionProvider = (props: AgentSessionProviderProps) => {
 	const joinOrCreateSessionMutation = useMutation(
 		api.collections.agentSessions.mutations.joinOrCreateSession,
 	);
+
+	const renewSessionMutation = useMutation(
+		api.collections.agentSessions.mutations.renewSession,
+	);
+
+	const renewSession = useCallback(async () => {
+		if (!sessionId) {
+			throw new Error("No session to renew");
+		}
+		const newSessionId = await renewSessionMutation({
+			completedSessionId: sessionId,
+		});
+		if (!newSessionId) {
+			throw new Error("Failed to renew session");
+		}
+		setSessionId(newSessionId);
+		return newSessionId;
+	}, [renewSessionMutation, sessionId]);
 
 	const joinOrCreateSession = useCallback(async () => {
 		// Prevent duplicate calls (defense against React Strict Mode double-mounting)
@@ -113,8 +135,9 @@ export const AgentSessionProvider = (props: AgentSessionProviderProps) => {
 		() => ({
 			session: session ?? undefined,
 			isLoading: !sessionId || isSessionLoading,
+			renewSession,
 		}),
-		[session, sessionId, isSessionLoading],
+		[session, sessionId, isSessionLoading, renewSession],
 	);
 
 	return (

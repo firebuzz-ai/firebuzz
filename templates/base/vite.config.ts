@@ -1,13 +1,27 @@
-import path from "node:path";
 import react from "@vitejs/plugin-react";
+import path from "node:path";
 import { defineConfig } from "vite";
+import terminal from "vite-plugin-terminal";
 
 // https://vite.dev/config/
 export default defineConfig({
-	plugins: [react()],
-	resolve: {
-		alias: {
-			"@": path.resolve(__dirname, "./src"),
-		},
-	},
+  plugins: [
+    react(),
+    ...(process.env.NODE_ENV !== "production"
+      ? [
+          terminal({
+            console: "terminal",
+          }),
+        ]
+      : []),
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+  },
+  server: {
+    allowedHosts: [".vercel.run"],
+  },
 });

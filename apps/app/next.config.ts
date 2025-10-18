@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
 	transpilePackages: ["@firebuzz/convex"],
+	serverExternalPackages: ["jsdom", "canvas", "paper"],
 	/* config options here */
 	async redirects() {
 		return [
@@ -91,8 +92,6 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-	contentDispositionType: "attachment",
-	contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
 	experimental: {
 		turbo: {
 			resolveAlias: {

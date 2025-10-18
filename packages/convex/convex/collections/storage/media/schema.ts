@@ -13,6 +13,7 @@ export const mediaSchema = defineTable(
 			v.literal("uploaded"),
 			v.literal("unsplash"),
 			v.literal("pexels"),
+			v.literal("url-snapshot"),
 		),
 		description: v.optional(v.string()),
 		aiMetadata: v.optional(

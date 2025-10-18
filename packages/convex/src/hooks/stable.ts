@@ -1,3 +1,5 @@
+"use client";
+
 import { usePaginatedQuery } from "convex/react";
 import { useRef } from "react";
 import type { Doc } from "../nextjs";

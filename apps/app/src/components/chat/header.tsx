@@ -1,3 +1,4 @@
+import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import {
 	Breadcrumb,
@@ -13,7 +14,6 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { ChevronsLeft } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { memo, useMemo } from "react";
-import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 
 interface ChatHeaderProps {
 	landingPageId: Id<"landingPages">;
@@ -27,9 +27,11 @@ export const ChatHeader = memo(({ landingPageId, type }: ChatHeaderProps) => {
 
 	const { data: landingPage, isPending: isLoading } = useCachedRichQuery(
 		api.collections.landingPages.queries.getById,
-		{
-			id: landingPageId,
-		},
+		landingPageId
+			? {
+					id: landingPageId,
+				}
+			: "skip",
 	);
 
 	const breadcrumbItems = useMemo(() => {
@@ -77,7 +79,7 @@ export const ChatHeader = memo(({ landingPageId, type }: ChatHeaderProps) => {
 	}, [type, landingPage?.title]);
 
 	return (
-		<div className="flex items-center justify-between px-2 py-3 border-b">
+		<div className="flex justify-between items-center px-2 py-3 border-b">
 			{/* Left Part */}
 			<Breadcrumb>
 				<BreadcrumbList>

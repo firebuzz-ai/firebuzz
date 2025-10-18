@@ -385,29 +385,44 @@ http.route({
 			const data = await req.json();
 			const validated = streamLogsSchema.parse(data);
 
+			// Return early acknowledgment to prevent timeout
+			// Process mutations asynchronously
+			const mutations: Promise<unknown>[] = [];
+
 			// Handle log batch
 			if (validated.logs && validated.logs.length > 0) {
-				await ctx.runMutation(
-					internal.collections.sandboxes.commands.mutations.appendCommandLogs,
-					{
-						cmdId: validated.cmdId,
-						logs: validated.logs,
-					},
+				mutations.push(
+					ctx.runMutation(
+						internal.collections.sandboxes.commands.mutations.appendCommandLogs,
+						{
+							cmdId: validated.cmdId,
+							logs: validated.logs,
+						},
+					),
 				);
 			}
 
 			// Handle status update
 			if (validated.status) {
-				await ctx.runMutation(
-					internal.collections.sandboxes.commands.mutations
-						.updateCommandByCmdId,
-					{
-						cmdId: validated.cmdId,
-						status: validated.status,
-						exitCode: validated.exitCode,
-					},
+				mutations.push(
+					ctx.runMutation(
+						internal.collections.sandboxes.commands.mutations
+							.updateCommandByCmdId,
+						{
+							cmdId: validated.cmdId,
+							status: validated.status,
+							exitCode: validated.exitCode,
+						},
+					),
 				);
 			}
+
+			// Wait for all mutations with a timeout
+			// If they don't complete in 8 seconds, return anyway
+			await Promise.race([
+				Promise.all(mutations),
+				new Promise((resolve) => setTimeout(resolve, 8000)),
+			]);
 
 			return new Response(JSON.stringify({ success: true }), { status: 200 });
 		} catch (error) {

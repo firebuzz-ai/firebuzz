@@ -8,7 +8,7 @@ import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
 
 const SESSION_CONFIG = {
-	maxDuration: 30 * 60 * 1000, // 30 minutes
+	maxDuration: 60 * 60 * 1000, // 60 minutes
 	maxIdleTime: 10 * 60 * 1000, // 10 minutes
 };
 
@@ -64,16 +64,24 @@ export const joinOrCreateSession = mutation({
 			}
 
 			let sessionId: Id<"agentSessions"> | null = null;
-			const session = await ctx.db
+			const latestSession = await ctx.db
 				.query("agentSessions")
 				.withIndex("by_landing_page_id", (q) =>
 					q.eq("landingPageId", assetSettings.id),
 				)
-				.filter((q) => q.eq(q.field("status"), "active"))
+				.order("desc")
 				.first();
 
+			// Check if we have an active session
+			const activeSession =
+				latestSession?.status === "active" ? latestSession : null;
+
 			// A) NEW SESSION ROUTE
-			if (!session) {
+			if (!activeSession) {
+				// Use the latest completed session for copying values
+				const latestCompletedSession =
+					latestSession?.status === "completed" ? latestSession : null;
+
 				sessionId = await ctx.db.insert("agentSessions", {
 					workspaceId: user.currentWorkspaceId,
 					projectId: campaign.projectId,
@@ -81,10 +89,11 @@ export const joinOrCreateSession = mutation({
 					createdBy: user._id,
 					startedAt: new Date().toISOString(),
 					messageQueue: [],
-					todoList: [],
+					todoList: latestCompletedSession?.todoList ?? [],
 					devServerErrors: [],
-					autoErrorFix: true,
-					model: "gemini-2.5-pro",
+					autoErrorFix: latestCompletedSession?.autoErrorFix ?? true,
+					model: latestCompletedSession?.model ?? "gemini-2.5-pro",
+					knowledgeBases: latestCompletedSession?.knowledgeBases,
 					joinedUsers: [user._id],
 					sessionType: "regular",
 					status: "active",
@@ -92,6 +101,7 @@ export const joinOrCreateSession = mutation({
 					landingPageId: assetSettings.id,
 					maxDuration: SESSION_CONFIG.maxDuration,
 					maxIdleTime: SESSION_CONFIG.maxIdleTime,
+					attachments: [],
 				});
 
 				// Initialize Agent Session Durable Object
@@ -119,12 +129,12 @@ export const joinOrCreateSession = mutation({
 			// B) EXISTING SESSION ROUTE
 			else {
 				// Assign sessionId to existing session
-				sessionId = session._id;
+				sessionId = activeSession._id;
 				// Insert users into session joinedUsers (if not already in the array)
-				if (!session.joinedUsers.includes(user._id)) {
-					await ctx.db.patch(session._id, {
+				if (!activeSession.joinedUsers.includes(user._id)) {
+					await ctx.db.patch(activeSession._id, {
 						joinedUsers: Array.from(
-							new Set([...session.joinedUsers, user._id]),
+							new Set([...activeSession.joinedUsers, user._id]),
 						),
 					});
 				}
@@ -566,5 +576,465 @@ export const removeAppliedDevServerError = internalMutation({
 			devServerErrors: [],
 			updatedAt: new Date().toISOString(),
 		});
+	},
+});
+
+/**
+ * Renew session - create a new session from a completed session
+ * Duplicates reusable values like model, knowledge bases, and starts sandbox creation
+ */
+export const renewSession = mutation({
+	args: {
+		completedSessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { completedSessionId }) => {
+		// Authenticate user
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get completed session
+		const completedSession = await ctx.db.get(completedSessionId);
+
+		if (!completedSession) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Check if session is in same workspace
+		if (completedSession.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Check if session is completed
+		if (completedSession.status !== "completed") {
+			throw new ConvexError("Can only renew completed sessions");
+		}
+
+		// Get campaign
+		const campaign = await ctx.db.get(completedSession.campaignId);
+
+		if (!campaign) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Prepare joined users (keep existing users and add current user if not already in)
+		const joinedUsers = completedSession.joinedUsers.includes(user._id)
+			? completedSession.joinedUsers
+			: [...completedSession.joinedUsers, user._id];
+
+		// LANDING PAGE
+		if (completedSession.assetType === "landingPage") {
+			// Get Asset
+			const asset = await ctx.db.get(completedSession.landingPageId);
+
+			if (!asset) {
+				throw new ConvexError(ERRORS.NOT_FOUND);
+			}
+
+			// Create new session with reusable values from completed session
+			const sessionId = await ctx.db.insert("agentSessions", {
+				workspaceId: completedSession.workspaceId,
+				projectId: completedSession.projectId,
+				campaignId: completedSession.campaignId,
+				createdBy: user._id,
+				startedAt: new Date().toISOString(),
+				messageQueue: [],
+				todoList: [],
+				devServerErrors: [],
+				autoErrorFix: completedSession.autoErrorFix,
+				model: completedSession.model,
+				knowledgeBases: completedSession.knowledgeBases,
+				joinedUsers,
+				sessionType: "regular",
+				status: "active",
+				assetType: "landingPage",
+				landingPageId: completedSession.landingPageId,
+				maxDuration: SESSION_CONFIG.maxDuration,
+				maxIdleTime: SESSION_CONFIG.maxIdleTime,
+				attachments: [],
+			});
+
+			// Initialize Agent Session Durable Object
+			await retrier.run(
+				ctx,
+				internal.collections.agentSessions.actions.initializeAgentSessionDO,
+				{
+					sessionId,
+					maxDuration: SESSION_CONFIG.maxDuration,
+					maxIdleTime: SESSION_CONFIG.maxIdleTime,
+				},
+			);
+
+			// Create or get sandbox session
+			await ctx.scheduler.runAfter(
+				0,
+				internal.collections.sandboxes.actions.createOrGetSandboxSession,
+				{
+					sessionId,
+					assetSettings: {
+						type: "landingPage",
+						id: completedSession.landingPageId,
+					},
+					config: SANDBOX_CONFIG,
+				},
+			);
+
+			return sessionId;
+		}
+
+		// FORM (if needed in the future)
+		if (completedSession.assetType === "form") {
+			// Get Asset
+			const asset = await ctx.db.get(completedSession.formId);
+
+			if (!asset) {
+				throw new ConvexError(ERRORS.NOT_FOUND);
+			}
+
+			// Create new session with reusable values from completed session
+			const sessionId = await ctx.db.insert("agentSessions", {
+				workspaceId: completedSession.workspaceId,
+				projectId: completedSession.projectId,
+				campaignId: completedSession.campaignId,
+				createdBy: user._id,
+				startedAt: new Date().toISOString(),
+				messageQueue: [],
+				todoList: [],
+				devServerErrors: [],
+				autoErrorFix: completedSession.autoErrorFix,
+				model: completedSession.model,
+				knowledgeBases: completedSession.knowledgeBases,
+				joinedUsers,
+				sessionType: "regular",
+				status: "active",
+				assetType: "form",
+				formId: completedSession.formId,
+				maxDuration: SESSION_CONFIG.maxDuration,
+				maxIdleTime: SESSION_CONFIG.maxIdleTime,
+				attachments: [],
+			});
+
+			// Initialize Agent Session Durable Object
+			await retrier.run(
+				ctx,
+				internal.collections.agentSessions.actions.initializeAgentSessionDO,
+				{
+					sessionId,
+					maxDuration: SESSION_CONFIG.maxDuration,
+					maxIdleTime: SESSION_CONFIG.maxIdleTime,
+				},
+			);
+
+			// Create or get sandbox session
+			await ctx.scheduler.runAfter(
+				0,
+				internal.collections.sandboxes.actions.createOrGetSandboxSession,
+				{
+					sessionId,
+					assetSettings: {
+						type: "form",
+						id: completedSession.formId,
+					},
+					config: SANDBOX_CONFIG,
+				},
+			);
+
+			return sessionId;
+		}
+	},
+});
+
+/**
+ * Add attachment to session
+ */
+export const addAttachment = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		attachment: v.union(
+			v.object({
+				type: v.literal("media"),
+				id: v.id("media"),
+			}),
+			v.object({
+				type: v.literal("document"),
+				id: v.id("documents"),
+			}),
+		),
+	},
+	handler: async (ctx, { sessionId, attachment }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Check if attachment already exists
+		const existingAttachment = session.attachments.find(
+			(att) => att.id === attachment.id && att.type === attachment.type,
+		);
+
+		if (existingAttachment) {
+			return { success: true, attachments: session.attachments };
+		}
+
+		const newAttachments = [...session.attachments, attachment];
+
+		await ctx.db.patch(sessionId, {
+			attachments: newAttachments,
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true, attachments: newAttachments };
+	},
+});
+
+/**
+ * Remove attachment from session
+ */
+export const removeAttachment = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		attachment: v.union(
+			v.object({
+				type: v.literal("media"),
+				id: v.id("media"),
+			}),
+			v.object({
+				type: v.literal("document"),
+				id: v.id("documents"),
+			}),
+		),
+	},
+	handler: async (ctx, { sessionId, attachment }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const newAttachments = session.attachments.filter(
+			(att) => !(att.id === attachment.id && att.type === attachment.type),
+		);
+
+		await ctx.db.patch(sessionId, {
+			attachments: newAttachments,
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true, attachments: newAttachments };
+	},
+});
+
+/**
+ * Clear all attachments from session
+ */
+export const clearAttachments = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		await ctx.db.patch(sessionId, {
+			attachments: [],
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Add message to queue
+ */
+export const addMessageToQueue = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		id: v.string(), // Unique identifier from client (nanoid)
+		prompt: v.string(),
+		attachments: v.array(
+			v.union(
+				v.object({ type: v.literal("media"), id: v.id("media") }),
+				v.object({ type: v.literal("document"), id: v.id("documents") }),
+			),
+		),
+	},
+	handler: async (ctx, { sessionId, id, prompt, attachments }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Add new message to the end of the queue with attachments
+		const newMessage = {
+			id,
+			prompt,
+			createdAt: new Date().toISOString(),
+			createdBy: user._id,
+			order: session.messageQueue.length,
+			attachments, // Store attachments with the queued message
+		};
+
+		const newMessageQueue = [...session.messageQueue, newMessage];
+
+		// Clear session attachments after adding to queue (like sendMessage does)
+		await ctx.db.patch(sessionId, {
+			messageQueue: newMessageQueue,
+			attachments: [], // Clear attachments
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true, messageQueue: newMessageQueue };
+	},
+});
+
+/**
+ * Process next queued message (internal use only)
+ */
+export const processNextQueuedMessageInternal = internalMutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.assetType !== "landingPage") {
+			throw new ConvexError("Session is not for a landing page");
+		}
+
+		// Get first message from queue
+		const firstMessage = session.messageQueue.find((msg) => msg.order === 0);
+
+		if (!firstMessage) {
+			console.log("[Queue] No messages in queue");
+			return;
+		}
+
+		// Get landing page for threadId
+		const landingPage = await ctx.db.get(session.landingPageId);
+
+		if (!landingPage || !landingPage.threadId) {
+			throw new ConvexError("Landing page or thread not found");
+		}
+
+		// Send message using internal mutation with attachments from queue
+		await ctx.runMutation(
+			internal.components.agent.sendMessageToLandingPageRegularAgentInternal,
+			{
+				threadId: landingPage.threadId,
+				prompt: firstMessage.prompt,
+				sessionId,
+				model: session.model,
+				knowledgeBases: session.knowledgeBases || [],
+				userId: firstMessage.createdBy,
+				attachments: firstMessage.attachments,
+			},
+		);
+
+		// Remove processed message and reorder queue
+		const newMessageQueue = session.messageQueue
+			.filter((msg) => msg.order !== 0)
+			.map((msg, index) => ({
+				...msg,
+				order: index,
+			}));
+
+		await ctx.db.patch(sessionId, {
+			messageQueue: newMessageQueue,
+			updatedAt: new Date().toISOString(),
+		});
+
+		console.log(`[Queue] Processed message, ${newMessageQueue.length} remaining`);
+
+		return { success: true, remainingMessages: newMessageQueue.length };
+	},
+});
+
+/**
+ * Remove queued message from session
+ */
+export const removeQueuedMessage = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		order: v.number(),
+	},
+	handler: async (ctx, { sessionId, order }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Remove message with matching order and reorder remaining messages
+		const newMessageQueue = session.messageQueue
+			.filter((msg) => msg.order !== order)
+			.map((msg, index) => ({
+				...msg,
+				order: index,
+			}));
+
+		await ctx.db.patch(sessionId, {
+			messageQueue: newMessageQueue,
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true, messageQueue: newMessageQueue };
 	},
 });

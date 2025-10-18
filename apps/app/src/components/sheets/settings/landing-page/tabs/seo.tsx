@@ -1,3 +1,7 @@
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { parsedFilesAtom, seoConfigAtom } from "@/lib/workbench/atoms";
+import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { envCloudflarePublic } from "@firebuzz/env";
@@ -19,10 +23,6 @@ import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
-import { parsedFilesAtom, seoConfigAtom } from "@/lib/workbench/atoms";
-import { getWebcontainerInstance } from "@/lib/workbench/webcontainer";
-import { ImagePreview } from "../image-preview";
-import { ImageSelect } from "../image-select";
 
 // Define schema for SEO configuration
 const seoSchema = z.object({

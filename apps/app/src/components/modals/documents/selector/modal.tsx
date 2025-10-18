@@ -1,3 +1,5 @@
+"use client";
+import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -10,7 +12,6 @@ import {
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
 import { GalleryHorizontal, Upload } from "@firebuzz/ui/icons/lucide";
-import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
 import { DocumentsTab } from "./documents";
 import { UploadTab } from "./upload";
 
@@ -60,7 +61,7 @@ export const DocumentsSelectorModal = () => {
 					indicatorPadding={16}
 				/>
 
-				<div className="flex flex-col flex-1 h-full overflow-hidden">
+				<div className="flex overflow-hidden flex-col flex-1 h-full">
 					{activeTab === "documents" && (
 						<DocumentsTab
 							onSelect={onSelect}

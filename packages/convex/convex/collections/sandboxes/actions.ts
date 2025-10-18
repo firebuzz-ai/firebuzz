@@ -6,7 +6,7 @@ import { ConvexError, type Infer, v } from "convex/values";
 import { internal } from "../../_generated/api";
 import type { Doc, Id } from "../../_generated/dataModel";
 import type { ActionCtx } from "../../_generated/server";
-import { internalAction } from "../../_generated/server";
+import { action, internalAction } from "../../_generated/server";
 import { r2 } from "../../components/r2";
 import { ERRORS } from "../../utils/errors";
 import { sandboxConfigSchema } from "./schema";
@@ -530,94 +530,6 @@ export const createOrGetSandboxSession = internalAction({
 	},
 });
 
-/*
- * Recreate sandbox session
- * Called when a sandbox is closed during a session
- */
-export const recreateSandboxSession = internalAction({
-	args: {
-		sessionId: v.id("agentSessions"),
-		config: v.object(sandboxConfigSchema.fields),
-	},
-	handler: async (ctx, { sessionId, config }) => {
-		const credentials = getCredentials();
-
-		// First, check if the session already has a sandbox (race condition protection)
-		const session = await ctx.runQuery(
-			internal.collections.agentSessions.queries.getByIdInternal,
-			{ id: sessionId },
-		);
-
-		if (!session) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
-
-		if (session.status !== "active") {
-			throw new ConvexError(
-				"Session is closed. Please join or create a new session.",
-			);
-		}
-
-		const assetSettings =
-			session.assetType === "landingPage"
-				? { type: "landingPage" as const, id: session.landingPageId }
-				: { type: "form" as const, id: session.formId };
-
-		// Get asset signed URL
-		let signedUrl: string;
-
-		if (assetSettings.type === "landingPage") {
-			const landingPage = await ctx.runQuery(
-				internal.collections.landingPages.queries.getByIdWithSignedUrlInternal,
-				{ id: assetSettings.id },
-			);
-			if (!landingPage) {
-				throw new ConvexError(ERRORS.NOT_FOUND);
-			}
-			signedUrl = landingPage.signedUrl;
-		} else {
-			// TODO: Implement form support
-			throw new ConvexError({
-				message: "Form sandboxes not yet supported",
-				data: { assetType: assetSettings.type },
-			});
-		}
-
-		try {
-			// Create new sandbox
-			const { sandboxDbId } = await createNewSandbox(
-				signedUrl,
-				credentials,
-				ctx,
-				sessionId,
-				config,
-			);
-
-			// Update sandboxId in session
-			await ctx.runMutation(
-				internal.collections.agentSessions.mutations.updateSandboxId,
-				{
-					sessionId,
-					sandboxId: sandboxDbId,
-				},
-			);
-
-			return sandboxDbId;
-		} catch (error) {
-			console.error("Sandbox creation/retrieval failed:", error);
-
-			if (error instanceof ConvexError) {
-				throw error;
-			}
-
-			throw new ConvexError({
-				message: "Failed to recreate sandbox",
-				data: { error: error instanceof Error ? error.message : String(error) },
-			});
-		}
-	},
-});
-
 export const killSandbox = internalAction({
 	args: {
 		id: v.id("sandboxes"),
@@ -801,10 +713,12 @@ export const readFileTool = internalAction({
 		sandboxId: v.id("sandboxes"),
 		filePath: v.string(),
 		cwd: v.optional(v.string()),
+		startLine: v.optional(v.number()),
+		endLine: v.optional(v.number()),
 	},
 	handler: async (
 		ctx,
-		{ sandboxId, filePath, cwd },
+		{ sandboxId, filePath, cwd, startLine, endLine },
 	): Promise<
 		| { success: true; content: string; error: null }
 		| { success: false; content: null; error: { message: string } }
@@ -837,6 +751,37 @@ export const readFileTool = internalAction({
 				...credentials,
 			});
 
+			// If line range is specified, use sed for efficient reading
+			if (startLine !== undefined || endLine !== undefined) {
+				const start = startLine ?? 1;
+				const end = endLine ?? "$"; // $ means end of file in sed
+
+				const cmd = await instance.runCommand({
+					cmd: "sed",
+					args: ["-n", `${start},${end}p`, filePath],
+					cwd: cwd ?? "/vercel/sandbox",
+				});
+
+				if (cmd.exitCode !== 0) {
+					const stderr = await cmd.stderr();
+					return {
+						success: false,
+						content: null,
+						error: {
+							message: `Failed to read file lines ${start}-${end}: ${stderr || "Unknown error"}`,
+						},
+					};
+				}
+
+				const stdout = await cmd.stdout();
+				return {
+					success: true,
+					content: stdout,
+					error: null,
+				};
+			}
+
+			// Otherwise, read entire file
 			const stream = await instance.readFile({ path: filePath, cwd });
 
 			if (!stream) {
@@ -887,6 +832,174 @@ export const readFileTool = internalAction({
 			return {
 				success: false,
 				content: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+export const grepTool = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		pattern: v.string(),
+		path: v.optional(v.string()),
+		cwd: v.optional(v.string()),
+		caseSensitive: v.optional(v.boolean()),
+		wholeWord: v.optional(v.boolean()),
+		includePattern: v.optional(v.string()),
+		excludePattern: v.optional(v.string()),
+		maxResults: v.optional(v.number()),
+	},
+	handler: async (
+		ctx,
+		{
+			sandboxId,
+			pattern,
+			path,
+			cwd,
+			caseSensitive,
+			wholeWord,
+			includePattern,
+			excludePattern,
+			maxResults,
+		},
+	): Promise<
+		| {
+				success: true;
+				matches: Array<{ file: string; line: number; content: string }>;
+				totalMatches: number;
+				error: null;
+		  }
+		| {
+				success: false;
+				matches: null;
+				totalMatches: 0;
+				error: { message: string };
+		  }
+	> => {
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			return {
+				success: false,
+				matches: null,
+				totalMatches: 0,
+				error: { message: "Sandbox not found" },
+			};
+		}
+
+		if (sandbox.status !== "running") {
+			return {
+				success: false,
+				matches: null,
+				totalMatches: 0,
+				error: { message: "Sandbox is not running" },
+			};
+		}
+
+		try {
+			const credentials = getCredentials();
+			const instance = await SandboxClass.get({
+				sandboxId: sandbox.sandboxExternalId,
+				...credentials,
+			});
+
+			// Build grep arguments
+			const args: string[] = [
+				"-rn", // recursive with line numbers (always on)
+			];
+
+			// Add optional flags
+			if (!caseSensitive) {
+				args.push("-i"); // case-insensitive by default
+			}
+
+			if (wholeWord) {
+				args.push("-w"); // match whole words only
+			}
+
+			if (includePattern) {
+				args.push(`--include=${includePattern}`);
+			}
+
+			if (excludePattern) {
+				args.push(`--exclude=${excludePattern}`);
+			}
+
+			// Add pattern and path
+			args.push(pattern);
+			args.push(path || ".");
+
+			// Execute grep
+			const cmd = await instance.runCommand({
+				cmd: "grep",
+				args,
+				cwd: cwd ?? sandbox.cwd,
+			});
+
+			// grep returns exit code 1 when no matches found (not an error)
+			if (cmd.exitCode === 1) {
+				const stdout = await cmd.stdout();
+				if (!stdout) {
+					return {
+						success: true,
+						matches: [],
+						totalMatches: 0,
+						error: null,
+					};
+				}
+			}
+
+			// Other non-zero exit codes are errors
+			if (cmd.exitCode !== 0 && cmd.exitCode !== 1) {
+				const stderr = await cmd.stderr();
+				return {
+					success: false,
+					matches: null,
+					totalMatches: 0,
+					error: {
+						message: `grep failed with exit code ${cmd.exitCode}: ${stderr || "Unknown error"}`,
+					},
+				};
+			}
+
+			// Parse grep output: "filepath:linenum:content"
+			const stdout = await cmd.stdout();
+			const lines = stdout.split("\n").filter(Boolean);
+			const matches = lines
+				.map((line) => {
+					const match = line.match(/^([^:]+):(\d+):(.*)$/);
+					if (!match || !match[1] || !match[2] || !match[3]) return null;
+
+					return {
+						file: match[1],
+						line: Number.parseInt(match[2], 10),
+						content: match[3].trim(),
+					};
+				})
+				.filter((m): m is { file: string; line: number; content: string } => m !== null);
+
+			// Apply max results limit if specified
+			const limitedMatches = maxResults
+				? matches.slice(0, maxResults)
+				: matches;
+
+			return {
+				success: true,
+				matches: limitedMatches,
+				totalMatches: matches.length,
+				error: null,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				matches: null,
+				totalMatches: 0,
 				error: {
 					message: error instanceof Error ? error.message : String(error),
 				},
@@ -1264,7 +1377,7 @@ export const buildLandingPageTool = internalAction({
 
 		// Set isBuilding = true
 		await ctx.runMutation(
-			internal.collections.sandboxes.mutations.updateBuildStatusInternal,
+			internal.collections.sandboxes.mutations.updateInternal,
 			{ id: sandboxId, isBuilding: true },
 		);
 
@@ -1301,7 +1414,7 @@ export const buildLandingPageTool = internalAction({
 		} finally {
 			// Always clear building flag
 			await ctx.runMutation(
-				internal.collections.sandboxes.mutations.updateBuildStatusInternal,
+				internal.collections.sandboxes.mutations.updateInternal,
 				{ id: sandboxId, isBuilding: false },
 			);
 		}
@@ -2283,6 +2396,955 @@ export const previewVersionRevertTool = internalAction({
 	},
 });
 
+// Helper to unregister monitoring from sandbox-logger
+const unregisterMonitoring = async (
+	sandboxId: string,
+	cmdId: string,
+): Promise<void> => {
+	const sandboxLoggerUrl = process.env.SANDBOX_LOGGER_URL;
+	const sandboxLoggerServiceToken = process.env.SANDBOX_LOGGER_SERVICE_TOKEN;
+
+	if (!sandboxLoggerUrl || !sandboxLoggerServiceToken) {
+		console.warn(
+			"[unregisterMonitoring] Missing environment variables, skipping log unregister",
+		);
+		return;
+	}
+
+	try {
+		const url = new URL(
+			`/monitor/stop/${sandboxId}/${cmdId}`,
+			sandboxLoggerUrl,
+		);
+
+		const response = await fetch(url.toString(), {
+			method: "POST",
+			headers: {
+				Authorization: `Bearer ${sandboxLoggerServiceToken}`,
+			},
+		});
+
+		if (!response.ok) {
+			const error = await response.text();
+			console.error(
+				`[unregisterMonitoring] Failed to unregister monitoring: ${error}`,
+			);
+		} else {
+			console.log(
+				`[unregisterMonitoring] Successfully unregistered monitoring for ${sandboxId}/${cmdId}`,
+			);
+		}
+	} catch (error) {
+		console.error(
+			"[unregisterMonitoring] Error unregistering monitoring:",
+			error,
+		);
+	}
+};
+
+/**
+ * Check dev server status and get recent logs
+ */
+export const checkDevServerAndLogs = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		logLimit: v.optional(v.number()),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, logLimit = 20 },
+	): Promise<
+		| {
+				success: true;
+				status: "running" | "stopped" | "failed" | "not_started";
+				logs: Array<{ timestamp: string; stream: string; data: string }>;
+				previewUrl: string | null;
+				port: number | null;
+				error: null;
+		  }
+		| {
+				success: false;
+				status: null;
+				logs: null;
+				previewUrl: null;
+				port: null;
+				error: string;
+		  }
+	> => {
+		try {
+			const sandboxDoc = await ctx.runQuery(
+				internal.collections.sandboxes.queries.getByIdInternal,
+				{ id: sandboxId },
+			);
+
+			if (!sandboxDoc) {
+				return {
+					success: false,
+					status: null,
+					logs: null,
+					previewUrl: null,
+					port: null,
+					error: "Sandbox not found",
+				};
+			}
+
+			// Check if dev command exists
+			if (!sandboxDoc.devCmdId) {
+				return {
+					success: true,
+					status: "not_started",
+					logs: [],
+					previewUrl: sandboxDoc.previewUrl ?? null,
+					port: sandboxDoc.ports[0] ?? null,
+					error: null,
+				};
+			}
+
+			// Get dev command with logs
+			const devCommand = await ctx.runQuery(
+				internal.collections.sandboxes.commands.queries.getByIdInternal,
+				{ id: sandboxDoc.devCmdId },
+			);
+
+			if (!devCommand) {
+				return {
+					success: true,
+					status: "not_started",
+					logs: [],
+					previewUrl: sandboxDoc.previewUrl ?? null,
+					port: sandboxDoc.ports[0] ?? null,
+					error: null,
+				};
+			}
+
+			// Get recent logs (last N entries)
+			const allLogs = devCommand.logs || [];
+			const recentLogs = allLogs.slice(-logLimit);
+
+			// Determine status
+			let status: "running" | "stopped" | "failed" | "not_started";
+			if (devCommand.status === "running") {
+				status = "running";
+			} else if (devCommand.status === "failed") {
+				status = "failed";
+			} else {
+				status = "stopped";
+			}
+
+			return {
+				success: true,
+				status,
+				logs: recentLogs,
+				previewUrl: sandboxDoc.previewUrl ?? null,
+				port: sandboxDoc.ports[0] ?? null,
+				error: null,
+			};
+		} catch (error) {
+			console.error("[checkDevServerAndLogs] Error:", error);
+			return {
+				success: false,
+				status: null,
+				logs: null,
+				previewUrl: null,
+				port: null,
+				error: error instanceof Error ? error.message : String(error),
+			};
+		}
+	},
+});
+
+/**
+ * Restart dev server - stops existing dev command and starts a new one
+ */
+export const restartDevServer = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId },
+	): Promise<
+		| { success: true; devCmdId: string; previewUrl: string; error: null }
+		| { success: false; devCmdId: null; previewUrl: null; error: string }
+	> => {
+		try {
+			const sandboxDoc = await ctx.runQuery(
+				internal.collections.sandboxes.queries.getByIdInternal,
+				{ id: sandboxId },
+			);
+
+			if (!sandboxDoc) {
+				return {
+					success: false,
+					devCmdId: null,
+					previewUrl: null,
+					error: "Sandbox not found",
+				};
+			}
+
+			if (sandboxDoc.status !== "running") {
+				return {
+					success: false,
+					devCmdId: null,
+					previewUrl: null,
+					error: "Sandbox is not running",
+				};
+			}
+
+			// Get session for workspace/project/campaign context
+			const session = await ctx.runQuery(
+				internal.collections.agentSessions.queries.getByIdInternal,
+				{ id: sandboxDoc.agentSessionId },
+			);
+
+			if (!session) {
+				return {
+					success: false,
+					devCmdId: null,
+					previewUrl: null,
+					error: "Session not found",
+				};
+			}
+
+			const credentials = getCredentials();
+			const instance = await SandboxClass.get({
+				sandboxId: sandboxDoc.sandboxExternalId,
+				...credentials,
+			});
+
+			// Step 1: Stop existing dev command if it exists
+			if (sandboxDoc.devCmdId) {
+				console.log("[restartDevServer] Stopping existing dev command...");
+
+				const devCommand = await ctx.runQuery(
+					internal.collections.sandboxes.commands.queries.getByIdInternal,
+					{ id: sandboxDoc.devCmdId },
+				);
+
+				if (devCommand) {
+					// Update command status to completed in Convex
+					await ctx.runMutation(
+						internal.collections.sandboxes.commands.mutations
+							.updateCommandStatus,
+						{ id: sandboxDoc.devCmdId, status: "completed", exitCode: 0 },
+					);
+
+					// Unregister from monitoring
+					await unregisterMonitoring(
+						sandboxDoc.sandboxExternalId,
+						devCommand.cmdId,
+					);
+
+					// Kill the process in sandbox
+					try {
+						await instance.runCommand({
+							cmd: "pkill",
+							args: ["-f", "pnpm run dev"],
+						});
+						console.log("[restartDevServer] Killed dev process");
+					} catch (error) {
+						console.warn(
+							"[restartDevServer] Failed to kill dev process:",
+							error,
+						);
+					}
+
+					// Wait for cleanup
+					await sleep(2000);
+				}
+			}
+
+			// Step 2: Start new dev command
+			console.log("[restartDevServer] Starting new dev command...");
+
+			const dev = await instance.runCommand({
+				cmd: "pnpm",
+				args: ["run", "dev"],
+				cwd: sandboxDoc.cwd,
+				detached: true,
+			});
+
+			// Create dev command record in Convex
+			const devCommandId = await ctx.runMutation(
+				internal.collections.sandboxes.commands.mutations.createCommand,
+				{
+					cmdId: dev.cmdId,
+					sandboxId: sandboxId,
+					status: "running",
+					command: "pnpm",
+					args: ["run", "dev"],
+					cwd: sandboxDoc.cwd,
+					type: "dev",
+					workspaceId: session.workspaceId,
+					projectId: session.projectId,
+					campaignId: session.campaignId,
+					agentSessionId: session._id,
+					createdBy: session.createdBy,
+				},
+			);
+
+			// Update sandbox dev cmdId
+			await ctx.runMutation(
+				internal.collections.sandboxes.mutations.updateCommandIdsInternal,
+				{ id: sandboxId, devCmdId: devCommandId },
+			);
+
+			// Register monitoring with sandbox-logger
+			await registerMonitoring(instance.sandboxId, dev.cmdId, "dev");
+
+			// Wait for dev server to start
+			await sleep(500);
+
+			// Get preview URL
+			const previewUrl = instance.domain(sandboxDoc.ports[0] ?? 5173);
+
+			// Update preview URL in DB
+			await ctx.runMutation(
+				internal.collections.sandboxes.mutations.updatePreviewUrlInternal,
+				{
+					id: sandboxId,
+					previewUrl,
+				},
+			);
+
+			console.log("[restartDevServer] Dev server restarted successfully");
+
+			return {
+				success: true,
+				devCmdId: devCommandId,
+				previewUrl,
+				error: null,
+			};
+		} catch (error) {
+			console.error("[restartDevServer] Error:", error);
+			return {
+				success: false,
+				devCmdId: null,
+				previewUrl: null,
+				error: error instanceof Error ? error.message : String(error),
+			};
+		}
+	},
+});
+
+/**
+ * Renew sandbox session - creates a new sandbox for a renewed agent session
+ * Similar to createOrGetSandboxSession but specifically for session renewals
+ */
+export const renewSandboxSession = internalAction({
+	args: {
+		sessionId: v.id("agentSessions"),
+		config: v.object(sandboxConfigSchema.fields),
+	},
+	handler: async (ctx, { sessionId, config }): Promise<Id<"sandboxes">> => {
+		const credentials = getCredentials();
+
+		// Get session details
+		const session = await ctx.runQuery(
+			internal.collections.agentSessions.queries.getByIdInternal,
+			{ id: sessionId },
+		);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.status !== "active") {
+			throw new ConvexError(
+				"Session is closed. Please join or create a new session.",
+			);
+		}
+
+		// Determine asset settings from session
+		const assetSettings =
+			session.assetType === "landingPage"
+				? { type: "landingPage" as const, id: session.landingPageId }
+				: { type: "form" as const, id: session.formId };
+
+		// Get asset signed URL
+		let signedUrl: string;
+
+		if (assetSettings.type === "landingPage") {
+			// Get landing page with signed URL
+			const landingPage = await ctx.runQuery(
+				internal.collections.landingPages.queries.getByIdInternal,
+				{ id: assetSettings.id },
+			);
+
+			if (!landingPage) {
+				throw new ConvexError(ERRORS.NOT_FOUND);
+			}
+
+			// If no version exists, prepare template
+			if (!landingPage.landingPageVersionId) {
+				console.log(
+					`[renewSandboxSession] No version found for landing page ${assetSettings.id}, preparing template inline`,
+				);
+				await ctx.runAction(
+					internal.collections.landingPages.actions
+						.prepareTemplateForLandingPage,
+					{
+						landingPageId: assetSettings.id,
+						userId: session.createdBy,
+					},
+				);
+			}
+
+			// Get landing page with signed URL
+			const landingPageWithUrl = await ctx.runQuery(
+				internal.collections.landingPages.queries.getByIdWithSignedUrlInternal,
+				{ id: assetSettings.id },
+			);
+
+			if (!landingPageWithUrl) {
+				throw new ConvexError(
+					"Landing page version not found after preparation",
+				);
+			}
+
+			signedUrl = landingPageWithUrl.signedUrl;
+		} else {
+			// TODO: Implement form support
+			throw new ConvexError({
+				message: "Form sandboxes not yet supported",
+				data: { assetType: assetSettings.type },
+			});
+		}
+
+		try {
+			// Create new sandbox
+			const { sandboxDbId } = await createNewSandbox(
+				signedUrl,
+				credentials,
+				ctx,
+				sessionId,
+				config,
+			);
+
+			return sandboxDbId;
+		} catch (error) {
+			console.error("Sandbox renewal failed:", error);
+
+			if (error instanceof ConvexError) {
+				throw error;
+			}
+
+			throw new ConvexError({
+				message: "Failed to renew sandbox",
+				data: { error: error instanceof Error ? error.message : String(error) },
+			});
+		}
+	},
+});
+
+export const readTagsFile = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId },
+	): Promise<
+		| { success: true; content: string; error: null }
+		| { success: false; content: null; error: { message: string } }
+	> => {
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get sandbox and verify workspace authorization
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Get current user workspace
+		const currentUser = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+
+		if (
+			!currentUser ||
+			sandbox.workspaceId !== currentUser.currentWorkspaceId
+		) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		try {
+			const result = await ctx.runAction(
+				internal.collections.sandboxes.actions.readFileTool,
+				{
+					sandboxId,
+					filePath: "src/configuration/tags.ts",
+					cwd: "/vercel/sandbox",
+				},
+			);
+
+			return result;
+		} catch (error) {
+			return {
+				success: false,
+				content: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+export const updateTagsFile = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		tagsConfig: v.object({
+			googleTagManagerId: v.union(v.string(), v.null()),
+			googleAnalyticsId: v.union(v.string(), v.null()),
+			googleSiteVerificationId: v.union(v.string(), v.null()),
+			facebookPixelId: v.union(v.string(), v.null()),
+		}),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, tagsConfig },
+	): Promise<
+		| { success: true; error: null }
+		| { success: false; error: { message: string } }
+	> => {
+		try {
+			// Prepare the updated configuration string with LLM directives
+			const configString = `// LLM Directives:
+// - You are not allowed to change any key in the tagsConfiguration object
+// - If user requests to change a tag, you should notify users they can change the tags in settings > Tags
+
+export const tagsConfiguration = ${JSON.stringify(tagsConfig, null, 2)};
+`;
+
+			const result = await ctx.runAction(
+				internal.collections.sandboxes.actions.writeFilesTool,
+				{
+					sandboxId,
+					files: [
+						{
+							path: "src/configuration/tags.ts",
+							content: configString,
+						},
+					],
+				},
+			);
+
+			if (!result.success) {
+				return {
+					success: false,
+					error: result.error,
+				};
+			}
+
+			return {
+				success: true,
+				error: null,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+export const readSeoFile = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId },
+	): Promise<
+		| { success: true; content: string; error: null }
+		| { success: false; content: null; error: { message: string } }
+	> => {
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get sandbox and verify workspace authorization
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Get current user workspace
+		const currentUser = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+
+		if (
+			!currentUser ||
+			sandbox.workspaceId !== currentUser.currentWorkspaceId
+		) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		try {
+			const result = await ctx.runAction(
+				internal.collections.sandboxes.actions.readFileTool,
+				{
+					sandboxId,
+					filePath: "src/configuration/seo.ts",
+					cwd: "/vercel/sandbox",
+				},
+			);
+
+			return result;
+		} catch (error) {
+			return {
+				success: false,
+				content: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+export const updateSeoFile = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		seoConfig: v.object({
+			title: v.string(),
+			description: v.string(),
+			canonical: v.string(),
+			indexable: v.boolean(),
+			iconType: v.string(),
+			icon: v.string(),
+			openGraph: v.object({
+				title: v.string(),
+				description: v.string(),
+				image: v.optional(v.string()),
+				url: v.optional(v.string()),
+				type: v.optional(v.string()),
+			}),
+		}),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, seoConfig },
+	): Promise<
+		| { success: true; error: null }
+		| { success: false; error: { message: string } }
+	> => {
+		try {
+			// Prepare the updated configuration string with LLM directives
+			const configString = `// LLM Directives:
+// - You are not allowed to change any key in the seoConfiguration object
+// - You can change the values based on user requests e.g. "I want to change the meta title to 'My new title'"
+
+export const seoConfiguration = ${JSON.stringify(seoConfig, null, 2)};
+`;
+
+			const result = await ctx.runAction(
+				internal.collections.sandboxes.actions.writeFilesTool,
+				{
+					sandboxId,
+					files: [
+						{
+							path: "src/configuration/seo.ts",
+							content: configString,
+						},
+					],
+				},
+			);
+
+			if (!result.success) {
+				return {
+					success: false,
+					error: result.error,
+				};
+			}
+
+			return {
+				success: true,
+				error: null,
+			};
+		} catch (error) {
+			return {
+				success: false,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+export const saveSeoAndVersion = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		landingPageId: v.id("landingPages"),
+		seoConfig: v.object({
+			title: v.string(),
+			description: v.string(),
+			canonical: v.string(),
+			indexable: v.boolean(),
+			iconType: v.string(),
+			icon: v.string(),
+			openGraph: v.object({
+				title: v.string(),
+				description: v.string(),
+				image: v.optional(v.string()),
+				url: v.optional(v.string()),
+				type: v.optional(v.string()),
+			}),
+		}),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, landingPageId, seoConfig },
+	): Promise<
+		| {
+				success: true;
+				versionNumber: number;
+				versionId: string;
+				error: null;
+		  }
+		| {
+				success: false;
+				versionNumber: null;
+				versionId: null;
+				error: { message: string };
+		  }
+	> => {
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get sandbox and verify workspace authorization
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Get current user workspace
+		const currentUser = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+
+		if (
+			!currentUser ||
+			sandbox.workspaceId !== currentUser.currentWorkspaceId
+		) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		try {
+			// Step 1: Update SEO file
+			console.log("[saveSeoAndVersion] Updating SEO file...");
+			const updateResult = await ctx.runAction(
+				internal.collections.sandboxes.actions.updateSeoFile,
+				{ sandboxId, seoConfig },
+			);
+
+			if (!updateResult.success) {
+				return {
+					success: false,
+					versionNumber: null,
+					versionId: null,
+					error: updateResult.error,
+				};
+			}
+
+			// Step 2: Save version with commit message
+			console.log("[saveSeoAndVersion] Saving version...");
+			const versionResult = await ctx.runAction(
+				internal.collections.sandboxes.actions.saveLandingPageVersionTool,
+				{
+					sandboxId,
+					landingPageId,
+					commitMessage: "chore: update SEO configuration",
+					description:
+						"Updated SEO configuration including meta tags, Open Graph, and Twitter Card settings",
+				},
+			);
+
+			if (!versionResult.success) {
+				return {
+					success: false,
+					versionNumber: null,
+					versionId: null,
+					error: versionResult.error,
+				};
+			}
+
+			console.log(
+				"[saveSeoAndVersion] Successfully saved SEO and version:",
+				versionResult.versionNumber,
+			);
+
+			return {
+				success: true,
+				versionNumber: versionResult.versionNumber,
+				versionId: versionResult.versionId,
+				error: null,
+			};
+		} catch (error) {
+			console.error("[saveSeoAndVersion] Error:", error);
+			return {
+				success: false,
+				versionNumber: null,
+				versionId: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
+/**
+ * Save marketing tags and create a new version
+ * Public action that users can call to update tags and save the current state
+ */
+export const saveTagsAndVersion = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		landingPageId: v.id("landingPages"),
+		tagsConfig: v.object({
+			googleTagManagerId: v.union(v.string(), v.null()),
+			googleAnalyticsId: v.union(v.string(), v.null()),
+			googleSiteVerificationId: v.union(v.string(), v.null()),
+			facebookPixelId: v.union(v.string(), v.null()),
+		}),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, landingPageId, tagsConfig },
+	): Promise<
+		| {
+				success: true;
+				versionNumber: number;
+				versionId: string;
+				error: null;
+		  }
+		| {
+				success: false;
+				versionNumber: null;
+				versionId: null;
+				error: { message: string };
+		  }
+	> => {
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get sandbox and verify workspace authorization
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Get current user workspace
+		const currentUser = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+
+		if (
+			!currentUser ||
+			sandbox.workspaceId !== currentUser.currentWorkspaceId
+		) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		try {
+			// Step 1: Update tags file
+			console.log("[saveTagsAndVersion] Updating tags file...");
+			const updateResult = await ctx.runAction(
+				internal.collections.sandboxes.actions.updateTagsFile,
+				{ sandboxId, tagsConfig },
+			);
+
+			if (!updateResult.success) {
+				return {
+					success: false,
+					versionNumber: null,
+					versionId: null,
+					error: updateResult.error,
+				};
+			}
+
+			// Step 2: Save version with commit message
+			console.log("[saveTagsAndVersion] Saving version...");
+			const versionResult = await ctx.runAction(
+				internal.collections.sandboxes.actions.saveLandingPageVersionTool,
+				{
+					sandboxId,
+					landingPageId,
+					commitMessage: "chore: update marketing tags",
+					description:
+						"Updated marketing tags configuration (Google Tag Manager, Google Analytics, Google Site Verification, Facebook Pixel)",
+				},
+			);
+
+			if (!versionResult.success) {
+				return {
+					success: false,
+					versionNumber: null,
+					versionId: null,
+					error: versionResult.error,
+				};
+			}
+
+			console.log(
+				"[saveTagsAndVersion] Successfully saved tags and version:",
+				versionResult.versionNumber,
+			);
+
+			return {
+				success: true,
+				versionNumber: versionResult.versionNumber,
+				versionId: versionResult.versionId,
+				error: null,
+			};
+		} catch (error) {
+			console.error("[saveTagsAndVersion] Error:", error);
+			return {
+				success: false,
+				versionNumber: null,
+				versionId: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
 export const revertToVersionTool = internalAction({
 	args: {
 		sandboxId: v.id("sandboxes"),
@@ -2558,13 +3620,13 @@ export const revertToVersionTool = internalAction({
 				"[revertToVersionTool] Updating landing page version reference...",
 			);
 
-			// Update the landing page's current version to the reverted version
+			// Update the landing page's current version to the reverted version and clear reverting state
 			await ctx.runMutation(
-				internal.collections.landingPages.mutations
-					.updateLandingPageVersionInternal,
+				internal.collections.landingPages.mutations.updateInternal,
 				{
 					id: version.landingPageId,
 					landingPageVersionId: versionId,
+					revertingToVersionId: undefined,
 				},
 			);
 
@@ -2576,6 +3638,29 @@ export const revertToVersionTool = internalAction({
 			};
 		} catch (error) {
 			console.error("[revertToVersionTool] Error:", error);
+
+			// Clear reverting state on error
+			try {
+				const version = await ctx.runQuery(
+					internal.collections.landingPages.versions.queries.getByIdInternal,
+					{ id: versionId },
+				);
+				if (version) {
+					await ctx.runMutation(
+						internal.collections.landingPages.mutations.updateInternal,
+						{
+							id: version.landingPageId,
+							revertingToVersionId: undefined,
+						},
+					);
+				}
+			} catch (clearError) {
+				console.error(
+					"[revertToVersionTool] Failed to clear reverting state:",
+					clearError,
+				);
+			}
+
 			return {
 				success: false,
 				error: {

@@ -1,5 +1,9 @@
 "use client";
 
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { useUser } from "@/hooks/auth/use-user";
 import { envCloudflarePublic } from "@firebuzz/env";
 import {
 	Avatar,
@@ -17,10 +21,6 @@ import {
 } from "@firebuzz/ui/components/ui/form";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/sheets/settings/landing-page/image-preview";
-import { ImageSelect } from "@/components/sheets/settings/landing-page/image-select";
-import { useUser } from "@/hooks/auth/use-user";
 import { useProfileForm } from "./form-context";
 
 export const ProfileForm = () => {

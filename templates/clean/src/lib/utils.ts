@@ -63,3 +63,37 @@ export function createZodSchemaFromFormConfig(
 
   return z.object(schemaObject);
 }
+
+// Logger utility with file/line information for vite-plugin-terminal
+const getCallerInfo = () => {
+  const stack = new Error().stack?.split("\n")[3]; // Get caller location
+  const match = stack?.match(/at\s+(.*)\s+\((.*):(\d+):(\d+)\)/);
+  if (match) {
+    return {
+      function: match[1],
+      file: match[2].split("/").pop(),
+      line: match[3],
+      column: match[4],
+    };
+  }
+  return null;
+};
+
+export const logger = {
+  log: (...args: unknown[]) => {
+    const info = getCallerInfo();
+    console.log(`[browser] [${info?.file}:${info?.line}]`, ...args);
+  },
+  error: (...args: unknown[]) => {
+    const info = getCallerInfo();
+    console.error(`[browser] [${info?.file}:${info?.line}]`, ...args);
+  },
+  warn: (...args: unknown[]) => {
+    const info = getCallerInfo();
+    console.warn(`[browser] [${info?.file}:${info?.line}]`, ...args);
+  },
+  info: (...args: unknown[]) => {
+    const info = getCallerInfo();
+    console.info(`[browser] [${info?.file}:${info?.line}]`, ...args);
+  },
+};

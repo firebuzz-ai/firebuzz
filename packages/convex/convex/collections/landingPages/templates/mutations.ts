@@ -11,6 +11,7 @@ export const createInternal = internalMutationWithTrigger({
 		previewUrl: v.string(),
 		files: v.string(),
 		tags: templateTags,
+		key: v.string(),
 	},
 	handler: async (ctx, args) => {
 		const landingPageTemplate = await ctx.db.insert("landingPageTemplates", {
@@ -19,6 +20,7 @@ export const createInternal = internalMutationWithTrigger({
 			slug: args.slug,
 			thumbnail: args.thumbnail,
 			previewUrl: args.previewUrl,
+			key: args.key,
 			tags: args.tags,
 			files: args.files,
 		});

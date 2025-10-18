@@ -1,8 +1,8 @@
 "use node";
-import { gunzipSync, gzipSync } from "node:zlib";
 import { saveMessage } from "@convex-dev/agent";
 import { TarFileSystem } from "@firebuzz/file-system-v2";
 import { ConvexError, v } from "convex/values";
+import { gunzipSync, gzipSync } from "node:zlib";
 import { components, internal } from "../../_generated/api";
 import type { Doc, Id } from "../../_generated/dataModel";
 import { internalAction } from "../../_generated/server";
@@ -161,13 +161,6 @@ export const buildAndPublishPreview = internalAction({
 		sessionId: v.id("agentSessions"),
 	},
 	handler: async (ctx, { landingPageId, sessionId, userId }) => {
-		// Set isPublishing = true at the start
-		await ctx.runMutation(
-			internal.collections.landingPages.mutations
-				.updatePublishingStatusInternal,
-			{ id: landingPageId, isPublishing: true },
-		);
-
 		try {
 			// 1. Get landing page
 			const landingPage = await ctx.runQuery(
@@ -175,7 +168,7 @@ export const buildAndPublishPreview = internalAction({
 				{ id: landingPageId },
 			);
 
-			if (!landingPage) {
+			if (!landingPage || !landingPage.landingPageVersionId) {
 				throw new ConvexError(ERRORS.NOT_FOUND);
 			}
 
@@ -211,11 +204,17 @@ export const buildAndPublishPreview = internalAction({
 					buildResult.error,
 				);
 
+				// Clear isPublishing flag immediately
+				await ctx.runMutation(
+					internal.collections.landingPages.mutations.updateInternal,
+					{ id: landingPageId, isPublishing: false },
+				);
+
 				// Analyze build error
 				const { object: analysisResult } =
 					await landingPageErrorAnalysisAgent.generateObject(
 						ctx,
-						{},
+						{ userId },
 						{
 							prompt: `Analyze the following build error: ${buildResult.error}`,
 							schema: landingPageErrorAnalysisSchema,
@@ -254,7 +253,6 @@ ${JSON.stringify(analysisResult)}
 						landingPageId,
 						model: session.model,
 						knowledgeBases: [],
-						ignoreAutoFix: true,
 						workspaceId: landingPage.workspaceId,
 						projectId: landingPage.projectId,
 						campaignId: landingPage.campaignId,
@@ -272,6 +270,11 @@ ${JSON.stringify(analysisResult)}
 			);
 
 			if (!extractResult.success) {
+				// Clear isPublishing flag immediately
+				await ctx.runMutation(
+					internal.collections.landingPages.mutations.updateInternal,
+					{ id: landingPageId, isPublishing: false },
+				);
 				throw new ConvexError(
 					`Failed to extract build output: ${extractResult.error}`,
 				);
@@ -285,6 +288,7 @@ ${JSON.stringify(analysisResult)}
 					html: extractResult.html,
 					js: extractResult.js,
 					css: extractResult.css,
+					landingPageVersionId: landingPage.landingPageVersionId,
 				},
 			);
 
@@ -292,8 +296,7 @@ ${JSON.stringify(analysisResult)}
 		} catch (error) {
 			// Clear isPublishing flag on error
 			await ctx.runMutation(
-				internal.collections.landingPages.mutations
-					.updatePublishingStatusInternal,
+				internal.collections.landingPages.mutations.updateInternal,
 				{ id: landingPageId, isPublishing: false },
 			);
 			throw error;

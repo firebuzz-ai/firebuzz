@@ -30,6 +30,7 @@ export const updateInternal = internalMutation({
 		sandboxExternalId: v.optional(v.string()),
 		startedAt: v.optional(v.string()),
 		stoppedAt: v.optional(v.string()),
+		isBuilding: v.optional(v.boolean()),
 	},
 	handler: async (ctx, args) => {
 		const updates: Partial<Doc<"sandboxes">> = {};
@@ -39,6 +40,7 @@ export const updateInternal = internalMutation({
 			updates.sandboxExternalId = args.sandboxExternalId;
 		if (args.startedAt) updates.startedAt = args.startedAt;
 		if (args.stoppedAt) updates.stoppedAt = args.stoppedAt;
+		if ("isBuilding" in args) updates.isBuilding = args.isBuilding;
 		await ctx.db.patch(args.id, updates);
 	},
 });
@@ -56,16 +58,6 @@ export const updateCommandIdsInternal = internalMutation({
 		if (args.devCmdId) updates.devCmdId = args.devCmdId;
 		if (args.buildCmdId) updates.buildCmdId = args.buildCmdId;
 		await ctx.db.patch(args.id, updates);
-	},
-});
-
-export const updateBuildStatusInternal = internalMutation({
-	args: {
-		id: v.id("sandboxes"),
-		isBuilding: v.boolean(),
-	},
-	handler: async (ctx, { id, isBuilding }) => {
-		await ctx.db.patch(id, { isBuilding });
 	},
 });
 
@@ -138,15 +130,25 @@ export const killSandboxInternalByExternalId = internalMutation({
 			sandboxExternalId: sandbox.sandboxExternalId,
 			startedAt: sandbox.startedAt || new Date().toISOString(),
 		});
+
+		if (sandbox.devCmdId) {
+			// Kill dev command
+			await ctx.db.patch(sandbox.devCmdId, {
+				status: "completed",
+			});
+		}
 	},
 });
 
-export const recreate = mutation({
+/**
+ * Renew sandbox - creates a new sandbox for a renewed agent session
+ * Public mutation that users can call to renew sandbox when renewing session
+ */
+export const renew = mutation({
 	args: {
 		sessionId: v.id("agentSessions"),
-		existingSandboxId: v.id("sandboxes"),
 	},
-	handler: async (ctx, { sessionId, existingSandboxId }) => {
+	handler: async (ctx, { sessionId }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
@@ -165,32 +167,32 @@ export const recreate = mutation({
 			throw new ConvexError("Session is not active");
 		}
 
-		if (session.sandboxId !== existingSandboxId) {
-			throw new ConvexError("Session does not have the existing sandbox");
-		}
+		// Get existing sandbox to extract config
+		const existingSandbox = session.sandboxId
+			? await ctx.db.get(session.sandboxId)
+			: null;
 
-		const existingSandbox = await ctx.db.get(existingSandboxId);
-		if (!existingSandbox) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
+		// Use existing config or defaults
+		const config = existingSandbox
+			? {
+					timeout: existingSandbox.timeout,
+					vcpus: existingSandbox.vcpus,
+					runtime: existingSandbox.runtime,
+					ports: existingSandbox.ports,
+					cwd: existingSandbox.cwd,
+				}
+			: {
+					timeout: 30 * 60 * 1000 + 2 * 60 * 1000,
+					ports: [5173],
+					vcpus: 2 as const,
+					runtime: "node22" as const,
+					cwd: "/vercel/sandbox" as const,
+				};
 
-		const config = {
-			timeout: existingSandbox.timeout,
-			vcpus: existingSandbox.vcpus,
-			runtime: existingSandbox.runtime,
-			ports: existingSandbox.ports,
-			cwd: existingSandbox.cwd,
-		};
-
-		// Update sandboxId in session
-		await ctx.db.patch(sessionId, {
-			sandboxId: undefined,
-		});
-
-		// Recreate sandbox
+		// Renew sandbox
 		await retrier.run(
 			ctx,
-			internal.collections.sandboxes.actions.recreateSandboxSession,
+			internal.collections.sandboxes.actions.renewSandboxSession,
 			{ sessionId, config },
 		);
 	},

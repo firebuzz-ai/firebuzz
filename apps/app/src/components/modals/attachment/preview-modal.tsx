@@ -1,3 +1,6 @@
+"use client";
+import { PDFViewer } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/pdf-viewer";
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button, buttonVariants } from "@firebuzz/ui/components/ui/button";
@@ -5,8 +8,6 @@ import { ExternalLink, EyeOff, X } from "@firebuzz/ui/icons/lucide";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useHotkeys } from "react-hotkeys-hook";
-import { PDFViewer } from "@/app/(workspace)/(dashboard)/storage/documents/_components/modals/pdf-viewer";
-import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 
 const MediaRenderer = ({
 	mediaUrl,
@@ -56,8 +57,8 @@ const MediaRenderer = ({
 
 	if (mediaType.startsWith("audio")) {
 		return (
-			<div className="flex flex-col items-center justify-center w-full h-full">
-				<div className="p-8 mb-4 bg-accent rounded-xl">
+			<div className="flex flex-col justify-center items-center w-full h-full">
+				<div className="p-8 mb-4 rounded-xl bg-accent">
 					<svg
 						width="64"
 						height="64"
@@ -83,20 +84,20 @@ const MediaRenderer = ({
 
 	if (mediaType === "pdf") {
 		return (
-			<div className="w-full h-full p-10">
+			<div className="p-10 w-full h-full">
 				<PDFViewer src={mediaUrl} />
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex flex-col items-center justify-center w-full h-full bg-muted/30">
-			<div className="flex items-center justify-center p-4 mb-4 border rounded-full bg-muted">
-				<EyeOff className="size-8 animate-pulse" />
+		<div className="flex flex-col justify-center items-center w-full h-full bg-muted/30">
+			<div className="flex justify-center items-center p-4 mb-4 rounded-full border bg-muted">
+				<EyeOff className="animate-pulse size-8" />
 			</div>
 			<div className="mb-6 text-center">
 				<p className="text-lg font-bold">Preview Not Available</p>
-				<div className="max-w-sm mt-1 text-sm">
+				<div className="mt-1 max-w-sm text-sm">
 					Direct preview for{" "}
 					<Badge variant="outline" className="uppercase">
 						{mediaType}
@@ -136,7 +137,7 @@ export const AttachmentPreviewModal = () => {
 				>
 					<motion.div
 						layout
-						className="container flex items-center justify-center h-full max-w-7xl"
+						className="container flex justify-center items-center max-w-7xl h-full"
 					>
 						<motion.div
 							initial={{ opacity: 0, scale: 0.9, y: 10 }}
@@ -153,7 +154,7 @@ export const AttachmentPreviewModal = () => {
 							<Button
 								variant="ghost"
 								size="icon"
-								className="absolute z-10 top-2 right-2"
+								className="absolute top-2 right-2 z-10"
 								onClick={handleClose}
 							>
 								<X />

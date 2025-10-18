@@ -22,19 +22,22 @@ export const useLandingChat = ({
 	landingPageId: Id<"landingPages">;
 }) => {
 	const { data: landingPage, isPending: isLandingPageLoading } =
-		useCachedRichQuery(api.collections.landingPages.queries.getById, {
-			id: landingPageId,
-		});
+		useCachedRichQuery(
+			api.collections.landingPages.queries.getById,
+			landingPageId
+				? {
+						id: landingPageId,
+					}
+				: "skip",
+		);
 
 	const result = useUIMessages(
 		api.components.agent.listLandingPageMessages,
-		{ landingPageId, threadId: "" }, // threadId is passed as empty string to make ts happy (We are inheriting it from the landing page)
+		landingPage?.threadId ? { threadId: landingPage.threadId } : "skip",
 		{ initialNumItems: 140, stream: true },
 	);
 
 	const { results, status, loadMore } = result;
-
-	console.log("result", result);
 
 	const typedMessages = useMemo(() => {
 		return results as LandingPageUIMessage[];
@@ -89,6 +92,78 @@ export const useLandingChat = ({
 
 		return a as Doc<"knowledgeBases">[];
 	}, [session.session?.knowledgeBases, defaultKnowledgeBase]);
+
+	const addAttachmentMutation = useMutation(
+		api.collections.agentSessions.mutations.addAttachment,
+	).withOptimisticUpdate((store, args) => {
+		const session = store.getQuery(
+			api.collections.agentSessions.queries.getById,
+			{ id: args.sessionId },
+		);
+		if (session) {
+			// Check if attachment already exists
+			const exists = session.attachments.some(
+				(att) =>
+					att.id === args.attachment.id && att.type === args.attachment.type,
+			);
+			if (!exists) {
+				store.setQuery(
+					api.collections.agentSessions.queries.getById,
+					{ id: args.sessionId },
+					{
+						...session,
+						attachments: [...session.attachments, args.attachment],
+					},
+				);
+			}
+		}
+	});
+
+	const removeAttachmentMutation = useMutation(
+		api.collections.agentSessions.mutations.removeAttachment,
+	).withOptimisticUpdate((store, args) => {
+		const session = store.getQuery(
+			api.collections.agentSessions.queries.getById,
+			{ id: args.sessionId },
+		);
+		if (session) {
+			store.setQuery(
+				api.collections.agentSessions.queries.getById,
+				{ id: args.sessionId },
+				{
+					...session,
+					attachments: session.attachments.filter(
+						(att) =>
+							!(
+								att.id === args.attachment.id &&
+								att.type === args.attachment.type
+							),
+					),
+				},
+			);
+		}
+	});
+
+	const clearAttachmentsMutation = useMutation(
+		api.collections.agentSessions.mutations.clearAttachments,
+	).withOptimisticUpdate((store, args) => {
+		const session = store.getQuery(
+			api.collections.agentSessions.queries.getById,
+			{ id: args.sessionId },
+		);
+		if (session) {
+			store.setQuery(
+				api.collections.agentSessions.queries.getById,
+				{ id: args.sessionId },
+				{
+					...session,
+					attachments: [],
+				},
+			);
+		}
+	});
+
+	const attachments = session.session?.attachments || [];
 
 	const model = session.session?.model;
 	const updateModelMutation = useMutation(
@@ -186,6 +261,113 @@ export const useLandingChat = ({
 		});
 	}, [abortStreamMutation, landingPage?.threadId, pendingMessageId]);
 
+	const addAttachment = useCallback(
+		async (attachment: {
+			type: "media" | "document";
+			id: Id<"media"> | Id<"documents">;
+		}) => {
+			if (!session.session?._id) return;
+			try {
+				await addAttachmentMutation({
+					sessionId: session.session._id,
+					attachment: attachment as
+						| { type: "media"; id: Id<"media"> }
+						| { type: "document"; id: Id<"documents"> },
+				});
+			} catch (error) {
+				if (error instanceof ConvexError) {
+					toast.error(error.data);
+				}
+			}
+		},
+		[addAttachmentMutation, session.session?._id],
+	);
+
+	const removeAttachment = useCallback(
+		async (attachment: {
+			type: "media" | "document";
+			id: Id<"media"> | Id<"documents">;
+		}) => {
+			if (!session.session?._id) return;
+			try {
+				await removeAttachmentMutation({
+					sessionId: session.session._id,
+					attachment: attachment as
+						| { type: "media"; id: Id<"media"> }
+						| { type: "document"; id: Id<"documents"> },
+				});
+			} catch (error) {
+				if (error instanceof ConvexError) {
+					toast.error(error.data);
+				}
+			}
+		},
+		[removeAttachmentMutation, session.session?._id],
+	);
+
+	const clearAttachments = useCallback(async () => {
+		if (!session.session?._id) return;
+		try {
+			await clearAttachmentsMutation({
+				sessionId: session.session._id,
+			});
+		} catch (error) {
+			if (error instanceof ConvexError) {
+				toast.error(error.data);
+			}
+		}
+	}, [clearAttachmentsMutation, session.session?._id]);
+
+	const clearConversationMutation = useMutation(
+		api.components.agent.clearThreadAndCreateNew,
+	).withOptimisticUpdate((store, args) => {
+		// Optimistically clear messages from UI
+		const landingPage = store.getQuery(
+			api.collections.landingPages.queries.getById,
+			{ id: args.landingPageId },
+		);
+		if (landingPage?.threadId) {
+			// Clear messages from the old thread
+			store.setQuery(
+				api.components.agent.listLandingPageMessages,
+				{
+					threadId: landingPage.threadId,
+					paginationOpts: {
+						numItems: 140,
+						cursor: null,
+					},
+				},
+				undefined,
+			);
+		}
+	});
+
+	const clearConversation = useCallback(async () => {
+		if (!landingPage?._id) return;
+		try {
+			toast.loading("Clearing conversation...", { id: "clear-conversation" });
+			await clearConversationMutation({
+				landingPageId: landingPage._id,
+			});
+			toast.success("Conversation cleared", {
+				id: "clear-conversation",
+				description: "Started fresh with a new conversation",
+			});
+		} catch (error) {
+			if (error instanceof ConvexError) {
+				toast.error("Failed to clear conversation", {
+					id: "clear-conversation",
+					description: error.data,
+				});
+			} else {
+				toast.error("Failed to clear conversation", {
+					id: "clear-conversation",
+					description: "An unexpected error occurred",
+				});
+			}
+		}
+	}, [clearConversationMutation, landingPage?._id]);
+
 	return {
 		messages: typedMessages,
 		sendMessage,
@@ -205,5 +387,10 @@ export const useLandingChat = ({
 		queues,
 		todoList,
 		landingPage,
+		attachments,
+		addAttachment,
+		removeAttachment,
+		clearAttachments,
+		clearConversation,
 	};
 };

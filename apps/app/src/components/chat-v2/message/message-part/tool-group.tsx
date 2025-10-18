@@ -6,7 +6,7 @@ import { Button } from "@firebuzz/ui/components/ui/button";
 import { ChevronDown, ChevronRight } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { getToolName } from "../utils/group-tool-calls";
 import { MessagePart } from "./message-part";
 
@@ -15,7 +15,10 @@ interface ToolGroupProps {
 	startIndex: number;
 }
 
-export const ToolGroup = ({ parts, startIndex }: ToolGroupProps) => {
+export const ToolGroup = memo(function ToolGroup({
+	parts,
+	startIndex,
+}: ToolGroupProps) {
 	const [isOpen, setIsOpen] = useState(false);
 
 	const groupStatus = useMemo(() => {
@@ -59,34 +62,37 @@ export const ToolGroup = ({ parts, startIndex }: ToolGroupProps) => {
 
 	const activeToolCall = useMemo(() => {
 		// Find the first loading/streaming tool call
-		const foundPart = parts.find((part) => {
+		return parts.find((part) => {
 			if ("state" in part) {
-				const isLoading = part.state === "input-available" || part.state === "input-streaming";
-				console.log(`[ToolGroup] Checking part ${part.type}, state: ${part.state}, isLoading: ${isLoading}`);
-				return isLoading;
+				return (
+					part.state === "input-available" || part.state === "input-streaming"
+				);
 			}
 			return false;
 		});
-		console.log(`[ToolGroup] Active tool call:`, foundPart);
-		return foundPart;
 	}, [parts]);
 
 	const activeToolName = useMemo(() => {
 		if (activeToolCall) {
-			const name = getToolName(activeToolCall.type);
-			console.log(`[ToolGroup] Active tool name: ${name}`);
-			return name;
+			return getToolName(activeToolCall.type);
 		}
 		return null;
 	}, [activeToolCall]);
 
 	const isStreaming = groupStatus === "loading";
 
-	console.log(`[ToolGroup] Render - isStreaming: ${isStreaming}, activeToolName: ${activeToolName}, groupStatus: ${groupStatus}`);
+	// Filter parts for display in collapsible content - exclude active tool if it's streaming
+	const displayParts = useMemo(() => {
+		if (isStreaming && activeToolCall) {
+			// Don't show the active streaming tool in the content since it's in the header
+			return parts.filter((part) => part !== activeToolCall);
+		}
+		return parts;
+	}, [parts, isStreaming, activeToolCall]);
 
-	const handleToggle = () => {
-		setIsOpen(!isOpen);
-	};
+	const handleToggle = useCallback(() => {
+		setIsOpen((prev) => !prev);
+	}, []);
 
 	return (
 		<div className="overflow-hidden w-full text-xs rounded-md border">
@@ -147,17 +153,21 @@ export const ToolGroup = ({ parts, startIndex }: ToolGroupProps) => {
 						className="overflow-hidden"
 					>
 						<div className="flex flex-col gap-2 p-2">
-							{parts.map((part, index) => (
-								<MessagePart
-									key={`${part.type}-${startIndex + index}`}
-									part={part}
-									partIndex={startIndex + index}
-								/>
-							))}
+							{displayParts.map((part, index) => {
+								// Find original index in parts array
+								const originalIndex = parts.indexOf(part);
+								return (
+									<MessagePart
+										key={`${part.type}-${startIndex + originalIndex}`}
+										part={part}
+										partIndex={startIndex + originalIndex}
+									/>
+								);
+							})}
 						</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
 		</div>
 	);
-};
+});
