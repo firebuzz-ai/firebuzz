@@ -1,4 +1,5 @@
 import { ChatTabsProvider } from "@/components/chat-v2/providers/chat-tabs-provider";
+import { DesignModeProvider } from "@/components/chat-v2/providers/design-mode-provider";
 import { LandingPageProvider } from "@/components/chat-v2/providers/landing-page-provider";
 import { PreviewSizeProvider } from "@/components/chat-v2/providers/preview-size-provider";
 import { PreviewTabsProvider } from "@/components/chat-v2/providers/preview-tabs-provider";
@@ -37,25 +38,27 @@ export default async function Page({
 				<SanboxProvider>
 					<PreviewTabsProvider>
 						<PreviewSizeProvider>
-							<ChatTabsProvider>
-								<div className="flex flex-col flex-1 px-2 pb-2 h-screen">
-									<TwoPanelsAgentProvider
-										id="asset-agent"
-										leftPanelSizeFromCookie={leftPanelSize}
-									>
-										<div className="flex overflow-hidden flex-col w-full max-h-screen">
-											<Edit landingPageId={pageId} campaignId={campaignId} />
-											{/* Modals */}
-											<MediaGalleryModal />
-											<DocumentsSelectorModal />
-											<AIImageModal />
-											<AttachmentPreviewModal />
-											<RenameLandingPageModal />
-											<TranslationModal />
-										</div>
-									</TwoPanelsAgentProvider>
-								</div>
-							</ChatTabsProvider>
+							<DesignModeProvider>
+								<ChatTabsProvider>
+									<div className="flex flex-col flex-1 px-2 pb-2 h-screen">
+										<TwoPanelsAgentProvider
+											id="asset-agent"
+											leftPanelSizeFromCookie={leftPanelSize}
+										>
+											<div className="flex overflow-hidden flex-col w-full max-h-screen">
+												<Edit landingPageId={pageId} campaignId={campaignId} />
+												{/* Modals */}
+												<MediaGalleryModal />
+												<DocumentsSelectorModal />
+												<AIImageModal />
+												<AttachmentPreviewModal />
+												<RenameLandingPageModal />
+												<TranslationModal />
+											</div>
+										</TwoPanelsAgentProvider>
+									</div>
+								</ChatTabsProvider>
+							</DesignModeProvider>
 						</PreviewSizeProvider>
 					</PreviewTabsProvider>
 				</SanboxProvider>

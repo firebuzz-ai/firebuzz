@@ -1,4 +1,7 @@
 import { useAgentSession } from "@/hooks/agent/use-agent-session";
+import type { ElementData } from "@/components/chat-v2/providers/design-mode-provider";
+import { ElementInspector } from "@/components/chat-v2/design-mode/element-inspector";
+import { useDesignMode } from "@/hooks/agent/use-design-mode";
 import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import { usePreviewSize } from "@/hooks/agent/use-preview-size";
 import { useSandbox } from "@/hooks/agent/use-sandbox";
@@ -8,7 +11,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { AlertCircle } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
 const sizeClasses = {
 	mobile: "w-[375px]",
@@ -35,6 +38,7 @@ export const Preview = () => {
 	} = sandbox;
 	const { currentSize } = usePreviewSize();
 	const { landingPage } = useLandingPageContext();
+	const { isDesignModeActive, selectElement } = useDesignMode();
 
 	const handleIframeLoad = () => {
 		setIsPreviewIframeLoaded(true);
@@ -43,6 +47,32 @@ export const Preview = () => {
 	const handleStaticIframeLoad = () => {
 		setIsStaticPreviewIframeLoaded(true);
 	};
+
+	// Send design mode toggle messages to iframe
+	useEffect(() => {
+		if (!iframeRef.current?.contentWindow || !isPreviewIframeLoaded) return;
+
+		const message = {
+			type: isDesignModeActive ? "ENABLE_DESIGN_MODE" : "DISABLE_DESIGN_MODE",
+			enabled: isDesignModeActive,
+		};
+
+		iframeRef.current.contentWindow.postMessage(message, "*");
+	}, [isDesignModeActive, iframeRef, isPreviewIframeLoaded]);
+
+	// Listen for element selection messages from iframe
+	useEffect(() => {
+		const handleMessage = (
+			event: MessageEvent<{ type: string; data: ElementData }>,
+		) => {
+			if (event.data.type === "FB_ELEMENT_SELECTED") {
+				selectElement(event.data.data);
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+		return () => window.removeEventListener("message", handleMessage);
+	}, [selectElement]);
 
 	const staticPreviewURL = landingPage?.previewUrl; // Static preview URL from landing page
 	const isInitializing = useMemo(() => {
@@ -139,6 +169,9 @@ export const Preview = () => {
 
 	return (
 		<div className="relative w-full h-full">
+			{/* Element Inspector */}
+			<ElementInspector />
+
 			{/* Message Component */}
 			<AnimatePresence>
 				{shouldShowMessage && (
