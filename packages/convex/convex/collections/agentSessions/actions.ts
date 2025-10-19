@@ -2,7 +2,9 @@
 
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
-import { internalAction } from "../../_generated/server";
+import { action, internalAction } from "../../_generated/server";
+import { ERRORS } from "../../utils/errors";
+import { getCurrentUserWithWorkspace } from "../users/utils";
 import { engineAPIClient } from "../../lib/engine";
 
 interface TodoItem {
@@ -241,6 +243,36 @@ export const updateTodoListTool = internalAction({
 				},
 			};
 		}
+	},
+});
+
+/**
+ * Read file from sandbox for design mode (public action wrapper)
+ */
+export const readFileForDesignMode = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		filePath: v.string(),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, filePath },
+	): Promise<{
+		success: boolean;
+		content: string | null;
+		error: { message: string } | null;
+	}> => {
+		// Call internal readFileTool action
+		const result = await ctx.runAction(
+			internal.collections.sandboxes.actions.readFileTool,
+			{
+				sandboxId,
+				filePath,
+				cwd: "/vercel/sandbox",
+			},
+		);
+
+		return result;
 	},
 });
 

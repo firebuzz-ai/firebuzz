@@ -1,22 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { parse } from "@babel/parser";
-import traverse_ from "@babel/traverse";
-import type { NodePath } from "@babel/traverse";
-import generate_ from "@babel/generator";
-import type { JSXAttribute, JSXOpeningElement } from "@babel/types";
 import * as esbuild from "esbuild";
 import type { Plugin } from "vite";
 
-// Handle CommonJS default exports
-const traverse = (traverse_ as any).default || traverse_;
-const generate = (generate_ as any).default || generate_;
-
 /**
  * Vite plugin that enables design mode features for Firebuzz
- * - Adds data attributes to JSX elements for tracking
+ * - Generates Tailwind config JSON for client-side use
  * - Injects overlay script for element selection
- * - Generates Tailwind config JSON for client-side use (Phase 2)
+ *
+ * NOTE: This plugin does NOT modify JSX/TSX files.
+ * Element tracking is done at runtime using React Fiber's _debugSource.
  */
 export function firebuzzDesignMode(): Plugin {
 	// Only enable in development, never in production builds
@@ -74,26 +67,6 @@ export function firebuzzDesignMode(): Plugin {
 			}
 		},
 
-		transform(code, id) {
-			if (!isDesignModeEnabled) return null;
-
-			// Only process .tsx and .jsx files, skip node_modules and design-mode itself
-			if (
-				!id.includes("node_modules") &&
-				/\.(tsx|jsx)$/.test(id) &&
-				!id.includes("design-mode")
-			) {
-				try {
-					return addDataAttributes(code, id);
-				} catch (error) {
-					console.warn(`[Firebuzz Design Mode] Error transforming ${id}:`, error);
-					return null;
-				}
-			}
-
-			return null;
-		},
-
 		transformIndexHtml(html) {
 			if (!isDesignModeEnabled) return html;
 
@@ -104,103 +77,6 @@ export function firebuzzDesignMode(): Plugin {
 			);
 		},
 	};
-
-	function addDataAttributes(code: string, filename: string) {
-		// Parse the code with Babel
-		const ast = parse(code, {
-			sourceType: "module",
-			plugins: ["jsx", "typescript"],
-		});
-
-		const relativePath = filename.replace(projectRoot, "");
-
-		// Traverse the AST and add data attributes to JSX elements
-		traverse(ast, {
-			JSXOpeningElement(nodePath: NodePath<JSXOpeningElement>) {
-				const { node } = nodePath;
-				const line = node.loc?.start.line || 0;
-				const column = node.loc?.start.column || 0;
-
-				// Get element name
-				let elementName = "";
-				if (node.name.type === "JSXIdentifier") {
-					elementName = node.name.name;
-				}
-
-				// Check if already has data-fb-id attribute
-				const hasDataAttr = node.attributes.some(
-					(attr: JSXAttribute | any) =>
-						attr.type === "JSXAttribute" &&
-						attr.name.type === "JSXIdentifier" &&
-						attr.name.name === "data-fb-id",
-				);
-
-				if (hasDataAttr) return;
-
-				// Add data attributes
-				const attributes = [
-					{
-						type: "JSXAttribute" as const,
-						name: {
-							type: "JSXIdentifier" as const,
-							name: "data-fb-id",
-						},
-						value: {
-							type: "StringLiteral" as const,
-							value: `${relativePath}:${line}:${column}`,
-						},
-					},
-					{
-						type: "JSXAttribute" as const,
-						name: {
-							type: "JSXIdentifier" as const,
-							name: "data-fb-name",
-						},
-						value: {
-							type: "StringLiteral" as const,
-							value: elementName,
-						},
-					},
-					{
-						type: "JSXAttribute" as const,
-						name: {
-							type: "JSXIdentifier" as const,
-							name: "data-fb-path",
-						},
-						value: {
-							type: "StringLiteral" as const,
-							value: relativePath,
-						},
-					},
-					{
-						type: "JSXAttribute" as const,
-						name: {
-							type: "JSXIdentifier" as const,
-							name: "data-fb-line",
-						},
-						value: {
-							type: "StringLiteral" as const,
-							value: String(line),
-						},
-					},
-				];
-
-				// Add attributes to the node
-				node.attributes.push(...attributes);
-			},
-		});
-
-		// Generate code from modified AST
-		const output = generate(ast, {
-			retainLines: true,
-			compact: false,
-		});
-
-		return {
-			code: output.code,
-			map: output.map,
-		};
-	}
 
 	async function generateTailwindConfig() {
 		try {

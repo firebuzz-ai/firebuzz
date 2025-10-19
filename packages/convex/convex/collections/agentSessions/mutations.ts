@@ -1038,3 +1038,333 @@ export const removeQueuedMessage = mutation({
 		return { success: true, messageQueue: newMessageQueue };
 	},
 });
+
+// ============================================================================
+// DESIGN MODE MUTATIONS
+// ============================================================================
+
+/**
+ * Update the active tab for the session (chat, history, design)
+ */
+export const setActiveTab = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		activeTab: v.union(
+			v.literal("chat"),
+			v.literal("history"),
+			v.literal("design"),
+		),
+	},
+	handler: async (ctx, { sessionId, activeTab }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		await ctx.db.patch(sessionId, {
+			activeTab,
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Toggle design mode on/off
+ */
+export const toggleDesignMode = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		enabled: v.boolean(),
+	},
+	handler: async (ctx, { sessionId, enabled }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const currentState = session.designModeState || {
+			isActive: false,
+			pendingChanges: [],
+		};
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				isActive: enabled,
+				selectedElement: enabled ? currentState.selectedElement : undefined,
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Select an element in design mode
+ */
+export const selectElement = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		element: v.object({
+			// Source location from React Fiber
+			sourceFile: v.string(),
+			sourceLine: v.number(),
+			sourceColumn: v.number(),
+			elementId: v.string(),
+
+			// DOM properties
+			tagName: v.string(),
+			className: v.string(),
+			textContent: v.optional(v.string()),
+			src: v.optional(v.string()),
+			alt: v.optional(v.string()),
+		}),
+	},
+	handler: async (ctx, { sessionId, element }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const currentState = session.designModeState || {
+			isActive: false,
+			pendingChanges: [],
+		};
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				selectedElement: element,
+			},
+			activeTab: "design", // Auto-switch to design tab when element selected
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Update element optimistically (instant preview, not yet saved to file)
+ */
+export const updateElementOptimistic = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		changeId: v.string(),
+		elementId: v.string(),
+		updates: v.object({
+			className: v.optional(v.string()),
+			textContent: v.optional(v.string()),
+			src: v.optional(v.string()),
+			alt: v.optional(v.string()),
+		}),
+	},
+	handler: async (ctx, { sessionId, changeId, elementId, updates }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const currentState = session.designModeState || {
+			isActive: false,
+			pendingChanges: [],
+		};
+
+		// Check if change already exists
+		const existingChangeIndex = currentState.pendingChanges.findIndex(
+			(c) => c.id === changeId,
+		);
+
+		let newPendingChanges: typeof currentState.pendingChanges;
+		if (existingChangeIndex >= 0) {
+			// Update existing change
+			newPendingChanges = currentState.pendingChanges.map((c, i) =>
+				i === existingChangeIndex
+					? {
+							...c,
+							updates,
+							appliedAt: new Date().toISOString(),
+						}
+					: c,
+			);
+		} else {
+			// Add new change
+			newPendingChanges = [
+				...currentState.pendingChanges,
+				{
+					id: changeId,
+					elementId,
+					updates,
+					appliedAt: new Date().toISOString(),
+					savedToFile: false,
+				},
+			];
+		}
+
+		// Update selected element with new values
+		const updatedSelectedElement = currentState.selectedElement
+			? {
+					...currentState.selectedElement,
+					className: updates.className ?? currentState.selectedElement.className,
+					textContent:
+						updates.textContent ?? currentState.selectedElement.textContent,
+					src: updates.src ?? currentState.selectedElement.src,
+					alt: updates.alt ?? currentState.selectedElement.alt,
+				}
+			: undefined;
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				selectedElement: updatedSelectedElement,
+				pendingChanges: newPendingChanges,
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Mark a pending change as saved to file
+ */
+export const markChangeAsSaved = internalMutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		changeId: v.string(),
+	},
+	handler: async (ctx, { sessionId, changeId }) => {
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		const currentState = session.designModeState;
+		if (!currentState) return { success: false };
+
+		const newPendingChanges = currentState.pendingChanges.map((c) =>
+			c.id === changeId ? { ...c, savedToFile: true } : c,
+		);
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				pendingChanges: newPendingChanges,
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Discard pending changes
+ */
+export const discardChanges = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		changeIds: v.array(v.string()),
+	},
+	handler: async (ctx, { sessionId, changeIds }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const currentState = session.designModeState;
+		if (!currentState) return { success: false };
+
+		const newPendingChanges = currentState.pendingChanges.filter(
+			(c) => !changeIds.includes(c.id),
+		);
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				pendingChanges: newPendingChanges,
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Save pending changes to files (AST-based approach)
+ */
+export const saveChangesToFiles = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		sandboxId: v.id("sandboxes"),
+		files: v.array(
+			v.object({
+				filePath: v.string(),
+				content: v.string(),
+			}),
+		),
+		changeIds: v.array(v.string()),
+	},
+	handler: async (ctx, { sessionId, sandboxId, files, changeIds }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Schedule the action to save changes
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.sandboxes.actions.saveDesignModeChanges,
+			{
+				sandboxId,
+				sessionId,
+				files,
+				changeIds,
+			},
+		);
+
+		return { success: true };
+	},
+});

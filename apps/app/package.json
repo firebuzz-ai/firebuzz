@@ -99,10 +99,10 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
-		"@babel/generator": "^7.26.10",
-		"@babel/parser": "^7.26.10",
-		"@babel/traverse": "^7.26.10",
-		"@babel/types": "^7.26.10",
+		"@babel/generator": "^7.28.3",
+		"@babel/parser": "^7.28.4",
+		"@babel/traverse": "^7.28.4",
+		"@babel/types": "^7.28.4",
 		"@clerk/types": "^4.45.1",
 		"@types/node": "^20",
 		"@types/react": "^19",

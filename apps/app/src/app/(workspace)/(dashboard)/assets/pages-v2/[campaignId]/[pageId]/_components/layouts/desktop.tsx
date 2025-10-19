@@ -2,6 +2,7 @@
 
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Chatbox } from "@/components/chat-v2/chatbox/chatbox";
+import { ElementEditor } from "@/components/chat-v2/design-mode/element-editor";
 import { AgentNavbar } from "@/components/chat-v2/navigation/navbar";
 import { PreviewTabs } from "@/components/chat-v2/preview/landing-page/tabs";
 import { useChatTabs } from "@/components/chat-v2/providers/chat-tabs-provider";
@@ -28,7 +29,18 @@ export const DesktopLayout = ({
 					onExpand={() => setIsLeftPanelCollapsed(false)}
 				>
 					<div className="relative w-full h-full">
-						<Chatbox landingPageId={landingPageId} />
+						{/* Chat Tab */}
+						<div
+							className="absolute inset-0 bg-background transition-opacity duration-200"
+							style={{
+								opacity: activeTab === "chat" ? 1 : 0,
+								pointerEvents: activeTab === "chat" ? "auto" : "none",
+							}}
+						>
+							<Chatbox landingPageId={landingPageId} />
+						</div>
+
+						{/* History Tab */}
 						<div
 							className="absolute inset-0 bg-background transition-opacity duration-200"
 							style={{
@@ -37,6 +49,17 @@ export const DesktopLayout = ({
 							}}
 						>
 							<VersionHistory landingPageId={landingPageId} />
+						</div>
+
+						{/* Design Tab */}
+						<div
+							className="absolute inset-0 bg-background transition-opacity duration-200"
+							style={{
+								opacity: activeTab === "design" ? 1 : 0,
+								pointerEvents: activeTab === "design" ? "auto" : "none",
+							}}
+						>
+							<ElementEditor />
 						</div>
 					</div>
 				</ChatLayout>

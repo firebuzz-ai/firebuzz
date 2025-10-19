@@ -103,3 +103,63 @@ export const getAttachmentsWithDetails = query({
 		return attachmentsWithDetails.filter(Boolean);
 	},
 });
+
+// ============================================================================
+// DESIGN MODE QUERIES
+// ============================================================================
+
+/**
+ * Get design mode state for a session
+ */
+export const getDesignModeState = query({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		return session.designModeState || null;
+	},
+});
+
+/**
+ * Get active tab for session
+ */
+export const getActiveTab = query({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		return session.activeTab || "chat";
+	},
+});

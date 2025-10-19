@@ -3670,3 +3670,99 @@ export const revertToVersionTool = internalAction({
 		}
 	},
 });
+
+// ============================================================================
+// DESIGN MODE FILE PERSISTENCE
+// ============================================================================
+
+export const saveDesignModeChanges = internalAction({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		sessionId: v.id("agentSessions"),
+		files: v.array(
+			v.object({
+				filePath: v.string(),
+				content: v.string(),
+			}),
+		),
+		changeIds: v.array(v.string()),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, sessionId, files, changeIds },
+	): Promise<{
+		success: boolean;
+		savedChanges: string[];
+		failedChanges: Array<{ id: string; error: string }>;
+	}> => {
+		console.log("[Design Mode] saveDesignModeChanges started (AST-based)", {
+			sandboxId,
+			sessionId,
+			fileCount: files.length,
+			changeIds,
+		});
+
+		const savedChanges: string[] = [];
+		const failedChanges: Array<{ id: string; error: string }> = [];
+
+		// Save all files using writeFilesTool (batch write)
+		try {
+			console.log(`[Design Mode] Saving ${files.length} files...`);
+			console.log("[Design Mode] Files to save:", files.map(f => ({
+				path: f.filePath,
+				contentLength: f.content.length
+			})));
+
+			// Log the actual content for debugging
+			for (const file of files) {
+				console.log(`[Design Mode] Content for ${file.filePath} (first 500 chars):`, file.content.substring(0, 500));
+			}
+
+			const writeResult = await ctx.runAction(
+				internal.collections.sandboxes.actions.writeFilesTool,
+				{
+					sandboxId,
+					files: files.map(f => ({
+						path: f.filePath,
+						content: f.content,
+					})),
+				},
+			);
+
+			console.log("[Design Mode] Write result:", writeResult);
+
+			if (!writeResult.success) {
+				console.error("[Design Mode] Failed to write files:", writeResult.error);
+			} else {
+				console.log("[Design Mode] Successfully saved all files");
+			}
+		} catch (error) {
+			console.error("[Design Mode] Error saving files:", error);
+		}
+
+		// Mark all changes as saved
+		for (const changeId of changeIds) {
+			try {
+				await ctx.runMutation(
+					internal.collections.agentSessions.mutations.markChangeAsSaved,
+					{
+						sessionId,
+						changeId,
+					},
+				);
+				savedChanges.push(changeId);
+			} catch (error) {
+				failedChanges.push({
+					id: changeId,
+					error: error instanceof Error ? error.message : String(error),
+				});
+			}
+		}
+
+		return {
+			success: failedChanges.length === 0,
+			savedChanges,
+			failedChanges,
+		};
+	},
+});

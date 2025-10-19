@@ -49,6 +49,41 @@ const errorSchema = v.object({
 	isAutoFixEnabled: v.boolean(), // Snapshot of autoErrorFix flag when detected
 });
 
+// Design mode state schema for visual element editing
+const designModeStateSchema = v.object({
+	isActive: v.boolean(),
+	selectedElement: v.optional(
+		v.object({
+			// Source location from React Fiber
+			sourceFile: v.string(), // e.g., "/src/components/hero.tsx"
+			sourceLine: v.number(), // e.g., 16
+			sourceColumn: v.number(), // e.g., 12
+			elementId: v.string(), // Computed: `${sourceFile}:${sourceLine}:${sourceColumn}`
+
+			// DOM properties
+			tagName: v.string(),
+			className: v.string(),
+			textContent: v.optional(v.string()),
+			src: v.optional(v.string()),
+			alt: v.optional(v.string()),
+		}),
+	),
+	pendingChanges: v.array(
+		v.object({
+			id: v.string(), // Unique change ID
+			elementId: v.string(),
+			updates: v.object({
+				className: v.optional(v.string()),
+				textContent: v.optional(v.string()),
+				src: v.optional(v.string()),
+				alt: v.optional(v.string()),
+			}),
+			appliedAt: v.string(),
+			savedToFile: v.boolean(),
+		}),
+	),
+});
+
 // Base schema for agent session
 const baseSchema = v.object({
 	// Relations
@@ -83,6 +118,11 @@ const baseSchema = v.object({
 	joinedUsers: v.array(v.id("users")),
 	sessionType: v.union(v.literal("background"), v.literal("regular")),
 	attachments: v.array(attachmentSchema),
+	// UI state
+	activeTab: v.optional(
+		v.union(v.literal("chat"), v.literal("history"), v.literal("design")),
+	),
+	designModeState: v.optional(designModeStateSchema),
 });
 
 export const landingPageSessionSchema = v.object({
