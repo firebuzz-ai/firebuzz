@@ -1,6 +1,5 @@
 "use client";
 
-import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import type { ToolSet } from "@firebuzz/convex";
 import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -14,6 +13,7 @@ import { cn } from "@firebuzz/ui/lib/utils";
 import type { UIToolInvocation } from "ai";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo, useState } from "react";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 
 interface SaveVersionProps {
 	part: UIToolInvocation<ToolSet["saveLandingPageVersion"]>;

@@ -1,8 +1,3 @@
-import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/reusables/image-preview";
-import { ImageSelect } from "@/components/reusables/image-select";
-import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { api, ConvexError, type Doc, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
@@ -27,6 +22,11 @@ import { motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { z } from "zod";
+import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 
 const formSchema = z.object({
 	logo: z.string().optional(),

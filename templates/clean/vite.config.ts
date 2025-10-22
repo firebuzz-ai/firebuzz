@@ -1,5 +1,5 @@
-import react from "@vitejs/plugin-react-swc";
 import path from "node:path";
+import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import terminal from "vite-plugin-terminal";
 import { firebuzzDesignMode } from "./src/design-mode/vite-plugin-design-mode";

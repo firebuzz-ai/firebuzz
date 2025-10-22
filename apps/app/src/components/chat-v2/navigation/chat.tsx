@@ -1,10 +1,5 @@
 "use client";
 
-import { useLandingChat } from "@/hooks/agent/use-landing-chat";
-import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
-import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
-import { useRenameLandingPageModal } from "@/hooks/ui/use-rename-landing-page-modal";
-import { useTwoPanelsAgentLayout } from "@/hooks/ui/use-two-panels-agent-layout";
 import { api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ButtonGroup } from "@firebuzz/ui/components/ui/button-group";
@@ -32,7 +27,6 @@ import {
 	History,
 	Languages,
 	MessageSquare,
-	Paintbrush,
 	PanelLeftClose,
 	PanelLeftOpen,
 	Plus,
@@ -48,14 +42,17 @@ import {
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useLandingChat } from "@/hooks/agent/use-landing-chat";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
+import { useRenameLandingPageModal } from "@/hooks/ui/use-rename-landing-page-modal";
+import { useTwoPanelsAgentLayout } from "@/hooks/ui/use-two-panels-agent-layout";
 import { useChatTabs } from "../providers/chat-tabs-provider";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
 
 export const ChatControls = () => {
 	const { leftPanelRef, isLeftPanelCollapsed, setIsLeftPanelCollapsed } =
 		useTwoPanelsAgentLayout();
 	const { activeTab, setActiveTab } = useChatTabs();
-	const { isDesignModeActive, toggleDesignMode } = useDesignMode();
 	const { landingPage, campaign, campaignId } = useLandingPageContext();
 	const [, setRenameLandingPageModalState] = useRenameLandingPageModal();
 	const [, { openModal: openTranslationModal }] = useNewTranslationModal();
@@ -193,8 +190,8 @@ export const ChatControls = () => {
 	return (
 		<div
 			className={cn(
-				"flex items-center h-full flex-shrink-0 gap-2  flex-grow-0 justify-between",
-				isLeftPanelCollapsed && "w-auto pr-1",
+				"flex items-center h-full flex-shrink-0 gap-2 px-2 flex-grow-0 justify-between",
+				isLeftPanelCollapsed && "w-auto px-1",
 			)}
 			style={
 				!isLeftPanelCollapsed
@@ -381,55 +378,26 @@ export const ChatControls = () => {
 
 			<div className="flex gap-1 items-center">
 				{!isLeftPanelCollapsed && (
-					<>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="iconSm"
-									onClick={() =>
-										setActiveTab(activeTab === "chat" ? "history" : "chat")
-									}
-								>
-									{activeTab === "chat" ? (
-										<History className="size-3" />
-									) : (
-										<MessageSquare className="size-3" />
-									)}
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{activeTab === "chat" ? "Version History" : "Chat"}
-							</TooltipContent>
-						</Tooltip>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="ghost"
-									size="iconSm"
-									onClick={async () => {
-										// If design mode is not active, enable it
-										if (!isDesignModeActive) {
-											await toggleDesignMode();
-										}
-										// Switch to design tab
-										setActiveTab("design");
-									}}
-								>
-									<Paintbrush
-										className={cn(
-											"size-3",
-											(activeTab === "design" || isDesignModeActive) &&
-												"text-primary",
-										)}
-									/>
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isDesignModeActive ? "Design Mode" : "Enter Design Mode"}
-							</TooltipContent>
-						</Tooltip>
-					</>
+					<Tooltip>
+						<TooltipTrigger asChild>
+							<Button
+								variant="ghost"
+								size="iconSm"
+								onClick={() =>
+									setActiveTab(activeTab === "chat" ? "history" : "chat")
+								}
+							>
+								{activeTab === "chat" ? (
+									<History className="size-3" />
+								) : (
+									<MessageSquare className="size-3" />
+								)}
+							</Button>
+						</TooltipTrigger>
+						<TooltipContent>
+							{activeTab === "chat" ? "Version History" : "Chat"}
+						</TooltipContent>
+					</Tooltip>
 				)}
 				<Tooltip>
 					<TooltipTrigger asChild>

@@ -376,6 +376,12 @@ export function hexToHsl(hex: string): string {
  * @returns Hex color string (e.g., "#ff0000")
  */
 export function hslToHex(hsl: string): string {
+	// Guard against undefined/null
+	if (!hsl) {
+		console.warn("hslToHex received invalid input:", hsl);
+		return "#000000";
+	}
+
 	// Parse the HSL string - handle both "h s% l%" and "h, s%, l%" formats
 	const values = hsl
 		.replace(/%/g, "")

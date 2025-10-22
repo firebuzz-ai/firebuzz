@@ -217,8 +217,6 @@ export class TailwindCSSGenerator {
 	 * Generate base CSS for a class (no prefixes)
 	 */
 	private generateBaseCSS(className: string): string | null {
-		const theme = this.config.theme || {};
-
 		// Background colors: bg-{color}-{shade}
 		if (className.startsWith("bg-")) {
 			return this.generateColorCSS(className, "background-color");
@@ -235,9 +233,14 @@ export class TailwindCSSGenerator {
 
 		// Border colors: border-{color}-{shade}
 		if (className.startsWith("border-")) {
-			// Check if it's a color or width
+			// Check if it's a color, width, or style
 			if (className.match(/^border-(\d+|t|r|b|l|x|y)$/)) {
 				return this.generateBorderWidthCSS(className);
+			}
+			// Check for border styles
+			if (["border-solid", "border-dashed", "border-dotted", "border-double", "border-none"].includes(className)) {
+				const style = className.replace("border-", "");
+				return `.${className} { border-style: ${style} }`;
 			}
 			return this.generateColorCSS(className, "border-color");
 		}
@@ -287,15 +290,72 @@ export class TailwindCSSGenerator {
 			return this.generateSpaceBetweenCSS(className);
 		}
 
-		// Common layout utilities
-		if (className === "items-center") return ".items-center { align-items: center }";
+		// Flex direction utilities
+		if (className === "flex-row") return ".flex-row { flex-direction: row }";
+		if (className === "flex-row-reverse") return ".flex-row-reverse { flex-direction: row-reverse }";
+		if (className === "flex-col") return ".flex-col { flex-direction: column }";
+		if (className === "flex-col-reverse") return ".flex-col-reverse { flex-direction: column-reverse }";
+
+		// Justify content utilities
+		if (className === "justify-start") return ".justify-start { justify-content: flex-start }";
 		if (className === "justify-center") return ".justify-center { justify-content: center }";
-		if (className === "items-start") return ".items-start { align-items: flex-start }";
-		if (className === "items-end") return ".items-end { align-items: flex-end }";
+		if (className === "justify-end") return ".justify-end { justify-content: flex-end }";
 		if (className === "justify-between") return ".justify-between { justify-content: space-between }";
 		if (className === "justify-around") return ".justify-around { justify-content: space-around }";
-		if (className === "flex-col") return ".flex-col { flex-direction: column }";
-		if (className === "flex-row") return ".flex-row { flex-direction: row }";
+		if (className === "justify-evenly") return ".justify-evenly { justify-content: space-evenly }";
+
+		// Align items utilities
+		if (className === "items-start") return ".items-start { align-items: flex-start }";
+		if (className === "items-center") return ".items-center { align-items: center }";
+		if (className === "items-end") return ".items-end { align-items: flex-end }";
+		if (className === "items-baseline") return ".items-baseline { align-items: baseline }";
+		if (className === "items-stretch") return ".items-stretch { align-items: stretch }";
+
+		// Text alignment utilities
+		if (className === "text-left") return ".text-left { text-align: left }";
+		if (className === "text-center") return ".text-center { text-align: center }";
+		if (className === "text-right") return ".text-right { text-align: right }";
+		if (className === "text-justify") return ".text-justify { text-align: justify }";
+
+		// Text decoration utilities
+		if (className === "underline") return ".underline { text-decoration-line: underline }";
+		if (className === "overline") return ".overline { text-decoration-line: overline }";
+		if (className === "line-through") return ".line-through { text-decoration-line: line-through }";
+		if (className === "no-underline") return ".no-underline { text-decoration-line: none }";
+
+		// Font style utilities
+		if (className === "italic") return ".italic { font-style: italic }";
+		if (className === "not-italic") return ".not-italic { font-style: normal }";
+
+		// Line height utilities
+		if (className.startsWith("leading-")) {
+			return this.generateLineHeightCSS(className);
+		}
+
+		// Letter spacing utilities
+		if (className.startsWith("tracking-")) {
+			return this.generateLetterSpacingCSS(className);
+		}
+
+		// Grid columns: grid-cols-{number}
+		if (className.startsWith("grid-cols-")) {
+			return this.generateGridColumnsCSS(className);
+		}
+
+		// Grid rows: grid-rows-{number}
+		if (className.startsWith("grid-rows-")) {
+			return this.generateGridRowsCSS(className);
+		}
+
+		// Opacity: opacity-{value}
+		if (className.startsWith("opacity-")) {
+			return this.generateOpacityCSS(className);
+		}
+
+		// Shadow: shadow-{size}
+		if (className.startsWith("shadow")) {
+			return this.generateShadowCSS(className);
+		}
 
 		// If we can't generate CSS, return null
 		console.warn(`[Tailwind Generator] Cannot generate CSS for class: ${className}`);
@@ -522,6 +582,96 @@ export class TailwindCSSGenerator {
 		}
 		if (className === "space-y-reverse") {
 			return `.${className} > :not([hidden]) ~ :not([hidden]) { --tw-space-y-reverse: 1 }`;
+		}
+
+		return null;
+	}
+
+	private generateLineHeightCSS(className: string): string | null {
+		const lineHeight = (this.config.theme?.lineHeight as Record<string, string>) || {};
+		const value = className.slice("leading-".length);
+		const lineHeightValue = lineHeight[value];
+
+		if (lineHeightValue) {
+			return `.${className} { line-height: ${lineHeightValue} }`;
+		}
+
+		return null;
+	}
+
+	private generateLetterSpacingCSS(className: string): string | null {
+		const letterSpacing = (this.config.theme?.letterSpacing as Record<string, string>) || {};
+		const value = className.slice("tracking-".length);
+		const letterSpacingValue = letterSpacing[value];
+
+		if (letterSpacingValue) {
+			return `.${className} { letter-spacing: ${letterSpacingValue} }`;
+		}
+
+		return null;
+	}
+
+	private generateGridColumnsCSS(className: string): string | null {
+		const value = className.slice("grid-cols-".length);
+
+		if (value === "none") {
+			return `.${className} { grid-template-columns: none }`;
+		}
+		if (value === "subgrid") {
+			return `.${className} { grid-template-columns: subgrid }`;
+		}
+
+		const numCols = Number.parseInt(value, 10);
+		if (!Number.isNaN(numCols) && numCols >= 1 && numCols <= 12) {
+			return `.${className} { grid-template-columns: repeat(${numCols}, minmax(0, 1fr)) }`;
+		}
+
+		return null;
+	}
+
+	private generateGridRowsCSS(className: string): string | null {
+		const value = className.slice("grid-rows-".length);
+
+		if (value === "none") {
+			return `.${className} { grid-template-rows: none }`;
+		}
+		if (value === "subgrid") {
+			return `.${className} { grid-template-rows: subgrid }`;
+		}
+
+		const numRows = Number.parseInt(value, 10);
+		if (!Number.isNaN(numRows) && numRows >= 1 && numRows <= 6) {
+			return `.${className} { grid-template-rows: repeat(${numRows}, minmax(0, 1fr)) }`;
+		}
+
+		return null;
+	}
+
+	private generateOpacityCSS(className: string): string | null {
+		const value = className.slice("opacity-".length);
+		const numValue = Number.parseInt(value, 10);
+
+		if (!Number.isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+			return `.${className} { opacity: ${numValue / 100} }`;
+		}
+
+		return null;
+	}
+
+	private generateShadowCSS(className: string): string | null {
+		const shadows = (this.config.theme?.boxShadow as Record<string, string>) || {};
+
+		// Handle "shadow" (default)
+		if (className === "shadow") {
+			const value = shadows.DEFAULT || shadows[""];
+			if (value) return `.shadow { box-shadow: ${value} }`;
+		}
+
+		// Handle "shadow-{size}"
+		const size = className.slice("shadow-".length);
+		const shadowValue = shadows[size];
+		if (shadowValue) {
+			return `.${className} { box-shadow: ${shadowValue} }`;
 		}
 
 		return null;

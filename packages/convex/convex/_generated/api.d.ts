@@ -34,6 +34,7 @@ import type * as collections_brands_socials_utils from "../collections/brands/so
 import type * as collections_brands_testimonials_mutations from "../collections/brands/testimonials/mutations.js";
 import type * as collections_brands_testimonials_queries from "../collections/brands/testimonials/queries.js";
 import type * as collections_brands_testimonials_utils from "../collections/brands/testimonials/utils.js";
+import type * as collections_brands_themes_fontUtils from "../collections/brands/themes/fontUtils.js";
 import type * as collections_brands_themes_mutations from "../collections/brands/themes/mutations.js";
 import type * as collections_brands_themes_queries from "../collections/brands/themes/queries.js";
 import type * as collections_brands_themes_utils from "../collections/brands/themes/utils.js";
@@ -60,10 +61,7 @@ import type * as collections_invitations_mutations from "../collections/invitati
 import type * as collections_invitations_queries from "../collections/invitations/queries.js";
 import type * as collections_invitations_utils from "../collections/invitations/utils.js";
 import type * as collections_landingPages_actions from "../collections/landingPages/actions.js";
-import type * as collections_landingPages_helpers_brand from "../collections/landingPages/helpers/brand.js";
-import type * as collections_landingPages_helpers_campaign from "../collections/landingPages/helpers/campaign.js";
-import type * as collections_landingPages_helpers_seo from "../collections/landingPages/helpers/seo.js";
-import type * as collections_landingPages_helpers_theme from "../collections/landingPages/helpers/theme.js";
+import type * as collections_landingPages_helpers_initializeTemplate from "../collections/landingPages/helpers/initializeTemplate.js";
 import type * as collections_landingPages_messages_mutations from "../collections/landingPages/messages/mutations.js";
 import type * as collections_landingPages_messages_queries from "../collections/landingPages/messages/queries.js";
 import type * as collections_landingPages_messages_utils from "../collections/landingPages/messages/utils.js";
@@ -220,6 +218,7 @@ declare const fullApi: ApiFromModules<{
   "collections/brands/testimonials/mutations": typeof collections_brands_testimonials_mutations;
   "collections/brands/testimonials/queries": typeof collections_brands_testimonials_queries;
   "collections/brands/testimonials/utils": typeof collections_brands_testimonials_utils;
+  "collections/brands/themes/fontUtils": typeof collections_brands_themes_fontUtils;
   "collections/brands/themes/mutations": typeof collections_brands_themes_mutations;
   "collections/brands/themes/queries": typeof collections_brands_themes_queries;
   "collections/brands/themes/utils": typeof collections_brands_themes_utils;
@@ -246,10 +245,7 @@ declare const fullApi: ApiFromModules<{
   "collections/invitations/queries": typeof collections_invitations_queries;
   "collections/invitations/utils": typeof collections_invitations_utils;
   "collections/landingPages/actions": typeof collections_landingPages_actions;
-  "collections/landingPages/helpers/brand": typeof collections_landingPages_helpers_brand;
-  "collections/landingPages/helpers/campaign": typeof collections_landingPages_helpers_campaign;
-  "collections/landingPages/helpers/seo": typeof collections_landingPages_helpers_seo;
-  "collections/landingPages/helpers/theme": typeof collections_landingPages_helpers_theme;
+  "collections/landingPages/helpers/initializeTemplate": typeof collections_landingPages_helpers_initializeTemplate;
   "collections/landingPages/messages/mutations": typeof collections_landingPages_messages_mutations;
   "collections/landingPages/messages/queries": typeof collections_landingPages_messages_queries;
   "collections/landingPages/messages/utils": typeof collections_landingPages_messages_utils;

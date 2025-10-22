@@ -1,11 +1,11 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <We must use the index as the key> */
 "use client";
 
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
 import type { LandingPageUIMessage } from "@firebuzz/convex";
 import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { memo, useEffect, useMemo } from "react";
 import { useStickToBottomContext } from "use-stick-to-bottom";
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
 import { UserMarkdownRenderer } from "../markdown/user-markdown-renderer";
 import { MessageAttachments } from "./message-part/attachments";
 

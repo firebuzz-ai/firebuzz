@@ -16,12 +16,19 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { CustomColorPicker } from "./custom";
 import { ColorLibrary } from "./library";
+import { SystemColors } from "./system";
 import { ThemeColors } from "./themes";
+import { useMemo, useEffect } from "react";
 
-const TABS: TabItem[] = [
+const ALL_TABS: TabItem[] = [
+	{
+		value: "system",
+		icon: Palette,
+		label: "Current",
+	},
 	{
 		value: "themes",
-		icon: Palette,
+		icon: Layers2,
 		label: "Themes",
 	},
 	{
@@ -29,17 +36,38 @@ const TABS: TabItem[] = [
 		icon: GalleryHorizontal,
 		label: "Library",
 	},
-
 	{
 		value: "custom",
-		icon: Layers2,
+		icon: Palette,
 		label: "Custom",
 	},
 ] as const;
 
 export const ColorSelectorModal = () => {
-	const { isOpen, setIsOpen, activeTab, setActiveTab, color, onSelect } =
-		useColorSelectorModal();
+	const {
+		isOpen,
+		setIsOpen,
+		activeTab,
+		setActiveTab,
+		color,
+		onSelect,
+		systemColors,
+	} = useColorSelectorModal();
+
+	// Filter tabs based on system colors availability
+	const availableTabs = useMemo(() => {
+		if (systemColors.length === 0) {
+			return ALL_TABS.filter((tab) => tab.value !== "system");
+		}
+		return ALL_TABS;
+	}, [systemColors.length]);
+
+	// If active tab is "system" but system colors are empty, switch to first available tab
+	useEffect(() => {
+		if (activeTab === "system" && systemColors.length === 0) {
+			setActiveTab(availableTabs[0]?.value as typeof activeTab);
+		}
+	}, [activeTab, systemColors.length, availableTabs, setActiveTab]);
 
 	useHotkeys(
 		"enter",
@@ -65,17 +93,18 @@ export const ColorSelectorModal = () => {
 				</DialogHeader>
 
 				<AnimatedTabs
-					tabs={TABS}
+					tabs={availableTabs}
 					value={activeTab}
-					defaultValue={"library" as const}
+					defaultValue={availableTabs[0]?.value as typeof activeTab}
 					onValueChange={(value) =>
-						setActiveTab(value as "library" | "custom" | "themes")
+						setActiveTab(value as "system" | "library" | "custom" | "themes")
 					}
 					className="px-4"
 					indicatorPadding={16}
 				/>
 
 				<div className="flex flex-col flex-1 h-full overflow-hidden">
+					{activeTab === "system" && <SystemColors />}
 					{activeTab === "library" && <ColorLibrary />}
 					{activeTab === "themes" && <ThemeColors />}
 					{activeTab === "custom" && <CustomColorPicker />}

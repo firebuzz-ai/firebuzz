@@ -35,7 +35,10 @@ export const Grep = ({ part }: GrepProps) => {
 
 				return (
 					<div className="flex gap-1 items-center">
-						<Badge variant="outline" className="flex gap-1 items-center bg-muted">
+						<Badge
+							variant="outline"
+							className="flex gap-1 items-center bg-muted"
+						>
 							<span className="text-xs">"{pattern}"</span>
 							<span>in</span>
 							<span className="text-xs">{path}</span>

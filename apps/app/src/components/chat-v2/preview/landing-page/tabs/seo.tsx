@@ -1,9 +1,5 @@
 "use client";
 
-import { ImagePreview } from "@/components/reusables/image-preview";
-import { ImageSelect } from "@/components/reusables/image-select";
-import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
 import { api, ConvexError, useAction } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { InfoBox } from "@firebuzz/ui/components/reusable/info-box";
@@ -26,6 +22,10 @@ import { toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { z } from "zod";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
 
 // Define schema for SEO configuration
 const seoSchema = z.object({
@@ -265,7 +265,9 @@ export const Seo = () => {
 												{!field.value ? (
 													<ImageSelect
 														onChange={(url) => {
-															field.onChange(`${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`);
+															field.onChange(
+																`${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`,
+															);
 														}}
 														className="p-0 size-8"
 														buttonType="icon"
@@ -299,7 +301,8 @@ export const Seo = () => {
 									/>
 								</div>
 								<p className="pt-2 text-[0.8rem] text-muted-foreground">
-									The icon and title displayed in search results and browser tabs
+									The icon and title displayed in search results and browser
+									tabs
 								</p>
 							</div>
 

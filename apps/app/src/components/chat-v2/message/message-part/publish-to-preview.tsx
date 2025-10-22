@@ -37,7 +37,6 @@ export const PublishToPreview = ({ part }: PublishToPreviewProps) => {
 						>
 							View <IconArrowUpRight className="size-3" />
 						</a>
-						
 					</Badge>
 				);
 			}

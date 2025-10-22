@@ -26,18 +26,11 @@ export const BuildLandingPage = ({ part }: BuildLandingPageProps) => {
 	const message = useMemo(() => {
 		if (part?.output) {
 			if (part.output.success) {
-				return <Badge variant="emerald" >
-				Completed
-				
-			</Badge>;
+				return <Badge variant="emerald">Completed</Badge>;
 			}
 
 			if (part.output.error) {
-				return (
-					<Badge variant="destructive" >
-						Build failed
-					</Badge>
-				);
+				return <Badge variant="destructive">Build failed</Badge>;
 			}
 		}
 

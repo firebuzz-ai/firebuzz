@@ -41,12 +41,66 @@ const todoListSchema = v.object({
 	order: v.number(),
 });
 
-// Dev server error schema for auto-fixing
-const errorSchema = v.object({
-	errorHash: v.string(), // MD5/SHA hash for deduplication
-	errorMessage: v.string(), // Full error message (temporary, removed after applied)
-	detectedAt: v.string(), // ISO timestamp
-	isAutoFixEnabled: v.boolean(), // Snapshot of autoErrorFix flag when detected
+// Theme object schema for design mode
+export const themeObjectSchema = v.object({
+	fonts: v.object({
+		sans: v.string(),
+		serif: v.string(),
+		mono: v.string(),
+	}),
+	lightTheme: v.object({
+		background: v.string(),
+		foreground: v.string(),
+		muted: v.string(),
+		mutedForeground: v.string(),
+		popover: v.string(),
+		popoverForeground: v.string(),
+		border: v.string(),
+		input: v.string(),
+		card: v.string(),
+		cardForeground: v.string(),
+		primary: v.string(),
+		primaryForeground: v.string(),
+		secondary: v.string(),
+		secondaryForeground: v.string(),
+		accent: v.string(),
+		accentForeground: v.string(),
+		destructive: v.string(),
+		destructiveForeground: v.string(),
+		ring: v.string(),
+		chart1: v.string(),
+		chart2: v.string(),
+		chart3: v.string(),
+		chart4: v.string(),
+		chart5: v.string(),
+		radius: v.string(),
+	}),
+	darkTheme: v.object({
+		background: v.string(),
+		foreground: v.string(),
+		muted: v.string(),
+		mutedForeground: v.string(),
+		popover: v.string(),
+		popoverForeground: v.string(),
+		border: v.string(),
+		input: v.string(),
+		card: v.string(),
+		cardForeground: v.string(),
+		primary: v.string(),
+		primaryForeground: v.string(),
+		secondary: v.string(),
+		secondaryForeground: v.string(),
+		accent: v.string(),
+		accentForeground: v.string(),
+		destructive: v.string(),
+		destructiveForeground: v.string(),
+		ring: v.string(),
+		chart1: v.string(),
+		chart2: v.string(),
+		chart3: v.string(),
+		chart4: v.string(),
+		chart5: v.string(),
+	}),
 });
 
 // Design mode state schema for visual element editing
@@ -66,6 +120,14 @@ const designModeStateSchema = v.object({
 			textContent: v.optional(v.string()),
 			src: v.optional(v.string()),
 			alt: v.optional(v.string()),
+			href: v.optional(v.string()),
+			target: v.optional(v.string()),
+			rel: v.optional(v.string()),
+
+			// Editability metadata - indicates if attributes are expressions vs string literals
+			isTextEditable: v.optional(v.boolean()),
+			isImageEditable: v.optional(v.boolean()),
+			isLinkEditable: v.optional(v.boolean()),
 		}),
 	),
 	pendingChanges: v.array(
@@ -77,9 +139,31 @@ const designModeStateSchema = v.object({
 				textContent: v.optional(v.string()),
 				src: v.optional(v.string()),
 				alt: v.optional(v.string()),
+				href: v.optional(v.string()),
+				target: v.optional(v.string()),
+				rel: v.optional(v.string()),
 			}),
-			appliedAt: v.string(),
-			savedToFile: v.boolean(),
+		}),
+	),
+
+	themeState: v.union(
+		v.object({
+			currentTheme: themeObjectSchema,
+			initialTheme: themeObjectSchema,
+			status: v.literal("ready"),
+			error: v.null(),
+		}),
+		v.object({
+			currentTheme: v.null(),
+			initialTheme: v.null(),
+			status: v.literal("error"),
+			error: v.string(),
+		}),
+		v.object({
+			currentTheme: v.null(),
+			initialTheme: v.null(),
+			status: v.union(v.literal("loading"), v.literal("idle")),
+			error: v.null(),
 		}),
 	),
 });
@@ -113,8 +197,6 @@ const baseSchema = v.object({
 	model: modelSchema,
 	messageQueue: v.array(queueSchema),
 	todoList: v.array(todoListSchema),
-	devServerErrors: v.array(errorSchema),
-	autoErrorFix: v.boolean(),
 	joinedUsers: v.array(v.id("users")),
 	sessionType: v.union(v.literal("background"), v.literal("regular")),
 	attachments: v.array(attachmentSchema),

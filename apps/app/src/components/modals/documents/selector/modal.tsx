@@ -1,5 +1,4 @@
 "use client";
-import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
 import {
 	AnimatedTabs,
 	type TabItem,
@@ -12,6 +11,7 @@ import {
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
 import { GalleryHorizontal, Upload } from "@firebuzz/ui/icons/lucide";
+import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
 import { DocumentsTab } from "./documents";
 import { UploadTab } from "./upload";
 

@@ -2,7 +2,6 @@
 
 import type { Id } from "@firebuzz/convex/nextjs";
 import { Chatbox } from "@/components/chat-v2/chatbox/chatbox";
-import { ElementEditor } from "@/components/chat-v2/design-mode/element-editor";
 import { AgentNavbar } from "@/components/chat-v2/navigation/navbar";
 import { PreviewTabs } from "@/components/chat-v2/preview/landing-page/tabs";
 import { useChatTabs } from "@/components/chat-v2/providers/chat-tabs-provider";
@@ -31,10 +30,10 @@ export const DesktopLayout = ({
 					<div className="relative w-full h-full">
 						{/* Chat Tab */}
 						<div
-							className="absolute inset-0 bg-background transition-opacity duration-200"
+							className="absolute inset-0 transition-opacity duration-200 bg-background"
 							style={{
-								opacity: activeTab === "chat" ? 1 : 0,
-								pointerEvents: activeTab === "chat" ? "auto" : "none",
+								opacity: activeTab !== "history" ? 1 : 0,
+								pointerEvents: activeTab !== "history" ? "auto" : "none",
 							}}
 						>
 							<Chatbox landingPageId={landingPageId} />
@@ -42,24 +41,13 @@ export const DesktopLayout = ({
 
 						{/* History Tab */}
 						<div
-							className="absolute inset-0 bg-background transition-opacity duration-200"
+							className="absolute inset-0 transition-opacity duration-200 bg-background"
 							style={{
 								opacity: activeTab === "history" ? 1 : 0,
 								pointerEvents: activeTab === "history" ? "auto" : "none",
 							}}
 						>
 							<VersionHistory landingPageId={landingPageId} />
-						</div>
-
-						{/* Design Tab */}
-						<div
-							className="absolute inset-0 bg-background transition-opacity duration-200"
-							style={{
-								opacity: activeTab === "design" ? 1 : 0,
-								pointerEvents: activeTab === "design" ? "auto" : "none",
-							}}
-						>
-							<ElementEditor />
 						</div>
 					</div>
 				</ChatLayout>

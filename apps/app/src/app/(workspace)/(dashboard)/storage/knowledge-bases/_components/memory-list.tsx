@@ -1,6 +1,4 @@
 "use client";
-import { TableFooter } from "@/components/tables/paginated-footer";
-import { useProject } from "@/hooks/auth/use-project";
 import {
 	api,
 	type Doc,
@@ -15,6 +13,8 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type FileRejection, useDropzone } from "react-dropzone";
+import { TableFooter } from "@/components/tables/paginated-footer";
+import { useProject } from "@/hooks/auth/use-project";
 import { useNewDocumentModal } from "../../documents/_components/modals/new-document/use-new-document-modal";
 import { MemoryItem } from "./memory-item";
 import { SelectedMenu } from "./selected-menu";

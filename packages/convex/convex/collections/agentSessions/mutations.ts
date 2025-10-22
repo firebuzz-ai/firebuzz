@@ -6,6 +6,7 @@ import { modelSchema } from "../../ai/models/schema";
 import { retrier } from "../../components/actionRetrier";
 import { ERRORS } from "../../utils/errors";
 import { getCurrentUserWithWorkspace } from "../users/utils";
+import { themeObjectSchema } from "./schema";
 
 const SESSION_CONFIG = {
 	maxDuration: 60 * 60 * 1000, // 60 minutes
@@ -90,8 +91,6 @@ export const joinOrCreateSession = mutation({
 					startedAt: new Date().toISOString(),
 					messageQueue: [],
 					todoList: latestCompletedSession?.todoList ?? [],
-					devServerErrors: [],
-					autoErrorFix: latestCompletedSession?.autoErrorFix ?? true,
 					model: latestCompletedSession?.model ?? "gemini-2.5-pro",
 					knowledgeBases: latestCompletedSession?.knowledgeBases,
 					joinedUsers: [user._id],
@@ -341,12 +340,30 @@ export const endSession = internalMutation({
 			);
 		}
 
+		// Clear design mode state if active
+		const currentDesignModeState = session.designModeState;
+		const clearedDesignModeState = currentDesignModeState
+			? {
+					isActive: false,
+					selectedElement: undefined,
+					pendingChanges: [],
+					themeState: {
+						currentTheme: null,
+						initialTheme: null,
+						status: "idle" as const,
+						error: null,
+					},
+				}
+			: undefined;
+
 		// Update session to completed
 		await ctx.db.patch(sessionId, {
 			status: "completed",
 			endedAt: new Date().toISOString(),
 			shutdownReason: reason,
 			scheduledId: undefined,
+			designModeState: clearedDesignModeState,
+			activeTab: "chat",
 		});
 
 		// Sync token and credit usages to Tinybird
@@ -503,83 +520,6 @@ export const updateTodoList = internalMutation({
 });
 
 /**
- * Add dev server error to session
- */
-export const addDevServerError = internalMutation({
-	args: {
-		sessionId: v.id("agentSessions"),
-		errorHash: v.string(),
-		errorMessage: v.string(),
-	},
-	handler: async (ctx, { sessionId, errorHash, errorMessage }) => {
-		console.log(
-			`[addDevServerError] Starting - sessionId: ${sessionId}, errorHash: ${errorHash}`,
-		);
-
-		const session = await ctx.db.get(sessionId);
-
-		if (!session) {
-			console.error(`[addDevServerError] Session not found: ${sessionId}`);
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
-
-		console.log(
-			`[addDevServerError] Session found, current errors: ${session.devServerErrors?.length || 0}, autoErrorFix: ${session.autoErrorFix}`,
-		);
-
-		// Check if error already exists
-		const devServerErrors = session.devServerErrors || [];
-		const existingError = devServerErrors.find(
-			(e) => e.errorHash === errorHash,
-		);
-
-		if (existingError) {
-			console.log(`[addDevServerError] Error already exists: ${errorHash}`);
-			return { isNew: false, error: existingError };
-		}
-
-		// Add new error with message (will be removed after applied)
-		const newError = {
-			errorHash,
-			errorMessage,
-			detectedAt: new Date().toISOString(),
-			isAutoFixEnabled: session.autoErrorFix || false,
-		};
-
-		await ctx.db.patch(sessionId, {
-			devServerErrors: [...devServerErrors, newError],
-			updatedAt: new Date().toISOString(),
-		});
-
-		console.log(
-			`[addDevServerError] New error added: ${errorHash}, total errors: ${devServerErrors.length + 1}`,
-		);
-		return { isNew: true, error: newError };
-	},
-});
-
-/**
- * Remove error from session after applied to thread
- */
-export const removeAppliedDevServerError = internalMutation({
-	args: {
-		sessionId: v.id("agentSessions"),
-	},
-	handler: async (ctx, { sessionId }) => {
-		const session = await ctx.db.get(sessionId);
-
-		if (!session) {
-			throw new ConvexError(ERRORS.NOT_FOUND);
-		}
-
-		await ctx.db.patch(sessionId, {
-			devServerErrors: [],
-			updatedAt: new Date().toISOString(),
-		});
-	},
-});
-
-/**
  * Renew session - create a new session from a completed session
  * Duplicates reusable values like model, knowledge bases, and starts sandbox creation
  */
@@ -638,8 +578,6 @@ export const renewSession = mutation({
 				startedAt: new Date().toISOString(),
 				messageQueue: [],
 				todoList: [],
-				devServerErrors: [],
-				autoErrorFix: completedSession.autoErrorFix,
 				model: completedSession.model,
 				knowledgeBases: completedSession.knowledgeBases,
 				joinedUsers,
@@ -698,8 +636,6 @@ export const renewSession = mutation({
 				startedAt: new Date().toISOString(),
 				messageQueue: [],
 				todoList: [],
-				devServerErrors: [],
-				autoErrorFix: completedSession.autoErrorFix,
 				model: completedSession.model,
 				knowledgeBases: completedSession.knowledgeBases,
 				joinedUsers,
@@ -991,7 +927,9 @@ export const processNextQueuedMessageInternal = internalMutation({
 			updatedAt: new Date().toISOString(),
 		});
 
-		console.log(`[Queue] Processed message, ${newMessageQueue.length} remaining`);
+		console.log(
+			`[Queue] Processed message, ${newMessageQueue.length} remaining`,
+		);
 
 		return { success: true, remainingMessages: newMessageQueue.length };
 	},
@@ -1077,14 +1015,113 @@ export const setActiveTab = mutation({
 });
 
 /**
- * Toggle design mode on/off
+ * Set theme status (internal mutation called by actions)
  */
-export const toggleDesignMode = mutation({
+export const setThemeStatus = internalMutation({
 	args: {
 		sessionId: v.id("agentSessions"),
-		enabled: v.boolean(),
+		status: v.union(v.literal("loading"), v.literal("error")),
+		error: v.optional(v.string()),
 	},
-	handler: async (ctx, { sessionId, enabled }) => {
+	handler: async (ctx, { sessionId, status, error }) => {
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		const currentState = session.designModeState;
+
+		if (!currentState) {
+			throw new ConvexError("Design mode not initialized");
+		}
+
+		const themeState =
+			status === "error" && error
+				? {
+						currentTheme: null,
+						initialTheme: null,
+						status: "error" as const,
+						error: error ?? "Unknown error",
+					}
+				: status === "loading"
+					? {
+							currentTheme: null,
+							initialTheme: null,
+							status: "loading" as const,
+							error: null,
+						}
+					: undefined;
+
+		if (!themeState) {
+			throw new ConvexError("Invalid theme state");
+		}
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				themeState,
+			},
+			updatedAt: new Date().toISOString(),
+		});
+	},
+});
+
+/**
+ * Initialize theme state with both initialTheme and currentTheme
+ * Called after successfully reading theme from sandbox
+ */
+export const initializeTheme = internalMutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		theme: themeObjectSchema,
+	},
+	handler: async (ctx, { sessionId, theme }) => {
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		const currentState = session.designModeState || {
+			isActive: false,
+			pendingChanges: [],
+		};
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				themeState: {
+					currentTheme: theme,
+					initialTheme: theme, // Same as current on first load
+					status: "ready" as const,
+					error: null,
+				},
+			},
+			updatedAt: new Date().toISOString(),
+		});
+	},
+});
+
+/**
+ * Update currentTheme with partial updates (optimistic mutation)
+ */
+export const updateCurrentTheme = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+		themeUpdates: v.object({
+			fonts: v.optional(
+				v.object({
+					sans: v.optional(v.string()),
+					serif: v.optional(v.string()),
+					mono: v.optional(v.string()),
+				}),
+			),
+			lightTheme: v.optional(v.any()), // Partial updates
+			darkTheme: v.optional(v.any()), // Partial updates
+		}),
+	},
+	handler: async (ctx, { sessionId, themeUpdates }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
 		const session = await ctx.db.get(sessionId);
 
@@ -1096,6 +1133,112 @@ export const toggleDesignMode = mutation({
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
+		const currentState = session.designModeState;
+		if (!currentState?.themeState?.currentTheme) {
+			throw new ConvexError("Theme not initialized");
+		}
+
+		const currentTheme = currentState.themeState.currentTheme;
+
+		// Deep merge updates
+		const newTheme = {
+			fonts: {
+				...currentTheme.fonts,
+				...(themeUpdates.fonts || {}),
+			},
+			lightTheme: {
+				...currentTheme.lightTheme,
+				...(themeUpdates.lightTheme || {}),
+			},
+			darkTheme: {
+				...currentTheme.darkTheme,
+				...(themeUpdates.darkTheme || {}),
+			},
+		};
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				themeState: {
+					...currentState.themeState,
+					currentTheme: newTheme,
+				},
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Reset currentTheme to initialTheme (optimistic mutation)
+ */
+export const resetTheme = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const currentState = session.designModeState;
+		if (
+			!currentState?.themeState ||
+			currentState.themeState.status !== "ready"
+		) {
+			throw new ConvexError("Theme not initialized");
+		}
+
+		const initialTheme = currentState.themeState.initialTheme;
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				...currentState,
+				themeState: {
+					...currentState.themeState,
+					currentTheme: initialTheme, // Copy initial → current
+				},
+			},
+			updatedAt: new Date().toISOString(),
+		});
+
+		return { success: true };
+	},
+});
+
+/**
+ * Enable design mode (optimistic)
+ * Sets isActive, switches to design tab, and schedules theme loading
+ */
+export const enableDesignMode = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		if (!session.sandboxId) {
+			throw new ConvexError("Session does not have a sandbox");
+		}
+
 		const currentState = session.designModeState || {
 			isActive: false,
 			pendingChanges: [],
@@ -1104,8 +1247,63 @@ export const toggleDesignMode = mutation({
 		await ctx.db.patch(sessionId, {
 			designModeState: {
 				...currentState,
-				isActive: enabled,
-				selectedElement: enabled ? currentState.selectedElement : undefined,
+				isActive: true,
+				themeState: {
+					currentTheme: null,
+					initialTheme: null,
+					status: "loading" as const,
+					error: null,
+				},
+			},
+			activeTab: "design", // Switch to design tab
+			updatedAt: new Date().toISOString(),
+		});
+
+		// Schedule action to load actual theme from sandbox
+		await ctx.scheduler.runAfter(
+			0,
+			internal.collections.sandboxes.actions.getInitialThemeFromSandboxInternal,
+			{
+				sessionId,
+				sandboxId: session.sandboxId,
+			},
+		);
+
+		return { success: true };
+	},
+});
+
+/**
+ * Disable design mode (optimistic)
+ * Clears all state including theme and pending changes
+ */
+export const disableDesignMode = mutation({
+	args: {
+		sessionId: v.id("agentSessions"),
+	},
+	handler: async (ctx, { sessionId }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+		const session = await ctx.db.get(sessionId);
+
+		if (!session) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (session.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		await ctx.db.patch(sessionId, {
+			designModeState: {
+				isActive: false,
+				selectedElement: undefined,
+				pendingChanges: [],
+				themeState: {
+					currentTheme: null,
+					initialTheme: null,
+					status: "idle" as const,
+					error: null,
+				},
 			},
 			updatedAt: new Date().toISOString(),
 		});
@@ -1120,20 +1318,30 @@ export const toggleDesignMode = mutation({
 export const selectElement = mutation({
 	args: {
 		sessionId: v.id("agentSessions"),
-		element: v.object({
-			// Source location from React Fiber
-			sourceFile: v.string(),
-			sourceLine: v.number(),
-			sourceColumn: v.number(),
-			elementId: v.string(),
+		element: v.optional(
+			v.object({
+				// Source location from React Fiber
+				sourceFile: v.string(),
+				sourceLine: v.number(),
+				sourceColumn: v.number(),
+				elementId: v.string(),
 
-			// DOM properties
-			tagName: v.string(),
-			className: v.string(),
-			textContent: v.optional(v.string()),
-			src: v.optional(v.string()),
-			alt: v.optional(v.string()),
-		}),
+				// DOM properties
+				tagName: v.string(),
+				className: v.string(),
+				textContent: v.optional(v.string()),
+				src: v.optional(v.string()),
+				alt: v.optional(v.string()),
+				href: v.optional(v.string()),
+				target: v.optional(v.string()),
+				rel: v.optional(v.string()),
+
+				// Editability metadata
+				isTextEditable: v.optional(v.boolean()),
+				isImageEditable: v.optional(v.boolean()),
+				isLinkEditable: v.optional(v.boolean()),
+			}),
+		),
 	},
 	handler: async (ctx, { sessionId, element }) => {
 		const user = await getCurrentUserWithWorkspace(ctx);
@@ -1147,10 +1355,11 @@ export const selectElement = mutation({
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
-		const currentState = session.designModeState || {
-			isActive: false,
-			pendingChanges: [],
-		};
+		const currentState = session.designModeState;
+
+		if (!currentState) {
+			throw new ConvexError("Design mode not initialized");
+		}
 
 		await ctx.db.patch(sessionId, {
 			designModeState: {
@@ -1178,6 +1387,9 @@ export const updateElementOptimistic = mutation({
 			textContent: v.optional(v.string()),
 			src: v.optional(v.string()),
 			alt: v.optional(v.string()),
+			href: v.optional(v.string()),
+			target: v.optional(v.string()),
+			rel: v.optional(v.string()),
 		}),
 	},
 	handler: async (ctx, { sessionId, changeId, elementId, updates }) => {
@@ -1192,10 +1404,11 @@ export const updateElementOptimistic = mutation({
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
 		}
 
-		const currentState = session.designModeState || {
-			isActive: false,
-			pendingChanges: [],
-		};
+		const currentState = session.designModeState;
+
+		if (!currentState) {
+			throw new ConvexError("Design mode not initialized");
+		}
 
 		// Check if change already exists
 		const existingChangeIndex = currentState.pendingChanges.findIndex(
@@ -1210,7 +1423,6 @@ export const updateElementOptimistic = mutation({
 					? {
 							...c,
 							updates,
-							appliedAt: new Date().toISOString(),
 						}
 					: c,
 			);
@@ -1222,21 +1434,23 @@ export const updateElementOptimistic = mutation({
 					id: changeId,
 					elementId,
 					updates,
-					appliedAt: new Date().toISOString(),
-					savedToFile: false,
 				},
 			];
 		}
 
 		// Update selected element with new values
-		const updatedSelectedElement = currentState.selectedElement
+		const updatedSelectedElement = currentState?.selectedElement
 			? {
-					...currentState.selectedElement,
-					className: updates.className ?? currentState.selectedElement.className,
+					...currentState?.selectedElement,
+					className:
+						updates.className ?? currentState.selectedElement.className,
 					textContent:
 						updates.textContent ?? currentState.selectedElement.textContent,
 					src: updates.src ?? currentState.selectedElement.src,
 					alt: updates.alt ?? currentState.selectedElement.alt,
+					href: updates.href ?? currentState.selectedElement.href,
+					target: updates.target ?? currentState.selectedElement.target,
+					rel: updates.rel ?? currentState.selectedElement.rel,
 				}
 			: undefined;
 
@@ -1272,7 +1486,7 @@ export const markChangeAsSaved = internalMutation({
 		if (!currentState) return { success: false };
 
 		const newPendingChanges = currentState.pendingChanges.map((c) =>
-			c.id === changeId ? { ...c, savedToFile: true } : c,
+			c.id === changeId ? { ...c } : c,
 		);
 
 		await ctx.db.patch(sessionId, {

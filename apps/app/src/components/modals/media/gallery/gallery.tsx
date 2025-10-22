@@ -1,5 +1,4 @@
 "use client";
-import { useProject } from "@/hooks/auth/use-project";
 import type { Id } from "@firebuzz/convex";
 import {
 	api,
@@ -29,6 +28,7 @@ import { cn, toast } from "@firebuzz/ui/lib/utils";
 import Image from "next/image";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage
 interface SelectedMediaItem {

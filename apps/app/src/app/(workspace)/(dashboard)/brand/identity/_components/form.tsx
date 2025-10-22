@@ -1,8 +1,5 @@
 "use client";
 
-import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
-import { ImagePreview } from "@/components/reusables/image-preview";
-import { ImageSelect } from "@/components/reusables/image-select";
 import { api, type Doc, useMutation } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
@@ -24,6 +21,9 @@ import { useTheme } from "next-themes";
 import type React from "react";
 import { useCallback, useEffect } from "react";
 import { z } from "zod";
+import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
 
 // Define schema for brand identity configuration
 const brandSchema = z.object({

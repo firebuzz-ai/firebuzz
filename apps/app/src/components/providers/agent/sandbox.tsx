@@ -1,5 +1,5 @@
 "use client";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
+
 import {
 	api,
 	type Doc,
@@ -15,6 +15,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
 
 interface SanboxContextType {
 	sandboxId: string | undefined;
@@ -40,6 +41,7 @@ interface SanboxContextType {
 	isStaticPreviewIframeLoaded: boolean;
 	setIsPreviewIframeLoaded: (loaded: boolean) => void;
 	setIsStaticPreviewIframeLoaded: (loaded: boolean) => void;
+	refreshAllPreviews: () => void;
 	renewSandbox: () => Promise<void>;
 }
 
@@ -70,6 +72,7 @@ export const SanboxContext = createContext<SanboxContextType>({
 	renewSandbox: async () => {
 		throw new Error("renewSandbox must be used within SanboxProvider");
 	},
+	refreshAllPreviews: () => void 0,
 });
 
 export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
@@ -94,6 +97,17 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 		}
 		await renewSandboxMutation({ sessionId: session.session._id });
 	}, [renewSandboxMutation, session.session?._id]);
+
+	const refreshAllPreviews = useCallback(() => {
+		if (iframeRef.current) {
+			const currentSrc = iframeRef.current.src;
+			iframeRef.current.src = currentSrc;
+		}
+		if (staticIframeRef.current) {
+			const currentSrc = staticIframeRef.current.src;
+			staticIframeRef.current.src = currentSrc;
+		}
+	}, []);
 
 	const exposedSandbox = useMemo(() => {
 		if (!sandbox) {
@@ -122,6 +136,7 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 				isPreviewIframeLoaded,
 				setIsPreviewIframeLoaded,
 				renewSandbox,
+				refreshAllPreviews,
 			};
 		}
 
@@ -150,6 +165,7 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 			isPreviewIframeLoaded,
 			setIsPreviewIframeLoaded,
 			renewSandbox,
+			refreshAllPreviews,
 		};
 	}, [
 		sandbox,
@@ -157,6 +173,7 @@ export const SanboxProvider = ({ children }: { children: React.ReactNode }) => {
 		isStaticPreviewIframeLoaded,
 		isPending,
 		renewSandbox,
+		refreshAllPreviews,
 	]);
 
 	return (

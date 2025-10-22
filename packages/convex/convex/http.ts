@@ -40,12 +40,6 @@ const sandboxClosedSchema = z.object({
 	closedAt: z.string(),
 });
 
-const devServerErrorSchema = z.object({
-	sandboxId: z.string(),
-	errorHash: z.string(),
-	errorMessage: z.string(),
-});
-
 async function validateClerkRequest(
 	req: Request,
 ): Promise<WebhookEvent | null> {
@@ -475,93 +469,6 @@ http.route({
 				);
 			}
 			console.error("Error processing sandbox closure:", error);
-			return new Response("Internal server error", { status: 500 });
-		}
-	}),
-});
-
-// Sandbox - Dev Server Error (Sandbox Logger - Error Detection)
-http.route({
-	path: "/sandbox/dev-server-error",
-	method: "POST",
-	handler: httpAction(async (ctx, req) => {
-		const token = req.headers.get("Authorization");
-		const expectedToken = `Bearer ${process.env.SANDBOX_LOGGER_WEBHOOK_SECRET}`;
-
-		if (!token || token !== expectedToken) {
-			return new Response("Unauthorized", { status: 401 });
-		}
-
-		try {
-			const data = await req.json();
-			console.log(`[Error Webhook] Received error data:`, JSON.stringify(data));
-
-			const validated = devServerErrorSchema.parse(data);
-			console.log(
-				`[Error Webhook] Validated - sandboxId: ${validated.sandboxId}, errorHash: ${validated.errorHash}`,
-			);
-
-			// Find sandbox by external ID
-			const sandbox = await ctx.runQuery(
-				internal.collections.sandboxes.queries.getByExternalIdInternal,
-				{ externalId: validated.sandboxId },
-			);
-
-			if (!sandbox) {
-				console.warn(
-					`[Error Webhook] Sandbox not found: ${validated.sandboxId}`,
-				);
-				return new Response(JSON.stringify({ error: "Sandbox not found" }), {
-					status: 404,
-				});
-			}
-
-			console.log(`[Error Webhook] Found sandbox: ${sandbox._id}`);
-
-			// Find active session for this sandbox
-			const session = await ctx.runQuery(
-				internal.collections.agentSessions.queries.getByActiveSandboxIdInternal,
-				{ sandboxId: sandbox._id },
-			);
-
-			if (!session) {
-				console.warn(
-					`[Error Webhook] No active session for sandbox: ${sandbox._id}`,
-				);
-				return new Response(JSON.stringify({ error: "No active session" }), {
-					status: 404,
-				});
-			}
-
-			console.log(
-				`[Error Webhook] Found session: ${session._id}, autoErrorFix: ${session.autoErrorFix}`,
-			);
-
-			// Add error directly via mutation (synchronous - must complete before returning)
-			const result = await ctx.runMutation(
-				internal.collections.agentSessions.mutations.addDevServerError,
-				{
-					sessionId: session._id,
-					errorHash: validated.errorHash,
-					errorMessage: validated.errorMessage,
-				},
-			);
-
-			console.log(
-				`[Error Webhook] ${result.isNew ? "New" : "Duplicate"} error added to session ${session._id}`,
-			);
-			return new Response(
-				JSON.stringify({ success: true, isNew: result.isNew }),
-				{ status: 200 },
-			);
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				return new Response(
-					JSON.stringify({ error: "Invalid payload", details: error.issues }),
-					{ status: 422 },
-				);
-			}
-			console.error("Error processing dev server error:", error);
 			return new Response("Internal server error", { status: 500 });
 		}
 	}),

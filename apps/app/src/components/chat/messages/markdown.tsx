@@ -51,31 +51,6 @@ export const Markdown = memo(
 			}
 		}, [children]);
 
-		// If it's an error explanation, render the ErrorExplanation component
-		if (parsedContent?.type === "error-explanation") {
-			return <ErrorExplanation errors={parsedContent.errors} />;
-		}
-
-		// If it's an action error explanation, render the ActionErrorExplanation component
-		if (parsedContent?.type === "action-error-explanation") {
-			return <ActionErrorExplanation errors={parsedContent.errors} />;
-		}
-
-		// If it's an element reference, render the ElementReference component
-		if (parsedContent?.type === "element-reference") {
-			return (
-				<ElementReference
-					message={parsedContent.message}
-					element={parsedContent.element}
-				/>
-			);
-		}
-
-		// If it's a version reference, render the VersionReference component
-		if (parsedContent?.type === "version-reference") {
-			return <VersionReference version={parsedContent.version} />;
-		}
-
 		const components = useMemo(() => {
 			return {
 				div: ({ className, children, node, ...props }) => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePresence } from "@/hooks/auth/use-presence";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -10,7 +11,6 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { TooltipProvider } from "@firebuzz/ui/components/ui/tooltip";
 import { cn } from "@firebuzz/ui/lib/utils";
 import * as React from "react";
-import { usePresence } from "@/hooks/auth/use-presence";
 import { getTimeAgo } from "./helpers";
 import { PresenceAvatar } from "./presence-avatar";
 
@@ -21,12 +21,14 @@ interface PresenceProps {
 	roomId: string;
 	maxVisible?: number;
 	className?: string;
+	size?: "sm" | "md";
 }
 
 export const Presence: React.FC<PresenceProps> = ({
 	roomId,
 	maxVisible = 5,
 	className,
+	size = "md",
 }) => {
 	const { presenceSate } = usePresence({ roomId });
 	const visible = React.useMemo(
@@ -59,6 +61,7 @@ export const Presence: React.FC<PresenceProps> = ({
 					{visible.map((p, idx) => (
 						<PresenceAvatar
 							key={p.userId}
+							size={size}
 							presence={
 								p as {
 									userId: string;

@@ -1,10 +1,5 @@
 "use client";
 
-import type { PreviewSize } from "@/components/chat-v2/providers/preview-size-provider";
-import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
-import { usePreviewSize } from "@/hooks/agent/use-preview-size";
-import { usePreviewTabs } from "@/hooks/agent/use-preview-tabs";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
 import {
 	InputGroup,
 	InputGroupAddon,
@@ -24,6 +19,11 @@ import {
 	Smartphone,
 	Tablet,
 } from "@firebuzz/ui/icons/lucide";
+import type { PreviewSize } from "@/components/chat-v2/providers/preview-size-provider";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { usePreviewSize } from "@/hooks/agent/use-preview-size";
+import { usePreviewTabs } from "@/hooks/agent/use-preview-tabs";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
 
 const sizeIcons = {
 	desktop: Monitor,
@@ -37,21 +37,7 @@ export const PreviewHeader = () => {
 	const { activeTab } = usePreviewTabs();
 	const { currentSize, setCurrentSize } = usePreviewSize();
 	const { landingPage } = useLandingPageContext();
-	const { previewURL, iframeRef, staticIframeRef, sandboxStatus } =
-		useSandbox();
-
-	const handleRefresh = () => {
-		if (iframeRef.current) {
-			// Force refresh by updating the src attribute
-			const currentSrc = iframeRef.current.src;
-			iframeRef.current.src = currentSrc;
-		}
-		if (staticIframeRef.current) {
-			// Force refresh by updating the src attribute
-			const currentSrc = staticIframeRef.current.src;
-			staticIframeRef.current.src = currentSrc;
-		}
-	};
+	const { previewURL, sandboxStatus, refreshAllPreviews } = useSandbox();
 
 	const handleSizeToggle = () => {
 		const currentIndex = sizeOrder.indexOf(currentSize);
@@ -168,7 +154,7 @@ export const PreviewHeader = () => {
 							<InputGroupButton
 								type="button"
 								size="icon-xs"
-								onClick={handleRefresh}
+								onClick={refreshAllPreviews}
 								disabled={!previewURL}
 							>
 								<RefreshCw className="size-4" />

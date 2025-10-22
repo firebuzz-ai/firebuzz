@@ -1,5 +1,5 @@
-import { LandingPageContext } from "@/components/chat-v2/providers/landing-page-provider";
 import { useContext } from "react";
+import { LandingPageContext } from "@/components/chat-v2/providers/landing-page-provider";
 
 export const useLandingPageContext = () => {
 	const context = useContext(LandingPageContext);

@@ -982,7 +982,10 @@ export const grepTool = internalAction({
 						content: match[3].trim(),
 					};
 				})
-				.filter((m): m is { file: string; line: number; content: string } => m !== null);
+				.filter(
+					(m): m is { file: string; line: number; content: string } =>
+						m !== null,
+				);
 
 			// Apply max results limit if specified
 			const limitedMatches = maxResults
@@ -1048,6 +1051,10 @@ export const writeFilesTool = internalAction({
 
 		try {
 			const credentials = getCredentials();
+			console.log(
+				"[writeFilesTool] Getting sandbox instance:",
+				sandbox.sandboxExternalId,
+			);
 			const instance = await SandboxClass.get({
 				sandboxId: sandbox.sandboxExternalId,
 				...credentials,
@@ -1059,7 +1066,17 @@ export const writeFilesTool = internalAction({
 				content: Buffer.from(file.content, "utf-8"),
 			}));
 
+			console.log(
+				"[writeFilesTool] Writing files:",
+				filesWithBuffer.map((f) => ({
+					path: f.path,
+					size: f.content.length,
+				})),
+			);
+
 			await instance.writeFiles(filesWithBuffer);
+
+			console.log("[writeFilesTool] Successfully wrote", files.length, "files");
 
 			return {
 				success: true,
@@ -1067,6 +1084,18 @@ export const writeFilesTool = internalAction({
 				error: null,
 			};
 		} catch (error) {
+			console.error("[writeFilesTool] Error writing files:", error);
+			console.error(
+				"[writeFilesTool] Error details:",
+				error instanceof Error
+					? {
+							message: error.message,
+							stack: error.stack,
+							name: error.name,
+						}
+					: error,
+			);
+
 			return {
 				success: false,
 				filesWritten: 0,
@@ -1075,6 +1104,369 @@ export const writeFilesTool = internalAction({
 				},
 			};
 		}
+	},
+});
+
+/**
+ * Unified action to save all design mode changes (theme + element changes) to sandbox
+ */
+export const saveDesignModeChangesToSandbox = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		theme: v.optional(
+			v.object({
+				fonts: v.object({
+					sans: v.string(),
+					serif: v.string(),
+					mono: v.string(),
+				}),
+				lightTheme: v.object({
+					background: v.string(),
+					foreground: v.string(),
+					muted: v.string(),
+					mutedForeground: v.string(),
+					popover: v.string(),
+					popoverForeground: v.string(),
+					border: v.string(),
+					input: v.string(),
+					card: v.string(),
+					cardForeground: v.string(),
+					primary: v.string(),
+					primaryForeground: v.string(),
+					secondary: v.string(),
+					secondaryForeground: v.string(),
+					accent: v.string(),
+					accentForeground: v.string(),
+					destructive: v.string(),
+					destructiveForeground: v.string(),
+					ring: v.string(),
+					chart1: v.string(),
+					chart2: v.string(),
+					chart3: v.string(),
+					chart4: v.string(),
+					chart5: v.string(),
+					radius: v.string(),
+				}),
+				darkTheme: v.object({
+					background: v.string(),
+					foreground: v.string(),
+					muted: v.string(),
+					mutedForeground: v.string(),
+					popover: v.string(),
+					popoverForeground: v.string(),
+					border: v.string(),
+					input: v.string(),
+					card: v.string(),
+					cardForeground: v.string(),
+					primary: v.string(),
+					primaryForeground: v.string(),
+					secondary: v.string(),
+					secondaryForeground: v.string(),
+					accent: v.string(),
+					accentForeground: v.string(),
+					destructive: v.string(),
+					destructiveForeground: v.string(),
+					ring: v.string(),
+					chart1: v.string(),
+					chart2: v.string(),
+					chart3: v.string(),
+					chart4: v.string(),
+					chart5: v.string(),
+				}),
+			}),
+		),
+		elementFiles: v.optional(
+			v.array(
+				v.object({
+					filePath: v.string(),
+					content: v.string(),
+				}),
+			),
+		),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, theme, elementFiles },
+	): Promise<
+		| { success: true; filesWritten: number; error: null }
+		| { success: false; filesWritten: 0; error: { message: string } }
+	> => {
+		// Verify sandbox exists
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		const filesToWrite: Array<{ path: string; content: string }> = [];
+
+		// Add theme files if theme is provided
+		if (theme) {
+			// Generate tailwind.config.js (ES6 module for template compatibility)
+			const tailwindConfig = `/** @type {import('tailwindcss').Config} */
+export default {
+	darkMode: ["class"],
+	content: ["./index.html", "./src/**/*.{ts,tsx,js,jsx}"],
+	theme: {
+		extend: {
+			fontFamily: {
+				sans: ["var(--font-sans)", "sans-serif"],
+				serif: ["var(--font-serif)", "serif"],
+				mono: ["var(--font-mono)", "monospace"],
+			},
+			borderRadius: {
+				lg: "var(--radius)",
+				md: "calc(var(--radius) - 2px)",
+				sm: "calc(var(--radius) - 4px)",
+			},
+			colors: {
+				background: "hsl(var(--background))",
+				foreground: "hsl(var(--foreground))",
+				card: {
+					DEFAULT: "hsl(var(--card))",
+					foreground: "hsl(var(--card-foreground))",
+				},
+				popover: {
+					DEFAULT: "hsl(var(--popover))",
+					foreground: "hsl(var(--popover-foreground))",
+				},
+				primary: {
+					DEFAULT: "hsl(var(--primary))",
+					foreground: "hsl(var(--primary-foreground))",
+				},
+				secondary: {
+					DEFAULT: "hsl(var(--secondary))",
+					foreground: "hsl(var(--secondary-foreground))",
+				},
+				muted: {
+					DEFAULT: "hsl(var(--muted))",
+					foreground: "hsl(var(--muted-foreground))",
+				},
+				accent: {
+					DEFAULT: "hsl(var(--accent))",
+					foreground: "hsl(var(--accent-foreground))",
+				},
+				destructive: {
+					DEFAULT: "hsl(var(--destructive))",
+					foreground: "hsl(var(--destructive-foreground))",
+				},
+				border: "hsl(var(--border))",
+				input: "hsl(var(--input))",
+				ring: "hsl(var(--ring))",
+				chart: {
+					"1": "hsl(var(--chart-1))",
+					"2": "hsl(var(--chart-2))",
+					"3": "hsl(var(--chart-3))",
+					"4": "hsl(var(--chart-4))",
+					"5": "hsl(var(--chart-5))",
+				},
+			},
+			keyframes: {
+				"accordion-down": {
+					from: { height: "0" },
+					to: { height: "var(--radix-accordion-content-height)" },
+				},
+				"accordion-up": {
+					from: { height: "var(--radix-accordion-content-height)" },
+					to: { height: "0" },
+				},
+			},
+			animation: {
+				"accordion-down": "accordion-down 0.2s ease-out",
+				"accordion-up": "accordion-up 0.2s ease-out",
+			},
+		},
+	},
+	plugins: [require("tailwindcss-animate")],
+};`;
+
+			// Generate src/index.css
+			const globalsCss = `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ${theme.fonts.sans};
+    --font-serif: ${theme.fonts.serif};
+    --font-mono: ${theme.fonts.mono};
+
+    --background: ${theme.lightTheme.background};
+
+    --foreground: ${theme.lightTheme.foreground};
+
+    --card: ${theme.lightTheme.card};
+
+    --card-foreground: ${theme.lightTheme.cardForeground};
+
+    --popover: ${theme.lightTheme.popover};
+
+    --popover-foreground: ${theme.lightTheme.popoverForeground};
+
+    --primary: ${theme.lightTheme.primary};
+
+    --primary-foreground: ${theme.lightTheme.primaryForeground};
+
+    --secondary: ${theme.lightTheme.secondary};
+
+    --secondary-foreground: ${theme.lightTheme.secondaryForeground};
+
+    --muted: ${theme.lightTheme.muted};
+
+    --muted-foreground: ${theme.lightTheme.mutedForeground};
+
+    --accent: ${theme.lightTheme.accent};
+
+    --accent-foreground: ${theme.lightTheme.accentForeground};
+
+    --destructive: ${theme.lightTheme.destructive};
+
+    --destructive-foreground: ${theme.lightTheme.destructiveForeground};
+
+    --border: ${theme.lightTheme.border};
+
+    --input: ${theme.lightTheme.input};
+
+    --ring: ${theme.lightTheme.ring};
+
+    --chart-1: ${theme.lightTheme.chart1};
+
+    --chart-2: ${theme.lightTheme.chart2};
+
+    --chart-3: ${theme.lightTheme.chart3};
+
+    --chart-4: ${theme.lightTheme.chart4};
+
+    --chart-5: ${theme.lightTheme.chart5};
+
+    --radius: ${theme.lightTheme.radius};
+  }
+  .dark {
+    --background: ${theme.darkTheme.background};
+
+    --foreground: ${theme.darkTheme.foreground};
+
+    --card: ${theme.darkTheme.card};
+
+    --card-foreground: ${theme.darkTheme.cardForeground};
+
+    --popover: ${theme.darkTheme.popover};
+
+    --popover-foreground: ${theme.darkTheme.popoverForeground};
+
+    --primary: ${theme.darkTheme.primary};
+
+    --primary-foreground: ${theme.darkTheme.primaryForeground};
+
+    --secondary: ${theme.darkTheme.secondary};
+
+    --secondary-foreground: ${theme.darkTheme.secondaryForeground};
+
+    --muted: ${theme.darkTheme.muted};
+
+    --muted-foreground: ${theme.darkTheme.mutedForeground};
+
+    --accent: ${theme.darkTheme.accent};
+
+    --accent-foreground: ${theme.darkTheme.accentForeground};
+
+    --destructive: ${theme.darkTheme.destructive};
+
+    --destructive-foreground: ${theme.darkTheme.destructiveForeground};
+
+    --border: ${theme.darkTheme.border};
+
+    --input: ${theme.darkTheme.input};
+
+    --ring: ${theme.darkTheme.ring};
+
+    --chart-1: ${theme.darkTheme.chart1};
+
+    --chart-2: ${theme.darkTheme.chart2};
+
+    --chart-3: ${theme.darkTheme.chart3};
+
+    --chart-4: ${theme.darkTheme.chart4};
+
+    --chart-5: ${theme.darkTheme.chart5};
+  }
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: hsl(var(--background));
+}`;
+
+			filesToWrite.push(
+				{ path: "tailwind.config.js", content: tailwindConfig },
+				{ path: "src/index.css", content: globalsCss },
+			);
+		}
+
+		// Add element files if provided
+		if (elementFiles && elementFiles.length > 0) {
+			console.log(
+				"[saveDesignModeChangesToSandbox] Processing element files:",
+				elementFiles.map((f) => ({
+					path: f.filePath,
+					contentLength: f.content.length,
+					contentPreview: f.content.slice(0, 200),
+				})),
+			);
+
+			for (const file of elementFiles) {
+				console.log(
+					`[saveDesignModeChangesToSandbox] Adding file to write queue: ${file.filePath}`,
+				);
+				filesToWrite.push({
+					path: file.filePath,
+					content: file.content,
+				});
+			}
+		}
+
+		// Write all files in one go
+		if (filesToWrite.length > 0) {
+			console.log(
+				"[saveDesignModeChangesToSandbox] Writing files to sandbox:",
+				filesToWrite.map((f) => f.path),
+			);
+
+			const result:
+				| {
+						success: true;
+						filesWritten: number;
+						error: null;
+				  }
+				| {
+						success: false;
+						filesWritten: 0;
+						error: {
+							message: string;
+						};
+				  } = await ctx.runAction(
+				internal.collections.sandboxes.actions.writeFilesTool,
+				{
+					sandboxId,
+					files: filesToWrite,
+				},
+			);
+
+			if (!result.success) {
+				return { success: false, filesWritten: 0, error: result.error };
+			}
+
+			return { success: true, filesWritten: result.filesWritten, error: null };
+		}
+
+		return { success: true, filesWritten: 0, error: null };
 	},
 });
 
@@ -2899,6 +3291,78 @@ export const readTagsFile = action({
 	},
 });
 
+/**
+ * Read any file from the sandbox
+ * Public action that users can call to read files from the sandbox
+ */
+export const readFile = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		filePath: v.string(),
+		cwd: v.optional(v.string()),
+		startLine: v.optional(v.number()),
+		endLine: v.optional(v.number()),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, filePath, cwd, startLine, endLine },
+	): Promise<
+		| { success: true; content: string; error: null }
+		| { success: false; content: null; error: { message: string } }
+	> => {
+		const user = await ctx.auth.getUserIdentity();
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get sandbox and verify workspace authorization
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		// Get current user workspace
+		const currentUser = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+
+		if (
+			!currentUser ||
+			sandbox.workspaceId !== currentUser.currentWorkspaceId
+		) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		try {
+			const result = await ctx.runAction(
+				internal.collections.sandboxes.actions.readFileTool,
+				{
+					sandboxId,
+					filePath,
+					cwd,
+					startLine,
+					endLine,
+				},
+			);
+
+			return result;
+		} catch (error) {
+			return {
+				success: false,
+				content: null,
+				error: {
+					message: error instanceof Error ? error.message : String(error),
+				},
+			};
+		}
+	},
+});
+
 export const updateTagsFile = internalAction({
 	args: {
 		sandboxId: v.id("sandboxes"),
@@ -3708,21 +4172,27 @@ export const saveDesignModeChanges = internalAction({
 		// Save all files using writeFilesTool (batch write)
 		try {
 			console.log(`[Design Mode] Saving ${files.length} files...`);
-			console.log("[Design Mode] Files to save:", files.map(f => ({
-				path: f.filePath,
-				contentLength: f.content.length
-			})));
+			console.log(
+				"[Design Mode] Files to save:",
+				files.map((f) => ({
+					path: f.filePath,
+					contentLength: f.content.length,
+				})),
+			);
 
 			// Log the actual content for debugging
 			for (const file of files) {
-				console.log(`[Design Mode] Content for ${file.filePath} (first 500 chars):`, file.content.substring(0, 500));
+				console.log(
+					`[Design Mode] Content for ${file.filePath} (first 500 chars):`,
+					file.content.substring(0, 500),
+				);
 			}
 
 			const writeResult = await ctx.runAction(
 				internal.collections.sandboxes.actions.writeFilesTool,
 				{
 					sandboxId,
-					files: files.map(f => ({
+					files: files.map((f) => ({
 						path: f.filePath,
 						content: f.content,
 					})),
@@ -3732,7 +4202,10 @@ export const saveDesignModeChanges = internalAction({
 			console.log("[Design Mode] Write result:", writeResult);
 
 			if (!writeResult.success) {
-				console.error("[Design Mode] Failed to write files:", writeResult.error);
+				console.error(
+					"[Design Mode] Failed to write files:",
+					writeResult.error,
+				);
 			} else {
 				console.log("[Design Mode] Successfully saved all files");
 			}
@@ -3766,3 +4239,437 @@ export const saveDesignModeChanges = internalAction({
 		};
 	},
 });
+
+const readFileHelper = async (
+	sandbox: Sandbox,
+	filePath: string,
+	cwd: string,
+): Promise<{
+	success: boolean;
+	content: string | null;
+	error: { message: string } | null;
+}> => {
+	try {
+		const stream = await sandbox.readFile({
+			path: filePath,
+			cwd: cwd ?? "/vercel/sandbox",
+		});
+		if (!stream) {
+			return {
+				success: false,
+				content: null,
+				error: { message: `File not found: ${filePath}` },
+			};
+		}
+
+		// Convert ReadableStream to string using async iteration
+		const chunks: Uint8Array[] = [];
+
+		try {
+			// Try to use async iteration if available
+			for await (const chunk of stream as AsyncIterable<Uint8Array>) {
+				chunks.push(chunk);
+			}
+		} catch {
+			// Fallback: try getReader if async iteration fails
+			try {
+				// @ts-expect-error - ReadableStream might have getReader
+				const reader = stream.getReader();
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) break;
+					if (value) chunks.push(value);
+				}
+			} catch (readerError) {
+				return {
+					success: false,
+					content: null,
+					error: {
+						message: `Failed to read stream: ${readerError instanceof Error ? readerError.message : String(readerError)}`,
+					},
+				};
+			}
+		}
+
+		const content = Buffer.concat(chunks).toString("utf-8");
+
+		return {
+			success: true,
+			content,
+			error: null,
+		};
+	} catch (error) {
+		return {
+			success: false,
+			content: null,
+			error: {
+				message: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
+			},
+		};
+	}
+};
+
+/**
+ * Read file from sandbox for design mode (public action wrapper)
+ */
+export const readFileForDesignMode = action({
+	args: {
+		sandboxId: v.id("sandboxes"),
+		filePath: v.string(),
+	},
+	handler: async (
+		ctx,
+		{ sandboxId, filePath },
+	): Promise<{
+		success: boolean;
+		content: string | null;
+		error: { message: string } | null;
+	}> => {
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+			{},
+		);
+		if (!user) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{ id: sandboxId },
+		);
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		try {
+			const credentials = getCredentials();
+			const instance = await SandboxClass.get({
+				sandboxId: sandbox.sandboxExternalId,
+				...credentials,
+			});
+
+			return await readFileHelper(instance, filePath, sandbox.cwd);
+		} catch (error) {
+			return {
+				success: false,
+				content: null,
+				error: {
+					message: `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
+				},
+			};
+		}
+	},
+});
+
+/**
+ * Get initial theme from sandbox files
+ * Reads tailwind.config.js and src/index.css to extract theme configuration
+ */
+export const getInitialThemeFromSandboxInternal = internalAction({
+	args: {
+		sessionId: v.id("agentSessions"),
+		sandboxId: v.id("sandboxes"),
+	},
+	handler: async (ctx, { sessionId, sandboxId }) => {
+		const sandbox = await ctx.runQuery(
+			internal.collections.sandboxes.queries.getByIdInternal,
+			{
+				id: sandboxId,
+			},
+		);
+
+		if (!sandbox) {
+			throw new ConvexError(ERRORS.NOT_FOUND);
+		}
+
+		if (sandbox.status !== "running") {
+			throw new ConvexError("Sandbox is not running.");
+		}
+
+		try {
+			const credentials = getCredentials();
+			const instance = await SandboxClass.get({
+				sandboxId: sandbox.sandboxExternalId,
+				...credentials,
+			});
+
+			const configResultPromise = readFileHelper(
+				instance,
+				"tailwind.config.js",
+				sandbox.cwd,
+			);
+			const cssResultPromise = readFileHelper(
+				instance,
+				"src/index.css",
+				sandbox.cwd,
+			);
+
+			const [configResult, cssResult] = await Promise.allSettled([
+				configResultPromise,
+				cssResultPromise,
+			]);
+
+			if (
+				configResult.status === "rejected" ||
+				cssResult.status === "rejected" ||
+				!configResult.value.success ||
+				!cssResult.value.success
+			) {
+				throw new ConvexError(
+					configResult.status === "fulfilled"
+						? configResult.value.error?.message
+						: configResult.reason ||
+								(cssResult.status === "fulfilled"
+									? cssResult.value.error?.message
+									: cssResult.reason) ||
+								"Failed to read theme files",
+				);
+			}
+
+			// Parse theme from files
+			const theme = parseThemeFromFiles(
+				configResult.value.content || "",
+				cssResult.value.content || "",
+			);
+
+			// Initialize theme state with mutation
+			await ctx.runMutation(
+				internal.collections.agentSessions.mutations.initializeTheme,
+				{
+					sessionId,
+					theme,
+				},
+			);
+
+			return { success: true, theme };
+		} catch (error) {
+			// Set error status
+			await ctx.runMutation(
+				internal.collections.agentSessions.mutations.setThemeStatus,
+				{
+					sessionId,
+					status: "error",
+					error:
+						error instanceof Error ? error.message : "Unknown error occurred",
+				},
+			);
+
+			return {
+				success: false,
+				error:
+					error instanceof Error ? error.message : "Unknown error occurred",
+			};
+		}
+	},
+});
+
+/**
+ * Parse theme from tailwind.config.js and index.css files
+ * Extracts fonts and theme variables
+ */
+function parseThemeFromFiles(
+	_tailwindConfig: string,
+	indexCss: string,
+): {
+	fonts: { sans: string; serif: string; mono: string };
+	lightTheme: {
+		background: string;
+		foreground: string;
+		muted: string;
+		mutedForeground: string;
+		popover: string;
+		popoverForeground: string;
+		border: string;
+		input: string;
+		card: string;
+		cardForeground: string;
+		primary: string;
+		primaryForeground: string;
+		secondary: string;
+		secondaryForeground: string;
+		accent: string;
+		accentForeground: string;
+		destructive: string;
+		destructiveForeground: string;
+		ring: string;
+		chart1: string;
+		chart2: string;
+		chart3: string;
+		chart4: string;
+		chart5: string;
+		radius: string;
+	};
+	darkTheme: {
+		background: string;
+		foreground: string;
+		muted: string;
+		mutedForeground: string;
+		popover: string;
+		popoverForeground: string;
+		border: string;
+		input: string;
+		card: string;
+		cardForeground: string;
+		primary: string;
+		primaryForeground: string;
+		secondary: string;
+		secondaryForeground: string;
+		accent: string;
+		accentForeground: string;
+		destructive: string;
+		destructiveForeground: string;
+		ring: string;
+		chart1: string;
+		chart2: string;
+		chart3: string;
+		chart4: string;
+		chart5: string;
+	};
+} {
+	console.log("[parseThemeFromFiles] Parsing theme from files");
+	console.log(
+		"[parseThemeFromFiles] CSS content preview:",
+		indexCss.slice(0, 500),
+	);
+
+	// Extract font CSS variables from :root (separate from theme colors)
+	const fonts = {
+		sans: "Inter",
+		serif: "Georgia",
+		mono: "JetBrains Mono",
+	};
+
+	// Extract CSS variables from :root for light theme
+	const lightTheme: Record<string, string> = {};
+	const rootMatch = indexCss.match(/:root\s*\{([^}]+)\}/s);
+	console.log("[parseThemeFromFiles] :root match found:", !!rootMatch);
+	if (rootMatch?.[1]) {
+		const rootVars = rootMatch[1];
+		console.log(
+			"[parseThemeFromFiles] Root vars extracted:",
+			rootVars.slice(0, 300),
+		);
+		const varMatches = rootVars.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g);
+		for (const match of varMatches) {
+			if (match[1] && match[2]) {
+				const cssVarName = match[1];
+				const value = match[2].trim();
+
+				// Extract fonts separately (skip them from lightTheme)
+				if (cssVarName === "font-sans") {
+					console.log("[parseThemeFromFiles] Found font-sans:", value);
+					fonts.sans = value.replace(/['"]/g, "");
+					continue;
+				}
+				if (cssVarName === "font-serif") {
+					console.log("[parseThemeFromFiles] Found font-serif:", value);
+					fonts.serif = value.replace(/['"]/g, "");
+					continue;
+				}
+				if (cssVarName === "font-mono") {
+					console.log("[parseThemeFromFiles] Found font-mono:", value);
+					fonts.mono = value.replace(/['"]/g, "");
+					continue;
+				}
+
+				// Convert kebab-case to camelCase (chart-1 -> chart1, muted-foreground -> mutedForeground)
+				const varName = cssVarName
+					.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+					.replace(/-/g, ""); // Remove remaining hyphens (for chart-1 -> chart1)
+
+				lightTheme[varName] = value;
+			}
+		}
+	}
+
+	// Extract CSS variables from .dark for dark theme
+	const darkTheme: Record<string, string> = {};
+	const darkMatch = indexCss.match(/\.dark\s*\{([^}]+)\}/s);
+	if (darkMatch?.[1]) {
+		const darkVars = darkMatch[1];
+		const varMatches = darkVars.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g);
+		for (const match of varMatches) {
+			if (match[1] && match[2]) {
+				// Convert kebab-case to camelCase (chart-1 -> chart1, muted-foreground -> mutedForeground)
+				const varName = match[1]
+					.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase())
+					.replace(/-/g, ""); // Remove remaining hyphens (for chart-1 -> chart1)
+				const value = match[2].trim();
+				darkTheme[varName] = value;
+			}
+		}
+	}
+
+	// NOTE: We no longer parse fonts from tailwind.config.js
+	// The config uses CSS variables: sans: ["var(--font-sans)", "sans-serif"]
+	// We already extracted the actual font names from CSS variables above (--font-sans: "Inter")
+
+	// Define default theme with all required fields
+	const defaultLightTheme = {
+		background: "0 0% 100%",
+		foreground: "240 10% 3.9%",
+		muted: "240 4.8% 95.9%",
+		mutedForeground: "240 3.8% 46.1%",
+		popover: "0 0% 100%",
+		popoverForeground: "240 10% 3.9%",
+		border: "240 5.9% 90%",
+		input: "240 5.9% 90%",
+		card: "0 0% 100%",
+		cardForeground: "240 10% 3.9%",
+		primary: "240 5.9% 10%",
+		primaryForeground: "0 0% 98%",
+		secondary: "240 4.8% 95.9%",
+		secondaryForeground: "240 5.9% 10%",
+		accent: "240 4.8% 95.9%",
+		accentForeground: "240 5.9% 10%",
+		destructive: "0 84.2% 60.2%",
+		destructiveForeground: "0 0% 98%",
+		ring: "240 5.9% 10%",
+		chart1: "12 76% 61%",
+		chart2: "173 58% 39%",
+		chart3: "197 37% 24%",
+		chart4: "43 74% 66%",
+		chart5: "27 87% 67%",
+		radius: "0.5rem",
+	};
+
+	const defaultDarkTheme = {
+		background: "240 10% 3.9%",
+		foreground: "0 0% 98%",
+		muted: "240 3.7% 15.9%",
+		mutedForeground: "240 5% 64.9%",
+		popover: "240 10% 3.9%",
+		popoverForeground: "0 0% 98%",
+		border: "240 3.7% 15.9%",
+		input: "240 3.7% 15.9%",
+		card: "240 10% 3.9%",
+		cardForeground: "0 0% 98%",
+		primary: "0 0% 98%",
+		primaryForeground: "240 5.9% 10%",
+		secondary: "240 3.7% 15.9%",
+		secondaryForeground: "0 0% 98%",
+		accent: "240 3.7% 15.9%",
+		accentForeground: "0 0% 98%",
+		destructive: "0 62.8% 30.6%",
+		destructiveForeground: "0 0% 98%",
+		ring: "240 4.9% 83.9%",
+		chart1: "220 70% 50%",
+		chart2: "160 60% 45%",
+		chart3: "30 80% 55%",
+		chart4: "280 65% 60%",
+		chart5: "340 75% 55%",
+	};
+
+	// Merge parsed values with defaults (parsed values override defaults)
+	return {
+		fonts,
+		lightTheme: {
+			...defaultLightTheme,
+			...lightTheme,
+		} as typeof defaultLightTheme,
+		darkTheme: {
+			...defaultDarkTheme,
+			...darkTheme,
+		} as typeof defaultDarkTheme,
+	};
+}

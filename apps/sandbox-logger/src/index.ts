@@ -504,7 +504,9 @@ async function startMonitoring(
 		try {
 			for await (const chunk of stream) {
 				if (abortController.signal.aborted) {
-					console.log(`[Monitor] Stream aborted for ${key} at chunk ${chunkCount}`);
+					console.log(
+						`[Monitor] Stream aborted for ${key} at chunk ${chunkCount}`,
+					);
 					break;
 				}
 

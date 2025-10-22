@@ -1,216 +1,174 @@
 "use client";
 
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
-import { Button } from "@firebuzz/ui/components/ui/button";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Label } from "@firebuzz/ui/components/ui/label";
-import { Separator } from "@firebuzz/ui/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@firebuzz/ui/components/ui/tabs";
-import { Textarea } from "@firebuzz/ui/components/ui/textarea";
+import { ScrollArea } from "@firebuzz/ui/components/ui/scroll-area";
 import {
-	Code,
-	Database,
-	Image as ImageIcon,
-	Save,
-	Type,
-	X,
-} from "@firebuzz/ui/icons/lucide";
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@firebuzz/ui/components/ui/select";
+import { Textarea } from "@firebuzz/ui/components/ui/textarea";
+import { Info } from "@firebuzz/ui/icons/lucide";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ImagePreview } from "@/components/reusables/image-preview";
+import { ImageSelect } from "@/components/reusables/image-select";
+import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import { parseClassName, updateClassName } from "@/lib/design-mode/class-utils";
 
-export const ElementEditor = () => {
-	const {
-		selectedElement,
-		updateElement,
-		hasUnsavedChanges: hasUnsavedFileChanges,
-		saveChangesToFiles,
-		isLoading,
-	} = useDesignMode();
+import { AppearanceControls } from "./controls/appearance-controls";
+import { BorderControls } from "./controls/border-controls";
+import { ColorControls } from "./controls/color-controls";
+import { LayoutControls } from "./controls/layout-controls";
+import { SizeControls } from "./controls/size-controls";
+import { SpacingControls } from "./controls/spacing-controls";
+import { TypographyControls } from "./controls/typography-controls";
+import { MonacoTailwindEditor } from "./monaco-tailwind-editor";
 
-	const [className, setClassName] = useState(
-		selectedElement?.className || "",
-	);
+export const ElementEditorContent = () => {
+	const { selectedElement, updateElement } = useDesignMode();
+	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
+
+	const [className, setClassName] = useState(selectedElement?.className || "");
 	const [textContent, setTextContent] = useState(
 		selectedElement?.textContent || "",
 	);
 	const [src, setSrc] = useState(selectedElement?.src || "");
 	const [alt, setAlt] = useState(selectedElement?.alt || "");
+	const [href, setHref] = useState(selectedElement?.href || "");
+	const [target, setTarget] = useState(selectedElement?.target || "");
+	const [rel, setRel] = useState(selectedElement?.rel || "");
 
 	// Track last selected element ID to detect when a NEW element is selected
 	const lastElementIdRef = useRef<string | null>(null);
+	const selectedElementIdRef = useRef<string | null>(null);
 
 	// Update local state ONLY when a NEW element is selected, not on every selectedElement change
 	useEffect(() => {
-		if (selectedElement && selectedElement.elementId !== lastElementIdRef.current) {
+		if (
+			selectedElement &&
+			selectedElement.elementId !== lastElementIdRef.current
+		) {
 			// New element selected - reset local state
 			setClassName(selectedElement.className);
 			setTextContent(selectedElement.textContent || "");
 			setSrc(selectedElement.src || "");
 			setAlt(selectedElement.alt || "");
+			setHref(selectedElement.href || "");
+			setTarget(selectedElement.target || "");
+			setRel(selectedElement.rel || "");
 			lastElementIdRef.current = selectedElement.elementId;
+			selectedElementIdRef.current = selectedElement.elementId;
 		} else if (!selectedElement) {
 			// Element deselected - reset
 			lastElementIdRef.current = null;
+			selectedElementIdRef.current = null;
 		}
 	}, [selectedElement]);
 
-	const hasUnsavedChanges = selectedElement
-		? className !== selectedElement.className ||
-			textContent !== (selectedElement.textContent || "") ||
-			src !== (selectedElement.src || "") ||
-			alt !== (selectedElement.alt || "")
-		: false;
-
-	// Real-time update function (no debouncing - pure real-time like Lovable)
+	// Real-time update function (no debouncing here - updateElement handles it internally)
 	const handleRealtimeUpdate = useCallback(
 		(updates: {
 			className?: string;
 			textContent?: string;
 			src?: string;
 			alt?: string;
+			href?: string;
+			target?: string;
+			rel?: string;
 		}) => {
-			if (!selectedElement) return;
-			updateElement(selectedElement.elementId, updates);
+			const currentElementId = selectedElementIdRef.current;
+			if (!currentElementId) return;
+
+			// Call updateElement immediately - it handles:
+			// 1. Immediate iframe update (real-time visual feedback)
+			// 2. Debounced database mutation (performance optimization)
+			updateElement(currentElementId, updates);
 		},
-		[selectedElement, updateElement],
+		[updateElement],
 	);
 
-	const handleApplyChanges = async () => {
-		if (!selectedElement) return;
-
-		const updates: {
-			className?: string;
-			textContent?: string;
-			src?: string;
-			alt?: string;
-		} = {};
-
-		if (className !== selectedElement.className) {
-			updates.className = className;
-		}
-		if (textContent !== (selectedElement.textContent || "")) {
-			updates.textContent = textContent;
-		}
-		if (src !== (selectedElement.src || "")) {
-			updates.src = src;
-		}
-		if (alt !== (selectedElement.alt || "")) {
-			updates.alt = alt;
-		}
-
-		if (Object.keys(updates).length > 0) {
-			await updateElement(selectedElement.elementId, updates);
-		}
-	};
-
-	const handleReset = () => {
-		if (selectedElement) {
-			setClassName(selectedElement.className);
-			setTextContent(selectedElement.textContent || "");
-			setSrc(selectedElement.src || "");
-			setAlt(selectedElement.alt || "");
-		}
-	};
-
-	if (isLoading) {
-		return (
-			<div className="flex flex-col h-full p-4">
-				<p className="text-sm text-muted-foreground">Loading...</p>
-			</div>
-		);
-	}
-
 	if (!selectedElement) {
-		return (
-			<div className="flex flex-col h-full p-4 items-center justify-center">
-				<div className="text-center space-y-2">
-					<p className="text-sm font-medium">No Element Selected</p>
-					<p className="text-xs text-muted-foreground">
-						Enable design mode and click on an element in the preview to edit
-						it.
-					</p>
-				</div>
-			</div>
-		);
+		return null;
 	}
 
 	const isImage = selectedElement.tagName === "IMG";
-	const isTextElement = !isImage && selectedElement.textContent;
+	const isLink = selectedElement.tagName === "A";
+	const isTextElement =
+		!isImage &&
+		!isLink &&
+		selectedElement.textContent !== undefined &&
+		selectedElement.textContent !== null;
+
+	// Parse current classes
+	const parsedClasses = parseClassName(className);
+
+	// Helper to update classes from control components
+	const handleClassUpdate = (updates: Partial<typeof parsedClasses>) => {
+		const newClassName = updateClassName(className, updates);
+		setClassName(newClassName);
+		handleRealtimeUpdate({ className: newClassName });
+	};
 
 	return (
 		<div className="flex flex-col h-full">
-			{/* Header */}
-			<div className="p-4 border-b">
-				<div className="flex items-center justify-between mb-2">
-					<h3 className="text-sm font-semibold">Element Editor</h3>
-				</div>
-				<div className="flex items-center gap-2 text-xs text-muted-foreground">
-					<Code className="size-3" />
-					<span className="font-mono">{selectedElement.tagName}</span>
-					<Separator orientation="vertical" className="h-3" />
-					<span className="truncate">{selectedElement.sourcePath}</span>
-				</div>
-			</div>
-
 			{/* Content */}
-			<div className="flex-1 overflow-y-auto p-4 space-y-4">
-				<Tabs defaultValue="styles" className="w-full">
-					<TabsList className="w-full">
-						<TabsTrigger value="styles" className="flex-1">
-							Styles
-						</TabsTrigger>
-						<TabsTrigger value="content" className="flex-1">
-							Content
-						</TabsTrigger>
-					</TabsList>
+			<ScrollArea className="flex-1">
+				<div className="">
+					{/* Content Section - Images */}
+					{isImage && (
+						<div className="px-2 py-4 space-y-3 border-b">
+							<h3 className="text-sm font-medium text-muted-foreground">
+								Content
+							</h3>
 
-					<TabsContent value="styles" className="space-y-4 mt-4">
-						<div className="space-y-2">
-							<Label htmlFor="className" className="text-xs">
-								Class Name
-							</Label>
-							<Textarea
-								id="className"
-								value={className}
-								onChange={(e) => {
-									const newValue = e.target.value;
-									setClassName(newValue);
-									handleRealtimeUpdate({ className: newValue });
-								}}
-								placeholder="Enter Tailwind classes..."
-								className="font-mono text-xs min-h-[100px]"
-							/>
-							<p className="text-xs text-muted-foreground">
-								Space-separated Tailwind classes
-							</p>
-						</div>
-					</TabsContent>
-
-					<TabsContent value="content" className="space-y-4 mt-4">
-						{isImage ? (
-							<>
-								<div className="space-y-2">
-									<Label htmlFor="src" className="text-xs flex items-center gap-1">
-										<ImageIcon className="size-3" />
-										Image Source
-									</Label>
-									<Input
-										id="src"
-										value={src}
-										onChange={(e) => {
-											const newValue = e.target.value;
-											setSrc(newValue);
-											handleRealtimeUpdate({ src: newValue });
-										}}
-										placeholder="https://..."
-										className="text-xs"
-									/>
+							{/* Show warning if image is not editable */}
+							{selectedElement.isImageEditable === false && (
+								<div className="flex gap-2 p-2 text-xs rounded-md bg-muted text-muted-foreground">
+									<Info className="size-4 flex-shrink-0 mt-0.5" />
+									<p>
+										Image source and alt text are defined as variables in the
+										code and cannot be edited directly in design mode.
+									</p>
 								</div>
-								<div className="space-y-2">
-									<Label htmlFor="alt" className="text-xs">
+							)}
+
+							<div className="space-y-3">
+								{/* Image Selector/Preview */}
+								<div className="space-y-1.5">
+									<Label className="text-xs text-muted-foreground">Image</Label>
+									{!src && selectedElement.isImageEditable !== false ? (
+										<ImageSelect
+											onChange={(url) => {
+												const fullUrl = `${NEXT_PUBLIC_R2_PUBLIC_URL}/${url}`;
+												setSrc(fullUrl);
+												handleRealtimeUpdate({ src: fullUrl });
+											}}
+										/>
+									) : src ? (
+										<ImagePreview
+											src={src}
+											handleDeselect={() => {
+												setSrc("");
+												handleRealtimeUpdate({ src: "" });
+											}}
+										/>
+									) : (
+										<p className="text-xs text-muted-foreground">
+											Image cannot be changed in design mode
+										</p>
+									)}
+								</div>
+
+								{/* Alt Text Input */}
+								<div className="space-y-1.5">
+									<Label className="text-xs text-muted-foreground">
 										Alt Text
 									</Label>
 									<Input
-										id="alt"
 										value={alt}
 										onChange={(e) => {
 											const newValue = e.target.value;
@@ -218,18 +176,119 @@ export const ElementEditor = () => {
 											handleRealtimeUpdate({ alt: newValue });
 										}}
 										placeholder="Image description..."
-										className="text-xs"
+										className="h-8 bg-muted"
+										disabled={selectedElement.isImageEditable === false}
 									/>
 								</div>
-							</>
-						) : isTextElement ? (
-							<div className="space-y-2">
-								<Label htmlFor="textContent" className="text-xs flex items-center gap-1">
-									<Type className="size-3" />
+							</div>
+						</div>
+					)}
+
+					{/* Content Section - Links */}
+					{isLink && (
+						<div className="px-2 py-4 space-y-3 border-b">
+							<h3 className="text-sm font-medium text-muted-foreground">
+								Content
+							</h3>
+
+							{/* Show warning if link is not editable */}
+							{selectedElement.isLinkEditable === false && (
+								<div className="flex gap-2 p-2 text-xs rounded-md bg-muted text-muted-foreground">
+									<Info className="size-4 flex-shrink-0 mt-0.5" />
+									<p>
+										Link attributes are defined as variables in the code and
+										cannot be edited directly in design mode.
+									</p>
+								</div>
+							)}
+
+							<div className="space-y-3">
+								{/* Href Input */}
+								<div className="space-y-1.5">
+									<Label className="text-xs text-muted-foreground">URL</Label>
+									<Input
+										value={href}
+										onChange={(e) => {
+											const newValue = e.target.value;
+											setHref(newValue);
+											handleRealtimeUpdate({ href: newValue });
+										}}
+										placeholder="https://..."
+										className="h-8 bg-muted"
+										disabled={selectedElement.isLinkEditable === false}
+									/>
+								</div>
+
+								{/* Target Select */}
+								<div className="space-y-1.5">
+									<Label className="text-xs text-muted-foreground">
+										Target
+									</Label>
+									<Select
+										value={target || "_self"}
+										onValueChange={(val) => {
+											setTarget(val);
+											handleRealtimeUpdate({ target: val });
+										}}
+										disabled={selectedElement.isLinkEditable === false}
+									>
+										<SelectTrigger className="h-8 bg-muted">
+											<SelectValue placeholder="Select target" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="_self">Same Window</SelectItem>
+											<SelectItem value="_blank">New Window</SelectItem>
+											<SelectItem value="_parent">Parent Frame</SelectItem>
+											<SelectItem value="_top">Top Frame</SelectItem>
+										</SelectContent>
+									</Select>
+								</div>
+
+								{/* Rel Input */}
+								<div className="space-y-1.5">
+									<Label className="text-xs text-muted-foreground">Rel</Label>
+									<Input
+										value={rel}
+										onChange={(e) => {
+											const newValue = e.target.value;
+											setRel(newValue);
+											handleRealtimeUpdate({ rel: newValue });
+										}}
+										placeholder="nofollow, noopener, noreferrer..."
+										className="h-8 bg-muted"
+										disabled={selectedElement.isLinkEditable === false}
+									/>
+									<p className="text-xs text-muted-foreground">
+										Common values: nofollow, noopener, noreferrer
+									</p>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Content Section - Text */}
+					{isTextElement && (
+						<div className="px-2 py-4 space-y-3 border-b">
+							<h3 className="text-sm font-medium text-muted-foreground">
+								Content
+							</h3>
+
+							{/* Show warning if text is not editable */}
+							{selectedElement.isTextEditable === false && (
+								<div className="flex gap-2 p-2 text-xs rounded-md bg-muted text-muted-foreground">
+									<Info className="size-4 flex-shrink-0 mt-0.5" />
+									<p>
+										Text content is defined as a variable or expression in the
+										code and cannot be edited directly in design mode.
+									</p>
+								</div>
+							)}
+
+							<div className="space-y-1.5">
+								<Label className="text-xs text-muted-foreground">
 									Text Content
 								</Label>
 								<Textarea
-									id="textContent"
 									value={textContent}
 									onChange={(e) => {
 										const newValue = e.target.value;
@@ -237,61 +296,177 @@ export const ElementEditor = () => {
 										handleRealtimeUpdate({ textContent: newValue });
 									}}
 									placeholder="Enter text..."
-									className="text-xs min-h-[100px]"
+									className="min-h-[100px] bg-muted"
+									rows={4}
+									disabled={selectedElement.isTextEditable === false}
 								/>
 							</div>
-						) : (
-							<p className="text-xs text-muted-foreground">
-								This element has no editable content.
-							</p>
-						)}
-					</TabsContent>
-				</Tabs>
-			</div>
+						</div>
+					)}
 
-			{/* Footer Actions */}
-			<div className="p-4 border-t space-y-2">
-				<Button
-					onClick={handleApplyChanges}
-					disabled={!hasUnsavedChanges}
-					className="w-full"
-					size="sm"
-				>
-					<Save className="size-3 mr-2" />
-					Apply Changes
-				</Button>
-				<Button
-					onClick={handleReset}
-					disabled={!hasUnsavedChanges}
-					variant="outline"
-					className="w-full"
-					size="sm"
-				>
-					<X className="size-3 mr-2" />
-					Reset
-				</Button>
+					{/* Typography Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Typography
+						</h3>
+						<TypographyControls
+							value={{
+								fontFamily: parsedClasses.fontFamily,
+								fontSize: parsedClasses.fontSize,
+								fontWeight: parsedClasses.fontWeight,
+								lineHeight: parsedClasses.lineHeight,
+								letterSpacing: parsedClasses.letterSpacing,
+								textAlign: parsedClasses.textAlign,
+								textDecoration: parsedClasses.textDecoration,
+								fontStyle: parsedClasses.fontStyle,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
 
-				{/* Save to File Button */}
-				{hasUnsavedFileChanges && (
-					<Button
-						onClick={async () => {
-							try {
-								console.log("[Element Editor] Saving changes to files...");
-								await saveChangesToFiles();
-								console.log("[Element Editor] Changes saved successfully");
-							} catch (error) {
-								console.error("[Element Editor] Failed to save changes:", error);
+					{/* Color Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Colors
+						</h3>
+						<ColorControls
+							textColor={parsedClasses.textColor}
+							backgroundColor={parsedClasses.backgroundColor}
+							onTextColorChange={(color) =>
+								handleClassUpdate({ textColor: color })
 							}
-						}}
-						variant="default"
-						className="w-full"
-						size="sm"
-					>
-						<Database className="size-3 mr-2" />
-						Save to File
-					</Button>
-				)}
-			</div>
+							onBackgroundColorChange={(color) =>
+								handleClassUpdate({ backgroundColor: color })
+							}
+						/>
+					</div>
+
+					{/* Layout Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Layout
+						</h3>
+						<LayoutControls
+							value={{
+								display: parsedClasses.display,
+								flexDirection: parsedClasses.flexDirection,
+								justifyContent: parsedClasses.justifyContent,
+								alignItems: parsedClasses.alignItems,
+								gap: parsedClasses.gap,
+								gridCols: parsedClasses.gridCols,
+								gridRows: parsedClasses.gridRows,
+								spaceX: parsedClasses.spaceX,
+								spaceY: parsedClasses.spaceY,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
+
+					{/* Size Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">Size</h3>
+						<SizeControls
+							value={{
+								width: parsedClasses.width,
+								height: parsedClasses.height,
+								minWidth: parsedClasses.minWidth,
+								maxWidth: parsedClasses.maxWidth,
+								minHeight: parsedClasses.minHeight,
+								maxHeight: parsedClasses.maxHeight,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
+
+					{/* Spacing Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Spacing
+						</h3>
+						<SpacingControls
+							value={{
+								marginTop: parsedClasses.marginTop,
+								marginRight: parsedClasses.marginRight,
+								marginBottom: parsedClasses.marginBottom,
+								marginLeft: parsedClasses.marginLeft,
+								paddingTop: parsedClasses.paddingTop,
+								paddingRight: parsedClasses.paddingRight,
+								paddingBottom: parsedClasses.paddingBottom,
+								paddingLeft: parsedClasses.paddingLeft,
+								marginX: parsedClasses.marginX,
+								marginY: parsedClasses.marginY,
+								paddingX: parsedClasses.paddingX,
+								paddingY: parsedClasses.paddingY,
+								margin: parsedClasses.margin,
+								padding: parsedClasses.padding,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
+
+					{/* Border Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Border
+						</h3>
+						<BorderControls
+							value={{
+								borderWidth: parsedClasses.borderWidth,
+								borderXWidth: parsedClasses.borderXWidth,
+								borderYWidth: parsedClasses.borderYWidth,
+								borderTopWidth: parsedClasses.borderTopWidth,
+								borderRightWidth: parsedClasses.borderRightWidth,
+								borderBottomWidth: parsedClasses.borderBottomWidth,
+								borderLeftWidth: parsedClasses.borderLeftWidth,
+								borderStyle: parsedClasses.borderStyle,
+								borderColor: parsedClasses.borderColor,
+								borderRadius: parsedClasses.borderRadius,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
+
+					{/* Appearance Section */}
+					<div className="px-2 py-4 space-y-3 border-b">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Appearance
+						</h3>
+						<AppearanceControls
+							value={{
+								opacity: parsedClasses.opacity,
+								shadow: parsedClasses.shadow,
+							}}
+							onChange={(updates) => handleClassUpdate(updates)}
+						/>
+					</div>
+
+					{/* Advanced Section */}
+					<div className="px-2 py-4 space-y-3">
+						<h3 className="text-sm font-medium text-muted-foreground">
+							Advanced
+						</h3>
+						<div className="space-y-1.5">
+							<Label
+								htmlFor="className"
+								className="text-xs text-muted-foreground"
+							>
+								Tailwind Classes
+							</Label>
+							<MonacoTailwindEditor
+								value={className}
+								onChange={(newValue) => {
+									setClassName(newValue);
+									handleRealtimeUpdate({ className: newValue });
+								}}
+								placeholder="Enter Tailwind classes..."
+							/>
+							<p className="text-xs text-muted-foreground">
+								Space-separated Tailwind classes with autocomplete
+							</p>
+						</div>
+					</div>
+				</div>
+			</ScrollArea>
 		</div>
 	);
 };

@@ -1,15 +1,16 @@
+import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
+import { Button } from "@firebuzz/ui/components/ui/button";
+import { Spinner } from "@firebuzz/ui/components/ui/spinner";
+import { AlertCircle, EyeOff } from "@firebuzz/ui/icons/lucide";
+import { cn } from "@firebuzz/ui/lib/utils";
+import { AnimatePresence, motion } from "motion/react";
+import { useMemo } from "react";
+import { DesignModeActionMenu } from "@/components/chat-v2/design-mode/action-menu";
 import { useAgentSession } from "@/hooks/agent/use-agent-session";
 // import { ElementInspector } from "@/components/chat-v2/design-mode/element-inspector";
 import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import { usePreviewSize } from "@/hooks/agent/use-preview-size";
 import { useSandbox } from "@/hooks/agent/use-sandbox";
-import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
-import { Button } from "@firebuzz/ui/components/ui/button";
-import { Spinner } from "@firebuzz/ui/components/ui/spinner";
-import { AlertCircle } from "@firebuzz/ui/icons/lucide";
-import { cn } from "@firebuzz/ui/lib/utils";
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo } from "react";
 
 const sizeClasses = {
 	mobile: "w-[375px]",
@@ -99,6 +100,8 @@ export const Preview = () => {
 		isStaticPreviewIframeLoaded,
 	]);
 
+	console.log("currentPreviewType", currentPreviewType);
+
 	const message = useMemo(() => {
 		if (session && session.status !== "active")
 			return {
@@ -139,9 +142,9 @@ export const Preview = () => {
 	]);
 
 	return (
-		<div className="relative w-full h-full">
-			{/* Element Inspector - Hidden, using new design mode in Design tab */}
-			{/* <ElementInspector /> */}
+		<div className="flex relative flex-col w-full h-full">
+			{/* Design Mode Action Menu */}
+			<DesignModeActionMenu />
 
 			{/* Message Component */}
 			<AnimatePresence>
@@ -196,7 +199,7 @@ export const Preview = () => {
 					</motion.div>
 				)}
 			</AnimatePresence>
-			<div className="overflow-hidden w-full h-full rounded-lg border bg-muted">
+			<div className="overflow-hidden flex-1 w-full rounded-lg border bg-muted">
 				<div className="flex overflow-auto justify-center items-start w-full h-full bg-muted">
 					<div
 						className={cn(
@@ -206,7 +209,7 @@ export const Preview = () => {
 					>
 						{/* Initializing */}
 						{isInitializing && (
-							<div className="flex absolute inset-0 z-30 justify-center items-center w-full h-full bg-background">
+							<div className="flex absolute inset-0 z-0 justify-center items-center w-full h-full bg-background">
 								<TextShimmer
 									as="span"
 									duration={1.5}
@@ -217,6 +220,25 @@ export const Preview = () => {
 								</TextShimmer>
 							</div>
 						)}
+
+						{/* No Preview */}
+						{currentPreviewType === "no-preview" && !isInitializing && (
+							<div className="flex absolute inset-0 z-20 gap-2 justify-center items-center w-full h-full bg-background">
+								<div className="flex justify-center items-center p-2 rounded-lg border bg-muted">
+									<EyeOff className="size-5" />
+								</div>
+								<div className="">
+									<h3 className="text-lg font-medium leading-tight">
+										No preview available
+									</h3>
+									<p className="text-sm text-muted-foreground">
+										Renew the session to refresh the preview.
+									</p>
+								</div>
+							</div>
+						)}
+
+						{/* No Preview */}
 
 						{/* Static Preview Iframe */}
 						<iframe

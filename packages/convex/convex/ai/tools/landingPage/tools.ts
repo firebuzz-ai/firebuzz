@@ -986,7 +986,9 @@ export const getEditImageTool = ({
 				.string()
 				.url()
 				.optional()
-				.describe("Single source image URL to edit (use this OR imageUrls, not both)"),
+				.describe(
+					"Single source image URL to edit (use this OR imageUrls, not both)",
+				),
 			imageUrls: z
 				.array(z.string().url())
 				.optional()
@@ -1985,8 +1987,7 @@ export const getPublishToPreviewTool = ({
 						success: false,
 						previewUrl: null,
 						error: {
-							message:
-								extractResult.error || "Failed to extract build output",
+							message: extractResult.error || "Failed to extract build output",
 						},
 					};
 				}

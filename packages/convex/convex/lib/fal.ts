@@ -63,7 +63,10 @@ export const generateImage = internalAction({
 		userId: v.id("users"),
 		projectId: v.id("projects"),
 	},
-	handler: async (ctx, args): Promise<{
+	handler: async (
+		ctx,
+		args,
+	): Promise<{
 		success: boolean;
 		cdnUrl: string | null;
 		key: string | null;
@@ -163,7 +166,10 @@ export const editImage = internalAction({
 		userId: v.id("users"),
 		projectId: v.id("projects"),
 	},
-	handler: async (ctx, args): Promise<{
+	handler: async (
+		ctx,
+		args,
+	): Promise<{
 		success: boolean;
 		cdnUrl: string | null;
 		key: string | null;
@@ -180,11 +186,12 @@ export const editImage = internalAction({
 			}
 
 			// Build image_urls array (required parameter for nano-banana/edit)
-			const imageUrls: string[] = args.imageUrls && args.imageUrls.length > 0
-				? args.imageUrls
-				: args.imageUrl
-					? [args.imageUrl]
-					: [];
+			const imageUrls: string[] =
+				args.imageUrls && args.imageUrls.length > 0
+					? args.imageUrls
+					: args.imageUrl
+						? [args.imageUrl]
+						: [];
 
 			// Log the URLs being used for debugging
 			console.log("[editImage] Using image URLs:", imageUrls);

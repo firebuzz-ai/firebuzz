@@ -26,13 +26,6 @@
 			"!packages/ui/src/components/ui/**"
 		]
 	},
-	"assist": {
-		"actions": {
-			"source": {
-				"organizeImports": "on"
-			}
-		}
-	},
 	"linter": {
 		"enabled": true,
 		"includes": [

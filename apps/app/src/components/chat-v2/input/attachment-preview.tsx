@@ -1,8 +1,8 @@
 "use client";
 
 import { useCachedQuery } from "@firebuzz/convex";
-import { api } from "@firebuzz/convex/nextjs";
 import type { Id } from "@firebuzz/convex/nextjs";
+import { api } from "@firebuzz/convex/nextjs";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { InputGroupButton } from "@firebuzz/ui/components/ui/input-group";
 import { IconFile, IconX } from "@firebuzz/ui/icons/tabler";
@@ -22,9 +22,7 @@ export const AttachmentPreview = ({
 	// Call hooks unconditionally, using "skip" for the one we don't need
 	const media = useCachedQuery(
 		api.collections.storage.media.queries.getById,
-		attachment.type === "media"
-			? { id: attachment.id as Id<"media"> }
-			: "skip",
+		attachment.type === "media" ? { id: attachment.id as Id<"media"> } : "skip",
 	);
 
 	const document = useCachedQuery(

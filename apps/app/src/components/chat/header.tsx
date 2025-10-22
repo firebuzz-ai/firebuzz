@@ -1,4 +1,3 @@
-import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 import { api, type Id, useCachedRichQuery } from "@firebuzz/convex";
 import {
 	Breadcrumb,
@@ -14,6 +13,7 @@ import { Skeleton } from "@firebuzz/ui/components/ui/skeleton";
 import { ChevronsLeft } from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { memo, useMemo } from "react";
+import { useTwoPanelsLayout } from "@/hooks/ui/use-two-panels-layout";
 
 interface ChatHeaderProps {
 	landingPageId: Id<"landingPages">;

@@ -6,8 +6,9 @@ interface RenameLandingPageModalState {
 	currentTitle: string;
 }
 
-const renameLandingPageModalAtom =
-	atom<RenameLandingPageModalState | null>(null);
+const renameLandingPageModalAtom = atom<RenameLandingPageModalState | null>(
+	null,
+);
 
 export const useRenameLandingPageModal = () => {
 	return useAtom(renameLandingPageModalAtom);

@@ -5,9 +5,9 @@
  * Based on Lovable's approach for robust visual editing.
  */
 
-import { parse, type ParseResult } from "@babel/parser";
-import traverse, { type NodePath } from "@babel/traverse";
 import generate from "@babel/generator";
+import { type ParseResult, parse } from "@babel/parser";
+import traverse, { type NodePath } from "@babel/traverse";
 import * as t from "@babel/types";
 
 /**
@@ -36,7 +36,7 @@ export function findNodeByLocation(
 	column: number,
 ): NodePath<t.JSXElement> | null {
 	let exactMatch: NodePath<t.JSXElement> | null = null;
-	let closeMatches: Array<{
+	const closeMatches: Array<{
 		path: NodePath<t.JSXElement>;
 		distance: number;
 	}> = [];

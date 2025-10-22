@@ -1,6 +1,5 @@
 "use client";
 
-import { useProject } from "@/hooks/auth/use-project";
 import {
 	api,
 	type Id,
@@ -30,6 +29,7 @@ import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useState } from "react";
 import { type Accept, type FileRejection, useDropzone } from "react-dropzone";
+import { useProject } from "@/hooks/auth/use-project";
 
 // Define expected structure for onSelect based on usage (same as GalleryTab)
 interface SelectedMediaItem {

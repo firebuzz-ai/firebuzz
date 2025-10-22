@@ -153,7 +153,7 @@ export const ToolGroup = memo(function ToolGroup({
 						className="overflow-hidden"
 					>
 						<div className="flex flex-col gap-2 p-2">
-							{displayParts.map((part, index) => {
+							{displayParts.map((part, _index) => {
 								// Find original index in parts array
 								const originalIndex = parts.indexOf(part);
 								return (

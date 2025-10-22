@@ -1,6 +1,5 @@
 "use client";
 
-import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 import type { ToolSet } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { GeminiIcon } from "@firebuzz/ui/icons/ai-providers";
@@ -8,6 +7,7 @@ import { Sparkles } from "@firebuzz/ui/icons/lucide";
 import type { UIToolInvocation } from "ai";
 import Image from "next/image";
 import { useMemo } from "react";
+import { useAttachmentPreviewModal } from "@/hooks/ui/use-attachment-preview-modal";
 
 interface GenerateImageProps {
 	part: UIToolInvocation<ToolSet["generateImage"]>;

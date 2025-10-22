@@ -26,7 +26,9 @@ export const UploadImageToCDN = ({ part }: UploadImageToCDNProps) => {
 		if (part?.output) {
 			if (part.output.success && part.output.cdnUrl) {
 				return (
-					<span className="font-mono text-xs truncate">{part.output.cdnUrl}</span>
+					<span className="font-mono text-xs truncate">
+						{part.output.cdnUrl}
+					</span>
 				);
 			}
 
@@ -40,7 +42,9 @@ export const UploadImageToCDN = ({ part }: UploadImageToCDNProps) => {
 		}
 
 		if (part.input) {
-			return <span className="font-mono text-xs truncate">{part.input.url}</span>;
+			return (
+				<span className="font-mono text-xs truncate">{part.input.url}</span>
+			);
 		}
 
 		return null;

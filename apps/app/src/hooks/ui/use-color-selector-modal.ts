@@ -1,17 +1,27 @@
 import { atom, useAtom } from "jotai";
 
+export interface SystemColor {
+	name: string;
+	displayName: string;
+	hexValue: string;
+	category: string;
+	description: string;
+}
+
 interface ColorSelectorModal {
 	isOpen: boolean;
 	onSelect: (color: string) => void;
-	activeTab: "library" | "custom" | "themes";
+	activeTab: "system" | "library" | "custom" | "themes";
 	color: string | undefined;
+	systemColors: SystemColor[];
 }
 
 export const colorSelectorModalAtom = atom<ColorSelectorModal>({
 	isOpen: false,
 	color: undefined,
 	onSelect: () => {},
-	activeTab: "themes",
+	activeTab: "system",
+	systemColors: [],
 });
 
 export const useColorSelectorModal = () => {
@@ -43,12 +53,13 @@ export const useColorSelectorModal = () => {
 		},
 		setActiveTab: (
 			value:
+				| "system"
 				| "library"
 				| "custom"
 				| "themes"
 				| ((
-						prev: "library" | "custom" | "themes",
-				  ) => "library" | "custom" | "themes"),
+						prev: "system" | "library" | "custom" | "themes",
+				  ) => "system" | "library" | "custom" | "themes"),
 		) => {
 			setState((prev) => {
 				if (typeof value === "function") {
@@ -56,6 +67,9 @@ export const useColorSelectorModal = () => {
 				}
 				return { ...prev, activeTab: value };
 			});
+		},
+		setSystemColors: (colors: SystemColor[]) => {
+			setState((prev) => ({ ...prev, systemColors: colors }));
 		},
 	};
 };

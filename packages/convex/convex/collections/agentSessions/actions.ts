@@ -2,9 +2,7 @@
 
 import { ConvexError, v } from "convex/values";
 import { internal } from "../../_generated/api";
-import { action, internalAction } from "../../_generated/server";
-import { ERRORS } from "../../utils/errors";
-import { getCurrentUserWithWorkspace } from "../users/utils";
+import { internalAction } from "../../_generated/server";
 import { engineAPIClient } from "../../lib/engine";
 
 interface TodoItem {
@@ -242,74 +240,6 @@ export const updateTodoListTool = internalAction({
 					message: error instanceof Error ? error.message : String(error),
 				},
 			};
-		}
-	},
-});
-
-/**
- * Read file from sandbox for design mode (public action wrapper)
- */
-export const readFileForDesignMode = action({
-	args: {
-		sandboxId: v.id("sandboxes"),
-		filePath: v.string(),
-	},
-	handler: async (
-		ctx,
-		{ sandboxId, filePath },
-	): Promise<{
-		success: boolean;
-		content: string | null;
-		error: { message: string } | null;
-	}> => {
-		// Call internal readFileTool action
-		const result = await ctx.runAction(
-			internal.collections.sandboxes.actions.readFileTool,
-			{
-				sandboxId,
-				filePath,
-				cwd: "/vercel/sandbox",
-			},
-		);
-
-		return result;
-	},
-});
-
-/**
- * Process dev server error - add to session and trigger analysis
- */
-export const processDevServerError = internalAction({
-	args: {
-		sessionId: v.id("agentSessions"),
-		errorHash: v.string(),
-		errorMessage: v.string(),
-		sandboxId: v.string(),
-	},
-	handler: async (ctx, args): Promise<void> => {
-		console.log(
-			`[processDevServerError] Starting - sessionId: ${args.sessionId}, errorHash: ${args.errorHash}`,
-		);
-
-		try {
-			// Just store the error hash immediately - analysis happens later in batch
-			const result = await ctx.runMutation(
-				internal.collections.agentSessions.mutations.addDevServerError,
-				{
-					sessionId: args.sessionId,
-					errorHash: args.errorHash,
-					errorMessage: args.errorMessage,
-				},
-			);
-
-			console.log(
-				`[processDevServerError] ${result.isNew ? "New" : "Duplicate"} error detected: ${args.errorHash}`,
-			);
-
-			// Store the error message temporarily in memory/cache for later batch analysis
-			// We'll analyze all pending errors together after stream finishes
-		} catch (error) {
-			console.error("[Error] Failed to store error:", error);
 		}
 	},
 });

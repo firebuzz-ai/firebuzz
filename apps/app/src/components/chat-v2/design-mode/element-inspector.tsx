@@ -1,6 +1,5 @@
 "use client";
 
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Card,
@@ -13,6 +12,7 @@ import { ScrollArea } from "@firebuzz/ui/components/ui/scroll-area";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { IconCode, IconFileCode, IconX } from "@firebuzz/ui/icons/tabler";
 import { AnimatePresence, motion } from "motion/react";
+import { useDesignMode } from "@/hooks/agent/use-design-mode";
 
 export const ElementInspector = () => {
 	const { selectedElement, selectElement, isDesignModeActive } =

@@ -56,7 +56,11 @@ export const AskToWebsite = ({ part }: AskToWebsiteProps) => {
 	}, [part.output, part.input]);
 
 	return (
-		<ToolPart className="justify-start" status={status} toolName="Ask to Website">
+		<ToolPart
+			className="justify-start"
+			status={status}
+			toolName="Ask to Website"
+		>
 			{message}
 		</ToolPart>
 	);

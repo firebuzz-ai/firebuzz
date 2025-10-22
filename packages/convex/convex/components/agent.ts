@@ -1,11 +1,11 @@
 import { openai } from "@ai-sdk/openai";
 import {
 	Agent,
-	type StreamArgs,
 	abortStream,
 	createThread,
 	listMessages,
 	listStreams,
+	type StreamArgs,
 	saveMessage,
 	syncStreams,
 	toUIMessages,
@@ -19,10 +19,10 @@ import { components, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import {
 	type ActionCtx,
-	type QueryCtx,
 	internalAction,
 	internalMutation,
 	mutation,
+	type QueryCtx,
 	query,
 } from "../_generated/server";
 import {
@@ -257,16 +257,21 @@ export const sendMessageToLandingPageRegularAgentActionInternal =
 				{ id: sessionId },
 			);
 
-			if (sessionAfterStream?.messageQueue && sessionAfterStream.messageQueue.length > 0) {
-				console.log(`[Queue] Stream finished, processing next of ${sessionAfterStream.messageQueue.length} queued messages`);
+			if (
+				sessionAfterStream?.messageQueue &&
+				sessionAfterStream.messageQueue.length > 0
+			) {
+				console.log(
+					`[Queue] Stream finished, processing next of ${sessionAfterStream.messageQueue.length} queued messages`,
+				);
 				// Schedule processing the next queued message
 				await ctx.scheduler.runAfter(
 					0,
-					internal.collections.agentSessions.mutations.processNextQueuedMessageInternal,
+					internal.collections.agentSessions.mutations
+						.processNextQueuedMessageInternal,
 					{ sessionId },
 				);
 			}
-
 		},
 	});
 
@@ -651,7 +656,6 @@ export const sendMessageToLandingPageRegularAgent = mutation({
 				projectId: session.projectId,
 				campaignId: session.campaignId,
 				userId: user._id,
-			
 			},
 		);
 	},
