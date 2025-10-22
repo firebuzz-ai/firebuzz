@@ -18,10 +18,13 @@ export const landingPageTemplatesSchema = defineTable(
     title: v.string(),
     description: v.string(),
     slug: v.string(), // Must be unique
-    thumbnail: v.string(),
-    previewUrl: v.string(),
+    type: v.optional(v.union(v.literal("firebuzz"), v.literal("workspace"))),
+    thumbnail: v.optional(v.string()),
     key: v.string(),
     tags: templateTags,
-    files: v.string(),
+    /* Relations */
+    workspaceId: v.optional(v.id("workspaces")),
+    projectId: v.optional(v.id("projects")),
+    createdBy: v.optional(v.id("users")),
   })
-).index("by_title", ["title"]);
+).index("by_title", ["title"]).index("by_workspace_id", ["workspaceId"]).index("by_project_id", ["projectId"]).index("by_created_by", ["createdBy"]);

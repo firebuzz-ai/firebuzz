@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { previewCampaignApp } from "./campaign";
 import { previewLandingApp } from "./landing";
+import { previewTemplateApp } from "./template";
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -9,6 +10,9 @@ app.route("/landing", previewLandingApp);
 
 // Preview [Campaign]
 app.route("/campaign", previewCampaignApp);
+
+// Preview [Template]
+app.route("/template", previewTemplateApp);
 
 // Root route - handles both subdomain root and redirect
 app.get("/", async (c) => {

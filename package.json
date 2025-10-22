@@ -18,10 +18,14 @@
 		"clean": "turbo clean && rm -rf .turbo node_modules",
 		"ui": "pnpm --filter @firebuzz/ui ui",
 		"with-env": "dotenv -e .env.local --",
-		"test": "turbo test"
+		"test": "turbo test",
+		"create-template": "node packages/template-cli/dist/index.js create",
+		"pack-template": "node packages/template-cli/dist/index.js pack"
 	},
 	"devDependencies": {
+		"@aws-sdk/client-s3": "^3.705.0",
 		"@biomejs/biome": "^2.2.5",
+		"@inquirer/prompts": "^7.9.0",
 		"dotenv-cli": "^7.3.0",
 		"turbo": "^2.4.1",
 		"typescript": "5.7.3"

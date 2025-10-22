@@ -833,5 +833,7 @@ class DesignModeOverlay {
 	}
 }
 
-// Initialize when script loads
-new DesignModeOverlay();
+// Initialize when script loads - only in browser environment
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+	new DesignModeOverlay();
+}

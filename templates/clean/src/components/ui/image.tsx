@@ -236,9 +236,34 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 		ref,
 	) => {
 		const [isLoaded, setIsLoaded] = React.useState(false);
+		const [hasError, setHasError] = React.useState(false);
+		const loadTimeoutRef = React.useRef<NodeJS.Timeout>();
 
 		// Handle src being either string or StaticImport
 		const src = typeof srcProp === "object" ? srcProp.src : srcProp;
+
+		// Detect if source is SVG - SVGs should not be transformed
+		const isSvg = src.toLowerCase().endsWith(".svg");
+
+		// SVGs should always be unoptimized (no transformation)
+		const shouldOptimize = !unoptimized && !isSvg;
+
+		// Force image to show after 3 seconds even if onLoad hasn't fired
+		// This prevents invisible images due to CDN transformation delays or onLoad issues
+		React.useEffect(() => {
+			loadTimeoutRef.current = setTimeout(() => {
+				if (!isLoaded && !hasError) {
+					console.warn(`Image load timeout, forcing visibility: ${src}`);
+					setIsLoaded(true);
+				}
+			}, 3000);
+
+			return () => {
+				if (loadTimeoutRef.current) {
+					clearTimeout(loadTimeoutRef.current);
+				}
+			};
+		}, [src, isLoaded, hasError]);
 
 		// Parse width and height to number if they're string
 		const width =
@@ -314,8 +339,9 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 
 		// Generate blur placeholder if needed
 		// Only use blur for transformable images to avoid double-transforming external URLs
+		// SVGs should never use blur placeholder
 		const shouldUseBlurPlaceholder =
-			placeholder === "blur" && (blurDataURL || src) && canTransform;
+			placeholder === "blur" && (blurDataURL || src) && canTransform && !isSvg;
 		const placeholderSrc =
 			blurDataURL || (shouldUseBlurPlaceholder ? src : undefined);
 		const placeholderUrl =
@@ -332,7 +358,11 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 		const handleImageLoad = (
 			e: React.SyntheticEvent<HTMLImageElement, Event>,
 		) => {
+			if (loadTimeoutRef.current) {
+				clearTimeout(loadTimeoutRef.current);
+			}
 			setIsLoaded(true);
+			setHasError(false);
 			if (onLoadingComplete) {
 				const img = e.currentTarget;
 				onLoadingComplete({
@@ -342,16 +372,26 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 			}
 		};
 
+		// Handle image error
+		const handleImageError = (
+			e: React.SyntheticEvent<HTMLImageElement, Event>,
+		) => {
+			console.error(`Failed to load image: ${src}`, e);
+			setHasError(true);
+			// Show image anyway on error to avoid invisible broken images
+			setIsLoaded(true);
+		};
+
 		const imgAttributes = {
-			src: unoptimized
-				? src
-				: loader({ src, width: defaultWidth, quality: qualityNum }),
-			srcSet: unoptimized ? undefined : srcSet,
-			sizes: !unoptimized ? sizes : undefined,
+			src: shouldOptimize
+				? loader({ src, width: defaultWidth, quality: qualityNum })
+				: src,
+			srcSet: shouldOptimize ? srcSet : undefined,
+			sizes: shouldOptimize ? sizes : undefined,
 			width,
 			height,
 			loading: priority ? "eager" : loading,
-			decoding: "async" as const,
+			decoding: isSvg ? ("sync" as const) : ("async" as const),
 			style,
 		};
 
@@ -382,6 +422,7 @@ const Image = React.forwardRef<HTMLImageElement | null, ImageProps>(
 					ref={ref}
 					alt={alt ?? "No alt text provided"}
 					onLoad={handleImageLoad}
+					onError={handleImageError}
 					className={cn(
 						"transition-opacity",
 						isLoaded ? "opacity-100" : "opacity-0",
