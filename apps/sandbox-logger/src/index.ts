@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
@@ -61,98 +60,6 @@ const sandboxMonitors = new Map<string, SandboxMonitor>();
 
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 
-// ============================================================================
-// Error Detection
-// ============================================================================
-
-const ERROR_PATTERNS = [
-	/Error:/i,
-	/TypeError:/i,
-	/ReferenceError:/i,
-	/SyntaxError:/i,
-	/Module not found/i,
-	/Cannot find module/i,
-	/Failed to resolve import/i,
-	/Failed to load/i,
-	/Unexpected token/i,
-	/is not defined/i,
-	/\[plugin:.*?\]\s+/i, // Vite plugin errors like [plugin:vite:import-analysis]
-	/\s+at\s+.*:\d+:\d+/, // Stack trace line
-	/ENOENT/i, // File not found errors
-	/ENOTDIR/i, // Not a directory errors
-	/Parse error/i,
-	/Compilation failed/i,
-];
-
-interface ErrorInfo {
-	errorHash: string;
-	errorMessage: string;
-}
-
-/**
- * Detect error patterns in logs and generate hash for deduplication
- */
-function detectAndHashError(logData: string): ErrorInfo | null {
-	// Check if log contains error patterns
-	const hasError = ERROR_PATTERNS.some((pattern) => pattern.test(logData));
-	if (!hasError) return null;
-
-	// Use the raw log data as error message
-	const errorMessage = logData.trim();
-
-	// Generate MD5 hash for deduplication
-	const errorHash = createHash("md5").update(errorMessage).digest("hex");
-
-	return { errorHash, errorMessage };
-}
-
-/**
- * Send error to Convex for analysis
- */
-async function sendErrorToConvex(
-	sandboxId: string,
-	errorInfo: ErrorInfo,
-): Promise<void> {
-	try {
-		const { url: convexSiteUrl, token: webhookToken } = getWebhookConfig();
-		const webhookUrl = `${convexSiteUrl}/sandbox/dev-server-error`;
-
-		console.log(
-			`[Error] Sending error to Convex: ${sandboxId} - ${errorInfo.errorHash.substring(0, 8)}...`,
-		);
-
-		const sendStart = Date.now();
-		const response = await fetch(webhookUrl, {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${webhookToken}`,
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				sandboxId,
-				errorHash: errorInfo.errorHash,
-				errorMessage: errorInfo.errorMessage,
-			}),
-			signal: AbortSignal.timeout(5000),
-		});
-
-		const duration = Date.now() - sendStart;
-		if (response.ok) {
-			console.log(
-				`[Error] Successfully sent error to Convex: ${sandboxId} - ${errorInfo.errorHash.substring(0, 8)}... (${duration}ms)`,
-			);
-		} else {
-			console.warn(
-				`[Error] Convex returned ${response.status} for error ${errorInfo.errorHash.substring(0, 8)}... (${duration}ms)`,
-			);
-		}
-	} catch (error) {
-		console.error(
-			"[Error] Failed to send error to Convex:",
-			error instanceof Error ? error.message : error,
-		);
-	}
-}
 
 /**
  * Notify Convex that a sandbox has closed
@@ -512,33 +419,6 @@ async function startMonitoring(
 
 				chunkCount++;
 				lastChunkTime = Date.now();
-
-				// Detect errors in stderr for dev commands
-				if (chunk.stream === "stderr" && commandType === "dev") {
-					const errorInfo = detectAndHashError(chunk.data);
-					if (errorInfo) {
-						console.log(
-							`[Error] Detected error in ${sandboxId}: ${errorInfo.errorHash.substring(0, 8)}... (chunk #${chunkCount})`,
-						);
-						console.log(
-							`[Error] Error preview: ${errorInfo.errorMessage.substring(0, 200)}${errorInfo.errorMessage.length > 200 ? "..." : ""}`,
-						);
-						// Send to Convex asynchronously (don't block log streaming)
-						const errorSendStart = Date.now();
-						sendErrorToConvex(sandboxId, errorInfo)
-							.then(() => {
-								console.log(
-									`[Error] Sent error to Convex (${Date.now() - errorSendStart}ms)`,
-								);
-							})
-							.catch((error) => {
-								console.error(
-									`[Error] Failed to send error to Convex after ${Date.now() - errorSendStart}ms:`,
-									error instanceof Error ? error.message : error,
-								);
-							});
-					}
-				}
 
 				logBuffer.push({
 					stream: chunk.stream,
