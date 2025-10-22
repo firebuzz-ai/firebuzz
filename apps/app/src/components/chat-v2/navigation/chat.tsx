@@ -1,5 +1,10 @@
 "use client";
 
+import { useLandingChat } from "@/hooks/agent/use-landing-chat";
+import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
+import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
+import { useRenameLandingPageModal } from "@/hooks/ui/use-rename-landing-page-modal";
+import { useTwoPanelsAgentLayout } from "@/hooks/ui/use-two-panels-agent-layout";
 import { api, useCachedQuery, useMutation } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { ButtonGroup } from "@firebuzz/ui/components/ui/button-group";
@@ -42,11 +47,6 @@ import {
 import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useLandingChat } from "@/hooks/agent/use-landing-chat";
-import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
-import { useNewTranslationModal } from "@/hooks/ui/use-new-translation-modal";
-import { useRenameLandingPageModal } from "@/hooks/ui/use-rename-landing-page-modal";
-import { useTwoPanelsAgentLayout } from "@/hooks/ui/use-two-panels-agent-layout";
 import { useChatTabs } from "../providers/chat-tabs-provider";
 
 export const ChatControls = () => {
@@ -184,7 +184,7 @@ export const ChatControls = () => {
 	// Handler for navigating to campaign
 	const handleNavigateToCampaign = () => {
 		if (!campaignId) return;
-		router.push(`/campaigns/${campaignId}/data`);
+		router.push(`/campaigns/${campaignId}/edit`);
 	};
 
 	return (

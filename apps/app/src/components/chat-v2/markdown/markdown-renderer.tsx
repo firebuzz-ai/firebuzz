@@ -103,8 +103,9 @@ const markdownComponents: Components = {
 	// Handle unrecognized tags that might appear in markdown content
 	//@ts-expect-error
 	path: ({ children, ...props }) => <span {...props}>{children}</span>,
-
 	param: ({ children, ...props }) => <span {...props}>{children}</span>,
+	//@ts-expect-error
+	params: ({ children, ...props }) => <span {...props}>{children}</span>,
 };
 
 export const MarkdownRenderer = memo(function MarkdownRenderer({

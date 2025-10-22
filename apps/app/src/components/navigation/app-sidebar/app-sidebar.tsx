@@ -44,17 +44,19 @@ const navLinks = [
 		icon: SquareTerminal,
 		items: [
 			{
-				title: "Ads",
-				url: "/assets/ads",
+				title: "Templates",
+				url: "/assets/templates",
 			},
 			{
-				title: "Landing Pages",
-				url: "/assets/landing-pages",
+				title: "Blocks",
+				url: "/assets/blocks",
+				isComingSoon: true,
 			},
 
 			{
-				title: "Email Templates",
-				url: "/assets/email-templates",
+				title: "Components",
+				url: "/assets/components",
+				isComingSoon: true,
 			},
 		],
 	},
@@ -180,6 +182,7 @@ export function AppSidebar({
 													{items?.map((subItem) => (
 														<SidebarMenuSubItem key={subItem.title}>
 															<SidebarLink
+																isComingSoon={subItem.isComingSoon}
 																href={subItem.url}
 																label={subItem.title}
 															/>

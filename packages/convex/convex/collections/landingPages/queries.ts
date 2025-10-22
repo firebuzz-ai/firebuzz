@@ -247,3 +247,135 @@ export const getTranslationsByOriginalId = query({
 		return translations;
 	},
 });
+
+// Get paginated main landing pages by campaign ID (no originalId, no parentId, isChampion = true)
+export const getByCampaignIdPaginated = query({
+	args: {
+		campaignId: v.id("campaigns"),
+		paginationOpts: paginationOptsValidator,
+		sortOrder: v.union(v.literal("asc"), v.literal("desc")),
+	},
+	handler: async (ctx, { campaignId, paginationOpts, sortOrder }) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get the campaign to verify workspace access
+		const campaign = await ctx.db.get(campaignId);
+		if (!campaign || campaign.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError("Campaign not found or unauthorized");
+		}
+
+		// Get all main landing pages for this campaign
+		const landingPages = await ctx.db
+			.query("landingPages")
+			.withIndex("by_campaign_id", (q) => q.eq("campaignId", campaignId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
+			.filter((q) => q.eq(q.field("isArchived"), false))
+			.filter((q) => q.eq(q.field("isChampion"), true))
+			.filter((q) => q.eq(q.field("originalId"), undefined))
+			.filter((q) => q.eq(q.field("parentId"), undefined))
+			.order(sortOrder)
+			.paginate(paginationOpts);
+
+		// Enrich with creator info and counts
+		const enrichedPages = await Promise.all(
+			landingPages.page.map(async (page) => {
+				const creator = await ctx.db.get(page.createdBy);
+
+				// Count variants
+				const variantsCount = await ctx.db
+					.query("landingPages")
+					.withIndex("by_parent_id", (q) => q.eq("parentId", page._id))
+					.filter((q) => q.eq(q.field("deletedAt"), undefined))
+					.filter((q) => q.eq(q.field("isArchived"), false))
+					.collect()
+					.then((variants) => variants.length);
+
+				// Count translations
+				const translationsCount = await ctx.db
+					.query("landingPages")
+					.withIndex("by_original_id", (q) => q.eq("originalId", page._id))
+					.filter((q) => q.eq(q.field("deletedAt"), undefined))
+					.filter((q) => q.eq(q.field("isArchived"), false))
+					.collect()
+					.then((translations) => translations.length);
+
+				return {
+					...page,
+					creator: creator
+						? {
+								_id: creator._id,
+								name: creator.name,
+								email: creator.email,
+								imageKey: creator.imageKey,
+							}
+						: null,
+					variantsCount,
+					translationsCount,
+				};
+			}),
+		);
+
+		return {
+			...landingPages,
+			page: enrichedPages,
+		};
+	},
+});
+
+// Get landing page by ID with its variants and translations
+export const getByIdWithVariantsAndTranslations = query({
+	args: {
+		id: v.id("landingPages"),
+	},
+	handler: async (ctx, args) => {
+		const user = await getCurrentUserWithWorkspace(ctx);
+
+		// Get landing page
+		const landingPage = await ctx.db.get(args.id);
+
+		if (!landingPage || landingPage.deletedAt) {
+			return null;
+		}
+
+		if (landingPage.workspaceId !== user.currentWorkspaceId) {
+			throw new ConvexError(ERRORS.UNAUTHORIZED);
+		}
+
+		// Get signed URL if version exists
+		let signedUrl: string | undefined;
+		if (landingPage.landingPageVersionId) {
+			const landingPageVersion = await ctx.db.get(
+				landingPage.landingPageVersionId,
+			);
+
+			if (landingPageVersion?.key) {
+				signedUrl = await r2.getUrl(landingPageVersion.key);
+			}
+		}
+
+		// Get variants (where parentId = this landing page ID)
+		const variants = await ctx.db
+			.query("landingPages")
+			.withIndex("by_parent_id", (q) => q.eq("parentId", args.id))
+			.filter((q) => q.eq(q.field("workspaceId"), user.currentWorkspaceId))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
+			.filter((q) => q.eq(q.field("isArchived"), false))
+			.order("desc")
+			.collect();
+
+		// Get translations (where originalId = this landing page ID)
+		const translations = await ctx.db
+			.query("landingPages")
+			.withIndex("by_original_id", (q) => q.eq("originalId", args.id))
+			.filter((q) => q.eq(q.field("deletedAt"), undefined))
+			.filter((q) => q.eq(q.field("isArchived"), false))
+			.collect();
+
+		return {
+			...landingPage,
+			signedUrl,
+			variants,
+			translations,
+		};
+	},
+});

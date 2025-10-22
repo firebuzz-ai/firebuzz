@@ -1,16 +1,22 @@
 "use client";
 
+import { Presence } from "@/components/presence/presence";
 import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
 	type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
-import { ChartBar, Database, Table, Workflow } from "@firebuzz/ui/icons/lucide";
+import {
+	ChartBar,
+	Database,
+	FileText,
+	Table,
+	Workflow,
+} from "@firebuzz/ui/icons/lucide";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
-import { Presence } from "@/components/presence/presence";
 import { CampaignStatusButton } from "./campaign-status-button";
 
 interface CampaignTabsProps {
@@ -23,6 +29,12 @@ const TABS: TabItem[] = [
 		href: "/edit",
 		icon: Workflow,
 		label: "Edit",
+	},
+	{
+		value: "landing-pages",
+		href: "/landing-pages",
+		icon: FileText,
+		label: "Landing Pages",
 	},
 	{
 		value: "form",
@@ -73,7 +85,7 @@ export const CampaignTabs = ({ id }: CampaignTabsProps) => {
 
 			{/* Buttons */}
 			<div className="flex gap-4 items-center">
-				<Presence roomId={roomId} />
+				<Presence size="sm" roomId={roomId} />
 				<Separator orientation="vertical" className="h-4" />
 				<CampaignStatusButton campaignId={id as Id<"campaigns">} />
 			</div>
