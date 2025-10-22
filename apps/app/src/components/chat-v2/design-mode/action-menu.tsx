@@ -5,11 +5,11 @@ import { Check, X } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import { useDesignModeState } from "@/components/providers/agent/design-mode";
 
 export const DesignModeActionMenu = () => {
 	const { isDesignModeActive, totalChangeCount, resetTheme, applyChanges } =
-		useDesignMode();
+		useDesignModeState();
 
 	const [isApplying, setIsApplying] = useState(false);
 	const [isDiscarding, setIsDiscarding] = useState(false);

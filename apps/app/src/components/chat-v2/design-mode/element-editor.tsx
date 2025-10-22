@@ -16,7 +16,7 @@ import { Info } from "@firebuzz/ui/icons/lucide";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePreview } from "@/components/reusables/image-preview";
 import { ImageSelect } from "@/components/reusables/image-select";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import { useDesignModeElement } from "@/components/providers/agent/design-mode";
 import { parseClassName, updateClassName } from "@/lib/design-mode/class-utils";
 
 import { AppearanceControls } from "./controls/appearance-controls";
@@ -29,7 +29,7 @@ import { TypographyControls } from "./controls/typography-controls";
 import { MonacoTailwindEditor } from "./monaco-tailwind-editor";
 
 export const ElementEditorContent = () => {
-	const { selectedElement, updateElement } = useDesignMode();
+	const { selectedElement, updateElement } = useDesignModeElement();
 	const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
 	const [className, setClassName] = useState(selectedElement?.className || "");

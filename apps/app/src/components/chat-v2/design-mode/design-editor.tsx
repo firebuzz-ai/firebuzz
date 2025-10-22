@@ -5,13 +5,16 @@ import { ChevronRight } from "@firebuzz/ui/icons/lucide";
 import { IconComponents, IconHomeEdit } from "@firebuzz/ui/icons/tabler";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { ColorSelectorModal } from "@/components/modals/color-selector/modal";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import {
+	useDesignModeElement,
+	useDesignModeState,
+} from "@/components/providers/agent/design-mode";
 import { ElementEditorContent } from "./element-editor";
 import { ThemeEditor } from "./theme-editor";
 
 export const DesignEditor = () => {
-	const { selectedElement, selectElement, isLoading, currentDesignModeTab } =
-		useDesignMode();
+	const { selectedElement, selectElement } = useDesignModeElement();
+	const { isLoading, currentDesignModeTab } = useDesignModeState();
 
 	const handleThemeClick = () => {
 		// Clear selected element to show theme editor

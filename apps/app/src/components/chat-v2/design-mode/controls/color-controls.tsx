@@ -2,7 +2,7 @@
 
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Label } from "@firebuzz/ui/components/ui/label";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import { useDesignModeTheme } from "@/components/providers/agent/design-mode";
 import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import {
 	formatColorName,
@@ -23,7 +23,7 @@ export const ColorControls = ({
 	onTextColorChange,
 	onBackgroundColorChange,
 }: ColorControlsProps) => {
-	const { getSystemColors } = useDesignMode();
+	const { getSystemColors } = useDesignModeTheme();
 	const { setState: setColorSelectorModalState } = useColorSelectorModal();
 	const systemColors = getSystemColors();
 

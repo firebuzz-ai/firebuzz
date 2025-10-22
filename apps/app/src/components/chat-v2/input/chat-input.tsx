@@ -1,7 +1,10 @@
 "use client";
 
 import { useAgentSession } from "@/hooks/agent/use-agent-session";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import {
+	useDesignModeElement,
+	useDesignModeState,
+} from "@/components/providers/agent/design-mode";
 import { useLandingChat } from "@/hooks/agent/use-landing-chat";
 import { useSandbox } from "@/hooks/agent/use-sandbox";
 import { useProject } from "@/hooks/auth/use-project";
@@ -94,13 +97,9 @@ export const ChatInput = ({ landingPageId }: ChatInputProps) => {
 	const { currentProject } = useProject();
 	const { setState: setGalleryModalState } = useMediaGalleryModal();
 	const { setState: setDocumentsModalState } = useDocumentsSelectorModal();
-	const {
-		isDesignModeActive,
-		enableDesignMode,
-		disableDesignMode,
-		selectedElement,
-		selectElement,
-	} = useDesignMode();
+	const { isDesignModeActive, enableDesignMode, disableDesignMode } =
+		useDesignModeState();
+	const { selectedElement, selectElement } = useDesignModeElement();
 
 	const [inputValue, setInputValue] = useState("");
 	const [filesMenuOpen, setFilesMenuOpen] = useState(false);

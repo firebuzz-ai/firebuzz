@@ -11,6 +11,7 @@ import { RenameLandingPageModal } from "@/components/modals/landing-pages/rename
 import { TranslationModal } from "@/components/modals/landing-pages/translations/translation-modal";
 import { AIImageModal } from "@/components/modals/media/ai-image/ai-image-modal";
 import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-modal";
+import { DesignModeProvider } from "@/components/providers/agent/design-mode";
 import { SanboxProvider } from "@/components/providers/agent/sandbox";
 import { AgentSessionProvider } from "@/components/providers/agent/session";
 import { Edit } from "./_components/edit";
@@ -35,7 +36,8 @@ export default async function Page({
 				landingPageId={pageId}
 			>
 				<SanboxProvider>
-					<PreviewTabsProvider>
+					<DesignModeProvider>
+						<PreviewTabsProvider>
 						<PreviewSizeProvider>
 							<ChatTabsProvider>
 								<div className="flex flex-col flex-1 px-2 pb-2 h-screen">
@@ -58,6 +60,7 @@ export default async function Page({
 							</ChatTabsProvider>
 						</PreviewSizeProvider>
 					</PreviewTabsProvider>
+					</DesignModeProvider>
 				</SanboxProvider>
 			</AgentSessionProvider>
 		</LandingPageProvider>

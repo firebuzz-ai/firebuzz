@@ -1,6 +1,9 @@
 "use client";
 
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import {
+	useDesignModeState,
+	useDesignModeTheme,
+} from "@/components/providers/agent/design-mode";
 import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { COLOR_CATEGORY_ORDER } from "@/lib/theme/constants";
 import { getCategoryForColor, getDescriptionForColor } from "@/lib/theme/utils";
@@ -71,17 +74,12 @@ const getThemeColors = (theme: {
 };
 
 export const ThemeEditor = () => {
-	const {
-		themeState,
-		updateTheme,
-		isDesignModeActive,
-		isLoading: isDesignModeLoading,
-	} = useDesignMode();
+	const { themeState, updateTheme } = useDesignModeTheme();
+	const { isDesignModeActive, isLoading: isDesignModeLoading } =
+		useDesignModeState();
 	const [selectedThemeId, setSelectedThemeId] = useState<string>("custom");
 	const [themePopoverOpen, setThemePopoverOpen] = useState(false);
-	const [previewThemeMode, setPreviewThemeMode] = useState<"light" | "dark">(
-		"light",
-	);
+
 	const { setState: setColorSelectorModalState } = useColorSelectorModal();
 
 	// Fetch user's themes from Convex (auth context is handled automatically)
@@ -275,11 +273,6 @@ export const ThemeEditor = () => {
 		description: string;
 		theme: "light" | "dark";
 	}) => {
-		// Switch to the theme mode of the clicked color
-		if (previewThemeMode !== color.theme) {
-			setPreviewThemeMode(color.theme);
-		}
-
 		setColorSelectorModalState((prev) => {
 			return {
 				...prev,
@@ -514,8 +507,6 @@ export const ThemeEditor = () => {
 					<ThemeColorsControls
 						themes={themeColors}
 						onColorClick={handleColorClick}
-						previewThemeMode={previewThemeMode}
-						setPreviewThemeMode={setPreviewThemeMode}
 					/>
 
 					<RadiusControl

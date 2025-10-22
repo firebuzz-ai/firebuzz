@@ -12,11 +12,14 @@ import { ScrollArea } from "@firebuzz/ui/components/ui/scroll-area";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
 import { IconCode, IconFileCode, IconX } from "@firebuzz/ui/icons/tabler";
 import { AnimatePresence, motion } from "motion/react";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import {
+	useDesignModeElement,
+	useDesignModeState,
+} from "@/components/providers/agent/design-mode";
 
 export const ElementInspector = () => {
-	const { selectedElement, selectElement, isDesignModeActive } =
-		useDesignMode();
+	const { selectedElement, selectElement } = useDesignModeElement();
+	const { isDesignModeActive } = useDesignModeState();
 
 	if (!isDesignModeActive || !selectedElement) return null;
 
@@ -106,7 +109,7 @@ export const ElementInspector = () => {
 							)}
 
 							{/* Source Path */}
-							{selectedElement.sourcePath && (
+							{selectedElement.sourceFile && (
 								<>
 									<div>
 										<div className="mb-1 text-xs font-semibold text-muted-foreground">
@@ -114,39 +117,11 @@ export const ElementInspector = () => {
 										</div>
 										<div className="flex gap-1 items-center p-2 font-mono text-xs break-all rounded-md bg-muted">
 											<IconFileCode className="flex-shrink-0 size-3" />
-											<span>{selectedElement.sourcePath}</span>
+											<span>{selectedElement.sourceFile}</span>
 										</div>
 									</div>
 									<Separator />
 								</>
-							)}
-
-							{/* Computed Styles Preview */}
-							{selectedElement.computedStyles && (
-								<div>
-									<div className="mb-1 text-xs font-semibold text-muted-foreground">
-										Computed Styles (Sample)
-									</div>
-									<ScrollArea className="h-32">
-										<div className="space-y-1">
-											{Object.entries(selectedElement.computedStyles)
-												.slice(0, 8)
-												.map(([key, value]) => (
-													<div
-														key={key}
-														className="flex justify-between gap-2 p-1.5 text-xs rounded bg-muted"
-													>
-														<span className="font-mono text-muted-foreground">
-															{key}:
-														</span>
-														<span className="font-mono text-right truncate">
-															{value}
-														</span>
-													</div>
-												))}
-										</div>
-									</ScrollArea>
-								</div>
 							)}
 						</CardContent>
 					</Card>

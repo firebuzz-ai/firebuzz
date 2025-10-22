@@ -4,7 +4,7 @@ import type { Id } from "@firebuzz/convex/nextjs";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { useMemo } from "react";
-import { useDesignMode } from "@/hooks/agent/use-design-mode";
+import { useDesignModeState } from "@/components/providers/agent/design-mode";
 import { useLandingChat } from "@/hooks/agent/use-landing-chat";
 import { DesignEditor } from "../design-mode/design-editor";
 import { ChatInput } from "../input/chat-input";
@@ -25,7 +25,7 @@ export const Chatbox = ({ landingPageId }: ChatboxProps) => {
 	const { messages, isCanLoadMore, loadMore, isLoadingMore } = useLandingChat({
 		landingPageId,
 	});
-	const { isDesignModeActive } = useDesignMode();
+	const { isDesignModeActive } = useDesignModeState();
 
 	const renderedMessages = useMemo(() => {
 		return messages.map((message) => {
