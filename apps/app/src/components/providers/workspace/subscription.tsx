@@ -79,7 +79,7 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 				: { workspaceId: currentWorkspace._id },
 		);
 
-		console.log({creditBalance, isCreditBalancePending, currentWorkspace, customerId: currentWorkspace?.customerId})
+		
 
 	// Current Subcription Item (Plan Item)
 	const currentSubscriptionPlanItem = useMemo(() => {
@@ -238,7 +238,7 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 		interval,
 	};
 
-	console.log({exposed})
+
 
 	return (
 		<subscriptionContext.Provider value={exposed}>

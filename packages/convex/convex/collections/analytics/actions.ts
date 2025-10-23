@@ -177,9 +177,34 @@ export const fetchAnalyticsPipe = internalAction({
 				// Handle single row response from sum primitives
 				const singleData = response.data[0];
 				if (!singleData) {
-					throw new Error("No data returned from sum primitives");
+					// Create empty data structure with zero values instead of throwing error
+					data = {
+						current_all_sessions: 0,
+						current_new_sessions: 0,
+						current_returning_sessions: 0,
+						current_users: 0,
+						current_pageviews: 0,
+						current_conversions: 0,
+						current_conversion_value: 0,
+						current_external_link_clicks: 0,
+						current_form_submissions: 0,
+						current_avg_session_duration: 0,
+						current_bounced_sessions: 0,
+						previous_all_sessions: 0,
+						previous_new_sessions: 0,
+						previous_returning_sessions: 0,
+						previous_users: 0,
+						previous_pageviews: 0,
+						previous_conversions: 0,
+						previous_conversion_value: 0,
+						previous_external_link_clicks: 0,
+						previous_form_submissions: 0,
+						previous_avg_session_duration: 0,
+						previous_bounced_sessions: 0,
+					} as SumPrimitivesData;
+				} else {
+					data = singleData;
 				}
-				data = singleData;
 			} else if (params.queryId === "timeseries-primitives") {
 				const response = await getTimeseriesPrimitives({
 					workspaceId,
@@ -201,9 +226,11 @@ export const fetchAnalyticsPipe = internalAction({
 				// Handle array response from timeseries primitives
 				const arrayData = response.data;
 				if (!arrayData || arrayData.length === 0) {
-					throw new Error("No data returned from timeseries primitives");
+					// Return empty array instead of throwing error
+					data = [] as TimeseriesData;
+				} else {
+					data = arrayData;
 				}
-				data = arrayData;
 			} else if (params.queryId === "audience-breakdown") {
 				const response = await getAudienceBreakdown({
 					workspaceId,
@@ -221,9 +248,33 @@ export const fetchAnalyticsPipe = internalAction({
 				// Handle single row response from audience breakdown
 				const singleData = response.data[0];
 				if (!singleData) {
-					throw new Error("No data returned from audience breakdown");
+					// Create empty data structure instead of throwing error
+					data = {
+						total_sessions: 0,
+						total_users: 0,
+						device_types: [],
+						operating_systems: [],
+						browsers: [],
+						countries: [],
+						cities: [],
+						continents: [],
+						languages: [],
+						timezones: [],
+						utm_sources: [],
+						sources: [],
+						utm_mediums: [],
+						utm_campaigns: [],
+						referrers: [],
+						user_types: [],
+						hourly_distribution: [],
+						daily_distribution: [],
+						landing_pages: [],
+						segments: [],
+						ab_test_variants: [],
+					} as AudienceBreakdownData;
+				} else {
+					data = singleData;
 				}
-				data = singleData;
 			} else if (params.queryId === "conversions-breakdown") {
 				const response = await getConversionsBreakdown({
 					workspaceId,
@@ -243,9 +294,34 @@ export const fetchAnalyticsPipe = internalAction({
 				// Handle single row response from conversions breakdown
 				const singleData = response.data[0];
 				if (!singleData) {
-					throw new Error("No data returned from conversions breakdown");
+					// Create empty data structure instead of throwing error
+					data = {
+						total_sessions: 0,
+						total_users: 0,
+						total_conversions: 0,
+						total_conversion_value: 0,
+						overall_conversion_rate: 0,
+						device_conversions: [],
+						operating_system_conversions: [],
+						browser_conversions: [],
+						geographic_conversions: [],
+						city_conversions: [],
+						utm_source_conversions: [],
+						utm_medium_conversions: [],
+						utm_campaign_conversions: [],
+						referrer_conversions: [],
+						source_conversions: [],
+						landing_page_conversions: [],
+						hourly_conversions: [],
+						daily_conversions: [],
+						user_type_conversions: [],
+						value_distribution: [],
+						segment_conversions: [],
+						ab_test_conversions: [],
+					} as ConversionsBreakdownData;
+				} else {
+					data = singleData;
 				}
-				data = singleData;
 			} else if (params.queryId === "realtime-overview") {
 				// Calculate lookback minutes from periodStart and periodEnd
 				const periodStartTime = new Date(params.periodStart).getTime();
@@ -270,9 +346,21 @@ export const fetchAnalyticsPipe = internalAction({
 				// Handle single row response from realtime overview
 				const singleData = response.data[0];
 				if (!singleData) {
-					throw new Error("No data returned from realtime overview");
+					// Create empty data structure instead of throwing error
+					data = {
+						active_sessions: 0,
+						events: 0,
+						conversions: 0,
+						conversion_value: 0,
+						top_pages: [],
+						top_referrers: [],
+						top_countries: [],
+						top_devices: [],
+						recent_conversions: [],
+					} as unknown as RealtimeOverviewData;
+				} else {
+					data = singleData as unknown as RealtimeOverviewData;
 				}
-				data = singleData as unknown as RealtimeOverviewData;
 			} else if (params.queryId === "ab-test-result") {
 				console.log("AB test result data:", {
 					workspaceId,
@@ -305,15 +393,20 @@ export const fetchAnalyticsPipe = internalAction({
 				const arrayData = response.data;
 				console.log("AB test result data:", arrayData);
 				if (!arrayData || arrayData.length === 0) {
-					throw new Error("No data returned from AB test result");
+					// Return empty array instead of throwing error
+					data = [] as AbTestResultData;
+				} else {
+					data = arrayData;
 				}
-				data = arrayData;
 			} else {
 				// This should never happen due to TypeScript exhaustiveness checking
 				throw new Error("Unknown query type");
 			}
 
 			if (args.existingAnalyticsPipeId) {
+				console.log(
+					`Updating existing analytics pipe ${args.existingAnalyticsPipeId} for ${params.queryId}`,
+				);
 				await ctx.runMutation(
 					internal.collections.analytics.mutations.updateAnalyticsPipe,
 					{
@@ -324,6 +417,11 @@ export const fetchAnalyticsPipe = internalAction({
 					},
 				);
 			} else {
+				const period =
+					"period" in params ? params.period : ("all-time" as const);
+				console.log(
+					`Creating new analytics pipe for ${params.queryId}, period: ${period}, environment: ${params.campaignEnvironment}`,
+				);
 				await ctx.runMutation(
 					internal.collections.analytics.mutations.createAnalyticsPipe,
 					{
@@ -331,7 +429,8 @@ export const fetchAnalyticsPipe = internalAction({
 						campaignId,
 						workspaceId,
 						projectId,
-						period: "all-time" as const,
+						// Use the period from params, not hardcoded "all-time"
+						period,
 						campaignEnvironment: params.campaignEnvironment,
 						conversionEventId:
 							"conversionEventId" in params

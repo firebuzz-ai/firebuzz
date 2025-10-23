@@ -1,9 +1,10 @@
 "use client";
 
 import { api, type Id, useCachedQuery, useMutation } from "@firebuzz/convex";
+import { toast } from "@firebuzz/ui/lib/utils";
 
 import { parseAsBoolean, parseAsStringLiteral, useQueryStates } from "nuqs";
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 // Period configuration
 export const ANALYTICS_PERIODS = {
@@ -31,6 +32,9 @@ interface UseCampaignAnalyticsConfig {
 export function useCampaignAnalytics({
 	campaignId,
 }: UseCampaignAnalyticsConfig) {
+	// Track which screens have been mounted and fetched
+	const mountedScreensRef = useRef<Set<string>>(new Set());
+
 	// URL state management with nuqs
 	const [{ period, screen, isPreview }, setQueryStates] = useQueryStates({
 		period: parseAsStringLiteral(
@@ -79,10 +83,18 @@ export function useCampaignAnalytics({
 		const periodEnd = now.toISOString();
 
 		if (currentPeriod === "all-time") {
-			// Use publishedAt as start date for all-time
-			if (!campaign.publishedAt) return null;
+			// Use environment-specific firstPublishedAt for all-time period
+			const firstPublishedAt = currentIsPreview
+				? campaign.previewFirstPublishedAt
+				: campaign.productionFirstPublishedAt;
+
+			// Fallback to publishedAt if environment-specific field is not available
+			const startDate = firstPublishedAt || campaign.publishedAt;
+
+			if (!startDate) return null;
+
 			return {
-				periodStart: campaign.publishedAt,
+				periodStart: startDate,
 				periodEnd,
 			};
 		}
@@ -98,7 +110,7 @@ export function useCampaignAnalytics({
 		};
 
 		return result;
-	}, [campaign, currentPeriod]);
+	}, [campaign, currentPeriod, currentIsPreview]);
 
 	// Check if we should fetch analytics data
 	const shouldFetchAnalytics = useMemo(() => {
@@ -170,6 +182,24 @@ export function useCampaignAnalytics({
 			: "skip",
 	);
 
+	// Debug logging for realtime query
+	useEffect(() => {
+		if (currentScreen === "realtime") {
+			console.log("Realtime Query Debug:", {
+				shouldFetchAnalytics,
+				currentIsPreview,
+				campaignEnvironment: currentIsPreview ? "preview" : "production",
+				realtimeOverviewQuery,
+				hasData: !!realtimeOverviewQuery,
+			});
+		}
+	}, [
+		currentScreen,
+		shouldFetchAnalytics,
+		currentIsPreview,
+		realtimeOverviewQuery,
+	]);
+
 	// Query AB test results analytics data - handle multiple tests
 	const abTestResultsQuery = useCachedQuery(
 		api.collections.analytics.queries.getAbTestResults,
@@ -221,6 +251,9 @@ export function useCampaignAnalytics({
 
 		try {
 			const queries = [];
+
+			// Track if any query was rate limited
+			let hasRateLimitError = false;
 
 			// Add queries based on current screen
 			if (currentScreen === "overview") {
@@ -299,6 +332,12 @@ export function useCampaignAnalytics({
 				// Realtime screen only needs realtime-overview query
 				const conversionEventId = primaryConversionEventId;
 
+				console.log("Realtime revalidation:", {
+					conversionEventId,
+					currentIsPreview,
+					campaignEnvironment: currentIsPreview ? "preview" : "production",
+				});
+
 				if (!conversionEventId) {
 					console.error("No conversion event ID found for realtime");
 					throw new Error(
@@ -309,7 +348,7 @@ export function useCampaignAnalytics({
 				// Use last 30 minutes for realtime data
 				const now = new Date();
 				const thirtyMinutesAgo = new Date(now.getTime() - 30 * 60 * 1000);
-				queries.push({
+				const realtimeQuery = {
 					queryId: "realtime-overview" as const,
 					period: currentPeriod,
 					periodStart: thirtyMinutesAgo.toISOString(),
@@ -318,7 +357,10 @@ export function useCampaignAnalytics({
 					campaignEnvironment: currentIsPreview
 						? ("preview" as const)
 						: ("production" as const),
-				});
+				};
+
+				console.log("Pushing realtime query:", realtimeQuery);
+				queries.push(realtimeQuery);
 			} else if (currentScreen === "conversions") {
 				// Conversions screen requires periodDates
 				if (!periodDates) return;
@@ -429,14 +471,50 @@ export function useCampaignAnalytics({
 			// Future screens can add more queries here
 
 			if (queries.length > 0) {
-				await revalidateAnalyticsMutation({
+				console.log("Calling revalidateAnalyticsMutation with queries:", queries);
+				const result = await revalidateAnalyticsMutation({
 					campaignId,
 					queries,
 				});
+
+				console.log("Mutation result:", result);
+
+				// Check if any queries were rate limited
+				if (result?.results) {
+					for (const queryResult of result.results) {
+						if (
+							!queryResult.scheduled &&
+							queryResult.error?.includes("10 seconds")
+						) {
+							hasRateLimitError = true;
+							break;
+						}
+					}
+				}
+			} else {
+				console.log("No queries to revalidate");
+			}
+
+			// Show toast feedback
+			if (hasRateLimitError) {
+				toast.error("Please wait a moment", {
+					id: "analytics-rate-limit",
+					description: "You can refresh analytics every 10 seconds",
+				});
+			} else if (queries.length > 0) {
+				// Show success toast only if queries were scheduled
+				toast.success("Analytics refreshed", {
+					id: "analytics-refresh-success",
+				});
 			}
 		} catch (error) {
-			console.error(error);
-			throw error;
+			console.error("Analytics refresh error:", error);
+			toast.error("Failed to refresh analytics", {
+				id: "analytics-refresh-error",
+				description:
+					error instanceof Error ? error.message : "An unexpected error occurred",
+			});
+			// Don't re-throw, just log the error
 		}
 	}, [
 		shouldFetchAnalytics,
@@ -452,67 +530,56 @@ export function useCampaignAnalytics({
 		campaignAnalyticsData,
 	]);
 
-	// Auto-revalidate when period changes or screen changes with different intervals
+	// Mount-only revalidation - trigger once per screen on first visit
 	useEffect(() => {
+		// Create a unique key for this screen + period + environment combination
+		const screenKey = `${currentScreen}-${currentPeriod}-${currentIsPreview ? "preview" : "production"}`;
+
+		console.log("Mount effect triggered:", {
+			screenKey,
+			shouldFetchAnalytics,
+			isPublished: campaign?.isPublished,
+			alreadyMounted: mountedScreensRef.current.has(screenKey),
+			periodDates,
+		});
+
 		// Only revalidate if we have everything we need and the campaign is published
-		if (shouldFetchAnalytics && campaign?.isPublished) {
-			// For realtime screen, period changes don't matter, but we need to start auto-refresh
-			if (currentScreen === "realtime") {
-				// Initial load
-				const initialTimeoutId = setTimeout(() => {
-					revalidate().catch((error) => {
-						console.error("Initial realtime revalidation failed:", error);
-					});
-				}, 300);
-
-				// Auto-refresh every 30 seconds for realtime
-				const intervalId = setInterval(() => {
-					revalidate().catch((error) => {
-						console.error("Realtime auto-revalidation failed:", error);
-					});
-				}, 30000); // 30 seconds
-
-				return () => {
-					clearTimeout(initialTimeoutId);
-					clearInterval(intervalId);
-				};
-			}
-			if (
-				periodDates &&
-				(currentScreen === "overview" ||
-					currentScreen === "conversions" ||
-					currentScreen === "audience" ||
-					currentScreen === "ab-tests")
-			) {
-				// For overview, conversions, audience, and AB tests screens, revalidate when period changes
-				const initialTimeoutId = setTimeout(() => {
-					revalidate().catch((error) => {
-						console.error(
-							`Auto-revalidation failed for ${currentScreen}:`,
-							error,
-						);
-					});
-				}, 300);
-
-				// Auto-refresh every 3 minutes for these screens
-				const intervalId = setInterval(() => {
-					revalidate().catch((error) => {
-						console.error(`${currentScreen} auto-revalidation failed:`, error);
-					});
-				}, 180000); // 3 minutes
-
-				return () => {
-					clearTimeout(initialTimeoutId);
-					clearInterval(intervalId);
-				};
-			}
+		if (!shouldFetchAnalytics || !campaign?.isPublished) {
+			console.log("Skipping mount revalidation:", {
+				shouldFetchAnalytics,
+				isPublished: campaign?.isPublished,
+			});
+			return;
 		}
+
+		// Check if we've already fetched for this screen combination
+		if (mountedScreensRef.current.has(screenKey)) {
+			console.log("Already fetched for:", screenKey);
+			return;
+		}
+
+		// Mark this screen as mounted
+		mountedScreensRef.current.add(screenKey);
+		console.log("Triggering initial revalidation for:", screenKey);
+
+		// Trigger initial load with a small delay
+		const initialTimeoutId = setTimeout(() => {
+			revalidate().catch((error) => {
+				console.error(`Initial revalidation failed for ${currentScreen}:`, error);
+			});
+		}, 300);
+
+		return () => {
+			clearTimeout(initialTimeoutId);
+		};
 	}, [
 		shouldFetchAnalytics,
-		periodDates,
 		campaign?.isPublished,
 		currentScreen,
+		currentPeriod,
+		currentIsPreview,
 		revalidate,
+		periodDates,
 	]);
 
 	// Aggregate all analytics data

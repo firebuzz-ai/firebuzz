@@ -257,29 +257,22 @@ export const revalidateAnalytics = mutation({
 				}
 
 				if (existingAnalyticsPipe) {
-					// Check last updated at with different TTL based on query type
+					// Check last updated at with uniform 10 second TTL
 					const lastUpdatedAt = new Date(
 						existingAnalyticsPipe.lastUpdatedAt,
 					).getTime();
 
-					// Use shorter cache TTL for realtime queries
-					const cacheTTL =
-						queryParams.queryId === "realtime-overview"
-							? 15000 // 15 seconds for realtime data
-							: 180000; // 3 minutes for other analytics
+					// Uniform cache TTL of 10 seconds for all queries
+					const cacheTTL = 10000; // 10 seconds
 
 					const cacheExpiryTime = new Date(Date.now() - cacheTTL).getTime();
 
 					if (lastUpdatedAt > cacheExpiryTime) {
-						const ttlDescription =
-							queryParams.queryId === "realtime-overview"
-								? "15 seconds"
-								: "3 minutes";
-						console.log(`Last updated at is less than ${ttlDescription} ago`);
+						console.log("Last updated at is less than 10 seconds ago");
 						results.push({
 							query: queryParams.queryId,
 							scheduled: false,
-							error: `Last updated at is less than ${ttlDescription} ago`,
+							error: "Please wait 10 seconds before refreshing again",
 						});
 						continue;
 					}
