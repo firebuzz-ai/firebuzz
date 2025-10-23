@@ -85,20 +85,7 @@ export const getCurrent = query({
 	},
 });
 
-export const getFilesInternal = internalQuery({
-	args: {
-		templateId: v.id("landingPageTemplates"),
-	},
-	handler: async (ctx, args) => {
-		const template = await ctx.db.get(args.templateId);
 
-		if (!template) {
-			throw new ConvexError("Template not found");
-		}
-
-		return template.files;
-	},
-});
 
 export const getByIdInternal = internalQuery({
 	args: {

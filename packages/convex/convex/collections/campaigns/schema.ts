@@ -32,6 +32,8 @@ export const campaignSchema = defineTable(
 		startedAt: v.optional(v.string()),
 		completedAt: v.optional(v.string()),
 		publishedAt: v.optional(v.string()),
+		productionFirstPublishedAt: v.optional(v.string()),
+		previewFirstPublishedAt: v.optional(v.string()),
 		previewPublishedAt: v.optional(v.string()),
 		deletedAt: v.optional(v.string()),
 		scheduledAt: v.optional(v.string()),

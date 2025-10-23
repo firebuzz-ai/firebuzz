@@ -1,5 +1,8 @@
 "use client";
 
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
+import { useSubscription } from "@/hooks/auth/use-subscription";
 import { api, useMutation } from "@firebuzz/convex";
 import type { Id } from "@firebuzz/convex/nextjs";
 import { envCloudflarePublic } from "@firebuzz/env";
@@ -27,9 +30,6 @@ import { formatRelativeTimeShort } from "@firebuzz/utils";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useMemo } from "react";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
-import { useSubscription } from "@/hooks/auth/use-subscription";
 
 type NotificationType =
 	| "subscription"
@@ -66,7 +66,7 @@ interface Notification {
 	queuedMessages?: QueuedMessage[];
 }
 
-const CREDIT_LOW_THRESHOLD = 100;
+const CREDIT_LOW_THRESHOLD = 5;
 
 export const ChatNotification = () => {
 	const { isActive, creditBalance } = useSubscription();
@@ -85,7 +85,7 @@ export const ChatNotification = () => {
 		if (!isActive) {
 			notifications.push({
 				type: "subscription",
-				priority: 8,
+				priority: 1,
 				title: "No Active Subscription",
 				link: {
 					label: "Upgrade Plan",

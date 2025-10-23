@@ -1,5 +1,6 @@
 "use client";
 
+import type { Id } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import {
 	Tooltip,
@@ -30,9 +31,11 @@ import { AIFormGenerator } from "../../../../app/(workspace)/(dashboard)/campaig
 import type { FormNodeData } from "../nodes/form-node";
 import { useFormCanvasController } from "./provider";
 
-type ControllerProps = Omit<PanelProps, "children"> & {};
+type ControllerProps = Omit<PanelProps, "children"> & {
+	campaignId: Id<"campaigns">;
+};
 
-export function Controller({ className, ...props }: ControllerProps) {
+export function Controller({ campaignId, className, ...props }: ControllerProps) {
 	const { zoom } = useViewport();
 	const { zoomTo, zoomIn, zoomOut, fitView, updateNodeData } = useReactFlow();
 	const { mode, setMode, isGeneratingSchema, setIsGeneratingSchema } =
@@ -248,6 +251,7 @@ export function Controller({ className, ...props }: ControllerProps) {
 			{/* AI Generator Integration */}
 			{formNode && (
 				<AIFormGenerator
+					campaignId={campaignId}
 					isVisible={isGeneratingSchema}
 					existingSchema={existingSchema}
 					onSchemaUpdate={handleSchemaUpdate}

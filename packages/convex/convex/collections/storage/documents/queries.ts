@@ -98,7 +98,6 @@ export const getTotalSize = query({
 	handler: async (ctx, args) => {
 		return await aggregateDocuments.sum(ctx, {
 			namespace: args.projectId,
-			// @ts-expect-error
 			bounds: {},
 		});
 	},
@@ -227,7 +226,6 @@ export const getTotalCountByKnowledgeBase = query({
 	handler: async (ctx, args) => {
 		return await aggregateMemoizedDocuments.count(ctx, {
 			namespace: args.knowledgeBaseId,
-			// @ts-expect-error
 			bounds: {},
 		});
 	},

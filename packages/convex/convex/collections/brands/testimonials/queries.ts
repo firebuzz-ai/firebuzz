@@ -68,7 +68,6 @@ export const getTotalCount = query({
 	handler: async (ctx, args) => {
 		return await aggregateTestimonials.count(ctx, {
 			namespace: args.brandId,
-			// @ts-expect-error
 			bounds: {},
 		});
 	},

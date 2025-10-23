@@ -84,7 +84,6 @@ export const getTotalCount = query({
 	handler: async (ctx, args) => {
 		return await aggregateCampaigns.count(ctx, {
 			namespace: args.projectId,
-			// @ts-expect-error
 			bounds: {},
 		});
 	},

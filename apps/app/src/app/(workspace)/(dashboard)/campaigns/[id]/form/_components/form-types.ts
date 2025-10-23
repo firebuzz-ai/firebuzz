@@ -2,8 +2,8 @@
 export interface FormField {
 	id: string;
 	title: string;
-	placeholder: string | undefined;
-	description: string | undefined;
+	placeholder?: string;
+	description?: string;
 	type: "string" | "number" | "boolean";
 	inputType:
 		| "text"
@@ -21,7 +21,7 @@ export interface FormField {
 	required: boolean;
 	unique: boolean;
 	visible: boolean;
-	default: string | number | boolean | undefined;
+	default?: string | number | boolean;
 	options?: { label: string; value: string }[];
 }
 

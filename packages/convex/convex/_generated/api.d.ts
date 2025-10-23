@@ -9,8 +9,10 @@
  */
 
 import type * as ai_models_helpers from "../ai/models/helpers.js";
+import type * as ai_prompts_formSchema from "../ai/prompts/formSchema.js";
 import type * as ai_prompts_landingError from "../ai/prompts/landingError.js";
 import type * as ai_prompts_landingMain from "../ai/prompts/landingMain.js";
+import type * as ai_schemas_formSchema from "../ai/schemas/formSchema.js";
 import type * as ai_tools_landingPage_index from "../ai/tools/landingPage/index.js";
 import type * as ai_tools_landingPage_tools from "../ai/tools/landingPage/tools.js";
 import type * as collections_agentSessions_actions from "../collections/agentSessions/actions.js";
@@ -193,8 +195,10 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   "ai/models/helpers": typeof ai_models_helpers;
+  "ai/prompts/formSchema": typeof ai_prompts_formSchema;
   "ai/prompts/landingError": typeof ai_prompts_landingError;
   "ai/prompts/landingMain": typeof ai_prompts_landingMain;
+  "ai/schemas/formSchema": typeof ai_schemas_formSchema;
   "ai/tools/landingPage/index": typeof ai_tools_landingPage_index;
   "ai/tools/landingPage/tools": typeof ai_tools_landingPage_tools;
   "collections/agentSessions/actions": typeof collections_agentSessions_actions;

@@ -1,9 +1,8 @@
-import {
-	api,
-	useMutation,
-	useStableCachedQuery,
-	useUploadFile,
-} from "@firebuzz/convex";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
+import { api, useAction, useStableCachedQuery } from "@firebuzz/convex";
+import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import {
@@ -18,31 +17,46 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
-import {
-	CornerDownRight,
-	Ratio,
-	SlidersHorizontal,
-} from "@firebuzz/ui/icons/lucide";
+import { GeminiIcon } from "@firebuzz/ui/icons/ai-providers";
+import { CornerDownRight, Ratio } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
-import ImageGenClient from "@/lib/ai/image/client";
 import { Generations } from "./generations";
 import { ImageList } from "./image-list";
 import { MaskButton } from "./mask-button";
 
-const IMAGE_SIZES = {
-	"1024x1024": "Square (1:1)",
-	"1536x1024": "Landscape (3:2)",
-	"1024x1536": "Portrait (2:3)",
-	auto: "Auto",
+const ASPECT_RATIOS = {
+	"1:1": "Square",
+	"16:9": "Landscape",
+	"9:16": "Portrait",
+	"4:3": "Classic",
+	"3:4": "Classic Portrait",
+	"3:2": "Photo",
+	"2:3": "Photo Portrait",
 } as const;
 
-type ImageSize = keyof typeof IMAGE_SIZES;
+type AspectRatio = keyof typeof ASPECT_RATIOS;
+
+const IMAGE_MODELS = {
+	"nano-banana": {
+		name: "Nano Banana",
+		speed: "Fast",
+	},
+	"imagen4-fast": {
+		name: "Imagen 4 Fast",
+		speed: "Medium",
+	},
+	"imagen4-ultra": {
+		name: "Imagen 4 Ultra",
+		speed: "Slow",
+	},
+} as const;
+
+type ImageModel = keyof typeof IMAGE_MODELS;
 
 interface GenerateImageFormInputProps {
-	selectedSize: ImageSize;
-	setSelectedSize: React.Dispatch<React.SetStateAction<ImageSize>>;
+	selectedAspectRatio: AspectRatio;
+	setSelectedAspectRatio: React.Dispatch<React.SetStateAction<AspectRatio>>;
 	setState: React.Dispatch<React.SetStateAction<"idle" | "generating">>;
 	quality: "low" | "medium" | "high";
 	setQuality: React.Dispatch<React.SetStateAction<"low" | "medium" | "high">>;
@@ -50,8 +64,8 @@ interface GenerateImageFormInputProps {
 }
 
 export const GenerateImageFormInput = ({
-	selectedSize,
-	setSelectedSize,
+	selectedAspectRatio,
+	setSelectedAspectRatio,
 	setState,
 	quality,
 	setQuality,
@@ -66,10 +80,19 @@ export const GenerateImageFormInput = ({
 		isSelectedImagePrimary,
 	} = useAIImageModal();
 
+	const { currentWorkspace } = useWorkspace();
+	const { currentProject } = useProject();
+
 	const [prompt, setPrompt] = useState("");
+	const [selectedModel, setSelectedModel] = useState<ImageModel>("nano-banana");
+
 	const generations = useStableCachedQuery(
 		api.collections.storage.media.queries.getRecentGenerations,
 	);
+
+	// Convex actions
+	const generateImageAction = useAction(api.lib.fal.generateImageWithAuth);
+	const editImageAction = useAction(api.lib.fal.editImageWithAuth);
 
 	const memoizedGenerations = useMemo(() => {
 		return generations?.map((generation) => ({
@@ -82,14 +105,9 @@ export const GenerateImageFormInput = ({
 				| "low"
 				| "medium"
 				| "high",
-			size: (generation.aiMetadata?.size ?? "auto") as ImageSize,
+			aspectRatio: (generation.aiMetadata?.size ?? "1:1") as AspectRatio,
 		}));
 	}, [generations]);
-
-	const uploadFile = useUploadFile(api.components.r2);
-	const createMedia = useMutation(
-		api.collections.storage.media.mutations.create,
-	);
 
 	// Return a Promise that resolves with the mask File or null, scaled to natural dimensions stored on canvas
 	const getMaskFile = (): Promise<File | null> => {
@@ -246,69 +264,42 @@ export const GenerateImageFormInput = ({
 		}
 	};
 
-	// Use the client for generation, but handle edit via direct fetch
-	const imageGenClient = new ImageGenClient(); // Keep for generate
-
 	const handleGenerate = async () => {
 		if (!prompt.trim()) {
 			toast.error("Please enter a prompt");
 			return;
 		}
+
+		if (!currentWorkspace?._id || !currentProject?._id) {
+			toast.error("Workspace or project not found");
+			return;
+		}
+
 		setState("generating");
 		try {
-			const result = await imageGenClient.generate({
+			// Call Convex action
+			const result = await generateImageAction({
 				prompt,
-				size: selectedSize,
-				quality,
-				model: "gpt-image-1",
-				n: 1,
-				background: "auto",
-				output_format: "png",
-				output_compression: 100,
-				moderation: "low",
+				model: selectedModel,
+				aspectRatio: selectedAspectRatio,
+				resolution: "1K", // Default to 1K for now
+				workspaceId: currentWorkspace._id,
+				projectId: currentProject._id,
 			});
 
-			if (!result.success) {
-				throw new Error(result.error);
+			if (!result.success || !result.cdnUrl || !result.key) {
+				throw new Error(result.error?.message || "Failed to generate image");
 			}
 
-			const firstResultData = result.data?.[0];
+			// Update UI with generated image
+			setSelectedImage({
+				key: result.key,
+				name: `generated-${result.requestId}.png`,
+				contentType: "image/png",
+				size: 0, // Size not available from action response
+			});
 
-			if (firstResultData?.b64_json) {
-				const byteCharacters = atob(firstResultData.b64_json);
-				const byteArrays = [];
-				for (let i = 0; i < byteCharacters.length; i++) {
-					byteArrays.push(byteCharacters.charCodeAt(i));
-				}
-				const byteArray = new Uint8Array(byteArrays);
-				const blob = new Blob([byteArray], { type: "image/png" });
-				const file = new File([blob], `generated-${Date.now()}.png`, {
-					type: "image/png",
-				});
-				const key = await uploadFile(file);
-				const aiMetadata = {
-					prompt,
-					size: selectedSize,
-					quality,
-				};
-				await createMedia({
-					key,
-					name: `generated-${Date.now()}.png`,
-					type: "image",
-					contentType: "image/png",
-					size: blob.size,
-					source: "ai-generated",
-					aiMetadata,
-				});
-				setSelectedImage({
-					key,
-					name: `generated-${Date.now()}.png`,
-					contentType: "image/png",
-					size: blob.size,
-				});
-			} else {
-				throw new Error("No image data received");
-			}
+			toast.success("Image generated successfully!");
 		} catch (error) {
 			toast.error(
 				error instanceof Error ? error.message : "Failed to generate image",
@@ -324,6 +315,11 @@ export const GenerateImageFormInput = ({
 			return;
 		}
 
+		if (!currentWorkspace?._id || !currentProject?._id) {
+			toast.error("Workspace or project not found");
+			return;
+		}
+
 		const maskIsPresent = hasMask();
 
 		if (isMasking && !maskIsPresent) {
@@ -333,72 +329,38 @@ export const GenerateImageFormInput = ({
 
 		setState("generating");
 		try {
-			// 1. Get mask file - no arguments needed now
-			const maskFile = isMasking && maskIsPresent ? await getMaskFile() : null;
+			// Get R2 public URL from env
+			const { NEXT_PUBLIC_R2_PUBLIC_URL } = envCloudflarePublic();
 
-			if (isMasking && maskIsPresent && !maskFile) {
-				toast.error("Failed to process mask image.");
-				setState("idle");
-				return;
-			}
+			// Build image URLs from keys
+			const imageUrls = images.map(
+				(image) => `${NEXT_PUBLIC_R2_PUBLIC_URL}/${image.key}`,
+			);
 
-			// 2. Call client edit method
-			const result = await imageGenClient.edit({
+			// Call Convex action (always uses nano-banana for edit)
+			const result = await editImageAction({
 				prompt,
-				imageKeys: images.map((image) => image.key),
-				quality,
-				mask: maskFile ?? undefined,
-				model: "gpt-image-1",
-				n: 1,
-				size: selectedSize,
+				imageUrls,
+				aspectRatio: selectedAspectRatio,
+				workspaceId: currentWorkspace._id,
+				projectId: currentProject._id,
 			});
 
-			if (!result.success) {
-				throw new Error(result.error);
+			if (!result.success || !result.cdnUrl || !result.key) {
+				throw new Error(result.error?.message || "Failed to edit image");
 			}
 
-			// 3. Process successful API Response
-			const firstResultData = result.data?.[0];
+			// Update UI with edited image
+			setIsMasking(false);
+			setSelectedImage({
+				key: result.key,
+				name: `edited-${result.requestId}.png`,
+				contentType: "image/png",
+				size: 0, // Size not available from action response
+			});
+			setPrompt("");
 
-			if (firstResultData?.b64_json) {
-				const byteCharacters = atob(firstResultData.b64_json);
-				const byteArrays = [];
-				for (let i = 0; i < byteCharacters.length; i++) {
-					byteArrays.push(byteCharacters.charCodeAt(i));
-				}
-				const byteArray = new Uint8Array(byteArrays);
-				const editedBlob = new Blob([byteArray], { type: "image/png" });
-				const file = new File([editedBlob], `edited-${Date.now()}.png`, {
-					type: "image/png",
-				});
-				const key = await uploadFile(file);
-				// Store metadata matching the expected type for createMedia
-				const aiMetadata = {
-					prompt,
-					quality,
-					size: selectedSize,
-				};
-				await createMedia({
-					key,
-					name: file.name,
-					type: "image",
-					contentType: "image/png",
-					size: editedBlob.size,
-					source: "ai-generated",
-					aiMetadata,
-				});
-
-				setIsMasking(false);
-				setSelectedImage({
-					key,
-					name: file.name,
-					contentType: "image/png",
-					size: editedBlob.size,
-				});
-				setPrompt("");
-			} else {
-				throw new Error("No image data received");
-			}
+			toast.success("Image edited successfully!");
 		} catch (error) {
 			console.error("handleEdit error:", error);
 			toast.error(
@@ -410,50 +372,60 @@ export const GenerateImageFormInput = ({
 	};
 
 	return (
-		<div className="flex items-center justify-center w-full px-4 py-8">
-			<div className="flex flex-col w-full max-w-5xl gap-3">
+		<div className="flex justify-center items-center px-4 py-8 w-full">
+			<div className="flex flex-col gap-3 w-full max-w-5xl">
 				{/* Generations */}
 				{memoizedGenerations?.length && memoizedGenerations.length > 0 && (
 					<Generations generations={memoizedGenerations} />
 				)}
 
-				<div className="flex items-center justify-between gap-3">
+				<div className="flex gap-3 justify-between items-center">
 					{/* Top-left AI settings */}
-					<div className="flex flex-wrap items-center gap-3">
-						{/* Size Select */}
+					<div className="flex flex-wrap gap-3 items-center">
+						{/* Aspect Ratio Select */}
 						<Select
-							value={selectedSize}
-							onValueChange={(v) => setSelectedSize(v as ImageSize)}
+							value={selectedAspectRatio}
+							onValueChange={(v) => setSelectedAspectRatio(v as AspectRatio)}
 						>
 							<SelectTrigger className="h-8 max-w-fit">
-								<div className="flex items-center gap-2 pr-2 whitespace-nowrap">
+								<div className="flex gap-2 items-center pr-2 whitespace-nowrap">
 									<Ratio className="size-3.5" />
-									<SelectValue placeholder="Size" />
+									<SelectValue placeholder="Aspect Ratio" />
 								</div>
 							</SelectTrigger>
 							<SelectContent side="top" sideOffset={10}>
-								{Object.entries(IMAGE_SIZES).map(([key, value]) => (
+								{Object.entries(ASPECT_RATIOS).map(([key, value]) => (
 									<SelectItem key={key} value={key}>
-										{value}
+										{value} ({key})
 									</SelectItem>
 								))}
 							</SelectContent>
 						</Select>
-						{/* Quality Select */}
+						{/* Model Select - disabled in edit mode */}
 						<Select
-							value={quality}
-							onValueChange={(v) => setQuality(v as "low" | "medium" | "high")}
+							value={selectedModel}
+							onValueChange={(v) => setSelectedModel(v as ImageModel)}
+							disabled={Boolean(selectedImage)}
 						>
 							<SelectTrigger className="h-8 max-w-fit">
-								<div className="flex items-center gap-2 pr-2 whitespace-nowrap">
-									<SlidersHorizontal className="size-3.5" />
-									<SelectValue placeholder="Quality" />
+								<div className="flex gap-2 items-center pr-2 whitespace-nowrap">
+									
+									<SelectValue placeholder="Model" />
 								</div>
 							</SelectTrigger>
 							<SelectContent side="top" sideOffset={10}>
-								<SelectItem value="low">Low</SelectItem>
-								<SelectItem value="medium">Medium</SelectItem>
-								<SelectItem value="high">High</SelectItem>
+								{Object.entries(IMAGE_MODELS).map(([key, { name, speed }]) => (
+									<SelectItem key={key} value={key}>
+										<div className="flex gap-2 items-center">
+											<div className="p-1 h-6 rounded-md border bg-muted">
+												<GeminiIcon />
+											</div>
+											<span>
+												{name} ({speed})
+											</span>
+										</div>
+									</SelectItem>
+								))}
 							</SelectContent>
 						</Select>
 						{/* Mask Button */}
@@ -465,14 +437,14 @@ export const GenerateImageFormInput = ({
 					<ImageList selectedImageKey={selectedImage?.key ?? ""} />
 				</div>
 				{/* Input + Buttons */}
-				<div className="flex items-center gap-4 p-2 border rounded-lg shadow-lg bg-background-subtle">
+				<div className="flex gap-4 items-center p-2 rounded-lg border shadow-lg bg-background-subtle">
 					<Input
 						className="bg-transparent border-none outline-none focus-visible:ring-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
 						placeholder="Describe the image you want to generate..."
 						value={prompt}
 						onChange={(e) => setPrompt(e.target.value)}
 					/>
-					<div className="flex gap-2 right-3 bottom-2">
+					<div className="flex bottom-2 right-3 gap-2">
 						<Tooltip delayDuration={0}>
 							<TooltipTrigger asChild>
 								<Button

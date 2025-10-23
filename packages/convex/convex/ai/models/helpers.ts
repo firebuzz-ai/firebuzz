@@ -141,17 +141,14 @@ export function normalizeModel(modelString: string): Model {
 	return "claude-sonnet-4.5";
 }
 
-const openRouterSettings = {
+export const openRouterSettings = {
 	reasoning: {
 		enabled: true,
 		effort: "medium" as const,
 	},
 	usage: {
 		include: true,
-	},
-	extraBody: {
-		"anthropic-beta": "prompt-caching-2024-07-31",
-	},
+	}
 };
 
 export const getModel = (model: Model) => {

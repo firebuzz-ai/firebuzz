@@ -9,9 +9,9 @@ interface GenerateFormProps {
 
 export const GenerateForm = ({ setState }: GenerateFormProps) => {
 	const {
-		selectedImageSize,
+		selectedImageAspectRatio,
 		selectedImageQuality,
-		setSelectedImageSize,
+		setSelectedImageAspectRatio,
 		setSelectedImageQuality,
 		isMasking,
 	} = useAIImageModal();
@@ -22,8 +22,8 @@ export const GenerateForm = ({ setState }: GenerateFormProps) => {
 		<div className="flex flex-col w-full h-full max-h-full overflow-hidden">
 			<ImagePreviewWithEdit canvasRef={canvasRef} isMasking={isMasking} />
 			<GenerateImageFormInput
-				selectedSize={selectedImageSize}
-				setSelectedSize={setSelectedImageSize}
+				selectedAspectRatio={selectedImageAspectRatio}
+				setSelectedAspectRatio={setSelectedImageAspectRatio}
 				canvasRef={canvasRef}
 				setState={setState}
 				quality={selectedImageQuality}

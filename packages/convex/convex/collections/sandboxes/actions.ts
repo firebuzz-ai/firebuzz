@@ -4541,7 +4541,7 @@ function parseThemeFromFiles(
 
 	// Extract CSS variables from :root for light theme
 	const lightTheme: Record<string, string> = {};
-	const rootMatch = indexCss.match(/:root\s*\{([^}]+)\}/s);
+	const rootMatch = indexCss.match(/:root\s*\{([\s\S]+?)\}/);
 	console.log("[parseThemeFromFiles] :root match found:", !!rootMatch);
 	if (rootMatch?.[1]) {
 		const rootVars = rootMatch[1];
@@ -4584,7 +4584,7 @@ function parseThemeFromFiles(
 
 	// Extract CSS variables from .dark for dark theme
 	const darkTheme: Record<string, string> = {};
-	const darkMatch = indexCss.match(/\.dark\s*\{([^}]+)\}/s);
+	const darkMatch = indexCss.match(/\.dark\s*\{([\s\S]+?)\}/);
 	if (darkMatch?.[1]) {
 		const darkVars = darkMatch[1];
 		const varMatches = darkVars.matchAll(/--([a-z0-9-]+):\s*([^;]+);/g);

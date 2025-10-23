@@ -95,7 +95,6 @@ export const getTotalSize = query({
 	handler: async (ctx, args) => {
 		return await aggregateMedia.sum(ctx, {
 			namespace: args.projectId,
-			// @ts-expect-error
 			bounds: {},
 		});
 	},

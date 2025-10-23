@@ -10,9 +10,6 @@ import { tagsConfiguration } from "./configuration/tags.ts";
 import { Head } from "./head.tsx";
 import "./index.css";
 
-// Load Design Mode overlay for element selection
-import "./design-mode/overlay";
-
 
 export const createRoot = ViteReactSSG(
   <>

@@ -37,9 +37,11 @@ const customSelectionStyles = {
 
 export const Canvas = ({
 	formId,
+	campaignId,
 }: {
 	formId: Id<"forms">;
 	form: Doc<"forms">;
+	campaignId: Id<"campaigns">;
 }) => {
 	const { theme } = useTheme();
 	const { mode } = useFormCanvasController();
@@ -150,7 +152,7 @@ export const Canvas = ({
 				selectNodesOnDrag={mode === "select"}
 			>
 				<Background />
-				<Controller />
+				<Controller campaignId={campaignId} />
 			</ReactFlow>
 		</div>
 	);

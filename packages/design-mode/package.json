@@ -1,0 +1,63 @@
+{
+	"name": "@firebuzz/design-mode",
+	"version": "0.1.5",
+	"description": "Design mode overlay and utilities for Firebuzz landing page templates",
+	"author": "Firebuzz Team",
+	"license": "MIT",
+	"main": "./dist/index.js",
+	"module": "./dist/index.mjs",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.mjs",
+			"require": "./dist/index.js"
+		},
+		"./overlay": {
+			"types": "./dist/overlay.d.ts",
+			"import": "./dist/overlay.mjs",
+			"require": "./dist/overlay.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"build": "tsup",
+		"dev": "tsup --watch",
+		"typecheck": "tsc --noEmit",
+		"clean": "rm -rf dist",
+		"prepublishOnly": "pnpm build"
+	},
+	"peerDependencies": {
+		"react": ">=18.0.0",
+		"tailwindcss": "^3.0.0",
+		"vite": "^6.0.0"
+	},
+	"devDependencies": {
+		"@types/babel__generator": "^7.27.0",
+		"@types/node": "^22.0.0",
+		"tsup": "^8.0.0",
+		"typescript": "^5.7.2"
+	},
+	"dependencies": {
+		"esbuild": "^0.25.11"
+	},
+	"keywords": [
+		"design-mode",
+		"visual-editor",
+		"firebuzz",
+		"landing-pages",
+		"vite",
+		"tailwind"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/firebuzz/firebuzz.git",
+		"directory": "packages/design-mode"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}

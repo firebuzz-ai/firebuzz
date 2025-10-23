@@ -58,7 +58,7 @@ function FormCampaignInner({
 				isRightPanelClosable={false}
 			>
 				<FlowLayout>
-					<Canvas formId={formData._id} form={formData} />
+					<Canvas formId={formData._id} form={formData} campaignId={campaign._id} />
 				</FlowLayout>
 				<PanelLayout>
 					<Panel campaignId={campaign._id} formId={formData._id} />

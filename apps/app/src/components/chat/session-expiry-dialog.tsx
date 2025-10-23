@@ -1,5 +1,6 @@
 "use client";
 
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
 import { api, ConvexError, useMutation } from "@firebuzz/convex";
 import {
 	AlertDialog,
@@ -11,9 +12,9 @@ import {
 	AlertDialogHeader,
 	AlertDialogTitle,
 } from "@firebuzz/ui/components/ui/alert-dialog";
+import { AlertCircle } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useEffect, useState } from "react";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
 
 const WARNING_THRESHOLD = 2 * 60 * 1000; // Show warning 2 minutes before shutdown
 
@@ -32,6 +33,8 @@ export const SessionExpiryDialog = () => {
 		? new Date(session.shutdownAt).getTime() - Date.now() <=
 				WARNING_THRESHOLD && new Date(session.shutdownAt).getTime() > Date.now()
 		: false;
+
+		const shutdownReason = session?.shutdownReason;
 
 	// Update time remaining display every second
 	useEffect(() => {
@@ -110,13 +113,14 @@ export const SessionExpiryDialog = () => {
 	if (!session) return null;
 
 	return (
-		<AlertDialog open={showWarning} onOpenChange={setShowWarning}>
+		<AlertDialog open={shouldShowWarning} onOpenChange={setShowWarning}>
 			<AlertDialogContent>
-				<AlertDialogHeader>
+				<AlertDialogHeader className="space-y-0">
+					<div className="inline-flex justify-center items-center p-1.5 rounded-lg border bg-muted max-w-fit mb-1"><AlertCircle className="text-amber-500 size6" /></div>
 					<AlertDialogTitle>Session Expiring Soon</AlertDialogTitle>
-					<AlertDialogDescription>
-						Your agent session will end in <strong>{timeRemaining}</strong> due
-						to {session.shutdownReason === "idle" ? "inactivity" : "time limit"}
+					<AlertDialogDescription className="max-w-sm">
+						Your agent session will end in <strong className="text-primary">{timeRemaining}</strong> due
+						to {shutdownReason === "idle" ? "inactivity" : "time limit"}
 						. Would you like to extend your session?
 					</AlertDialogDescription>
 				</AlertDialogHeader>
@@ -124,7 +128,7 @@ export const SessionExpiryDialog = () => {
 					<AlertDialogCancel onClick={handleDismiss} disabled={isExtending}>
 						Let it expire
 					</AlertDialogCancel>
-					<AlertDialogAction onClick={handleExtend} disabled={isExtending}>
+					<AlertDialogAction disabled={shutdownReason === "max-duration" || isExtending} className="bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground" onClick={handleExtend}>
 						{isExtending ? "Extending..." : "Extend Session"}
 					</AlertDialogAction>
 				</AlertDialogFooter>

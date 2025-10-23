@@ -304,7 +304,7 @@ export const getByCampaignIdPaginated = query({
 					creator: creator
 						? {
 								_id: creator._id,
-								name: creator.name,
+								name: creator.fullName,
 								email: creator.email,
 								imageKey: creator.imageKey,
 							}

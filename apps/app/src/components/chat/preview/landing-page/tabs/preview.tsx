@@ -100,7 +100,6 @@ export const Preview = () => {
 		isStaticPreviewIframeLoaded,
 	]);
 
-	console.log("currentPreviewType", currentPreviewType);
 
 	const message = useMemo(() => {
 		if (session && session.status !== "active")

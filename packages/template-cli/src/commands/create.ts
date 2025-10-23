@@ -1,8 +1,8 @@
-import { input } from "@inquirer/prompts";
-import chalk from "chalk";
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { input } from "@inquirer/prompts";
+import chalk from "chalk";
 import ora from "ora";
 import { getProjectRoot } from "../lib/config.js";
 
@@ -37,7 +37,9 @@ export async function createCommand(): Promise<void> {
 
 	const targetPath = join(templatesDir, templateName);
 
-	console.log(chalk.gray(`\nCreating template: ${chalk.white(templateName)}\n`));
+	console.log(
+		chalk.gray(`\nCreating template: ${chalk.white(templateName)}\n`),
+	);
 
 	// Copy base template
 	const copySpinner = ora("Copying base template...").start();
@@ -71,7 +73,7 @@ export async function createCommand(): Promise<void> {
 		const packageJsonPath = join(targetPath, "package.json");
 		const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
 		packageJson.name = templateName;
-		writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + "\n");
+		writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 		updateSpinner.succeed(chalk.green("Updated package.json"));
 	} catch (error) {
 		updateSpinner.fail(chalk.red(`Failed to update package.json: ${error}`));

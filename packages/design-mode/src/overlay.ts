@@ -9,53 +9,26 @@
  */
 
 import { getTailwindGenerator } from "./tailwind-generator";
+import type {
+	DesignModeMessage,
+	ElementSelectedMessage,
+	SourceLocation,
+} from "./types";
 
-interface SourceLocation {
-	fileName: string;
-	lineNumber: number;
-	columnNumber: number;
+// Type for React Fiber internal structure
+interface ReactFiber {
+	_debugSource?: {
+		fileName: string;
+		lineNumber: number;
+		columnNumber?: number;
+	};
+	type?: string | { displayName?: string; name?: string };
+	return?: ReactFiber;
 }
 
-interface DesignModeMessage {
-	type: "ENABLE_DESIGN_MODE" | "DISABLE_DESIGN_MODE" | "FB_UPDATE_ELEMENT" | "FB_GET_ALL_ELEMENTS_STATE" | "FB_UPDATE_THEME" | "FB_DESELECT_ELEMENT" | "FB_SELECT_ELEMENT";
-	enabled?: boolean;
-	sourceFile?: string;
-	sourceLine?: number;
-	sourceColumn?: number;
-	updates?: {
-		className?: string;
-		textContent?: string;
-		src?: string;
-		alt?: string;
-		href?: string;
-		target?: string;
-		rel?: string;
-	};
-	theme?: {
-		lightVariables?: Record<string, string>;
-		darkVariables?: Record<string, string>;
-	};
-}
-
-interface ElementSelectedMessage {
-	type: "FB_ELEMENT_SELECTED";
-	data: {
-		// Source location from React Fiber
-		sourceFile: string;
-		sourceLine: number;
-		sourceColumn: number;
-
-		// DOM properties
-		tagName: string;
-		className: string;
-		textContent: string | null;
-		src?: string;
-		alt?: string;
-		href?: string;
-		target?: string;
-		rel?: string;
-		computedStyles: Record<string, string>;
-	};
+// Type for HTMLElement with React Fiber attached
+interface HTMLElementWithFiber extends HTMLElement {
+	[key: string]: unknown;
 }
 
 class DesignModeOverlay {
@@ -168,7 +141,10 @@ class DesignModeOverlay {
 
 	private updateOverlayPositions = () => {
 		// Update selected element overlay
-		if (this.selectedElement && this.selectionOverlay.style.display !== "none") {
+		if (
+			this.selectedElement &&
+			this.selectionOverlay.style.display !== "none"
+		) {
 			this.updateOverlayPosition(this.selectionOverlay, this.selectedElement);
 			this.updateTagLabel(this.selectedElement);
 		}
@@ -182,14 +158,17 @@ class DesignModeOverlay {
 		for (const overlay of this.childrenOverlays) {
 			if (overlay.style.display !== "none" && this.hoveredElement) {
 				// Find the corresponding child element
-				const children = Array.from(this.hoveredElement.children).filter(child => {
-					const source = this.getReactFiberSource(child as HTMLElement);
-					return source !== null;
-				}) as HTMLElement[];
+				const children = Array.from(this.hoveredElement.children).filter(
+					(child) => {
+						const source = this.getReactFiberSource(child as HTMLElement);
+						return source !== null;
+					},
+				) as HTMLElement[];
 
 				const index = this.childrenOverlays.indexOf(overlay);
-				if (index < children.length) {
-					this.updateOverlayPosition(overlay, children[index]);
+				const child = children[index];
+				if (child) {
+					this.updateOverlayPosition(overlay, child);
 				}
 			}
 		}
@@ -255,16 +234,22 @@ class DesignModeOverlay {
 	 * Used when restoring selection after page reload
 	 */
 	private handleSelectElement(data: DesignModeMessage) {
-		if (!data.sourceFile || !data.sourceLine || data.sourceColumn === undefined) {
+		if (
+			!data.sourceFile ||
+			!data.sourceLine ||
+			data.sourceColumn === undefined
+		) {
 			return;
 		}
 
 		// Find element by source location
-		const allElements = document.querySelectorAll('*');
+		const allElements = document.querySelectorAll("*");
 		for (const el of allElements) {
 			// Skip our own overlays
-			if ((el as HTMLElement).classList?.contains("fb-design-mode-overlay") ||
-			    (el as HTMLElement).classList?.contains("fb-design-mode-tag")) {
+			if (
+				(el as HTMLElement).classList?.contains("fb-design-mode-overlay") ||
+				(el as HTMLElement).classList?.contains("fb-design-mode-tag")
+			) {
 				continue;
 			}
 
@@ -310,16 +295,18 @@ class DesignModeOverlay {
 	 */
 	private getReactFiberSource(element: HTMLElement): SourceLocation | null {
 		// Find React fiber key (varies by React version)
-		const fiberKey = Object.keys(element).find(key =>
-			key.startsWith('__reactFiber$') ||
-			key.startsWith('__reactInternalInstance$')
+		const elementWithFiber = element as HTMLElementWithFiber;
+		const fiberKey = Object.keys(elementWithFiber).find(
+			(key) =>
+				key.startsWith("__reactFiber$") ||
+				key.startsWith("__reactInternalInstance$"),
 		);
 
 		if (!fiberKey) {
 			return null;
 		}
 
-		let fiber = (element as any)[fiberKey];
+		let fiber = elementWithFiber[fiberKey] as ReactFiber | undefined;
 		let firstSource: SourceLocation | null = null;
 
 		// Walk up fiber tree to find _debugSource
@@ -338,8 +325,9 @@ class DesignModeOverlay {
 
 				// Check if this is a component file (in src/components/ui/)
 				// If it is, skip it and use the parent's source (the usage site)
-				const isComponentFile = source.fileName.includes('/components/ui/') ||
-				                       source.fileName.includes('/components/common/');
+				const isComponentFile =
+					source.fileName.includes("/components/ui/") ||
+					source.fileName.includes("/components/common/");
 
 				if (isComponentFile) {
 					// This is the component definition - keep looking up for usage site
@@ -358,13 +346,25 @@ class DesignModeOverlay {
 	}
 
 	private isContainer(element: HTMLElement): boolean {
-		const containerTags = ['div', 'section', 'header', 'footer', 'main', 'aside', 'nav', 'article', 'ul', 'ol', 'li'];
+		const containerTags = [
+			"div",
+			"section",
+			"header",
+			"footer",
+			"main",
+			"aside",
+			"nav",
+			"article",
+			"ul",
+			"ol",
+			"li",
+		];
 		return containerTags.includes(element.tagName.toLowerCase());
 	}
 
 	private hasDirectTextContent(element: HTMLElement): boolean {
 		return Array.from(element.childNodes).some(
-			node => node.nodeType === Node.TEXT_NODE && node.textContent?.trim()
+			(node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
 		);
 	}
 
@@ -388,8 +388,10 @@ class DesignModeOverlay {
 
 		// Filter to only elements with React Fiber source, excluding overlays
 		const selectableElements = elementsAtPoint.filter((el) => {
-			if (el.classList.contains("fb-design-mode-overlay") ||
-			    el.classList.contains("fb-design-mode-tag")) {
+			if (
+				el.classList.contains("fb-design-mode-overlay") ||
+				el.classList.contains("fb-design-mode-tag")
+			) {
 				return false;
 			}
 
@@ -410,6 +412,7 @@ class DesignModeOverlay {
 
 		// Get topmost element (first in array)
 		const topElement = selectableElements[0];
+		if (!topElement) return; // Type guard for noUncheckedIndexedAccess
 
 		// Don't show hover overlay if this is the selected element
 		if (topElement === this.selectedElement) {
@@ -431,7 +434,10 @@ class DesignModeOverlay {
 		this.hoverOverlay.style.display = "block";
 
 		// Show children overlays if this is a container without direct text
-		if (this.isContainer(topElement) && !this.hasDirectTextContent(topElement)) {
+		if (
+			this.isContainer(topElement) &&
+			!this.hasDirectTextContent(topElement)
+		) {
 			this.showChildrenOverlays(topElement);
 		} else {
 			this.hideChildrenOverlays();
@@ -440,7 +446,7 @@ class DesignModeOverlay {
 
 	private showChildrenOverlays(parent: HTMLElement) {
 		// Get direct children with React Fiber source
-		const children = Array.from(parent.children).filter(child => {
+		const children = Array.from(parent.children).filter((child) => {
 			const source = this.getReactFiberSource(child as HTMLElement);
 			return source !== null;
 		}) as HTMLElement[];
@@ -453,13 +459,18 @@ class DesignModeOverlay {
 		// Show overlay for each child
 		children.forEach((child, index) => {
 			const overlay = this.childrenOverlays[index];
-			this.updateOverlayPosition(overlay, child);
-			overlay.style.display = "block";
+			if (overlay) {
+				this.updateOverlayPosition(overlay, child);
+				overlay.style.display = "block";
+			}
 		});
 
 		// Hide unused child overlays
 		for (let i = children.length; i < this.childrenOverlays.length; i++) {
-			this.childrenOverlays[i].style.display = "none";
+			const overlay = this.childrenOverlays[i];
+			if (overlay) {
+				overlay.style.display = "none";
+			}
 		}
 	}
 
@@ -491,8 +502,10 @@ class DesignModeOverlay {
 		// Get all elements at click point for cycling
 		const elementsAtPoint = document.elementsFromPoint(e.clientX, e.clientY);
 		const selectableElements = elementsAtPoint.filter((el) => {
-			if (el.classList.contains("fb-design-mode-overlay") ||
-			    el.classList.contains("fb-design-mode-tag")) {
+			if (
+				el.classList.contains("fb-design-mode-overlay") ||
+				el.classList.contains("fb-design-mode-tag")
+			) {
 				return false;
 			}
 
@@ -502,13 +515,19 @@ class DesignModeOverlay {
 		}) as HTMLElement[];
 
 		// Cycle through nested elements on repeated clicks
-		if (timeSinceLastClick < 1000 && distanceMoved < 10 && selectableElements.length > 1) {
-			this.currentSelectionIndex = (this.currentSelectionIndex + 1) % selectableElements.length;
+		if (
+			timeSinceLastClick < 1000 &&
+			distanceMoved < 10 &&
+			selectableElements.length > 1
+		) {
+			this.currentSelectionIndex =
+				(this.currentSelectionIndex + 1) % selectableElements.length;
 		} else {
 			this.currentSelectionIndex = 0;
 		}
 
 		const target = selectableElements[this.currentSelectionIndex];
+		if (!target) return; // Type guard for noUncheckedIndexedAccess
 
 		// Get source location
 		const source = this.getReactFiberSource(target);
@@ -587,11 +606,11 @@ class DesignModeOverlay {
 	 */
 	private getDirectTextContent(element: HTMLElement): string | null {
 		const directTextNodes = Array.from(element.childNodes)
-			.filter(node => node.nodeType === Node.TEXT_NODE)
-			.map(node => node.textContent?.trim())
+			.filter((node) => node.nodeType === Node.TEXT_NODE)
+			.map((node) => node.textContent?.trim())
 			.filter(Boolean);
 
-		return directTextNodes.length > 0 ? directTextNodes.join(' ') : null;
+		return directTextNodes.length > 0 ? directTextNodes.join(" ") : null;
 	}
 
 	private sendElementData(element: HTMLElement, source: SourceLocation) {
@@ -609,11 +628,11 @@ class DesignModeOverlay {
 				tagName: element.tagName,
 				className: element.className,
 				textContent: directText,
-				src: element.getAttribute('src') || undefined,
-				alt: element.getAttribute('alt') || undefined,
-				href: element.getAttribute('href') || undefined,
-				target: element.getAttribute('target') || undefined,
-				rel: element.getAttribute('rel') || undefined,
+				src: element.getAttribute("src") || undefined,
+				alt: element.getAttribute("alt") || undefined,
+				href: element.getAttribute("href") || undefined,
+				target: element.getAttribute("target") || undefined,
+				rel: element.getAttribute("rel") || undefined,
 				computedStyles: this.getRelevantStyles(element),
 			},
 		};
@@ -627,7 +646,7 @@ class DesignModeOverlay {
 	 * Used for computing diffs on save (Lovable's approach)
 	 */
 	private handleGetAllElementsState() {
-		const allElements = document.querySelectorAll('*');
+		const allElements = document.querySelectorAll("*");
 		const elementsState: Array<{
 			sourceFile: string;
 			sourceLine: number;
@@ -643,8 +662,10 @@ class DesignModeOverlay {
 
 		for (const el of allElements) {
 			// Skip our own overlays
-			if ((el as HTMLElement).classList?.contains("fb-design-mode-overlay") ||
-			    (el as HTMLElement).classList?.contains("fb-design-mode-tag")) {
+			if (
+				(el as HTMLElement).classList?.contains("fb-design-mode-overlay") ||
+				(el as HTMLElement).classList?.contains("fb-design-mode-tag")
+			) {
 				continue;
 			}
 
@@ -665,13 +686,13 @@ class DesignModeOverlay {
 			const textContent = this.getDirectTextContent(element);
 
 			// Get className as string - handle SVG elements which have className as SVGAnimatedString
-			let className = '';
+			let className = "";
 			if (element.className) {
 				// For SVG elements, className is SVGAnimatedString with .baseVal property
-				if (typeof element.className === 'string') {
+				if (typeof element.className === "string") {
 					className = element.className;
-				} else if ('baseVal' in element.className) {
-					className = (element.className as any).baseVal;
+				} else if ("baseVal" in element.className) {
+					className = (element.className as { baseVal: string }).baseVal;
 				}
 			}
 
@@ -681,19 +702,22 @@ class DesignModeOverlay {
 				sourceColumn: source.columnNumber,
 				className,
 				textContent,
-				src: actualElement.getAttribute('src') || undefined,
-				alt: actualElement.getAttribute('alt') || undefined,
-				href: element.getAttribute('href') || undefined,
-				target: element.getAttribute('target') || undefined,
-				rel: element.getAttribute('rel') || undefined,
+				src: actualElement.getAttribute("src") || undefined,
+				alt: actualElement.getAttribute("alt") || undefined,
+				href: element.getAttribute("href") || undefined,
+				target: element.getAttribute("target") || undefined,
+				rel: element.getAttribute("rel") || undefined,
 			});
 		}
 
 		// Send back to parent
-		window.parent.postMessage({
-			type: 'FB_ALL_ELEMENTS_STATE',
-			data: elementsState
-		}, '*');
+		window.parent.postMessage(
+			{
+				type: "FB_ALL_ELEMENTS_STATE",
+				data: elementsState,
+			},
+			"*",
+		);
 	}
 
 	/**
@@ -708,19 +732,23 @@ class DesignModeOverlay {
 		}
 
 		// Find element by matching React Fiber source
-		const allElements = document.querySelectorAll('*');
+		const allElements = document.querySelectorAll("*");
 
 		for (const el of allElements) {
 			const source = this.getReactFiberSource(el as HTMLElement);
-			if (source?.fileName === sourceFile &&
-			    source?.lineNumber === sourceLine &&
-			    source?.columnNumber === sourceColumn) {
-
+			if (
+				source?.fileName === sourceFile &&
+				source?.lineNumber === sourceLine &&
+				source?.columnNumber === sourceColumn
+			) {
 				let element = el as HTMLElement;
 
 				// Special case: if we're updating image properties (src/alt) but found a container,
 				// look for an <img> child element
-				if ((updates.src !== undefined || updates.alt !== undefined) && element.tagName !== "IMG") {
+				if (
+					(updates.src !== undefined || updates.alt !== undefined) &&
+					element.tagName !== "IMG"
+				) {
 					const imgChild = element.querySelector("img");
 					if (imgChild) {
 						element = imgChild as HTMLElement;
@@ -740,7 +768,7 @@ class DesignModeOverlay {
 				if (updates.textContent !== undefined) {
 					// Only update first text node to preserve child elements
 					const textNode = Array.from(element.childNodes).find(
-						node => node.nodeType === Node.TEXT_NODE
+						(node) => node.nodeType === Node.TEXT_NODE,
 					);
 					if (textNode) {
 						textNode.textContent = updates.textContent;
@@ -800,32 +828,34 @@ class DesignModeOverlay {
 		if (!theme) return;
 
 		// Find or create the style element for design mode theme overrides
-		let styleEl = document.getElementById('fb-design-mode-theme') as HTMLStyleElement;
+		let styleEl = document.getElementById(
+			"fb-design-mode-theme",
+		) as HTMLStyleElement;
 		if (!styleEl) {
-			styleEl = document.createElement('style');
-			styleEl.id = 'fb-design-mode-theme';
+			styleEl = document.createElement("style");
+			styleEl.id = "fb-design-mode-theme";
 			document.head.appendChild(styleEl);
 		}
 
 		// Build CSS with both light and dark theme variables
-		let css = '';
+		let css = "";
 
 		// Light theme variables in :root (includes colors, fonts, radius)
 		if (theme.lightVariables && Object.keys(theme.lightVariables).length > 0) {
-			css += ':root {\n';
+			css += ":root {\n";
 			for (const [key, value] of Object.entries(theme.lightVariables)) {
 				css += `  ${key}: ${value};\n`;
 			}
-			css += '}\n\n';
+			css += "}\n\n";
 		}
 
 		// Dark theme variables in .dark (only colors, not fonts/radius)
 		if (theme.darkVariables && Object.keys(theme.darkVariables).length > 0) {
-			css += '.dark {\n';
+			css += ".dark {\n";
 			for (const [key, value] of Object.entries(theme.darkVariables)) {
 				css += `  ${key}: ${value};\n`;
 			}
-			css += '}\n';
+			css += "}\n";
 		}
 
 		// Apply the CSS
@@ -834,6 +864,31 @@ class DesignModeOverlay {
 }
 
 // Initialize when script loads - only in browser environment
-if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-	new DesignModeOverlay();
+if (typeof window !== "undefined" && typeof document !== "undefined") {
+	// Load Tailwind config and initialize overlay
+	(async () => {
+		try {
+			// Load the generated Tailwind config JSON
+			const configResponse = await fetch(
+				"/src/design-mode/tailwind.config.json",
+			);
+			if (configResponse.ok) {
+				const config = await configResponse.json();
+				// Store config globally for TailwindGenerator
+				(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = config;
+				console.log("[Design Mode] Loaded Tailwind config from JSON");
+			} else {
+				console.warn(
+					"[Design Mode] Could not load Tailwind config JSON - using empty config",
+				);
+				(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = {};
+			}
+		} catch (error) {
+			console.warn("[Design Mode] Error loading Tailwind config:", error);
+			(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = {};
+		}
+
+		// Initialize overlay after config is loaded
+		new DesignModeOverlay();
+	})();
 }

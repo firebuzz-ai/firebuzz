@@ -2,7 +2,11 @@ import { select } from "@inquirer/prompts";
 import chalk from "chalk";
 import ora from "ora";
 import { buildTemplate } from "../lib/build.js";
-import { type Environment, getAvailableTemplates, getConfig } from "../lib/config.js";
+import {
+	type Environment,
+	getAvailableTemplates,
+	getConfig,
+} from "../lib/config.js";
 import { uploadToKV } from "../lib/kv.js";
 import { uploadScreenshotToR2, uploadToR2 } from "../lib/r2.js";
 import { captureTemplateScreenshot } from "../lib/screenshot.js";
@@ -29,7 +33,9 @@ export async function packCommand(): Promise<void> {
 	});
 
 	console.log(
-		chalk.gray(`\nPacking template: ${chalk.white(templateName)} for ${chalk.white(environment)}\n`),
+		chalk.gray(
+			`\nPacking template: ${chalk.white(templateName)} for ${chalk.white(environment)}\n`,
+		),
 	);
 
 	// Load environment config
@@ -56,9 +62,19 @@ export async function packCommand(): Promise<void> {
 		kvSpinner.succeed(chalk.green("Uploaded to KV"));
 
 		// Step 6: Capture screenshot (waits 60s for cache propagation)
-		const screenshotSpinner = ora("Capturing template screenshot (waiting for cache...)").start();
-		const screenshot = await captureTemplateScreenshot(config, templateName, environment);
-		const screenshotUrl = await uploadScreenshotToR2(config, templateName, screenshot);
+		const screenshotSpinner = ora(
+			"Capturing template screenshot (waiting for cache...)",
+		).start();
+		const screenshot = await captureTemplateScreenshot(
+			config,
+			templateName,
+			environment,
+		);
+		const screenshotUrl = await uploadScreenshotToR2(
+			config,
+			templateName,
+			screenshot,
+		);
 		screenshotSpinner.succeed(chalk.green("Screenshot captured and uploaded"));
 
 		// Step 7: Upload tarball to R2
@@ -67,7 +83,9 @@ export async function packCommand(): Promise<void> {
 		r2Spinner.succeed(chalk.green("Uploaded tarball to R2"));
 
 		console.log(
-			chalk.bold.green(`\n✅ Successfully packed and published ${templateName} to ${environment}!\n`),
+			chalk.bold.green(
+				`\n✅ Successfully packed and published ${templateName} to ${environment}!\n`,
+			),
 		);
 		console.log(chalk.gray(`Screenshot URL: ${chalk.white(screenshotUrl)}`));
 	} catch (error) {

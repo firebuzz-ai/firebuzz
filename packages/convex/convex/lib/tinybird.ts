@@ -518,7 +518,10 @@ const conversionsBreakdownResponseSchema = z.object({
 	total_users: z.number(),
 	total_conversions: z.number(),
 	total_conversion_value: z.number(),
-	overall_conversion_rate: z.number(),
+	overall_conversion_rate: z
+		.number()
+		.nullable()
+		.transform((val) => val ?? 0),
 	device_conversions: z.array(conversionSegmentSchema),
 	operating_system_conversions: z.array(conversionSegmentSchema),
 	browser_conversions: z.array(conversionSegmentSchema),

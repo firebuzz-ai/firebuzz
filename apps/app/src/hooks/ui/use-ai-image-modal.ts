@@ -2,7 +2,14 @@ import { useAtom } from "jotai";
 import { atomWithReset, RESET } from "jotai/utils";
 import { useCallback, useMemo } from "react";
 
-export type ImageSize = "1024x1024" | "1536x1024" | "1024x1536" | "auto";
+export type AspectRatio =
+	| "1:1"
+	| "16:9"
+	| "9:16"
+	| "4:3"
+	| "3:4"
+	| "3:2"
+	| "2:3";
 export type ImageQuality = "low" | "medium" | "high";
 export type BrushSize = "sm" | "md" | "lg" | "xl";
 export type GeneratedImage = {
@@ -10,7 +17,7 @@ export type GeneratedImage = {
 	imageKey: string;
 	prompt: string;
 	quality: ImageQuality;
-	size: ImageSize;
+	aspectRatio: AspectRatio;
 	contentType: string;
 	fileSize: number;
 };
@@ -28,7 +35,7 @@ export const aiImageModalAtom = atomWithReset<{
 	generations: GeneratedImage[];
 	selectedImage: ImageType | undefined;
 	selectedImageQuality: ImageQuality;
-	selectedImageSize: ImageSize;
+	selectedImageAspectRatio: AspectRatio;
 	selectedImagePrompt: string;
 	isMasking: boolean;
 	onInsert: null | ((image: ImageType) => void);
@@ -38,7 +45,7 @@ export const aiImageModalAtom = atomWithReset<{
 	generations: [],
 	selectedImage: undefined,
 	selectedImageQuality: "medium",
-	selectedImageSize: "auto",
+	selectedImageAspectRatio: "1:1",
 	selectedImagePrompt: "",
 	isMasking: false,
 	onInsert: null,
@@ -123,16 +130,20 @@ export const useAIImageModal = () => {
 				setState((prev) => ({ ...prev, selectedImagePrompt }));
 			}
 		},
-		setSelectedImageSize: (
-			selectedImageSize: ImageSize | ((prev: ImageSize) => ImageSize),
+		setSelectedImageAspectRatio: (
+			selectedImageAspectRatio:
+				| AspectRatio
+				| ((prev: AspectRatio) => AspectRatio),
 		) => {
-			if (typeof selectedImageSize === "function") {
+			if (typeof selectedImageAspectRatio === "function") {
 				setState((prev) => ({
 					...prev,
-					selectedImageSize: selectedImageSize(prev.selectedImageSize),
+					selectedImageAspectRatio: selectedImageAspectRatio(
+						prev.selectedImageAspectRatio,
+					),
 				}));
 			} else {
-				setState((prev) => ({ ...prev, selectedImageSize }));
+				setState((prev) => ({ ...prev, selectedImageAspectRatio }));
 			}
 		},
 		setSelectedImageQuality: (
@@ -152,14 +163,15 @@ export const useAIImageModal = () => {
 		setSelectedImage: (
 			selectedImage: ImageType | undefined,
 			selectedImageQuality?: ImageQuality,
-			selectedImageSize?: ImageSize,
+			selectedImageAspectRatio?: AspectRatio,
 			selectedImagePrompt?: string | undefined,
 		) => {
 			setState((prev) => ({
 				...prev,
 				selectedImage: selectedImage ?? undefined,
 				selectedImageQuality: selectedImageQuality ?? prev.selectedImageQuality,
-				selectedImageSize: selectedImageSize ?? prev.selectedImageSize,
+				selectedImageAspectRatio:
+					selectedImageAspectRatio ?? prev.selectedImageAspectRatio,
 				selectedImagePrompt: selectedImagePrompt ?? prev.selectedImagePrompt,
 			}));
 		},

@@ -8,21 +8,29 @@
  * reads custom configurations"
  */
 
-import tailwindConfig from "./tailwind.config.json";
-
-type TailwindConfig = typeof tailwindConfig;
+type TailwindConfig = any; // Generated config structure is dynamic
 
 export class TailwindCSSGenerator {
 	private config: TailwindConfig;
 	private generatedStyles = new Set<string>();
 	private styleElement: HTMLStyleElement | null = null;
 
-	constructor() {
-		this.config = tailwindConfig as TailwindConfig;
+	constructor(config?: TailwindConfig) {
+		// Load config dynamically - will be imported by the overlay
+		if (config) {
+			this.config = config;
+		} else {
+			// @ts-expect-error - Config is generated at build time by Vite plugin
+			this.config = (window as any).__FIREBUZZ_TAILWIND_CONFIG__ || {};
+		}
 		this.initStyleElement();
 		console.log("[Tailwind Generator] Initialized with config:", {
-			colors: Object.keys((this.config.theme?.colors as Record<string, any>) || {}).length,
-			spacing: Object.keys((this.config.theme?.spacing as Record<string, any>) || {}).length,
+			colors: Object.keys(
+				(this.config.theme?.colors as Record<string, any>) || {},
+			).length,
+			spacing: Object.keys(
+				(this.config.theme?.spacing as Record<string, any>) || {},
+			).length,
 		});
 	}
 
@@ -33,7 +41,9 @@ export class TailwindCSSGenerator {
 		// Check if style element already exists (shouldn't happen with singleton, but safety check)
 		const existing = document.getElementById("fb-runtime-tailwind");
 		if (existing) {
-			console.warn("[Tailwind Generator] Style element already exists, reusing it");
+			console.warn(
+				"[Tailwind Generator] Style element already exists, reusing it",
+			);
 			this.styleElement = existing as HTMLStyleElement;
 			return;
 		}
@@ -54,7 +64,8 @@ export class TailwindCSSGenerator {
 			// Create a hidden test element
 			const testDiv = document.createElement("div");
 			testDiv.className = className;
-			testDiv.style.cssText = "position:absolute;top:-9999px;left:-9999px;visibility:hidden;";
+			testDiv.style.cssText =
+				"position:absolute;top:-9999px;left:-9999px;visibility:hidden;";
 			document.body.appendChild(testDiv);
 
 			// Get computed styles
@@ -64,18 +75,33 @@ export class TailwindCSSGenerator {
 			let hasStyles = false;
 
 			// Background color classes
-			if (className.startsWith("bg-") && computed.backgroundColor !== "rgba(0, 0, 0, 0)") {
+			if (
+				className.startsWith("bg-") &&
+				computed.backgroundColor !== "rgba(0, 0, 0, 0)"
+			) {
 				hasStyles = true;
 			}
 			// Text color classes
-			else if (className.startsWith("text-") && !className.match(/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/)) {
+			else if (
+				className.startsWith("text-") &&
+				!className.match(
+					/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/,
+				)
+			) {
 				const defaultColor = window.getComputedStyle(document.body).color;
-				if (computed.color !== defaultColor && computed.color !== "rgb(0, 0, 0)") {
+				if (
+					computed.color !== defaultColor &&
+					computed.color !== "rgb(0, 0, 0)"
+				) {
 					hasStyles = true;
 				}
 			}
 			// Font size classes
-			else if (className.match(/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/)) {
+			else if (
+				className.match(
+					/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/,
+				)
+			) {
 				// Check if font-size is different from body default
 				const defaultFontSize = window.getComputedStyle(document.body).fontSize;
 				if (computed.fontSize !== defaultFontSize) {
@@ -94,9 +120,11 @@ export class TailwindCSSGenerator {
 			// Gap classes (gap, gap-x, gap-y)
 			else if (className.startsWith("gap-")) {
 				// Check if gap/column-gap/row-gap is set
-				if (computed.gap !== "normal" && computed.gap !== "0px" ||
-				    computed.columnGap !== "normal" && computed.columnGap !== "0px" ||
-				    computed.rowGap !== "normal" && computed.rowGap !== "0px") {
+				if (
+					(computed.gap !== "normal" && computed.gap !== "0px") ||
+					(computed.columnGap !== "normal" && computed.columnGap !== "0px") ||
+					(computed.rowGap !== "normal" && computed.rowGap !== "0px")
+				) {
 					hasStyles = true;
 				}
 			}
@@ -114,30 +142,65 @@ export class TailwindCSSGenerator {
 				}
 			}
 			// Display utilities
-			else if (["flex", "inline-flex", "grid", "inline-grid", "block", "inline-block", "hidden"].includes(className)) {
-				const expectedDisplay = className === "hidden" ? "none" : className.replace("inline-", "inline-").replace("-", "");
-				if (computed.display === expectedDisplay ||
-				    (className === "flex" && computed.display === "flex") ||
-				    (className === "grid" && computed.display === "grid") ||
-				    (className === "block" && computed.display === "block")) {
+			else if (
+				[
+					"flex",
+					"inline-flex",
+					"grid",
+					"inline-grid",
+					"block",
+					"inline-block",
+					"hidden",
+				].includes(className)
+			) {
+				const expectedDisplay =
+					className === "hidden"
+						? "none"
+						: className.replace("inline-", "inline-").replace("-", "");
+				if (
+					computed.display === expectedDisplay ||
+					(className === "flex" && computed.display === "flex") ||
+					(className === "grid" && computed.display === "grid") ||
+					(className === "block" && computed.display === "block")
+				) {
 					hasStyles = true;
 				}
 			}
 			// Flex/grid layout utilities
-			else if (["items-center", "items-start", "items-end", "justify-center", "justify-between", "justify-around", "flex-col", "flex-row"].includes(className)) {
+			else if (
+				[
+					"items-center",
+					"items-start",
+					"items-end",
+					"justify-center",
+					"justify-between",
+					"justify-around",
+					"flex-col",
+					"flex-row",
+				].includes(className)
+			) {
 				// Check for corresponding CSS properties
-				if (className.startsWith("items-") && computed.alignItems !== "normal") {
+				if (
+					className.startsWith("items-") &&
+					computed.alignItems !== "normal"
+				) {
 					hasStyles = true;
-				} else if (className.startsWith("justify-") && computed.justifyContent !== "normal") {
+				} else if (
+					className.startsWith("justify-") &&
+					computed.justifyContent !== "normal"
+				) {
 					hasStyles = true;
-				} else if (className.startsWith("flex-") && computed.flexDirection !== "row") {
+				} else if (
+					className.startsWith("flex-") &&
+					computed.flexDirection !== "row"
+				) {
 					hasStyles = true;
 				}
 			}
 
 			document.body.removeChild(testDiv);
 			return hasStyles;
-		} catch (e) {
+		} catch (_e) {
 			// If we can't check, assume it doesn't exist and generate it
 			return false;
 		}
@@ -158,7 +221,9 @@ export class TailwindCSSGenerator {
 
 			// Skip if the class already exists in a stylesheet
 			if (this.classExistsInStylesheet(className)) {
-				console.log(`[Tailwind Generator] Skipping ${className} - already in stylesheet`);
+				console.log(
+					`[Tailwind Generator] Skipping ${className} - already in stylesheet`,
+				);
 				continue;
 			}
 
@@ -167,7 +232,9 @@ export class TailwindCSSGenerator {
 			if (css) {
 				this.appendCSS(css);
 				this.generatedStyles.add(className);
-				console.log(`[Tailwind Generator] Generated CSS for new class: ${className}`);
+				console.log(
+					`[Tailwind Generator] Generated CSS for new class: ${className}`,
+				);
 			}
 		}
 	}
@@ -183,7 +250,8 @@ export class TailwindCSSGenerator {
 			const baseCss = this.generateBaseCSS(baseClass);
 			if (!baseCss) return null;
 
-			const screens = (this.config.theme?.screens as Record<string, string>) || {};
+			const screens =
+				(this.config.theme?.screens as Record<string, string>) || {};
 			const minWidth = screens[breakpoint];
 			if (!minWidth) return null;
 
@@ -191,13 +259,18 @@ export class TailwindCSSGenerator {
 		}
 
 		// Handle state prefixes (hover:, focus:, active:, etc.)
-		const stateMatch = className.match(/^(hover|focus|active|disabled|focus-visible|focus-within|visited):(.+)$/);
+		const stateMatch = className.match(
+			/^(hover|focus|active|disabled|focus-visible|focus-within|visited):(.+)$/,
+		);
 		if (stateMatch) {
 			const [, state, baseClass] = stateMatch;
 			const baseCss = this.generateBaseCSS(baseClass);
 			if (!baseCss) return null;
 
-			return baseCss.replace(/\.([^\s{]+)/, `.${className.replace(/:/g, "\\:")}:${state}`);
+			return baseCss.replace(
+				/\.([^\s{]+)/,
+				`.${className.replace(/:/g, "\\:")}:${state}`,
+			);
 		}
 
 		// Handle dark mode prefix
@@ -225,7 +298,11 @@ export class TailwindCSSGenerator {
 		// Text colors: text-{color}-{shade}
 		if (className.startsWith("text-")) {
 			// Check if it's a color or font size
-			if (className.match(/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/)) {
+			if (
+				className.match(
+					/^text-(xs|sm|base|lg|xl|2xl|3xl|4xl|5xl|6xl|7xl|8xl|9xl)$/,
+				)
+			) {
 				return this.generateFontSizeCSS(className);
 			}
 			return this.generateColorCSS(className, "color");
@@ -238,7 +315,15 @@ export class TailwindCSSGenerator {
 				return this.generateBorderWidthCSS(className);
 			}
 			// Check for border styles
-			if (["border-solid", "border-dashed", "border-dotted", "border-double", "border-none"].includes(className)) {
+			if (
+				[
+					"border-solid",
+					"border-dashed",
+					"border-dotted",
+					"border-double",
+					"border-none",
+				].includes(className)
+			) {
 				const style = className.replace("border-", "");
 				return `.${className} { border-style: ${style} }`;
 			}
@@ -276,7 +361,17 @@ export class TailwindCSSGenerator {
 		}
 
 		// Flex, Grid, Display utilities
-		if (["flex", "inline-flex", "grid", "inline-grid", "block", "inline-block", "hidden"].includes(className)) {
+		if (
+			[
+				"flex",
+				"inline-flex",
+				"grid",
+				"inline-grid",
+				"block",
+				"inline-block",
+				"hidden",
+			].includes(className)
+		) {
 			return `.${className} { display: ${className.replace("inline-", "inline ").replace("-", " ")} }`;
 		}
 
@@ -292,36 +387,55 @@ export class TailwindCSSGenerator {
 
 		// Flex direction utilities
 		if (className === "flex-row") return ".flex-row { flex-direction: row }";
-		if (className === "flex-row-reverse") return ".flex-row-reverse { flex-direction: row-reverse }";
+		if (className === "flex-row-reverse")
+			return ".flex-row-reverse { flex-direction: row-reverse }";
 		if (className === "flex-col") return ".flex-col { flex-direction: column }";
-		if (className === "flex-col-reverse") return ".flex-col-reverse { flex-direction: column-reverse }";
+		if (className === "flex-col-reverse")
+			return ".flex-col-reverse { flex-direction: column-reverse }";
 
 		// Justify content utilities
-		if (className === "justify-start") return ".justify-start { justify-content: flex-start }";
-		if (className === "justify-center") return ".justify-center { justify-content: center }";
-		if (className === "justify-end") return ".justify-end { justify-content: flex-end }";
-		if (className === "justify-between") return ".justify-between { justify-content: space-between }";
-		if (className === "justify-around") return ".justify-around { justify-content: space-around }";
-		if (className === "justify-evenly") return ".justify-evenly { justify-content: space-evenly }";
+		if (className === "justify-start")
+			return ".justify-start { justify-content: flex-start }";
+		if (className === "justify-center")
+			return ".justify-center { justify-content: center }";
+		if (className === "justify-end")
+			return ".justify-end { justify-content: flex-end }";
+		if (className === "justify-between")
+			return ".justify-between { justify-content: space-between }";
+		if (className === "justify-around")
+			return ".justify-around { justify-content: space-around }";
+		if (className === "justify-evenly")
+			return ".justify-evenly { justify-content: space-evenly }";
 
 		// Align items utilities
-		if (className === "items-start") return ".items-start { align-items: flex-start }";
-		if (className === "items-center") return ".items-center { align-items: center }";
-		if (className === "items-end") return ".items-end { align-items: flex-end }";
-		if (className === "items-baseline") return ".items-baseline { align-items: baseline }";
-		if (className === "items-stretch") return ".items-stretch { align-items: stretch }";
+		if (className === "items-start")
+			return ".items-start { align-items: flex-start }";
+		if (className === "items-center")
+			return ".items-center { align-items: center }";
+		if (className === "items-end")
+			return ".items-end { align-items: flex-end }";
+		if (className === "items-baseline")
+			return ".items-baseline { align-items: baseline }";
+		if (className === "items-stretch")
+			return ".items-stretch { align-items: stretch }";
 
 		// Text alignment utilities
 		if (className === "text-left") return ".text-left { text-align: left }";
-		if (className === "text-center") return ".text-center { text-align: center }";
+		if (className === "text-center")
+			return ".text-center { text-align: center }";
 		if (className === "text-right") return ".text-right { text-align: right }";
-		if (className === "text-justify") return ".text-justify { text-align: justify }";
+		if (className === "text-justify")
+			return ".text-justify { text-align: justify }";
 
 		// Text decoration utilities
-		if (className === "underline") return ".underline { text-decoration-line: underline }";
-		if (className === "overline") return ".overline { text-decoration-line: overline }";
-		if (className === "line-through") return ".line-through { text-decoration-line: line-through }";
-		if (className === "no-underline") return ".no-underline { text-decoration-line: none }";
+		if (className === "underline")
+			return ".underline { text-decoration-line: underline }";
+		if (className === "overline")
+			return ".overline { text-decoration-line: overline }";
+		if (className === "line-through")
+			return ".line-through { text-decoration-line: line-through }";
+		if (className === "no-underline")
+			return ".no-underline { text-decoration-line: none }";
 
 		// Font style utilities
 		if (className === "italic") return ".italic { font-style: italic }";
@@ -358,7 +472,9 @@ export class TailwindCSSGenerator {
 		}
 
 		// If we can't generate CSS, return null
-		console.warn(`[Tailwind Generator] Cannot generate CSS for class: ${className}`);
+		console.warn(
+			`[Tailwind Generator] Cannot generate CSS for class: ${className}`,
+		);
 		return null;
 	}
 
@@ -367,9 +483,12 @@ export class TailwindCSSGenerator {
 
 		// Extract color and shade from class name
 		// e.g., "bg-blue-500" -> property="background", color="blue", shade="500"
-		const prefix = property === "background-color" ? "bg-" :
-		               property === "color" ? "text-" :
-		               "border-";
+		const prefix =
+			property === "background-color"
+				? "bg-"
+				: property === "color"
+					? "text-"
+					: "border-";
 
 		const colorPart = className.slice(prefix.length);
 		const parts = colorPart.split("-");
@@ -392,8 +511,12 @@ export class TailwindCSSGenerator {
 		return null;
 	}
 
-	private generateSpacingCSS(className: string, type: "padding" | "margin"): string | null {
-		const spacing = (this.config.theme?.spacing as Record<string, string>) || {};
+	private generateSpacingCSS(
+		className: string,
+		type: "padding" | "margin",
+	): string | null {
+		const spacing =
+			(this.config.theme?.spacing as Record<string, string>) || {};
 		const prefix = type === "padding" ? "p" : "m";
 
 		// Extract direction and value
@@ -409,25 +532,41 @@ export class TailwindCSSGenerator {
 		if (!direction) {
 			properties.push(`${type}: ${spacingValue}`);
 		} else if (direction === "x") {
-			properties.push(`${type}-left: ${spacingValue}`, `${type}-right: ${spacingValue}`);
+			properties.push(
+				`${type}-left: ${spacingValue}`,
+				`${type}-right: ${spacingValue}`,
+			);
 		} else if (direction === "y") {
-			properties.push(`${type}-top: ${spacingValue}`, `${type}-bottom: ${spacingValue}`);
+			properties.push(
+				`${type}-top: ${spacingValue}`,
+				`${type}-bottom: ${spacingValue}`,
+			);
 		} else {
-			const dirMap: Record<string, string> = { t: "top", r: "right", b: "bottom", l: "left" };
+			const dirMap: Record<string, string> = {
+				t: "top",
+				r: "right",
+				b: "bottom",
+				l: "left",
+			};
 			properties.push(`${type}-${dirMap[direction]}: ${spacingValue}`);
 		}
 
 		return `.${className} { ${properties.join("; ")} }`;
 	}
 
-	private generateSizeCSS(className: string, property: "width" | "height"): string | null {
-		const spacing = (this.config.theme?.spacing as Record<string, string>) || {};
+	private generateSizeCSS(
+		className: string,
+		property: "width" | "height",
+	): string | null {
+		const spacing =
+			(this.config.theme?.spacing as Record<string, string>) || {};
 		const prefix = property === "width" ? "w-" : "h-";
 		const value = className.slice(prefix.length);
 
 		// Handle special values
 		if (value === "full") return `.${className} { ${property}: 100% }`;
-		if (value === "screen") return `.${className} { ${property}: 100v${property[0]} }`;
+		if (value === "screen")
+			return `.${className} { ${property}: 100v${property[0]} }`;
 		if (value === "auto") return `.${className} { ${property}: auto }`;
 		if (value === "min") return `.${className} { ${property}: min-content }`;
 		if (value === "max") return `.${className} { ${property}: max-content }`;
@@ -459,7 +598,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateFontWeightCSS(className: string): string | null {
-		const fontWeight = (this.config.theme?.fontWeight as Record<string, string>) || {};
+		const fontWeight =
+			(this.config.theme?.fontWeight as Record<string, string>) || {};
 		const weight = className.slice("font-".length);
 		const weightValue = fontWeight[weight];
 
@@ -471,7 +611,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateBorderRadiusCSS(className: string): string | null {
-		const borderRadius = (this.config.theme?.borderRadius as Record<string, string>) || {};
+		const borderRadius =
+			(this.config.theme?.borderRadius as Record<string, string>) || {};
 
 		// Handle "rounded" (no suffix)
 		if (className === "rounded") {
@@ -490,7 +631,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateBorderWidthCSS(className: string): string | null {
-		const borderWidth = (this.config.theme?.borderWidth as Record<string, string>) || {};
+		const borderWidth =
+			(this.config.theme?.borderWidth as Record<string, string>) || {};
 
 		// Handle "border" (default width)
 		if (className === "border") {
@@ -501,7 +643,12 @@ export class TailwindCSSGenerator {
 		// Handle directional borders: border-t, border-r, border-b, border-l
 		const dirMatch = className.match(/^border-([trbl])$/);
 		if (dirMatch) {
-			const dirMap: Record<string, string> = { t: "top", r: "right", b: "bottom", l: "left" };
+			const dirMap: Record<string, string> = {
+				t: "top",
+				r: "right",
+				b: "bottom",
+				l: "left",
+			};
 			const value = borderWidth.DEFAULT || "1px";
 			return `.${className} { border-${dirMap[dirMatch[1]]}-width: ${value} }`;
 		}
@@ -519,7 +666,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateGapCSS(className: string): string | null {
-		const spacing = (this.config.theme?.spacing as Record<string, string>) || {};
+		const spacing =
+			(this.config.theme?.spacing as Record<string, string>) || {};
 
 		// Handle gap-x-{size}
 		if (className.startsWith("gap-x-")) {
@@ -554,7 +702,8 @@ export class TailwindCSSGenerator {
 	 * These use margin and the child combinator selector
 	 */
 	private generateSpaceBetweenCSS(className: string): string | null {
-		const spacing = (this.config.theme?.spacing as Record<string, string>) || {};
+		const spacing =
+			(this.config.theme?.spacing as Record<string, string>) || {};
 
 		// Handle space-x-{size}
 		if (className.startsWith("space-x-")) {
@@ -588,7 +737,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateLineHeightCSS(className: string): string | null {
-		const lineHeight = (this.config.theme?.lineHeight as Record<string, string>) || {};
+		const lineHeight =
+			(this.config.theme?.lineHeight as Record<string, string>) || {};
 		const value = className.slice("leading-".length);
 		const lineHeightValue = lineHeight[value];
 
@@ -600,7 +750,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateLetterSpacingCSS(className: string): string | null {
-		const letterSpacing = (this.config.theme?.letterSpacing as Record<string, string>) || {};
+		const letterSpacing =
+			(this.config.theme?.letterSpacing as Record<string, string>) || {};
 		const value = className.slice("tracking-".length);
 		const letterSpacingValue = letterSpacing[value];
 
@@ -659,7 +810,8 @@ export class TailwindCSSGenerator {
 	}
 
 	private generateShadowCSS(className: string): string | null {
-		const shadows = (this.config.theme?.boxShadow as Record<string, string>) || {};
+		const shadows =
+			(this.config.theme?.boxShadow as Record<string, string>) || {};
 
 		// Handle "shadow" (default)
 		if (className === "shadow") {

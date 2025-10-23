@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getProjectRoot } from "./config.js";
 
@@ -40,7 +40,9 @@ export function buildTemplate(templateName: string): BuildResult {
 	const assetFiles = readdirSync(assetsPath);
 
 	// Find the main JS and CSS files (they typically have hashes)
-	const jsFile = assetFiles.find((f) => f.endsWith(".js") && !f.includes("chunk"));
+	const jsFile = assetFiles.find(
+		(f) => f.endsWith(".js") && !f.includes("chunk"),
+	);
 	const cssFile = assetFiles.find((f) => f.endsWith(".css"));
 
 	if (!jsFile || !cssFile) {

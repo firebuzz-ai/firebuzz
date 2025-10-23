@@ -1,10 +1,11 @@
 "use client";
 
+import { api, type Id, useAction } from "@firebuzz/convex";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
 import { Input } from "@firebuzz/ui/components/ui/input";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { ArrowRight, Sparkles } from "@firebuzz/ui/icons/lucide";
-import { cn } from "@firebuzz/ui/lib/utils";
+import { cn, toast } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormField } from "../form-types";
@@ -27,6 +28,7 @@ const animations = {
 };
 
 interface AIFormGeneratorProps {
+	campaignId: Id<"campaigns">;
 	isVisible: boolean;
 	existingSchema: FormField[];
 	onSchemaUpdate: (
@@ -38,6 +40,7 @@ interface AIFormGeneratorProps {
 }
 
 export const AIFormGenerator = ({
+	campaignId,
 	isVisible,
 	existingSchema,
 	onSchemaUpdate,
@@ -48,28 +51,19 @@ export const AIFormGenerator = ({
 
 	const inputRef = useRef<HTMLInputElement>(null);
 
+	const generateFormSchema = useAction(api.components.agent.generateFormSchema);
+
 	const handleGenerate = useCallback(async () => {
 		if (!prompt.trim()) return;
 
 		setIsGenerating(true);
 		try {
-			const response = await fetch("/api/chat/form/generate-schema", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					prompt: prompt.trim(),
-					existingSchema:
-						existingSchema.length > 0 ? existingSchema : undefined,
-				}),
+			const result = await generateFormSchema({
+				campaignId,
+				prompt: prompt.trim(),
+				existingSchema:
+					existingSchema.length > 0 ? existingSchema : undefined,
 			});
-
-			if (!response.ok) {
-				throw new Error("Failed to generate form schema");
-			}
-
-			const result = await response.json();
 
 			// Update the form schema
 			onSchemaUpdate(
@@ -79,13 +73,19 @@ export const AIFormGenerator = ({
 			);
 
 			setPrompt("");
+			toast.success("Form schema generated successfully!", {
+				id: "form-schema-generated",
+			});
 		} catch (error) {
 			console.error("Error generating form schema:", error);
-			// Add proper error handling (consider using a toast notification)
+			toast.error("Failed to generate form schema", {
+				id: "form-schema-error",
+				description: error instanceof Error ? error.message : "Unknown error occurred",
+			});
 		} finally {
 			setIsGenerating(false);
 		}
-	}, [prompt, existingSchema, onSchemaUpdate]);
+	}, [prompt, existingSchema, campaignId, generateFormSchema, onSchemaUpdate]);
 
 	// Reset prompt when hidden
 	useEffect(() => {

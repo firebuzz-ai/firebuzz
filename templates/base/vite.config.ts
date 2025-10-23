@@ -1,4 +1,5 @@
 import path from "node:path";
+import { firebuzzDesignMode } from "@firebuzz/design-mode";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import terminal from "vite-plugin-terminal";
@@ -7,6 +8,7 @@ import terminal from "vite-plugin-terminal";
 export default defineConfig({
   plugins: [
     react(),
+    firebuzzDesignMode(),
     ...(process.env.NODE_ENV !== "production"
       ? [
           terminal({

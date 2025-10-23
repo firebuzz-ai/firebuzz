@@ -49,7 +49,9 @@ export function createTarball(templateName: string): TarResult {
 		".env.*.local",
 	];
 
-	const excludeArgs = excludes.map((pattern) => `--exclude="${pattern}"`).join(" ");
+	const excludeArgs = excludes
+		.map((pattern) => `--exclude="${pattern}"`)
+		.join(" ");
 
 	// Create tarball
 	const command = `tar -czf "${outputPath}" -C "${templatePath}" ${excludeArgs} .`;
@@ -62,7 +64,10 @@ export function createTarball(templateName: string): TarResult {
 
 	// Get file size
 	const statCommand = `du -k "${outputPath}" | cut -f1`;
-	const sizeKb = Number.parseInt(execSync(statCommand, { encoding: "utf-8" }).trim(), 10);
+	const sizeKb = Number.parseInt(
+		execSync(statCommand, { encoding: "utf-8" }).trim(),
+		10,
+	);
 
 	return {
 		tarPath: outputPath,

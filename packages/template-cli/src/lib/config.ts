@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 export type Environment = "dev" | "preview" | "production";
@@ -25,16 +25,22 @@ function getKvNamespaceId(env: Environment): string {
 	const wranglerContent = readFileSync(wranglerPath, "utf-8");
 
 	// Remove comments from JSONC
-	const jsonContent = wranglerContent.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+	const jsonContent = wranglerContent
+		.replace(/\/\/.*$/gm, "")
+		.replace(/\/\*[\s\S]*?\*\//g, "");
 	const wrangler = JSON.parse(jsonContent);
 
 	if (env === "dev") {
-		const assets = wrangler.kv_namespaces?.find((kv: { binding: string }) => kv.binding === "ASSETS");
+		const assets = wrangler.kv_namespaces?.find(
+			(kv: { binding: string }) => kv.binding === "ASSETS",
+		);
 		return assets?.id;
 	}
 
 	const envConfig = wrangler.env?.[env];
-	const assets = envConfig?.kv_namespaces?.find((kv: { binding: string }) => kv.binding === "ASSETS");
+	const assets = envConfig?.kv_namespaces?.find(
+		(kv: { binding: string }) => kv.binding === "ASSETS",
+	);
 	return assets?.id;
 }
 
@@ -58,7 +64,10 @@ function loadEnvFile(env: Environment): Record<string, string> {
 
 		const [key, ...valueParts] = trimmed.split("=");
 		if (key && valueParts.length > 0) {
-			envVars[key.trim()] = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
+			envVars[key.trim()] = valueParts
+				.join("=")
+				.trim()
+				.replace(/^["']|["']$/g, "");
 		}
 	}
 
@@ -85,7 +94,9 @@ export function getConfig(env: Environment): EnvironmentConfig {
 	let r2AccountId = envVars.CLOUDFLARE_ACCOUNT_ID || "";
 	if (!r2AccountId && envVars.R2_ENDPOINT) {
 		// Extract from format: https://{accountId}.r2.cloudflarestorage.com
-		const match = envVars.R2_ENDPOINT.match(/https:\/\/([a-f0-9]+)\.r2\.cloudflarestorage\.com/);
+		const match = envVars.R2_ENDPOINT.match(
+			/https:\/\/([a-f0-9]+)\.r2\.cloudflarestorage\.com/,
+		);
 		if (match?.[1]) {
 			r2AccountId = match[1];
 		}
@@ -94,8 +105,11 @@ export function getConfig(env: Environment): EnvironmentConfig {
 	// Get R2 public URL based on environment
 	const r2PublicUrls: Record<Environment, string> = {
 		dev: envVars.NEXT_PUBLIC_R2_PUBLIC_URL || "https://cdn-dev.getfirebuzz.com",
-		preview: envVars.NEXT_PUBLIC_R2_PUBLIC_URL || "https://cdn-preview.getfirebuzz.com",
-		production: envVars.NEXT_PUBLIC_R2_PUBLIC_URL || "https://cdn.getfirebuzz.com",
+		preview:
+			envVars.NEXT_PUBLIC_R2_PUBLIC_URL ||
+			"https://cdn-preview.getfirebuzz.com",
+		production:
+			envVars.NEXT_PUBLIC_R2_PUBLIC_URL || "https://cdn.getfirebuzz.com",
 	};
 
 	return {

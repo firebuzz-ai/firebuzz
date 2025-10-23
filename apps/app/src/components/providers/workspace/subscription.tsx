@@ -1,8 +1,8 @@
 "use client";
 
+import { useWorkspace } from "@/hooks/auth/use-workspace";
 import { api, type Doc, useCachedRichQuery } from "@firebuzz/convex";
 import { createContext, useMemo } from "react";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
 
 interface SubscriptionData {
 	subscription:
@@ -78,6 +78,8 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 				? "skip"
 				: { workspaceId: currentWorkspace._id },
 		);
+
+		console.log({creditBalance, isCreditBalancePending, currentWorkspace, customerId: currentWorkspace?.customerId})
 
 	// Current Subcription Item (Plan Item)
 	const currentSubscriptionPlanItem = useMemo(() => {
@@ -236,6 +238,8 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 		interval,
 	};
 
+	console.log({exposed})
+
 	return (
 		<subscriptionContext.Provider value={exposed}>
 			{children}
@@ -243,4 +247,5 @@ const SubscriptionProvider = ({ children }: { children: React.ReactNode }) => {
 	);
 };
 
-export { SubscriptionProvider, subscriptionContext };
+export { subscriptionContext, SubscriptionProvider };
+

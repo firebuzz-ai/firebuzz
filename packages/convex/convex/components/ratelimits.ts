@@ -9,7 +9,7 @@ export const rateLimiter = new RateLimiter(components.rateLimiter, {
 	ingestTokenUsage: { kind: "fixed window", rate: 100, period: SECOND },
 	exaSearchAndCrawl: { kind: "fixed window", rate: 5, period: SECOND },
 	formSubmit: { kind: "fixed window", rate: 5, period: SECOND },
-	analyticsQuery: { kind: "fixed window", rate: 20, period: SECOND },
+	analyticsQuery: { kind: "fixed window", rate: 10, period: SECOND },
 	takeURLSnapshot: { kind: "fixed window", rate: 120, period: MINUTE },
 });
 

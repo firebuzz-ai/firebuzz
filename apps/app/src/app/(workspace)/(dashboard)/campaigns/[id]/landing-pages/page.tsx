@@ -90,7 +90,7 @@ export default function CampaignLandingPagesPage() {
 						<LandingPageCard key={landingPage._id} landingPage={landingPage} />
 					))}
 				</div>
-
+ 
 				{/* Intersection Observer Target */}
 				{status === "CanLoadMore" && (
 					<div ref={loaderRef} className="flex justify-center p-4">

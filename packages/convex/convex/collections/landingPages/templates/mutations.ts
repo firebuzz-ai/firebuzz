@@ -8,8 +8,6 @@ export const createInternal = internalMutationWithTrigger({
 		description: v.string(),
 		thumbnail: v.string(),
 		slug: v.string(),
-		previewUrl: v.string(),
-		files: v.string(),
 		tags: templateTags,
 		key: v.string(),
 	},
@@ -19,10 +17,9 @@ export const createInternal = internalMutationWithTrigger({
 			description: args.description,
 			slug: args.slug,
 			thumbnail: args.thumbnail,
-			previewUrl: args.previewUrl,
 			key: args.key,
 			tags: args.tags,
-			files: args.files,
+			
 		});
 
 		return landingPageTemplate;

@@ -136,21 +136,29 @@ export const ImageList = ({
 		<div className="flex items-center gap-2">
 			<Reorder.Group
 				axis="x"
-				values={images}
-				onReorder={(newOrder) => {
-					if (newOrder[0] !== images[0]) {
-						const hasHistory = checkHasHistory(newOrder[0].key);
+				values={images.map((img) => img.key)}
+				onReorder={(newOrderKeys) => {
+					// Convert keys back to full ImageType objects
+					const newOrder = newOrderKeys
+						.map((key) => images.find((img) => img.key === key))
+						.filter((img): img is ImageType => img !== undefined);
+
+					const firstNewImage = newOrder[0];
+					const firstCurrentImage = images[0];
+
+					if (firstNewImage?.key && firstCurrentImage?.key && firstNewImage.key !== firstCurrentImage.key) {
+						const hasHistory = checkHasHistory(firstNewImage.key);
 						if (hasHistory) {
 							setAIImageModalState((prev) => ({
 								...prev,
 								isMasking: true,
-								selectedImage: newOrder[0],
+								selectedImage: firstNewImage,
 							}));
 						} else {
 							setAIImageModalState((prev) => ({
 								...prev,
 								isMasking: false,
-								selectedImage: newOrder[0],
+								selectedImage: firstNewImage,
 							}));
 						}
 					}

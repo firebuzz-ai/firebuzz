@@ -48,8 +48,6 @@
 		"@types/paper": "^0.12.3",
 		"@uidotdev/usehooks": "^2.4.1",
 		"@uiw/react-codemirror": "^4.23.10",
-		"@webcontainer/api": "1.5.3",
-		"@webcontainer/snapshot": "^0.1.0",
 		"@xyflow/react": "^12.4.4",
 		"ai": "^5.0.60",
 		"canvas": "^3.1.0",

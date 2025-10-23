@@ -1,5 +1,5 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { readFileSync } from "node:fs";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type { EnvironmentConfig } from "./config.js";
 
 /**

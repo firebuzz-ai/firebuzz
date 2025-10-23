@@ -1,8 +1,8 @@
 import path from "node:path";
+import { firebuzzDesignMode } from "@firebuzz/design-mode";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
 import terminal from "vite-plugin-terminal";
-import { firebuzzDesignMode } from "./src/design-mode/vite-plugin-design-mode";
 
 // https://vite.dev/config/
 export default defineConfig({

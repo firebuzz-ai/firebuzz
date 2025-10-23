@@ -60,7 +60,6 @@ const sandboxMonitors = new Map<string, SandboxMonitor>();
 
 const HEALTH_CHECK_INTERVAL = 10000; // 10 seconds
 
-
 /**
  * Notify Convex that a sandbox has closed
  */

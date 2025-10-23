@@ -1,6 +1,17 @@
 "use client";
 
 import {
+	useDesignModeElement,
+	useDesignModeState,
+} from "@/components/providers/agent/design-mode";
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
+import { useLandingChat } from "@/hooks/agent/use-landing-chat";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
+import { useProject } from "@/hooks/auth/use-project";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
+import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
+import {
 	api,
 	useCachedQuery,
 	useMutation,
@@ -47,17 +58,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import { useState } from "react";
 import { type Accept, type FileRejection, useDropzone } from "react-dropzone";
-import {
-	useDesignModeElement,
-	useDesignModeState,
-} from "@/components/providers/agent/design-mode";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
-import { useLandingChat } from "@/hooks/agent/use-landing-chat";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
-import { useProject } from "@/hooks/auth/use-project";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useDocumentsSelectorModal } from "@/hooks/ui/use-documents-selector-modal";
-import { useMediaGalleryModal } from "@/hooks/ui/use-media-gallery-modal";
 import { MODEL_CONFIG } from "../models";
 import { AttachmentPreview } from "./attachment-preview";
 import { ChatNotification } from "./chat-notification";
@@ -402,7 +402,7 @@ ${sanitizedInput}
 	});
 
 	// Check if notification should be shown
-	const CREDIT_LOW_THRESHOLD = 100;
+	const CREDIT_LOW_THRESHOLD = 1;
 	const hasNotification =
 		!isActive ||
 		creditBalance < CREDIT_LOW_THRESHOLD ||

@@ -66,7 +66,10 @@ export async function uploadToKV(
 				throw new Error(`HTTP ${response.status}: ${errorText}`);
 			}
 
-			const result = (await response.json()) as { success: boolean; message?: string };
+			const result = (await response.json()) as {
+				success: boolean;
+				message?: string;
+			};
 			if (!result.success) {
 				throw new Error(result.message || "Upload failed");
 			}

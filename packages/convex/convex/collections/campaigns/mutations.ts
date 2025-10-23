@@ -305,6 +305,7 @@ export const publish = mutationWithTrigger({
 				await ctx.db.patch(id, {
 					status: "preview",
 					previewPublishedAt: new Date().toISOString(),
+					previewFirstPublishedAt: campaign.previewFirstPublishedAt || new Date().toISOString(),
 					urlConfig: {
 						previewUrl,
 					},
@@ -386,6 +387,7 @@ export const publish = mutationWithTrigger({
 				status: "published",
 				isPublished: true,
 				publishedAt: new Date().toISOString(),
+				productionFirstPublishedAt: campaign.productionFirstPublishedAt || new Date().toISOString(),
 				urlConfig: {
 					previewUrl:
 						campaign.urlConfig?.previewUrl ||
@@ -479,6 +481,7 @@ export const publishInternal = internalMutationWithTrigger({
 			if (campaign.status === "published") {
 				await ctx.db.patch(id, {
 					previewPublishedAt: new Date().toISOString(),
+					previewFirstPublishedAt: campaign.previewFirstPublishedAt || new Date().toISOString(),
 					urlConfig: {
 						...campaign.urlConfig,
 						previewUrl,
@@ -564,6 +567,7 @@ export const publishInternal = internalMutationWithTrigger({
 				status: "published",
 				isPublished: true,
 				publishedAt: new Date().toISOString(),
+				productionFirstPublishedAt: campaign.productionFirstPublishedAt || new Date().toISOString(),
 				urlConfig: {
 					previewUrl:
 						campaign.urlConfig?.previewUrl ||
