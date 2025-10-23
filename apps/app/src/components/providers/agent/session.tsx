@@ -1,22 +1,22 @@
 "use client";
 
 import {
-	api,
-	type Doc,
-	type Id,
-	useCachedRichQuery,
-	useMutation,
+    api,
+    type Doc,
+    type Id,
+    useCachedRichQuery,
+    useMutation,
 } from "@firebuzz/convex";
 import {
-	createContext,
-	type ReactNode,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
+    createContext,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from "react";
-import { SessionExpiryDialog } from "../../chat-v2/session-expiry-dialog";
+import { SessionExpiryDialog } from "../../chat/session-expiry-dialog";
 
 type AgentSessionProviderProps =
 	| {

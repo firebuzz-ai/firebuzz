@@ -18,7 +18,6 @@ export interface ParsedClasses {
 	// Colors
 	textColor?: string;
 	backgroundColor?: string;
-	borderColor?: string;
 
 	// Layout
 	display?: string;
@@ -442,7 +441,10 @@ export function updateClassName(
 
 		// Add new class if it's not empty
 		if (value && value !== "") {
-			if (category === "margin") {
+			// Handle array values (for "other" category)
+			if (Array.isArray(value)) {
+				classes.push(...value);
+			} else if (category === "margin") {
 				classes.push(`m-${value}`);
 			} else if (category === "marginX") {
 				classes.push(`mx-${value}`);

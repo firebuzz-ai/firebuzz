@@ -35,13 +35,13 @@ import {
 	WindowsIcon,
 	YouTubeIcon,
 } from "@firebuzz/ui/icons/social";
-// @ts-expect-error
-import { countriesAndLanguages, TIMEZONES } from "@firebuzz/utils";
+
 import type {
 	FilterOperator,
 	RuleTypeDefinition,
 	RuleTypeId,
 } from "@/components/canvas/campaign/nodes/campaign/types";
+import { countriesAndLanguages, TIMEZONES } from "@firebuzz/utils";
 
 // Helper functions to get countries and languages
 const getCountryOptions = () => {

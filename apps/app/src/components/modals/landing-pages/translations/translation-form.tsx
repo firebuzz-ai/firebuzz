@@ -50,7 +50,7 @@ export const TranslationForm = ({
 	const [isLoading, setIsLoading] = useState(false);
 
 	// Fetch original landing page to get campaignId for redirect
-	const { data: originalLandingPage } = useCachedQuery(
+	const originalLandingPage = useCachedQuery(
 		api.collections.landingPages.queries.getById,
 		{ id: originalLandingPageId },
 	);

@@ -12,13 +12,13 @@ import {
 	DialogTitle,
 } from "@firebuzz/ui/components/ui/dialog";
 import { GalleryHorizontal, Layers2, Palette } from "@firebuzz/ui/icons/lucide";
+import { useEffect, useMemo } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import { useColorSelectorModal } from "@/hooks/ui/use-color-selector-modal";
 import { CustomColorPicker } from "./custom";
 import { ColorLibrary } from "./library";
 import { SystemColors } from "./system";
 import { ThemeColors } from "./themes";
-import { useMemo, useEffect } from "react";
 
 const ALL_TABS: TabItem[] = [
 	{

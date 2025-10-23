@@ -174,7 +174,9 @@ export const LandingPageForm = ({
 			onSuccess?.();
 
 			// Redirect to the landing page editor
-			router.push(`/assets/pages-v2/${data.campaignId}/${landingPageId}`);
+			router.push(
+				`/campaigns/${data.campaignId}/landing-pages/${landingPageId}`,
+			);
 		} catch (error) {
 			console.error("Error creating landing page:", error);
 			toast.error("Failed to create landing page", {

@@ -1,14 +1,14 @@
 "use client";
 
-import type { Id } from "@firebuzz/convex/nextjs";
-import { Chatbox } from "@/components/chat-v2/chatbox/chatbox";
-import { AgentNavbar } from "@/components/chat-v2/navigation/navbar";
-import { PreviewTabs } from "@/components/chat-v2/preview/landing-page/tabs";
-import { useChatTabs } from "@/components/chat-v2/providers/chat-tabs-provider";
-import { VersionHistory } from "@/components/chat-v2/version-history/version-history";
+import { Chatbox } from "@/components/chat/chatbox/chatbox";
+import { AgentNavbar } from "@/components/chat/navigation/navbar";
+import { PreviewTabs } from "@/components/chat/preview/landing-page/tabs";
+import { useChatTabs } from "@/components/chat/providers/chat-tabs-provider";
+import { VersionHistory } from "@/components/chat/version-history/version-history";
 import { ChatLayout } from "@/components/layouts/two-panels-agent/panels/chat-layout";
 import { PreviewLayout } from "@/components/layouts/two-panels-agent/panels/preview-layout";
 import { useTwoPanelsAgentLayout } from "@/hooks/ui/use-two-panels-agent-layout";
+import type { Id } from "@firebuzz/convex/nextjs";
 
 export const DesktopLayout = ({
 	landingPageId,

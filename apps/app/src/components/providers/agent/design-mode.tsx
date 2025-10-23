@@ -15,6 +15,8 @@ import {
 	useRef,
 } from "react";
 import type { ThemeFormType } from "@/app/(workspace)/(dashboard)/brand/themes/_components/theme/form";
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
+import { useSandbox } from "@/hooks/agent/use-sandbox";
 import {
 	findNodeByLocation,
 	generateCodeFromAST,
@@ -24,12 +26,7 @@ import {
 	updateNodeTextContent,
 } from "@/lib/design-mode/ast-utils";
 import { systemColorsManager } from "@/lib/design-mode/system-colors";
-import {
-	getCategoryForColor,
-	getDescriptionForColor,
-} from "@/lib/theme/utils";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
-import { useSandbox } from "@/hooks/agent/use-sandbox";
+import { getCategoryForColor, getDescriptionForColor } from "@/lib/theme/utils";
 
 // ============= TYPES =============
 
@@ -70,13 +67,6 @@ interface ThemeState {
 	currentTheme: ThemeFormType | null;
 	initialTheme: ThemeFormType | null;
 	error: string | null;
-}
-
-interface DesignModeState {
-	isActive: boolean;
-	themeState: ThemeState;
-	selectedElement?: SelectedElement;
-	pendingChanges: PendingElementChange[];
 }
 
 // ============= THEME CONTEXT =============
@@ -175,10 +165,10 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 		>
 	>(new Map());
 
-	const updateTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
 	const hasRestoredDesignModeRef = useRef(false);
-	const lastSentUpdateRef = useRef<Map<string, string>>(new Map());
 	const isDeselectingRef = useRef(false);
+	const _updateTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+	const lastSentUpdateRef = useRef<Map<string, string>>(new Map());
 
 	// ============= QUERIES =============
 
@@ -333,6 +323,7 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 				];
 			}
 
+			// Update selected element with new values (for UI consistency)
 			const updatedSelectedElement = currentState.selectedElement
 				? {
 						...currentState.selectedElement,
@@ -465,7 +456,12 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 				"*",
 			);
 		}
-	}, [session?._id, enableDesignModeMutation, iframeRef, isPreviewIframeLoaded]);
+	}, [
+		session?._id,
+		enableDesignModeMutation,
+		iframeRef,
+		isPreviewIframeLoaded,
+	]);
 
 	const disableDesignMode = useCallback(async () => {
 		if (!session?._id) {
@@ -478,10 +474,6 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 		const hasPendingChanges = totalChangeCount > 0;
 
 		astCache.current.clear();
-		for (const timer of updateTimersRef.current.values()) {
-			clearTimeout(timer);
-		}
-		updateTimersRef.current.clear();
 
 		await disableDesignModeMutation({ sessionId: session._id });
 		await setActiveTabMutation({ sessionId: session._id, activeTab: "chat" });
@@ -576,10 +568,6 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 		);
 
 		astCache.current.clear();
-		for (const timer of updateTimersRef.current.values()) {
-			clearTimeout(timer);
-		}
-		updateTimersRef.current.clear();
 
 		await disableDesignModeMutation({ sessionId: session._id });
 		await setActiveTabMutation({ sessionId: session._id, activeTab: "chat" });
@@ -618,22 +606,7 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 		try {
 			console.log("[DesignModeProvider] Applying changes...");
 
-			// Flush pending debounced updates
-			for (const [elementId, timer] of updateTimersRef.current.entries()) {
-				clearTimeout(timer);
-				const updates = designModeState?.pendingChanges?.find(
-					(c) => c.elementId === elementId,
-				)?.updates;
-				if (updates) {
-					await updateElementOptimisticMutation({
-						sessionId: session._id,
-						changeId: elementId,
-						elementId,
-						updates,
-					});
-				}
-			}
-			updateTimersRef.current.clear();
+			// No need to flush pending updates - they're already in Convex via optimistic updates
 
 			let elementFiles:
 				| Array<{ filePath: string; content: string }>
@@ -807,7 +780,11 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 											element[attrName as keyof typeof element] || "";
 
 										if (currentValue !== originalValue) {
-											updateNodeAttribute(nodePath, attrName, currentValue);
+											updateNodeAttribute(
+												nodePath,
+												attrName,
+												String(currentValue),
+											);
 											hasChanges = true;
 										}
 									}
@@ -898,7 +875,6 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 		designModeState?.pendingChanges,
 		saveDesignModeChangesAction,
 		getOrLoadAST,
-		updateElementOptimisticMutation,
 		disableDesignModeMutation,
 		setActiveTabMutation,
 	]);
@@ -921,8 +897,6 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 			} | null,
 		) => {
 			if (!session?._id) return;
-
-			lastSentUpdateRef.current.clear();
 
 			// Send deselect message to iframe BEFORE mutation to prevent race condition
 			if (!data && iframeRef.current?.contentWindow && isPreviewIframeLoaded) {
@@ -997,10 +971,12 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 								t.isJSXIdentifier(attr.name) &&
 								attr.name.name === "alt",
 						);
-						isImageEditable =
+						isImageEditable = Boolean(
 							(!srcAttr ||
 								(srcAttr.value && t.isStringLiteral(srcAttr.value))) &&
-							(!altAttr || (altAttr.value && t.isStringLiteral(altAttr.value)));
+								(!altAttr ||
+									(altAttr.value && t.isStringLiteral(altAttr.value))),
+						);
 
 						const hrefAttr = nodePath.node.openingElement.attributes.find(
 							(
@@ -1026,15 +1002,20 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 								t.isJSXIdentifier(attr.name) &&
 								attr.name.name === "rel",
 						);
-						isLinkEditable =
+						isLinkEditable = Boolean(
 							(!hrefAttr ||
 								(hrefAttr.value && t.isStringLiteral(hrefAttr.value))) &&
-							(!targetAttr ||
-								(targetAttr.value && t.isStringLiteral(targetAttr.value))) &&
-							(!relAttr || (relAttr.value && t.isStringLiteral(relAttr.value)));
+								(!targetAttr ||
+									(targetAttr.value && t.isStringLiteral(targetAttr.value))) &&
+								(!relAttr ||
+									(relAttr.value && t.isStringLiteral(relAttr.value))),
+						);
 					}
 				} catch (error) {
-					console.error("[DesignModeProvider] Error checking editability:", error);
+					console.error(
+						"[DesignModeProvider] Error checking editability:",
+						error,
+					);
 				}
 			}
 
@@ -1098,6 +1079,7 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 				const [filePath, line, column] = parseElementId(elementId);
 				const changeId = elementId;
 
+				// Duplicate detection - avoid redundant updates
 				const updateKey = JSON.stringify(updates);
 				const lastUpdate = lastSentUpdateRef.current.get(elementId);
 
@@ -1105,13 +1087,9 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 					return;
 				}
 
-				console.log(
-					`[DesignModeProvider] Updating element at ${filePath}:${line}:${column}`,
-					updates,
-				);
-
 				lastSentUpdateRef.current.set(elementId, updateKey);
 
+				// Send immediate visual update to iframe (no lag)
 				if (iframeRef.current?.contentWindow && isPreviewIframeLoaded) {
 					iframeRef.current.contentWindow.postMessage(
 						{
@@ -1125,30 +1103,20 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 					);
 				}
 
-				const existingTimer = updateTimersRef.current.get(elementId);
-				if (existingTimer) {
-					clearTimeout(existingTimer);
+				// Call optimistic mutation immediately (no debounce)
+				try {
+					await updateElementOptimisticMutation({
+						sessionId: session._id,
+						changeId,
+						elementId,
+						updates,
+					});
+				} catch (error) {
+					console.error(
+						"[DesignModeProvider] Error saving element update:",
+						error,
+					);
 				}
-
-				const timer = setTimeout(async () => {
-					try {
-						await updateElementOptimisticMutation({
-							sessionId: session._id,
-							changeId,
-							elementId,
-							updates,
-						});
-
-						updateTimersRef.current.delete(elementId);
-					} catch (error) {
-						console.error(
-							"[DesignModeProvider] Error saving element update:",
-							error,
-						);
-					}
-				}, 300);
-
-				updateTimersRef.current.set(elementId, timer);
 			} catch (error) {
 				console.error("[DesignModeProvider] Error updating element:", error);
 			}
@@ -1328,7 +1296,12 @@ export const DesignModeProvider = ({ children }: { children: ReactNode }) => {
 			updateTheme,
 			getSystemColors,
 		}),
-		[designModeState?.themeState, hasThemeChanges, updateTheme, getSystemColors],
+		[
+			designModeState?.themeState,
+			hasThemeChanges,
+			updateTheme,
+			getSystemColors,
+		],
 	);
 
 	const elementContextValue = useMemo<ElementContextValue>(

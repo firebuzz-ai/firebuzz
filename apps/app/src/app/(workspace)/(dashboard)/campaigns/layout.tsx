@@ -1,7 +1,7 @@
 "use client";
 
-import { CampaignTopbar } from "@/components/navigation/campaign/topbar";
 import { useParams } from "next/navigation";
+import { CampaignTopbar } from "@/components/navigation/campaign/topbar";
 
 export default function CampaignLayout({
 	children,

@@ -1,6 +1,5 @@
 "use client";
 
-import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import type { Id } from "@firebuzz/convex";
 import { api, useStablePaginatedQuery } from "@firebuzz/convex";
 import { Button } from "@firebuzz/ui/components/ui/button";
@@ -9,6 +8,7 @@ import { Spinner } from "@firebuzz/ui/components/ui/spinner";
 import { Plus } from "@firebuzz/ui/icons/lucide";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useNewLandingPageModal } from "@/hooks/ui/use-new-landing-page-modal";
 import { LandingPageCard } from "./_components/landing-page-card";
 
 export default function CampaignLandingPagesPage() {

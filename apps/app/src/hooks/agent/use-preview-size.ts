@@ -1,5 +1,5 @@
+import { previewSizeContext } from "@/components/chat/providers/preview-size-provider";
 import { useContext } from "react";
-import { previewSizeContext } from "@/components/chat-v2/providers/preview-size-provider";
 
 export const usePreviewSize = () => {
 	const context = useContext(previewSizeContext);

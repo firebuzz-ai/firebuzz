@@ -1,7 +1,7 @@
-import { ChatTabsProvider } from "@/components/chat-v2/providers/chat-tabs-provider";
-import { LandingPageProvider } from "@/components/chat-v2/providers/landing-page-provider";
-import { PreviewSizeProvider } from "@/components/chat-v2/providers/preview-size-provider";
-import { PreviewTabsProvider } from "@/components/chat-v2/providers/preview-tabs-provider";
+import { ChatTabsProvider } from "@/components/chat/providers/chat-tabs-provider";
+import { LandingPageProvider } from "@/components/chat/providers/landing-page-provider";
+import { PreviewSizeProvider } from "@/components/chat/providers/preview-size-provider";
+import { PreviewTabsProvider } from "@/components/chat/providers/preview-tabs-provider";
 import { TwoPanelsAgentProvider } from "@/components/layouts/two-panels-agent/provider";
 import { AttachmentPreviewModal } from "@/components/modals/attachment/preview-modal";
 import { DocumentsSelectorModal } from "@/components/modals/documents/selector/modal";
