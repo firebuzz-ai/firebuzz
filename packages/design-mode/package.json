@@ -1,6 +1,6 @@
 {
 	"name": "@firebuzz/design-mode",
-	"version": "0.1.5",
+	"version": "0.2.1",
 	"description": "Design mode overlay and utilities for Firebuzz landing page templates",
 	"author": "Firebuzz Team",
 	"license": "MIT",
@@ -40,9 +40,6 @@
 		"@types/node": "^22.0.0",
 		"tsup": "^8.0.0",
 		"typescript": "^5.7.2"
-	},
-	"dependencies": {
-		"esbuild": "^0.25.11"
 	},
 	"keywords": [
 		"design-mode",

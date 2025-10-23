@@ -1,0 +1,58 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE session_hourly_aggregated
+DESCRIPTION >
+    Materializes session data with key metrics aggregated by hour with all dimensions for analytics queries
+
+SQL >
+    SELECT
+        toStartOfHour(timestamp) AS hour,
+        workspace_id,
+        project_id,
+        campaign_id,
+        environment,
+        campaign_environment,
+        coalesce(nullIf(device_type, ''), 'Unknown') AS device_type,
+        coalesce(nullIf(country, ''), 'Unknown') AS country,
+        coalesce(nullIf(city, ''), 'Unknown') AS city,
+        coalesce(nullIf(utm_source, ''), 'Direct') AS utm_source,
+        coalesce(nullIf(utm_medium, ''), 'Direct') AS utm_medium,
+        coalesce(nullIf(utm_campaign, ''), 'Direct') AS utm_campaign,
+        coalesce(nullIf(referrer, ''), 'Direct') AS referrer,
+        coalesce(nullIf(source, ''), 'Direct') AS source,
+        coalesce(nullIf(ref, ''), 'Direct') AS ref,
+        coalesce(nullIf(landing_page_id, ''), 'Unknown') AS landing_page_id,
+        coalesce(nullIf(browser, ''), 'Unknown') AS browser,
+        coalesce(nullIf(device_os, ''), 'Unknown') AS device_os,
+        countState() AS session_count,
+        countIfState(is_returning = 0) AS new_sessions,
+        countIfState(is_returning = 1) AS returning_sessions,
+        uniqState(user_id) AS unique_users,
+        countIfState(is_mobile = 1) AS mobile_sessions,
+        countIfState(is_mobile = 0) AS desktop_sessions,
+        countIfState(notEmpty(coalesce(ab_test_id, ''))) AS ab_test_sessions,
+        countIfState(notEmpty(coalesce(segment_id, ''))) AS segment_sessions
+    FROM session_v1
+    GROUP BY
+        hour,
+        workspace_id,
+        project_id,
+        campaign_id,
+        environment,
+        campaign_environment,
+        device_type,
+        country,
+        city,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        referrer,
+        source,
+        ref,
+        landing_page_id,
+        browser,
+        device_os
+
+TYPE MATERIALIZED
+DATASOURCE sessions_hourly_mv

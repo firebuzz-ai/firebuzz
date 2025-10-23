@@ -1,6 +1,5 @@
 "use client";
 
-import { useLandingPagePreviewModal } from "@/hooks/ui/use-landing-page-preview-modal";
 import type { Doc } from "@firebuzz/convex";
 import {
 	Avatar,
@@ -14,6 +13,7 @@ import { Languages } from "@firebuzz/ui/icons/lucide";
 import { capitalizeFirstLetter } from "@firebuzz/utils";
 import { formatDistanceToNow } from "date-fns";
 import Image from "next/image";
+import { useLandingPagePreviewModal } from "@/hooks/ui/use-landing-page-preview-modal";
 
 const NEXT_PUBLIC_R2_PUBLIC_URL = process.env.NEXT_PUBLIC_R2_PUBLIC_URL || "";
 

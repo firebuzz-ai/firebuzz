@@ -1,21 +1,21 @@
 "use client";
 
-import type { PreviewTab } from "@/components/chat/providers/preview-tabs-provider";
-import { usePreviewTabs } from "@/hooks/agent/use-preview-tabs";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
 } from "@firebuzz/ui/components/ui/tooltip";
 import {
-    BarChart,
-    Gauge,
-    Globe,
-    Search,
-    Tags,
+	BarChart,
+	Gauge,
+	Globe,
+	Search,
+	Tags,
 } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import * as React from "react";
+import type { PreviewTab } from "@/components/chat/providers/preview-tabs-provider";
+import { usePreviewTabs } from "@/hooks/agent/use-preview-tabs";
 
 const tabs = [
 	{ id: "preview" as PreviewTab, label: "Preview", icon: Globe },

@@ -16,6 +16,8 @@ export const NewLandingPageModal = () => {
 	const isCreate = state?.createLandingPage ?? false;
 	const isOpen = isCreate;
 
+	console.log("NewLandingPageModal state:", state, "isOpen:", isOpen);
+
 	return (
 		<Dialog
 			open={isOpen}
@@ -41,6 +43,7 @@ export const NewLandingPageModal = () => {
 				<LandingPageForm
 					onSuccess={closeModal}
 					defaultCampaignId={state?.campaignId}
+					defaultTemplateId={state?.templateId}
 				/>
 			</DialogContent>
 		</Dialog>

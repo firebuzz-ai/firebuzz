@@ -1,22 +1,17 @@
 "use client";
 
-import { Presence } from "@/components/presence/presence";
 import type { Id } from "@firebuzz/convex";
 import {
 	AnimatedTabs,
 	type TabItem,
 } from "@firebuzz/ui/components/ui/animated-tabs";
 import { Separator } from "@firebuzz/ui/components/ui/separator";
-import {
-	ChartBar,
-	Database,
-	Table,
-	Workflow
-} from "@firebuzz/ui/icons/lucide";
-import { IconAppWindowFilled } from "@firebuzz/ui/icons/tabler";
+import { ChartBar, Database, Table, Workflow } from "@firebuzz/ui/icons/lucide";
+import { IconDiamonds } from "@firebuzz/ui/icons/tabler";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
+import { Presence } from "@/components/presence/presence";
 import { CampaignStatusButton } from "./campaign-status-button";
 
 interface CampaignTabsProps {
@@ -33,7 +28,7 @@ const TABS: TabItem[] = [
 	{
 		value: "landing-pages",
 		href: "/landing-pages",
-		icon: IconAppWindowFilled,
+		icon: IconDiamonds,
 		label: "Landing Pages",
 	},
 	{

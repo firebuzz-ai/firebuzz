@@ -1,0 +1,29 @@
+import path from "node:path";
+import { firebuzzDesignMode } from "@firebuzz/design-mode";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+import terminal from "vite-plugin-terminal";
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    firebuzzDesignMode(),
+    ...(process.env.NODE_ENV !== "production"
+      ? [
+          terminal({
+            console: "terminal",
+          }),
+        ]
+      : []),
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+    extensions: [".js", ".jsx", ".ts", ".tsx", ".json"],
+  },
+  server: {
+    allowedHosts: [".vercel.run"],
+  },
+});

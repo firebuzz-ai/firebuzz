@@ -146,7 +146,11 @@ export const ImageList = ({
 					const firstNewImage = newOrder[0];
 					const firstCurrentImage = images[0];
 
-					if (firstNewImage?.key && firstCurrentImage?.key && firstNewImage.key !== firstCurrentImage.key) {
+					if (
+						firstNewImage?.key &&
+						firstCurrentImage?.key &&
+						firstNewImage.key !== firstCurrentImage.key
+					) {
 						const hasHistory = checkHasHistory(firstNewImage.key);
 						if (hasHistory) {
 							setAIImageModalState((prev) => ({

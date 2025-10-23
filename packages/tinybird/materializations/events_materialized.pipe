@@ -1,0 +1,59 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+NODE events_hourly_aggregated
+DESCRIPTION >
+    Materializes event data with key metrics aggregated by hour with all dimensions for analytics queries
+
+SQL >
+    SELECT
+        toStartOfHour(e.timestamp) AS hour,
+        e.workspace_id,
+        e.project_id,
+        e.campaign_id,
+        e.environment,
+        e.campaign_environment,
+        e.event_id,
+        e.event_type,
+        coalesce(nullIf(s.device_type, ''), 'Unknown') AS device_type,
+        coalesce(nullIf(s.country, ''), 'Unknown') AS country,
+        coalesce(nullIf(s.city, ''), 'Unknown') AS city,
+        coalesce(nullIf(s.utm_source, ''), 'Direct') AS utm_source,
+        coalesce(nullIf(s.utm_medium, ''), 'Direct') AS utm_medium,
+        coalesce(nullIf(s.utm_campaign, ''), 'Direct') AS utm_campaign,
+        coalesce(nullIf(s.referrer, ''), 'Direct') AS referrer,
+        coalesce(nullIf(s.source, ''), 'Direct') AS source,
+        coalesce(nullIf(e.landing_page_id, ''), 'Unknown') AS landing_page_id,
+        coalesce(nullIf(s.browser, ''), 'Unknown') AS browser,
+        coalesce(nullIf(s.device_os, ''), 'Unknown') AS device_os,
+        countState() AS event_count,
+        uniqState(e.session_id) AS unique_sessions,
+        uniqState(e.user_id) AS unique_users,
+        sumState(if(e.event_value_currency = 'USD', e.event_value, 0)) AS total_value_usd,
+        countState(if(e.event_id = 'page-unload', 1, NULL)) AS page_unload_count,
+        sumState(coalesce(e.time_on_page, 0)) AS total_time_on_page
+    FROM events_v1 e
+    LEFT JOIN session_v1 s ON e.session_id = s.session_id
+    GROUP BY
+        hour,
+        e.workspace_id,
+        e.project_id,
+        e.campaign_id,
+        e.environment,
+        e.campaign_environment,
+        e.event_id,
+        e.event_type,
+        device_type,
+        country,
+        city,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+        referrer,
+        source,
+        landing_page_id,
+        browser,
+        device_os
+
+TYPE MATERIALIZED
+DATASOURCE events_aggregated_mv

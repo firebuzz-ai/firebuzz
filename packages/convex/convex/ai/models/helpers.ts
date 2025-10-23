@@ -148,7 +148,7 @@ export const openRouterSettings = {
 	},
 	usage: {
 		include: true,
-	}
+	},
 };
 
 export const getModel = (model: Model) => {

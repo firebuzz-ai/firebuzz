@@ -1,29 +1,29 @@
 "use client";
 
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupButton,
+	InputGroupInput,
+} from "@firebuzz/ui/components/ui/input-group";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@firebuzz/ui/components/ui/tooltip";
+import {
+	ExternalLink,
+	Monitor,
+	PlayCircle,
+	RefreshCw,
+	Smartphone,
+	Tablet,
+} from "@firebuzz/ui/icons/lucide";
 import type { PreviewSize } from "@/components/chat/providers/preview-size-provider";
 import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import { usePreviewSize } from "@/hooks/agent/use-preview-size";
 import { usePreviewTabs } from "@/hooks/agent/use-preview-tabs";
 import { useSandbox } from "@/hooks/agent/use-sandbox";
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupButton,
-    InputGroupInput,
-} from "@firebuzz/ui/components/ui/input-group";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from "@firebuzz/ui/components/ui/tooltip";
-import {
-    ExternalLink,
-    Monitor,
-    PlayCircle,
-    RefreshCw,
-    Smartphone,
-    Tablet,
-} from "@firebuzz/ui/icons/lucide";
 
 const sizeIcons = {
 	desktop: Monitor,

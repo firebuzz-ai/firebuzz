@@ -793,9 +793,13 @@ interface UploadImageToCDNToolResult {
 }
 
 export const getUploadImageToCDNTool = ({
-	sessionId,
+	workspaceId,
+	userId,
+	projectId,
 }: {
-	sessionId: Id<"agentSessions">;
+	workspaceId: Id<"workspaces">;
+	userId: Id<"users">;
+	projectId: Id<"projects">;
 }) => {
 	const tool = createTool({
 		description:
@@ -819,7 +823,9 @@ export const getUploadImageToCDNTool = ({
 				internal.components.r2.uploadImageToCDN,
 				{
 					url: args.url,
-					sessionId,
+					workspaceId,
+					projectId,
+					userId,
 					filename: args.filename,
 				},
 			);
@@ -878,28 +884,30 @@ export const getGenerateImageTool = ({
 				.describe(
 					"AI model to use: 'nano-banana' (fast, default), 'imagen4-fast' (realistic, better quality), 'imagen4-ultra' (best quality, slowest). Use imagen4 models for realistic images or when user requests better quality.",
 				),
-			width: z
-				.number()
-				.min(256)
-				.max(2048)
-				.default(1024)
-				.optional()
-				.describe("Image width in pixels (default: 1024)"),
-			height: z
-				.number()
-				.min(256)
-				.max(2048)
-				.default(1024)
-				.optional()
-				.describe("Image height in pixels (default: 1024)"),
-			guidanceScale: z
-				.number()
-				.min(1)
-				.max(20)
-				.default(7.5)
+			aspectRatio: z
+				.enum([
+					"1:1",
+					"16:9",
+					"9:16",
+					"3:4",
+					"4:3",
+					"3:2",
+					"2:3",
+					"21:9",
+					"5:4",
+					"4:5",
+				])
+				.default("1:1")
 				.optional()
 				.describe(
-					"How closely to follow the prompt (1-20, default: 7.5). Higher values follow prompt more strictly.",
+					"Aspect ratio of the generated image (default: '1:1'). Common options: '1:1' (square), '16:9' (landscape), '9:16' (portrait), '3:4' (portrait), '4:3' (landscape)",
+				),
+			resolution: z
+				.enum(["1K", "2K"])
+				.default("1K")
+				.optional()
+				.describe(
+					"Resolution quality for imagen4 models only (default: '1K'). Higher resolution generates larger, more detailed images but costs more credits. Ignored for nano-banana model.",
 				),
 		}),
 		handler: async (ctx, args): Promise<GenerateImageToolResult> => {
@@ -907,11 +915,8 @@ export const getGenerateImageTool = ({
 				const result = await ctx.runAction(internal.lib.fal.generateImage, {
 					prompt: args.prompt,
 					model: args.model,
-					imageSize: {
-						width: args.width || 1024,
-						height: args.height || 1024,
-					},
-					guidanceScale: args.guidanceScale,
+					aspectRatio: args.aspectRatio,
+					resolution: args.resolution,
 					workspaceId,
 					sessionId,
 					userId,

@@ -94,7 +94,9 @@ export function tools(
 			sessionId,
 		}),
 		uploadImageToCDN: getUploadImageToCDNTool({
-			sessionId,
+			workspaceId,
+			userId,
+			projectId,
 		}),
 		generateImage: getGenerateImageTool({
 			sessionId,

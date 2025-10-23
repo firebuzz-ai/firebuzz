@@ -1,0 +1,37 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+DESCRIPTION >
+    Aggregated session data by hour with all dimensions for faster analytics queries
+
+SCHEMA >
+    `hour` DateTime,
+    `workspace_id` String,
+    `project_id` String,
+    `campaign_id` String,
+    `environment` LowCardinality(String),
+    `campaign_environment` LowCardinality(String),
+    `device_type` LowCardinality(String),
+    `country` LowCardinality(String),
+    `city` String,
+    `utm_source` String,
+    `utm_medium` String,
+    `utm_campaign` String,
+    `referrer` String,
+    `source` String,
+    `ref` String,
+    `landing_page_id` String,
+    `browser` LowCardinality(String),
+    `device_os` LowCardinality(String),
+    `session_count` AggregateFunction(count),
+    `new_sessions` AggregateFunction(countIf, UInt8),
+    `returning_sessions` AggregateFunction(countIf, UInt8),
+    `unique_users` AggregateFunction(uniq, String),
+    `mobile_sessions` AggregateFunction(countIf, UInt8),
+    `desktop_sessions` AggregateFunction(countIf, UInt8),
+    `ab_test_sessions` AggregateFunction(countIf, UInt8),
+    `segment_sessions` AggregateFunction(countIf, UInt8)
+
+ENGINE "AggregatingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(hour)"
+ENGINE_SORTING_KEY "workspace_id, project_id, campaign_id, environment, campaign_environment, hour, device_type, country"

@@ -61,8 +61,7 @@ export const AIFormGenerator = ({
 			const result = await generateFormSchema({
 				campaignId,
 				prompt: prompt.trim(),
-				existingSchema:
-					existingSchema.length > 0 ? existingSchema : undefined,
+				existingSchema: existingSchema.length > 0 ? existingSchema : undefined,
 			});
 
 			// Update the form schema
@@ -80,7 +79,8 @@ export const AIFormGenerator = ({
 			console.error("Error generating form schema:", error);
 			toast.error("Failed to generate form schema", {
 				id: "form-schema-error",
-				description: error instanceof Error ? error.message : "Unknown error occurred",
+				description:
+					error instanceof Error ? error.message : "Unknown error occurred",
 			});
 		} finally {
 			setIsGenerating(false);

@@ -47,6 +47,7 @@ export function createTarball(templateName: string): TarResult {
 		"coverage",
 		".env.local",
 		".env.*.local",
+		"src/design-mode/tailwind.config.json", // Exclude 178KB config - served from KV instead
 	];
 
 	const excludeArgs = excludes

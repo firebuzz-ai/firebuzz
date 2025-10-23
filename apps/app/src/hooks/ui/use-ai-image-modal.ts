@@ -10,7 +10,7 @@ export type AspectRatio =
 	| "3:4"
 	| "3:2"
 	| "2:3";
-export type ImageQuality = "low" | "medium" | "high";
+export type ImageQuality = "1K" | "2K";
 export type BrushSize = "sm" | "md" | "lg" | "xl";
 export type GeneratedImage = {
 	name: string;
@@ -44,7 +44,7 @@ export const aiImageModalAtom = atomWithReset<{
 	images: [],
 	generations: [],
 	selectedImage: undefined,
-	selectedImageQuality: "medium",
+	selectedImageQuality: "1K",
 	selectedImageAspectRatio: "1:1",
 	selectedImagePrompt: "",
 	isMasking: false,

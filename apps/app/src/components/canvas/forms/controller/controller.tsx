@@ -35,7 +35,11 @@ type ControllerProps = Omit<PanelProps, "children"> & {
 	campaignId: Id<"campaigns">;
 };
 
-export function Controller({ campaignId, className, ...props }: ControllerProps) {
+export function Controller({
+	campaignId,
+	className,
+	...props
+}: ControllerProps) {
 	const { zoom } = useViewport();
 	const { zoomTo, zoomIn, zoomOut, fitView, updateNodeData } = useReactFlow();
 	const { mode, setMode, isGeneratingSchema, setIsGeneratingSchema } =

@@ -1,11 +1,5 @@
 "use client";
 
-import { ManageProjectsModal } from "@/components/modals/subscription/manage-projects/modal";
-import { ManageSeatsModal } from "@/components/modals/subscription/manage-seats/modal";
-import { useSubscription } from "@/hooks/auth/use-subscription";
-import { useUser } from "@/hooks/auth/use-user";
-import { useManageProjects } from "@/hooks/ui/use-manage-projects";
-import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 import { Badge } from "@firebuzz/ui/components/ui/badge";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Card, CardContent } from "@firebuzz/ui/components/ui/card";
@@ -23,6 +17,12 @@ import {
 } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useCallback, useMemo } from "react";
+import { ManageProjectsModal } from "@/components/modals/subscription/manage-projects/modal";
+import { ManageSeatsModal } from "@/components/modals/subscription/manage-seats/modal";
+import { useSubscription } from "@/hooks/auth/use-subscription";
+import { useUser } from "@/hooks/auth/use-user";
+import { useManageProjects } from "@/hooks/ui/use-manage-projects";
+import { useManageSeats } from "@/hooks/ui/use-manage-seats";
 
 export const AddOns = () => {
 	const { subscription, isLoading, isCancellingAtPeriodEnd } =

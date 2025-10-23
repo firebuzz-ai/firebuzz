@@ -85,8 +85,6 @@ export const getCurrent = query({
 	},
 });
 
-
-
 export const getByIdInternal = internalQuery({
 	args: {
 		id: v.id("landingPageVersions"),

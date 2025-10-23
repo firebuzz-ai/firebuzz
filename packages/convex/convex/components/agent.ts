@@ -1,11 +1,11 @@
 import {
-	abortStream,
 	Agent,
+	type StreamArgs,
+	abortStream,
 	createThread,
 	listMessages,
 	listStreams,
 	saveMessage,
-	type StreamArgs,
 	syncStreams,
 	toUIMessages,
 	vStreamArgs,
@@ -13,18 +13,17 @@ import {
 import type { GenerateObjectResult, LanguageModel } from "ai";
 import { paginationOptsValidator } from "convex/server";
 import { ConvexError, type Infer, v } from "convex/values";
-import { openRouter } from "lib/openRouter";
 import { z } from "zod/v4";
 import { components, internal } from "../_generated/api";
 import type { Doc, Id } from "../_generated/dataModel";
 import {
-	action,
 	type ActionCtx,
+	type QueryCtx,
+	action,
 	internalAction,
 	internalMutation,
 	mutation,
 	query,
-	type QueryCtx,
 } from "../_generated/server";
 import {
 	calculateCreditsFromSpend,
@@ -37,10 +36,14 @@ import { type Model, modelSchema } from "../ai/models/schema";
 import { FORM_SCHEMA_GENERATION_PROMPT } from "../ai/prompts/formSchema";
 import { ERROR_ANALYSIS_PROMPT } from "../ai/prompts/landingError";
 import { LANDING_MAIN_PROMPT } from "../ai/prompts/landingMain";
-import { FormSchemaResponse, formSchemaResponse } from "../ai/schemas/formSchema";
+import {
+	type FormSchemaResponse,
+	formSchemaResponse,
+} from "../ai/schemas/formSchema";
 import { type Metadata, tools } from "../ai/tools/landingPage/index";
 import { sandboxSchema } from "../collections/sandboxes/schema";
 import { getCurrentUserWithWorkspace } from "../collections/users/utils";
+import { openRouter } from "../lib/openRouter";
 import { ERRORS } from "../utils/errors";
 
 export const landingPageErrorAnalysisSchema = z.object({
@@ -892,8 +895,9 @@ export const generateFormSchema = action({
 		existingSchema: v.optional(v.any()),
 	},
 	handler: async (ctx, args) => {
-
-		const user = await ctx.runQuery(internal.collections.users.queries.getCurrentUserInternal);
+		const user = await ctx.runQuery(
+			internal.collections.users.queries.getCurrentUserInternal,
+		);
 
 		if (!user) {
 			throw new ConvexError(ERRORS.UNAUTHORIZED);
@@ -901,27 +905,28 @@ export const generateFormSchema = action({
 
 		// Build the full prompt with existing schema if provided
 		const existingSchemaText =
-			args.existingSchema && Array.isArray(args.existingSchema) && args.existingSchema.length > 0
+			args.existingSchema &&
+			Array.isArray(args.existingSchema) &&
+			args.existingSchema.length > 0
 				? `\n\nExisting form schema to modify:\n${JSON.stringify(args.existingSchema, null, 2)}`
 				: "";
 
 		const fullPrompt = `User prompt: ${args.prompt}${existingSchemaText}`;
 
 		try {
-		const response: GenerateObjectResult<FormSchemaResponse> = await formSchemaGenerationAgent.generateObject(
-			ctx,
-			{
-				userId: user._id,
-			},
-			{
-				prompt: fullPrompt,
-				schema: formSchemaResponse,
-			},
-		);
+			const response: GenerateObjectResult<FormSchemaResponse> =
+				await formSchemaGenerationAgent.generateObject(
+					ctx,
+					{
+						userId: user._id,
+					},
+					{
+						prompt: fullPrompt,
+						schema: formSchemaResponse,
+					},
+				);
 
-
-
-		return response.object
+			return response.object;
 		} catch (error) {
 			console.error("Error generating form schema", error);
 			throw new ConvexError(ERRORS.SOMETHING_WENT_WRONG);

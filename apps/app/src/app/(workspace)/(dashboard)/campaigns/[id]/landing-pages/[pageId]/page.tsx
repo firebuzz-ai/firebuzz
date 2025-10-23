@@ -1,3 +1,5 @@
+import type { Id } from "@firebuzz/convex/nextjs";
+import { cookies } from "next/headers";
 import { ChatTabsProvider } from "@/components/chat/providers/chat-tabs-provider";
 import { LandingPageProvider } from "@/components/chat/providers/landing-page-provider";
 import { PreviewSizeProvider } from "@/components/chat/providers/preview-size-provider";
@@ -12,8 +14,6 @@ import { MediaGalleryModal } from "@/components/modals/media/gallery/gallery-mod
 import { DesignModeProvider } from "@/components/providers/agent/design-mode";
 import { SanboxProvider } from "@/components/providers/agent/sandbox";
 import { AgentSessionProvider } from "@/components/providers/agent/session";
-import type { Id } from "@firebuzz/convex/nextjs";
-import { cookies } from "next/headers";
 import { Edit } from "./_components/edit";
 
 export default async function Page({

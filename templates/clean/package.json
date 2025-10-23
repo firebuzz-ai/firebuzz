@@ -14,7 +14,7 @@
   "dependencies": {
     "@firebuzz/analytics": "^1.6.1",
     "@firebuzz/consent-manager": "^0.2.15",
-    "@firebuzz/design-mode": "^0.1.4",
+    "@firebuzz/design-mode": "^0.2.1",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "^1.2.2",
     "@radix-ui/react-aspect-ratio": "^1.1.1",

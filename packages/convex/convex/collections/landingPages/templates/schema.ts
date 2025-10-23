@@ -19,7 +19,6 @@ export const landingPageTemplatesSchema = defineTable(
     description: v.string(),
     slug: v.string(), // Must be unique
     type: v.optional(v.union(v.literal("firebuzz"), v.literal("workspace"))),
-    thumbnail: v.optional(v.string()),
     key: v.string(),
     tags: templateTags,
     /* Relations */

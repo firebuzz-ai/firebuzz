@@ -1,5 +1,5 @@
-import { previewTabsContext } from "@/components/chat/providers/preview-tabs-provider";
 import { useContext } from "react";
+import { previewTabsContext } from "@/components/chat/providers/preview-tabs-provider";
 
 export const usePreviewTabs = () => {
 	const context = useContext(previewTabsContext);

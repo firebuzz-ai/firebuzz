@@ -50,7 +50,7 @@ import { Check, ChevronDown, Info } from "@firebuzz/ui/icons/lucide";
 import { cn, toast, useForm, zodResolver } from "@firebuzz/ui/lib/utils";
 import { hslToHex, sleep } from "@firebuzz/utils";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useProject } from "@/hooks/auth/use-project";
 
@@ -67,6 +67,7 @@ type FormData = z.infer<typeof formSchema>;
 interface LandingPageFormProps {
 	onSuccess?: () => void;
 	defaultCampaignId?: Id<"campaigns">;
+	defaultTemplateId?: Id<"landingPageTemplates">;
 }
 
 // Helper function to extract colors from theme
@@ -94,6 +95,7 @@ const getThemeColors = (theme: {
 export const LandingPageForm = ({
 	onSuccess,
 	defaultCampaignId,
+	defaultTemplateId,
 }: LandingPageFormProps) => {
 	const router = useRouter();
 	const { currentProject } = useProject();
@@ -137,10 +139,20 @@ export const LandingPageForm = ({
 			title: "",
 			description: "",
 			campaignId: defaultCampaignId || "",
-			templateId: "",
+			templateId: defaultTemplateId || "",
 			themeId: "",
 		},
 	});
+
+	// Update form values when defaults change
+	useEffect(() => {
+		if (defaultCampaignId) {
+			form.setValue("campaignId", defaultCampaignId);
+		}
+		if (defaultTemplateId) {
+			form.setValue("templateId", defaultTemplateId);
+		}
+	}, [defaultCampaignId, defaultTemplateId, form]);
 
 	const onSubmitHandler = async (data: FormData) => {
 		if (!currentProject) {

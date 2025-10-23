@@ -1,5 +1,11 @@
 "use client";
 
+import type { ParseResult } from "@babel/parser";
+import type { File as BabelFile } from "@babel/types";
+import * as t from "@babel/types";
+import { api, useAction, useMutation, useQuery } from "@firebuzz/convex";
+import { hslToHex } from "@firebuzz/utils";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { ThemeFormType } from "@/app/(workspace)/(dashboard)/brand/themes/_components/theme/form";
 import {
 	findNodeByLocation,
@@ -11,12 +17,6 @@ import {
 } from "@/lib/design-mode/ast-utils";
 import { systemColorsManager } from "@/lib/design-mode/system-colors";
 import { getCategoryForColor, getDescriptionForColor } from "@/lib/theme/utils";
-import type { ParseResult } from "@babel/parser";
-import type { File as BabelFile } from "@babel/types";
-import * as t from "@babel/types";
-import { api, useAction, useMutation, useQuery } from "@firebuzz/convex";
-import { hslToHex } from "@firebuzz/utils";
-import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import { useAgentSession } from "./use-agent-session";
 import { useSandbox } from "./use-sandbox";
@@ -1115,7 +1115,8 @@ export const useDesignMode = () => {
 						isImageEditable = !!(
 							(!srcAttr ||
 								(srcAttr.value && t.isStringLiteral(srcAttr.value))) &&
-							(!altAttr || (altAttr.value && t.isStringLiteral(altAttr.value))));
+							(!altAttr || (altAttr.value && t.isStringLiteral(altAttr.value)))
+						);
 
 						// Check if link attributes (href, target, rel) are editable (string literals, not expressions)
 						const hrefAttr = nodePath.node.openingElement.attributes.find(
@@ -1147,7 +1148,8 @@ export const useDesignMode = () => {
 								(hrefAttr.value && t.isStringLiteral(hrefAttr.value))) &&
 							(!targetAttr ||
 								(targetAttr.value && t.isStringLiteral(targetAttr.value))) &&
-							(!relAttr || (relAttr.value && t.isStringLiteral(relAttr.value))));
+							(!relAttr || (relAttr.value && t.isStringLiteral(relAttr.value)))
+						);
 					}
 				} catch (error) {
 					console.error("[useDesignMode] Error checking editability:", error);

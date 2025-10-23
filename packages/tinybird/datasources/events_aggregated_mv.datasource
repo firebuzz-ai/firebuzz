@@ -1,0 +1,36 @@
+TOKEN read_write READ
+TOKEN read_only READ
+
+DESCRIPTION >
+    Aggregated events data by hour with all dimensions for faster analytics queries
+
+SCHEMA >
+    `hour` DateTime,
+    `workspace_id` String,
+    `project_id` String,
+    `campaign_id` String,
+    `environment` LowCardinality(String),
+    `campaign_environment` LowCardinality(String),
+    `event_id` LowCardinality(String),
+    `event_type` LowCardinality(String),
+    `device_type` LowCardinality(String),
+    `country` LowCardinality(String),
+    `city` String,
+    `utm_source` String,
+    `utm_medium` String,
+    `utm_campaign` String,
+    `referrer` String,
+    `source` String,
+    `landing_page_id` String,
+    `browser` LowCardinality(String),
+    `device_os` LowCardinality(String),
+    `event_count` AggregateFunction(count),
+    `unique_sessions` AggregateFunction(uniq, String),
+    `unique_users` AggregateFunction(uniq, String),
+    `total_value_usd` AggregateFunction(sum, Float64),
+    `page_unload_count` AggregateFunction(count),
+    `total_time_on_page` AggregateFunction(sum, UInt32)
+
+ENGINE "AggregatingMergeTree"
+ENGINE_PARTITION_KEY "toYYYYMM(hour)"
+ENGINE_SORTING_KEY "workspace_id, project_id, campaign_id, environment, campaign_environment, hour, event_id, event_type, device_type, country"

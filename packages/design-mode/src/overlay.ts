@@ -864,31 +864,7 @@ class DesignModeOverlay {
 }
 
 // Initialize when script loads - only in browser environment
+// Tailwind Play CDN handles all CSS generation automatically
 if (typeof window !== "undefined" && typeof document !== "undefined") {
-	// Load Tailwind config and initialize overlay
-	(async () => {
-		try {
-			// Load the generated Tailwind config JSON
-			const configResponse = await fetch(
-				"/src/design-mode/tailwind.config.json",
-			);
-			if (configResponse.ok) {
-				const config = await configResponse.json();
-				// Store config globally for TailwindGenerator
-				(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = config;
-				console.log("[Design Mode] Loaded Tailwind config from JSON");
-			} else {
-				console.warn(
-					"[Design Mode] Could not load Tailwind config JSON - using empty config",
-				);
-				(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = {};
-			}
-		} catch (error) {
-			console.warn("[Design Mode] Error loading Tailwind config:", error);
-			(window as any).__FIREBUZZ_TAILWIND_CONFIG__ = {};
-		}
-
-		// Initialize overlay after config is loaded
-		new DesignModeOverlay();
-	})();
+	new DesignModeOverlay();
 }

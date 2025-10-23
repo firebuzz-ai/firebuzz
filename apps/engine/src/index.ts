@@ -46,7 +46,7 @@ app.route("/client-api/v1/", clientApiRoutes);
 // Utility Routes
 app.route("/utility", utilityRoutes);
 
-// Tracking Script Route
+// Static Asset Routes
 app.route("/track.js", trackScriptRoute);
 
 app.get("/", async (c) => {

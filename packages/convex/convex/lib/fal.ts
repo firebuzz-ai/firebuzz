@@ -153,7 +153,7 @@ export const generateImage = internalAction({
 					aiMetadata: {
 						prompt: args.prompt,
 						size: args.aspectRatio || "1:1",
-						quality: modelConfig.speed.toLowerCase(),
+						quality: args.resolution || "1K",
 					},
 				},
 			);
@@ -302,7 +302,7 @@ export const editImage = internalAction({
 					aiMetadata: {
 						prompt: args.prompt,
 						size: args.aspectRatio || "auto",
-						quality: modelConfig.speed.toLowerCase(),
+						quality: "1K", // Edit always uses nano-banana which doesn't have resolution param
 					},
 				},
 			);

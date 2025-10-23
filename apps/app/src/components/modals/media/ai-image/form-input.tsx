@@ -1,6 +1,3 @@
-import { useProject } from "@/hooks/auth/use-project";
-import { useWorkspace } from "@/hooks/auth/use-workspace";
-import { useAIImageModal } from "@/hooks/ui/use-ai-image-modal";
 import { api, useAction, useStableCachedQuery } from "@firebuzz/convex";
 import { envCloudflarePublic } from "@firebuzz/env";
 import { Button, ButtonShortcut } from "@firebuzz/ui/components/ui/button";
@@ -21,6 +18,12 @@ import { GeminiIcon } from "@firebuzz/ui/icons/ai-providers";
 import { CornerDownRight, Ratio } from "@firebuzz/ui/icons/lucide";
 import { toast } from "@firebuzz/ui/lib/utils";
 import { useMemo, useState } from "react";
+import { useProject } from "@/hooks/auth/use-project";
+import { useWorkspace } from "@/hooks/auth/use-workspace";
+import {
+	useAIImageModal,
+	type ImageQuality,
+} from "@/hooks/ui/use-ai-image-modal";
 import { Generations } from "./generations";
 import { ImageList } from "./image-list";
 import { MaskButton } from "./mask-button";
@@ -58,18 +61,18 @@ interface GenerateImageFormInputProps {
 	selectedAspectRatio: AspectRatio;
 	setSelectedAspectRatio: React.Dispatch<React.SetStateAction<AspectRatio>>;
 	setState: React.Dispatch<React.SetStateAction<"idle" | "generating">>;
-	quality: "low" | "medium" | "high";
-	setQuality: React.Dispatch<React.SetStateAction<"low" | "medium" | "high">>;
 	canvasRef: React.RefObject<HTMLCanvasElement | null>;
+	quality: ImageQuality;
+	setQuality: React.Dispatch<React.SetStateAction<ImageQuality>>;
 }
 
 export const GenerateImageFormInput = ({
 	selectedAspectRatio,
 	setSelectedAspectRatio,
 	setState,
+	canvasRef,
 	quality,
 	setQuality,
-	canvasRef,
 }: GenerateImageFormInputProps) => {
 	const {
 		selectedImage,
@@ -101,136 +104,10 @@ export const GenerateImageFormInput = ({
 			contentType: generation.contentType,
 			fileSize: generation.size,
 			prompt: generation.aiMetadata?.prompt ?? "",
-			quality: (generation.aiMetadata?.quality ?? "medium") as
-				| "low"
-				| "medium"
-				| "high",
+			quality: (generation.aiMetadata?.quality ?? "1K") as ImageQuality,
 			aspectRatio: (generation.aiMetadata?.size ?? "1:1") as AspectRatio,
 		}));
 	}, [generations]);
-
-	// Return a Promise that resolves with the mask File or null, scaled to natural dimensions stored on canvas
-	const getMaskFile = (): Promise<File | null> => {
-		return new Promise((resolve) => {
-			// Cast canvasRef.current to include our custom properties
-			const canvas = canvasRef.current as
-				| (HTMLCanvasElement & {
-						naturalWidth?: number;
-						naturalHeight?: number;
-				  })
-				| null;
-
-			const originalWidth = canvas?.naturalWidth;
-			const originalHeight = canvas?.naturalHeight;
-
-			if (
-				!canvas ||
-				canvas.width === 0 ||
-				canvas.height === 0 ||
-				!originalWidth || // Check if natural dimensions exist
-				!originalHeight ||
-				originalWidth <= 0 ||
-				originalHeight <= 0
-			) {
-				console.warn(
-					"getMaskFile: Canvas not available, has zero dimensions, or missing natural dimensions.",
-				);
-				resolve(null);
-				return;
-			}
-
-			const renderedWidth = canvas.width;
-			const renderedHeight = canvas.height;
-
-			const ctx = canvas.getContext("2d", { willReadFrequently: true });
-			if (!ctx) {
-				console.error("getMaskFile: Failed to get 2D context.");
-				resolve(null);
-				return;
-			}
-
-			try {
-				// 1. Get rendered ImageData
-				const renderedImageData = ctx.getImageData(
-					0,
-					0,
-					renderedWidth,
-					renderedHeight,
-				);
-				const renderedData = renderedImageData.data;
-
-				// 2. Create inverted ImageData at original dimensions
-				const invertedImageData = new ImageData(originalWidth, originalHeight);
-				const invertedData = invertedImageData.data;
-
-				// Scaling factors
-				const scaleX = renderedWidth / originalWidth;
-				const scaleY = renderedHeight / originalHeight;
-
-				// 3. Iterate through original dimensions, sample from rendered, invert
-				for (let oy = 0; oy < originalHeight; oy++) {
-					for (let ox = 0; ox < originalWidth; ox++) {
-						const sx = Math.floor(ox * scaleX);
-						const sy = Math.floor(oy * scaleY);
-						const safeSx = Math.max(0, Math.min(renderedWidth - 1, sx));
-						const safeSy = Math.max(0, Math.min(renderedHeight - 1, sy));
-						const sourceIndex = (safeSy * renderedWidth + safeSx) * 4;
-						const originalAlpha = renderedData[sourceIndex + 3];
-						const targetIndex = (oy * originalWidth + ox) * 4;
-
-						if (originalAlpha > 0) {
-							invertedData[targetIndex] = 0;
-							invertedData[targetIndex + 1] = 0;
-							invertedData[targetIndex + 2] = 0;
-							invertedData[targetIndex + 3] = 0;
-						} else {
-							invertedData[targetIndex] = 255;
-							invertedData[targetIndex + 1] = 255;
-							invertedData[targetIndex + 2] = 255;
-							invertedData[targetIndex + 3] = 255;
-						}
-					}
-				}
-
-				// 4. Temp canvas at original dimensions
-				const tempCanvas = document.createElement("canvas");
-				tempCanvas.width = originalWidth;
-				tempCanvas.height = originalHeight;
-				const tempCtx = tempCanvas.getContext("2d");
-
-				if (!tempCtx) {
-					console.error(
-						"getMaskFile: Failed to get context for temporary canvas.",
-					);
-					resolve(null);
-					return;
-				}
-
-				// 5. Put scaled/inverted data, get blob, check size, return file
-				tempCtx.putImageData(invertedImageData, 0, 0);
-				tempCanvas.toBlob((blob) => {
-					if (blob) {
-						if (blob.size > 4 * 1024 * 1024) {
-							console.warn("Generated mask blob exceeds 4MB limit.");
-							toast.error("Mask image is too large (max 4MB).");
-							resolve(null);
-						} else {
-							const file = new File([blob], "mask.png", { type: "image/png" });
-							resolve(file);
-						}
-					} else {
-						console.error(
-							"getMaskFile: Failed to create blob from temporary canvas.",
-						);
-						resolve(null);
-					}
-				}, "image/png");
-			} catch (error) {
-				console.error("Error processing mask image data:", error);
-				resolve(null);
-			}
-		});
-	};
 
 	// Check if mask has content
 	const hasMask = () => {
@@ -282,7 +159,7 @@ export const GenerateImageFormInput = ({
 				prompt,
 				model: selectedModel,
 				aspectRatio: selectedAspectRatio,
-				resolution: "1K", // Default to 1K for now
+				resolution: quality,
 				workspaceId: currentWorkspace._id,
 				projectId: currentProject._id,
 			});
@@ -409,7 +286,6 @@ export const GenerateImageFormInput = ({
 						>
 							<SelectTrigger className="h-8 max-w-fit">
 								<div className="flex gap-2 items-center pr-2 whitespace-nowrap">
-									
 									<SelectValue placeholder="Model" />
 								</div>
 							</SelectTrigger>

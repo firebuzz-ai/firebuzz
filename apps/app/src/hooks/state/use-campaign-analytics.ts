@@ -471,7 +471,10 @@ export function useCampaignAnalytics({
 			// Future screens can add more queries here
 
 			if (queries.length > 0) {
-				console.log("Calling revalidateAnalyticsMutation with queries:", queries);
+				console.log(
+					"Calling revalidateAnalyticsMutation with queries:",
+					queries,
+				);
 				const result = await revalidateAnalyticsMutation({
 					campaignId,
 					queries,
@@ -512,7 +515,9 @@ export function useCampaignAnalytics({
 			toast.error("Failed to refresh analytics", {
 				id: "analytics-refresh-error",
 				description:
-					error instanceof Error ? error.message : "An unexpected error occurred",
+					error instanceof Error
+						? error.message
+						: "An unexpected error occurred",
 			});
 			// Don't re-throw, just log the error
 		}
@@ -565,7 +570,10 @@ export function useCampaignAnalytics({
 		// Trigger initial load with a small delay
 		const initialTimeoutId = setTimeout(() => {
 			revalidate().catch((error) => {
-				console.error(`Initial revalidation failed for ${currentScreen}:`, error);
+				console.error(
+					`Initial revalidation failed for ${currentScreen}:`,
+					error,
+				);
 			});
 		}, 300);
 

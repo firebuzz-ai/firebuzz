@@ -6,7 +6,7 @@ export const createInternal = internalMutationWithTrigger({
 	args: {
 		title: v.string(),
 		description: v.string(),
-		thumbnail: v.string(),
+		
 		slug: v.string(),
 		tags: templateTags,
 		key: v.string(),
@@ -16,7 +16,7 @@ export const createInternal = internalMutationWithTrigger({
 			title: args.title,
 			description: args.description,
 			slug: args.slug,
-			thumbnail: args.thumbnail,
+	
 			key: args.key,
 			tags: args.tags,
 			

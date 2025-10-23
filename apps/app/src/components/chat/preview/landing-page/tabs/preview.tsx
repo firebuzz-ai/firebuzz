@@ -1,5 +1,3 @@
-import { DesignModeActionMenu } from "@/components/chat/design-mode/action-menu";
-import { useAgentSession } from "@/hooks/agent/use-agent-session";
 import { TextShimmer } from "@firebuzz/ui/components/reusable/text-shimmer";
 import { Button } from "@firebuzz/ui/components/ui/button";
 import { Spinner } from "@firebuzz/ui/components/ui/spinner";
@@ -7,6 +5,8 @@ import { AlertCircle, EyeOff } from "@firebuzz/ui/icons/lucide";
 import { cn } from "@firebuzz/ui/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useMemo } from "react";
+import { DesignModeActionMenu } from "@/components/chat/design-mode/action-menu";
+import { useAgentSession } from "@/hooks/agent/use-agent-session";
 // import { ElementInspector } from "@/components/chat-v2/design-mode/element-inspector";
 import { useLandingPageContext } from "@/hooks/agent/use-landing-page";
 import { usePreviewSize } from "@/hooks/agent/use-preview-size";
@@ -99,7 +99,6 @@ export const Preview = () => {
 		staticPreviewURL,
 		isStaticPreviewIframeLoaded,
 	]);
-
 
 	const message = useMemo(() => {
 		if (session && session.status !== "active")

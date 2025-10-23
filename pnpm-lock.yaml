@@ -794,9 +794,6 @@ importers:
 
   packages/design-mode:
     dependencies:
-      esbuild:
-        specifier: ^0.25.11
-        version: 0.25.11
       react:
         specifier: '>=18.0.0'
         version: 19.1.1
